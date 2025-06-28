@@ -13,19 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Briefcase, Wrench, Search, MapPin, Clock } from "lucide-react";
-
-// Mock data
-const jobOpportunities = [
-  { id: 'job_1', title: "Motorista para Zona Sul (Turno Diurno)", company: "Frota Amarela", location: "Zona Sul", type: "Tempo Integral", logo: "https://placehold.co/40x40.png", tags: ["Pontual", "Experiente"] },
-  { id: 'job_2', title: "Vaga Urgente - Aeroporto de Congonhas", company: "SP AeroTaxi", location: "Zona Sul", type: "Tempo Integral", logo: "https://placehold.co/40x40.png", tags: ["Inglês Básico"] },
-  { id: 'job_3', title: "Motorista para Eventos Corporativos", company: "Executivo Black", location: "Centro", type: "Freelance", logo: "https://placehold.co/40x40.png", tags: ["Carro Próprio", "Traje Social"] },
-];
-
-const serviceListings = [
-    { id: 'srv_1', title: 'Despachante Veicular Completo', provider: 'Despachante Legal', category: 'Despachante', price: 'R$ 550,00', imageUrl: 'https://placehold.co/600x400.png', imageHint: 'documents stamp' },
-    { id: 'srv_2', title: 'Curso de Reciclagem para Taxistas', provider: 'Autoescola Futuro', category: 'Autoescola', price: 'R$ 300,00', imageUrl: 'https://placehold.co/600x400.png', imageHint: 'classroom training' },
-    { id: 'srv_3', title: 'Instalação de GNV 5ª Geração', provider: 'GNV Master', category: 'Instaladora GNV', price: 'Sob Consulta', imageUrl: 'https://placehold.co/600x400.png', imageHint: 'car engine' },
-];
+import { mockJobOpportunities, mockServiceListings } from '@/lib/mock-data';
 
 export default function OpportunitiesMarketplacePage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,14 +36,14 @@ export default function OpportunitiesMarketplacePage() {
   };
 
   const filteredJobs = useMemo(() => {
-    return jobOpportunities.filter(opp => 
+    return mockJobOpportunities.filter(opp => 
         opp.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
         opp.company.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [searchTerm]);
 
   const filteredServices = useMemo(() => {
-    return serviceListings.filter(srv => 
+    return mockServiceListings.filter(srv => 
         srv.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
         srv.provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
         srv.category.toLowerCase().includes(searchTerm.toLowerCase())

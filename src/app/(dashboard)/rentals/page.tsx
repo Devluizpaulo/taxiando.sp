@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { type Vehicle } from '@/lib/types';
 import { vehiclePerks as allPerks } from '@/lib/data';
+import { mockVehicles } from '@/lib/mock-data';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,11 +18,6 @@ import { Label } from '@/components/ui/label';
 import { Car, Fuel, MapPin, Search } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const initialVehicles: Omit<Vehicle, 'id' | 'fleetId' | 'createdAt'>[] = [
-  { make: 'Chevrolet', model: 'Onix', year: 2022, status: 'Disponível', dailyRate: 120, imageUrl: 'https://placehold.co/600x400.png', condition: 'Novo', description: 'Carro novo, completo, com ar, direção e som bluetooth.', paymentInfo: { terms: 'Diária (Seg-Sáb)', methods: ['Cartão de Crédito', 'PIX'] }, perks: [{ id: 'full_tank', label: 'Tanque Cheio' }, { id: 'car_wash', label: 'Lava-rápido' }, { id: 'insurance', label: 'Seguro Passageiro' }] },
-  { make: 'Hyundai', model: 'HB20', year: 2023, status: 'Disponível', dailyRate: 135, imageUrl: 'https://placehold.co/600x400.png', condition: 'Semi-novo', description: 'Modelo mais recente, super econômico. Ideal para o dia a dia.', paymentInfo: { terms: 'Semanal', methods: ['PIX', 'Boleto'] }, perks: [{ id: 'gvn', label: 'GNV Instalado' }, {id: 'support', label: 'Suporte 24h'}] },
-  { make: 'Fiat', model: 'Cronos', year: 2021, status: 'Disponível', dailyRate: 110, imageUrl: 'https://placehold.co/600x400.png', condition: 'Usado', description: 'Porta-malas gigante, perfeito para viagens e aeroporto.', paymentInfo: { terms: 'Diária (Seg-Seg)', methods: ['Dinheiro'] }, perks: [{id: 'tow_truck', label: 'Guincho'}] },
-];
 
 export default function RentalsPage() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -30,7 +26,7 @@ export default function RentalsPage() {
     const [maxPrice, setMaxPrice] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const allVehicles = initialVehicles.map((v, i) => ({ ...v, id: `v_${i+1}`, fleetId: 'mockFleetId', createdAt: new Date() }));
+    const allVehicles: Vehicle[] = useMemo(() => mockVehicles.map((v, i) => ({ ...v, id: `v_${i+1}`, fleetId: 'mockFleetId', createdAt: new Date() })), []);
     
     const uniqueMakes = useMemo(() => {
         const makes = new Set(allVehicles.map(v => v.make));

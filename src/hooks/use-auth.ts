@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, SetStateAction, Dispatch } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { doc, getDoc, type Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { type Badge, type FleetAmenity } from '@/lib/types';
+import { type Badge, type FleetAmenity, type CreditPackage, type Transaction } from '@/lib/types';
 
 
 export interface UserProfile {
@@ -94,7 +94,7 @@ export function useAuth() {
     return () => unsubscribe();
   }, []);
 
-  return { user, userProfile, loading };
+  return { user, userProfile, loading, setUserProfile };
 }
 
 

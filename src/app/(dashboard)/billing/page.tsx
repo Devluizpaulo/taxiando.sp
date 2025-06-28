@@ -1,44 +1,92 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { type CreditPackage, type Transaction } from '@/lib/types';
+import { purchaseCredits } from '@/app/actions/billing-actions';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CreditCard, DollarSign, PlusCircle, ShoppingCart } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { CreditCard, Loader2, ShoppingCart } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
-
-
-const creditPackages = [
-  { id: 'pkg_10', credits: 10, price: '9,90', priceId: 'price_10_credits' },
-  { id: 'pkg_50', credits: 50, price: '44,90', priceId: 'price_50_credits', popular: true },
-  { id: 'pkg_100', credits: 100, price: '79,90', priceId: 'price_100_credits' },
-];
-
-const mockTransactions = [
-  { id: 't_1', date: '25/07/2024', description: 'Compra de 50 créditos', amount: '- R$ 44,90', type: 'debit' },
-  { id: 't_2', date: '26/07/2024', description: 'Uso de 2 créditos - Anúncio em Destaque', amount: '- 2 créditos', type: 'credit_usage' },
-  { id: 't_3', date: '28/07/2024', description: 'Uso de 1 crédito - Download de Certificado', amount: '- 1 crédito', type: 'credit_usage' },
-];
+import { mockTransactions } from '@/lib/mock-data';
 
 export default function BillingPage() {
-    const { userProfile, loading } = useAuth();
+    const { user, userProfile, setUserProfile, loading: authLoading } = useAuth();
     const { toast } = useToast();
 
-    const handlePurchase = (packageName: string) => {
-        // Lógica de integração com Mercado Pago viria aqui.
-        // Por enquanto, apenas exibimos um toast.
-        toast({
-            title: "Funcionalidade em Breve!",
-            description: `A integração com o Mercado Pago para a compra de ${packageName} está sendo finalizada.`
-        });
+    const [packages, setPackages] = useState<CreditPackage[]>([]);
+    const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+    const [loading, setLoading] = useState(true);
+    const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
+
+     useEffect(() => {
+        const fetchPackages = async () => {
+            try {
+                const packagesCollection = collection(db, 'credit_packages');
+                const q = query(packagesCollection, orderBy('price', 'asc'));
+                const querySnapshot = await getDocs(q);
+                const packagesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CreditPackage));
+                setPackages(packagesData);
+            } catch (error) {
+                console.error("Error fetching credit packages: ", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchPackages();
+    }, []);
+
+
+    const handlePurchase = async (pkg: CreditPackage) => {
+        if (!user) {
+            toast({ variant: 'destructive', title: "Erro", description: "Você precisa estar logado para comprar." });
+            return;
+        }
+
+        setIsPurchasing(pkg.id);
+
+        try {
+            // Simulação de chamada à API de pagamento.
+            // No futuro, aqui iria a lógica de checkout com o Mercado Pago.
+            await new Promise(resolve => setTimeout(resolve, 1500)); 
+            
+            await purchaseCredits({
+                userId: user.uid,
+                packageId: pkg.id,
+                packageName: pkg.name,
+                credits: pkg.credits,
+                amountPaid: pkg.price
+            });
+
+            // Atualiza o perfil do usuário no estado local para refletir o novo saldo
+            setUserProfile(prev => prev ? { ...prev, credits: (prev.credits || 0) + pkg.credits } : null);
+            
+            toast({
+                title: "Compra Realizada com Sucesso!",
+                description: `Você adquiriu ${pkg.credits} créditos.`
+            });
+
+        } catch (error) {
+             toast({
+                variant: 'destructive',
+                title: "Erro na Compra",
+                description: "Não foi possível processar sua compra. Tente novamente."
+            });
+             console.error("Purchase error:", error);
+        } finally {
+            setIsPurchasing(null);
+        }
     }
 
-    if (loading) {
+    if (authLoading || loading) {
          return (
             <div className="flex flex-col gap-8">
                 <Skeleton className="h-10 w-1/3" />
@@ -77,23 +125,41 @@ export default function BillingPage() {
             <div className="space-y-4">
                 <h2 className="font-headline text-2xl font-semibold">Comprar Créditos</h2>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {creditPackages.map(pkg => (
+                    {packages.map(pkg => (
                         <Card key={pkg.id} className="flex flex-col relative overflow-hidden">
                             {pkg.popular && <Badge className="absolute top-2 right-2">Mais Popular</Badge>}
                             <CardHeader>
-                                <CardTitle>{pkg.credits} Créditos</CardTitle>
-                                <CardDescription>Pacote ideal para começar a usar os recursos premium.</CardDescription>
+                                <CardTitle>{pkg.name}</CardTitle>
+                                <CardDescription>{pkg.description}</CardDescription>
                             </CardHeader>
                             <CardContent className="flex-1">
                                 <p className="text-4xl font-bold font-headline text-primary">
-                                    R$ {pkg.price}
+                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pkg.price)}
                                 </p>
-                                <p className="text-sm text-muted-foreground">Pagamento único via Mercado Pago</p>
+                                <p className="text-sm text-muted-foreground">{pkg.credits} créditos</p>
                             </CardContent>
                             <CardContent>
-                                <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => handlePurchase(`${pkg.credits} créditos`)}>
-                                    <ShoppingCart className="mr-2" /> Comprar com Mercado Pago
-                                </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={isPurchasing === pkg.id}>
+                                            {isPurchasing === pkg.id ? <Loader2 className="mr-2 animate-spin" /> : <ShoppingCart className="mr-2" />}
+                                            {isPurchasing === pkg.id ? 'Processando...' : 'Comprar com Mercado Pago'}
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader><AlertDialogTitle>Confirmar Compra</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Você está prestes a comprar o pacote "{pkg.name}" por {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pkg.price)}.
+                                                <br/>
+                                                <span className="text-xs"> (Esta é uma simulação. Nenhum valor será cobrado.)</span>
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handlePurchase(pkg)}>Confirmar</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </CardContent>
                         </Card>
                     ))}
@@ -115,7 +181,7 @@ export default function BillingPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {mockTransactions.map(t => (
+                            {transactions.map(t => (
                                 <TableRow key={t.id}>
                                     <TableCell>{t.date}</TableCell>
                                     <TableCell className="font-medium">{t.description}</TableCell>

@@ -13,20 +13,13 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, Eye, Star, Wrench, Tag, DollarSign, FilePen, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-
-// Mock data
-const mockServices = [
-  { id: 'srv_1', title: 'Despachante Veicular Completo', category: 'Despachante', price: 'R$ 550,00', status: 'Ativo', views: 120, rating: 4.9 },
-  { id: 'srv_2', title: 'Curso de Reciclagem para Taxistas', category: 'Autoescola', price: 'R$ 300,00', status: 'Ativo', views: 85, rating: 4.8 },
-  { id: 'srv_3', title: 'Troca de Óleo e Filtro', category: 'Oficina Mecânica', price: 'R$ 180,00', status: 'Pausado', views: 210, rating: 5.0 },
-  { id: 'srv_4', title: 'Instalação de GNV 5ª Geração', category: 'Instaladora GNV', price: 'Sob Consulta', status: 'Ativo', views: 350, rating: 4.9 },
-];
+import { mockServiceListings } from '@/lib/mock-data';
 
 
 export default function ServicesPage() {
     const { userProfile, loading } = useAuth();
     const router = useRouter();
-    const [services, setServices] = useState(mockServices);
+    const [services, setServices] = useState(mockServiceListings);
 
     useEffect(() => {
         if (!loading && (!userProfile || !['provider', 'admin'].includes(userProfile.role))) {

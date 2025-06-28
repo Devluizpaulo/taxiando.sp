@@ -12,7 +12,7 @@ import {
   SidebarInset,
   SidebarTrigger
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, PanelLeft, Shield, FilePen, Search, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, PanelLeft, Shield, FilePen, Search, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -142,11 +142,18 @@ export default function DashboardLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             {userProfile?.role === 'admin' && (
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/admin"><Shield/> Admin</Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <>
+                <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                        <Link href="/admin"><Shield/> Painel Admin</Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                        <Link href="/admin/billing"><ShoppingCart/> Pacotes de Crédito</Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+              </>
             )}
           </SidebarMenu>
         </SidebarContent>

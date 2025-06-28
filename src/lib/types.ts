@@ -96,3 +96,22 @@ export interface VehicleApplication {
   appliedAt: Date;
   status: 'Pendente' | 'Aprovado' | 'Rejeitado';
 }
+
+export interface CreditPackage {
+  id: string;
+  name: string;
+  description: string;
+  credits: number;
+  price: number;
+  priceId: string; // For Mercado Pago
+  popular?: boolean;
+  createdAt: Timestamp;
+}
+
+export interface Transaction {
+    id: string;
+    date: string;
+    description: string;
+    amount: string;
+    type: 'debit' | 'credit_usage';
+}

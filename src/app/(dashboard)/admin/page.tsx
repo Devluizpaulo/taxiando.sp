@@ -11,41 +11,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, Wrench } from "lucide-react";
+import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, Wrench, CreditCard, ShoppingCart } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-
-const users = [
-    { id: 'usr_1', name: 'João da Silva', email: 'joao.silva@example.com', role: 'Motorista', profileStatus: 'Aprovado' },
-    { id: 'usr_2', name: 'Frota Rápida SP', email: 'contato@frotarapida.com', role: 'Frota', profileStatus: 'N/A' },
-    { id: 'usr_3', name: 'Maria Oliveira', email: 'maria.o@example.com', role: 'Motorista', profileStatus: 'Pendente' },
-    { id: 'usr_4', name: 'Carlos Souza', email: 'carlos.souza@example.com', role: 'Motorista', profileStatus: 'Rejeitado' },
-    { id: 'usr_5', name: 'Ana Pereira', email: 'ana.p@example.com', role: 'Motorista', profileStatus: 'Aprovado' },
-    { id: 'usr_6', name: 'Pedro Martins', email: 'pedro.m@example.com', role: 'Motorista', profileStatus: 'Pendente' },
-];
-
-
-const opportunities = [
-    { id: 'opp_1', title: 'Motorista Turno da Noite', company: 'Frota Rápida SP', status: 'Aprovado' },
-    { id: 'opp_2', title: 'Vaga para Aeroporto GUA', company: 'Cooperativa Alfa', status: 'Pendente' },
-    { id: 'opp_3', title: 'Motorista Fim de Semana', company: 'Táxi Legal', status: 'Rejeitado' },
-    { id: 'opp_4', title: 'Motorista Bilíngue (Eventos)', company: 'SP TuriTaxi', status: 'Pendente' },
-];
-
-const serviceListings = [
-    { id: 'srv_1', title: 'Despachante Veicular Completo', provider: 'Despachante Legal', status: 'Pendente' },
-    { id: 'srv_2', title: 'Curso de Reciclagem para Taxistas', provider: 'Autoescola Futuro', status: 'Aprovado' },
-    { id: 'srv_3', title: 'Instalação de GNV 5ª Geração', provider: 'GNV Master', status: 'Rejeitado' },
-    { id: 'srv_4', title: 'Troca de Óleo e Filtro', provider: 'Oficina do Zé', status: 'Pendente' },
-];
-
-
-const courses = [
-    { id: 'crs_1', name: 'Legislação de Trânsito', enrolled: 152, completion: '85%' },
-    { id: 'crs_2', name: 'Inglês para Atendimento', enrolled: 98, completion: '62%' },
-    { id: 'crs_3', name: 'Direção Defensiva', enrolled: 210, completion: '91%' },
-];
+import { mockUsers, mockOpportunities, mockServiceListings, mockCourses } from '@/lib/mock-data';
 
 const chartData = [
   { month: "Jan", users: 50 },
@@ -78,7 +48,7 @@ export default function AdminPage() {
 
     const handleSelectAll = (checked: boolean | 'indeterminate') => {
         if (checked === true) {
-            setSelectedUsers(users.filter(u => u.role === 'Motorista').map(u => u.id));
+            setSelectedUsers(mockUsers.filter(u => u.role === 'Motorista').map(u => u.id));
         } else {
             setSelectedUsers([]);
         }
@@ -119,35 +89,12 @@ export default function AdminPage() {
                 <p className="text-muted-foreground">Visão geral e gerenciamento da plataforma Táxiando SP.</p>
             </div>
             
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Usuários Totais</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{users.length}</div></CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Oportunidades Ativas</CardTitle>
-                        <Briefcase className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{opportunities.length}</div></CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Cursos Ativos</CardTitle>
-                        <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{courses.length}</div></CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Receita (Mês)</CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">R$ 15.231,89</div></CardContent>
-                </Card>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Usuários Totais</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{mockUsers.length}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Oportunidades Ativas</CardTitle><Briefcase className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{mockOpportunities.length}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Cursos Ativos</CardTitle><BookOpen className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{mockCourses.length}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Pacotes de Crédito</CardTitle><CreditCard className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">3</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Receita (Mês)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">R$ 15.231,89</div></CardContent></Card>
             </div>
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
@@ -175,7 +122,7 @@ export default function AdminPage() {
                          <Table>
                             <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {users.filter(u => u.profileStatus !== 'N/A').slice(0,5).map(user => (
+                                {mockUsers.filter(u => u.profileStatus !== 'N/A').slice(0,5).map(user => (
                                     <TableRow key={user.id}>
                                         <TableCell>
                                             <div className="font-medium">{user.name}</div>
@@ -191,12 +138,13 @@ export default function AdminPage() {
             </div>
 
             <Tabs defaultValue="users">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
                     <TabsTrigger value="users">Gerenciar Usuários</TabsTrigger>
                     <TabsTrigger value="opportunities">Moderar Vagas</TabsTrigger>
                     <TabsTrigger value="services">Moderar Serviços</TabsTrigger>
                     <TabsTrigger value="courses">Gerenciar Cursos</TabsTrigger>
                     <TabsTrigger value="events">Gerenciar Eventos</TabsTrigger>
+                    <TabsTrigger value="billing">Gerenciar Créditos</TabsTrigger>
                 </TabsList>
                 <TabsContent value="users">
                     <Card>
@@ -213,7 +161,7 @@ export default function AdminPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="w-12"><Checkbox onCheckedChange={handleSelectAll} checked={selectedUsers.length > 0 && selectedUsers.length === users.filter(u => u.role === 'Motorista').length} /></TableHead>
+                                        <TableHead className="w-12"><Checkbox onCheckedChange={handleSelectAll} checked={selectedUsers.length > 0 && selectedUsers.length === mockUsers.filter(u => u.role === 'Motorista').length} /></TableHead>
                                         <TableHead>Usuário</TableHead>
                                         <TableHead>Perfil</TableHead>
                                         <TableHead>Status do Perfil</TableHead>
@@ -221,7 +169,7 @@ export default function AdminPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {users.map(user => (
+                                    {mockUsers.map(user => (
                                         <TableRow key={user.id}>
                                             <TableCell><Checkbox 
                                                 disabled={user.role !== 'Motorista'}
@@ -271,7 +219,7 @@ export default function AdminPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {opportunities.map(opp => (
+                                    {mockOpportunities.map(opp => (
                                         <TableRow key={opp.id}>
                                             <TableCell className="font-medium">{opp.title}</TableCell>
                                             <TableCell>{opp.company}</TableCell>
@@ -308,7 +256,7 @@ export default function AdminPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {serviceListings.map(srv => (
+                                    {mockServiceListings.map(srv => (
                                         <TableRow key={srv.id}>
                                             <TableCell className="font-medium">{srv.title}</TableCell>
                                             <TableCell>{srv.provider}</TableCell>
@@ -349,7 +297,7 @@ export default function AdminPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {courses.map(course => (
+                                    {mockCourses.map(course => (
                                         <TableRow key={course.id}>
                                             <TableCell className="font-medium">{course.name}</TableCell>
                                             <TableCell>{course.enrolled}</TableCell>
@@ -377,6 +325,26 @@ export default function AdminPage() {
                                  <Calendar className="h-12 w-12 mb-4" />
                                 <p className="font-semibold">Nenhum evento agendado recentemente.</p>
                                 <p className="text-sm">Clique no botão para adicionar novos shows, feiras e outros acontecimentos importantes na cidade.</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                 <TabsContent value="billing">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                             <div>
+                                <CardTitle>Pacotes de Crédito</CardTitle>
+                                <CardDescription>Crie e gerencie os pacotes para compra na plataforma.</CardDescription>
+                            </div>
+                            <Button asChild>
+                                <Link href="/admin/billing">Gerenciar Pacotes <ArrowRight className="ml-2"/></Link>
+                            </Button>
+                        </CardHeader>
+                        <CardContent>
+                           <div className="flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed rounded-lg p-12">
+                                 <ShoppingCart className="h-12 w-12 mb-4" />
+                                <p className="font-semibold">Nenhum pacote de crédito criado.</p>
+                                <p className="text-sm">Clique no botão para criar pacotes de créditos que os usuários poderão comprar.</p>
                             </div>
                         </CardContent>
                     </Card>

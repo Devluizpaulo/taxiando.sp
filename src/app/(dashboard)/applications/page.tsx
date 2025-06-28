@@ -5,13 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuthProtection } from '@/hooks/use-auth';
-
-const applications = [
-    { id: 'app_1', title: 'Motorista Turno da Noite', company: 'Frota Rápida SP', status: 'Em Análise', appliedDate: '20/07/2024' },
-    { id: 'app_2', title: 'Vaga para Aeroporto GUA', company: 'Cooperativa Alfa', status: 'Visualizado', appliedDate: '18/07/2024' },
-    { id: 'app_3', title: 'Motorista Fim de Semana', company: 'Táxi Legal', status: 'Rejeitado', appliedDate: '15/07/2024' },
-    { id: 'app_4', title: 'Motorista Bilíngue (Eventos)', company: 'SP TuriTaxi', status: 'Contato Realizado', appliedDate: '12/07/2024' },
-];
+import { mockApplications } from "@/lib/mock-data";
 
 const getStatusVariant = (status: string) => {
     switch (status) {
@@ -54,7 +48,7 @@ export default function ApplicationsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {applications.map(app => (
+                            {mockApplications.map(app => (
                                 <TableRow key={app.id}>
                                     <TableCell className="font-medium">{app.title}</TableCell>
                                     <TableCell>{app.company}</TableCell>
