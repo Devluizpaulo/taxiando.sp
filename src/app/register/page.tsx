@@ -8,14 +8,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
+import Image from 'next/image';
 
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Car, Building, Wrench } from 'lucide-react';
+import { Loader2, Car, Building, Wrench, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -48,16 +49,17 @@ const registerFormSchema = z.object({
 type Role = 'driver' | 'fleet' | 'provider';
 type PersonType = 'pf' | 'pj';
 
-const roles: { id: Role; title: string; description: string; icon: React.ElementType }[] = [
-    { id: 'driver', title: 'Sou Motorista', description: 'Busco oportunidades e qualificação.', icon: Car },
-    { id: 'fleet', title: 'Sou uma Frota', description: 'Quero gerenciar veículos e encontrar motoristas.', icon: Building },
-    { id: 'provider', title: 'Sou Prestador', description: 'Ofereço serviços para motoristas e frotas.', icon: Wrench },
+const roles: { id: Role; title: string; description: string; icon: React.ElementType, image: string, imageHint: string }[] = [
+    { id: 'driver', title: 'Sou Motorista', description: 'Busco oportunidades e qualificação.', icon: Car, image: 'https://placehold.co/600x400.png', imageHint: 'taxi city night' },
+    { id: 'fleet', title: 'Sou uma Frota', description: 'Quero gerenciar veículos e encontrar motoristas.', icon: Building, image: 'https://placehold.co/600x400.png', imageHint: 'modern office building' },
+    { id: 'provider', title: 'Sou Prestador', description: 'Ofereço serviços para motoristas e frotas.', icon: Wrench, image: 'https://placehold.co/600x400.png', imageHint: 'car workshop' },
 ];
 
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   
   const form = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
@@ -74,11 +76,12 @@ export default function RegisterPage() {
     },
   });
 
-  const selectedRole = form.watch('role');
+  const currentRoleFromForm = form.watch('role');
   const personType = form.watch('personType');
 
   const handleRoleSelect = (role: Role) => {
     form.setValue('role', role, { shouldValidate: true, shouldDirty: true });
+    setSelectedRole(role);
   }
 
   async function onSubmit(values: z.infer<typeof registerFormSchema>) {
@@ -112,7 +115,8 @@ export default function RegisterPage() {
       await setDoc(doc(db, 'users', user.uid), userData);
 
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: any)
+    {
       console.error('Registration failed:', error);
       let errorMessage = 'Não foi possível criar a conta. Tente novamente.';
       if (error.code === 'auth/email-already-in-use') {
@@ -129,14 +133,12 @@ export default function RegisterPage() {
   }
 
   const renderFormFields = () => {
-    const isDriver = selectedRole === 'driver';
+    const isDriver = currentRoleFromForm === 'driver';
     const isCompany = !isDriver && personType === 'pj';
     const isIndividual = isDriver || personType === 'pf';
 
     return (
-        <div className="space-y-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" data-state="open">
-            <hr />
-            
+        <div className="space-y-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" data-state="open">            
             {isIndividual && (
                  <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem>
@@ -192,73 +194,107 @@ export default function RegisterPage() {
     )
   }
 
+  const selectedRoleData = roles.find(r => r.id === selectedRole);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.035-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.035.84-1.875 1.875-1.875h.75c1.035 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.035.84-1.875 1.875-1.875h.75c1.035 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z" /></svg>
-                </div>
-                <h1 className="font-headline text-2xl font-bold">Táxiando SP</h1>
-            </div>
-            <CardTitle className="text-2xl font-headline">Crie sua conta gratuita</CardTitle>
-            <CardDescription>Primeiro, selecione o seu tipo de perfil.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 gap-4">
-                     {roles.map((role) => (
-                        <Card 
-                            key={role.id}
-                            onClick={() => handleRoleSelect(role.id)}
-                            className={cn(
-                                "cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-primary",
-                                selectedRole === role.id ? "border-primary ring-2 ring-primary" : "border-border",
-                            )}
-                        >
-                            <CardHeader className="flex flex-row items-center gap-4 space-y-0">
-                                <role.icon className={cn("h-8 w-8", selectedRole === role.id ? "text-primary": "text-muted-foreground")} />
-                                <div>
-                                    <CardTitle className="text-base">{role.title}</CardTitle>
-                                    <CardDescription className="text-xs">{role.description}</CardDescription>
-                                </div>
-                            </CardHeader>
-                        </Card>
-                    ))}
-                </div>
-
-                {form.formState.errors.role && (
-                    <p className="text-sm font-medium text-destructive text-center">{form.formState.errors.role.message}</p>
-                )}
-
-              {selectedRole && (
-                  <>
-                    {selectedRole !== 'driver' ? (
-                        <Tabs defaultValue="pf" className="w-full" onValueChange={(v) => form.setValue('personType', v as PersonType)}>
-                            <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="pf">Pessoa Física</TabsTrigger>
-                                <TabsTrigger value="pj">Pessoa Jurídica</TabsTrigger>
-                            </TabsList>
-                             <TabsContent value="pf">{renderFormFields()}</TabsContent>
-                             <TabsContent value="pj">{renderFormFields()}</TabsContent>
-                        </Tabs>
-                    ) : (
-                        renderFormFields()
-                    )}
-                  </>
-              )}
-            </form>
-          </Form>
-        </CardContent>
-        <div className="p-6 pt-0 text-center text-sm">
-          Já possui uma conta?{" "}
-          <Link href="/login" className="font-semibold text-accent hover:underline">
-            Faça login
-          </Link>
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden [perspective:1000px]">
+      <div 
+        className={cn(
+          "w-full max-w-lg h-[680px] sm:h-[620px] relative transition-transform duration-700 ease-in-out [transform-style:preserve-3d]",
+          selectedRole ? '[transform:rotateY(180deg)]' : '[transform:rotateY(0deg)]'
+        )}
+      >
+        {/* Front Face: Role Selection */}
+        <div className="absolute inset-0 w-full h-full [backface-visibility:hidden]">
+          <Card className="h-full flex flex-col">
+              <CardHeader className="text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.035-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.035.84-1.875 1.875-1.875h.75c1.035 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.035.84-1.875 1.875-1.875h.75c1.035 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z" /></svg>
+                      </div>
+                      <h1 className="font-headline text-2xl font-bold">Táxiando SP</h1>
+                  </div>
+                  <CardTitle className="text-2xl font-headline">Crie sua conta gratuita</CardTitle>
+                  <CardDescription>Primeiro, selecione o seu tipo de perfil.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col justify-center gap-4">
+                    {roles.map((role) => (
+                      <Card 
+                          key={role.id}
+                          onClick={() => handleRoleSelect(role.id)}
+                          className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-primary"
+                      >
+                          <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
+                              <role.icon className="h-8 w-8 text-primary" />
+                              <div>
+                                  <CardTitle className="text-lg">{role.title}</CardTitle>
+                                  <CardDescription className="text-xs">{role.description}</CardDescription>
+                              </div>
+                          </CardHeader>
+                      </Card>
+                  ))}
+              </CardContent>
+              <CardFooter className="justify-center text-sm">
+                  Já possui uma conta?{" "}
+                  <Link href="/login" className="font-semibold text-accent hover:underline ml-1">
+                      Faça login
+                  </Link>
+              </CardFooter>
+          </Card>
         </div>
-      </Card>
+
+        {/* Back Face: Form */}
+        <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)]">
+          {selectedRole && selectedRoleData && (
+              <Card className="h-full w-full overflow-hidden shadow-2xl relative">
+                  <Image 
+                      src={selectedRoleData.image}
+                      alt={selectedRoleData.title}
+                      fill
+                      className="object-cover"
+                      data-ai-hint={selectedRoleData.imageHint}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
+                  
+                  <div className="relative h-full flex flex-col justify-between p-2 sm:p-6">
+                      <div>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white" onClick={() => setSelectedRole(null)}>
+                              <ArrowLeft />
+                          </Button>
+                      </div>
+                      
+                      <div className="bg-background/80 backdrop-blur-sm p-4 sm:p-6 rounded-lg border border-white/20 shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" data-state="open">
+                          <CardHeader className="p-0 mb-4 text-center">
+                              <CardTitle className="text-xl sm:text-2xl font-headline text-foreground">Cadastro de {selectedRoleData.title.split(' ')[2]}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-0">
+                             <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                  {currentRoleFromForm && (
+                                      <>
+                                        {currentRoleFromForm !== 'driver' ? (
+                                            <Tabs defaultValue="pf" className="w-full" onValueChange={(v) => form.setValue('personType', v as PersonType)}>
+                                                <TabsList className="grid w-full grid-cols-2">
+                                                    <TabsTrigger value="pf">Pessoa Física</TabsTrigger>
+                                                    <TabsTrigger value="pj">Pessoa Jurídica</TabsTrigger>
+                                                </TabsList>
+                                                <TabsContent value="pf" className="pt-4">{renderFormFields()}</TabsContent>
+                                                <TabsContent value="pj" className="pt-4">{renderFormFields()}</TabsContent>
+                                            </Tabs>
+                                        ) : (
+                                            <div className="pt-4">{renderFormFields()}</div>
+                                        )}
+                                      </>
+                                  )}
+                                </form>
+                              </Form>
+                          </CardContent>
+                      </div>
+                  </div>
+              </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
