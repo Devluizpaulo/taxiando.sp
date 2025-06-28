@@ -115,7 +115,7 @@ export default function LoginPage() {
         </div>
 
         {selectedRole && selectedRoleData && (
-            <div className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95" data-state="open">
+            <div className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-5" data-state="open">
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-2xl font-headline">{getLoginTitle()}</CardTitle>
