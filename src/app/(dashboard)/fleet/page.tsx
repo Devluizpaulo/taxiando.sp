@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -9,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Car, Users, Eye, PlusCircle, Search, Star, MoreHorizontal, Wrench, Trash2 } from "lucide-react";
+import { Car, Users, Eye, PlusCircle, Search, Star, Wrench, Trash2 } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,7 +27,7 @@ const drivers = [
     { id: 'd_3', name: 'Ricardo Alves', rating: 4.9, completedTrips: 2100, avatar: 'https://placehold.co/40x40.png' },
 ];
 
-const getVehicleStatusVariant = (status: string) => {
+const getVehicleStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
         case 'Disponível': return 'default';
         case 'Alugado': return 'secondary';
@@ -136,7 +137,7 @@ export default function FleetPage() {
                                     <TableCell>
                                         <div className="flex gap-2">
                                             <Button variant="ghost" size="icon" title="Editar"><Wrench className="h-4 w-4" /></Button>
-                                            <Button variant="ghost" size="icon" title="Remover" className="text-red-500 hover:text-red-600"><Trash2 className="h-4 w-4" /></Button>
+                                            <Button variant="ghost" size="icon" title="Remover" className="text-destructive hover:text-destructive-foreground"><Trash2 className="h-4 w-4" /></Button>
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -174,7 +175,7 @@ export default function FleetPage() {
                                     </Avatar>
                                     <div>
                                         <CardTitle className="text-lg">{driver.name}</CardTitle>
-                                        <CardDescription className="flex items-center gap-1"><Star className="text-yellow-500 fill-yellow-400 h-4 w-4"/> {driver.rating} ({driver.completedTrips}+ corridas)</CardDescription>
+                                        <CardDescription className="flex items-center gap-1"><Star className="text-yellow-500 fill-current h-4 w-4"/> {driver.rating} ({driver.completedTrips}+ corridas)</CardDescription>
                                     </div>
                                 </CardHeader>
                                 <CardFooter>

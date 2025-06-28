@@ -20,6 +20,7 @@ import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import React from "react";
+import { SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 export default function DashboardLayout({
   children,
@@ -64,6 +65,12 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <Sidebar>
+        <SheetHeader className="sr-only">
+          <SheetTitle>Menu</SheetTitle>
+          <SheetDescription>
+            Navegação principal da plataforma Táxiando SP.
+          </SheetDescription>
+        </SheetHeader>
         <SidebarHeader className="border-b border-sidebar-border">
             <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
