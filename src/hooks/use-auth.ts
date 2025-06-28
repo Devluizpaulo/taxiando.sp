@@ -13,6 +13,16 @@ export interface UserProfile {
     email: string;
     role: 'driver' | 'fleet' | 'admin';
     createdAt: any;
+    profileStatus?: 'incomplete' | 'pending_review' | 'approved' | 'rejected';
+    phone?: string;
+    hasWhatsApp?: boolean;
+    reference?: {
+        name: string;
+        relationship: string;
+        phone: string;
+    };
+    financialConsent?: boolean;
+    paymentMethod?: 'credit_card' | 'bank_slip' | 'pix';
 }
 
 export function useAuth() {

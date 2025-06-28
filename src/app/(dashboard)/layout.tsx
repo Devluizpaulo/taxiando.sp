@@ -12,7 +12,7 @@ import {
   SidebarInset,
   SidebarTrigger
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, PanelLeft, Shield } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, PanelLeft, Shield, FilePen, Search, CheckSquare } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -76,11 +76,30 @@ export default function DashboardLayout({
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/dashboard"><LayoutDashboard/> Meu Painel</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+             {userProfile?.role === 'driver' && (
+              <>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/dashboard"><LayoutDashboard/> Meu Painel</Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/profile"><FilePen/> Completar Perfil</Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/opportunities"><Search/> Oportunidades</Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/applications"><CheckSquare/> Minhas Candidaturas</Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </>
+            )}
              {(userProfile?.role === 'fleet' || userProfile?.role === 'admin') && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>

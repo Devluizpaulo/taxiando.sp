@@ -58,6 +58,7 @@ export default function RegisterPage() {
         email: values.email,
         role: values.role,
         createdAt: new Date(),
+        profileStatus: 'incomplete',
       });
 
       router.push('/dashboard');
