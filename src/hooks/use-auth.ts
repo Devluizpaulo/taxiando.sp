@@ -63,6 +63,9 @@ export interface UserProfile {
         facebook?: string;
         whatsapp?: string;
     };
+
+    // Billing
+    credits?: number;
 }
 
 export function useAuth() {
