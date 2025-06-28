@@ -79,14 +79,15 @@ export default function LoginPage() {
 
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
-      <div className="w-full max-w-md relative">
-        <div 
-          className={cn(
-            "transition-opacity duration-500",
-            selectedRole ? 'opacity-0 pointer-events-none' : 'opacity-100'
-          )}
-        >
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden [perspective:1000px]">
+      <div 
+        className={cn(
+          "w-full max-w-md h-[580px] relative transition-transform duration-700 ease-in-out [transform-style:preserve-3d]",
+          selectedRole ? '[transform:rotateY(180deg)]' : '[transform:rotateY(0deg)]'
+        )}
+      >
+        {/* Front Face: Role Selection */}
+        <div className="absolute inset-0 w-full h-full [backface-visibility:hidden]">
           <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-2 mb-2">
                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -115,72 +116,65 @@ export default function LoginPage() {
                    </Card>
               ))}
           </div>
-            <div className="p-6 pt-4 text-center text-sm">
-                Não tem uma conta?{" "}
-                <Link href="/register" className="font-semibold text-accent hover:underline">
-                    Cadastre-se
-                </Link>
-            </div>
+          <div className="p-6 pt-4 text-center text-sm">
+              Não tem uma conta?{" "}
+              <Link href="/register" className="font-semibold text-accent hover:underline">
+                  Cadastre-se
+              </Link>
+          </div>
         </div>
 
-        {selectedRole && selectedRoleData && (
-            <div 
-              className="absolute inset-0 flex flex-col justify-end data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95" 
-              data-state={selectedRole ? "open" : "closed"}
-            >
-                <div 
-                  className="absolute inset-x-0 top-0 flex flex-col justify-center items-center data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-top-full data-[state=open]:slide-in-from-top-full"
-                  data-state={selectedRole ? "open" : "closed"}
-                  style={{animationDuration: '600ms'}}
-                >
-                  <Card className="w-full shadow-2xl">
-                      <CardHeader>
-                          <div className="flex items-center gap-3">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedRole(null)}>
-                                  <ArrowLeft />
-                              </Button>
-                              <div>
-                                  <CardTitle className="text-2xl font-headline">{getLoginTitle()}</CardTitle>
-                                  <CardDescription>
-                                      Bem-vindo de volta! Insira suas credenciais.
-                                  </CardDescription>
-                              </div>
-                          </div>
-                      </CardHeader>
-                      <CardContent>
-                          <Form {...form}>
-                              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                              <FormField control={form.control} name="email" render={({ field }) => (
-                                  <FormItem><FormLabel>{getLoginLabel()}</FormLabel><FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl><FormMessage /></FormItem>
-                              )}/>
-                              <FormField control={form.control} name="password" render={({ field }) => (
-                                  <FormItem>
-                                      <div className="flex items-center justify-between"><FormLabel>Senha</FormLabel><Link href="#" className="text-sm text-accent hover:underline">Esqueceu a senha?</Link></div>
-                                      <FormControl><Input type="password" required {...field} /></FormControl><FormMessage />
-                                  </FormItem>
-                              )}/>
-                              <Button type="submit" disabled={isLoading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Entrar'}
-                              </Button>
-                              </form>
-                          </Form>
-                      </CardContent>
-                  </Card>
-                </div>
+        {/* Back Face: Login Form */}
+        <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)]">
+          {selectedRole && selectedRoleData && (
+            <div className="h-full flex flex-col justify-end">
+                <Card className="w-full shadow-2xl z-10">
+                    <CardHeader>
+                        <div className="flex items-center gap-3">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedRole(null)}>
+                                <ArrowLeft />
+                            </Button>
+                            <div>
+                                <CardTitle className="text-2xl font-headline">{getLoginTitle()}</CardTitle>
+                                <CardDescription>
+                                    Bem-vindo de volta! Insira suas credenciais.
+                                </CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                            <FormField control={form.control} name="email" render={({ field }) => (
+                                <FormItem><FormLabel>{getLoginLabel()}</FormLabel><FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="password" render={({ field }) => (
+                                <FormItem>
+                                    <div className="flex items-center justify-between"><FormLabel>Senha</FormLabel><Link href="#" className="text-sm text-accent hover:underline">Esqueceu a senha?</Link></div>
+                                    <FormControl><Input type="password" required {...field} /></FormControl><FormMessage />
+                                </FormItem>
+                            )}/>
+                            <Button type="submit" disabled={isLoading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Entrar'}
+                            </Button>
+                            </form>
+                        </Form>
+                    </CardContent>
+                </Card>
 
-                <div className="h-48 w-full overflow-hidden rounded-b-lg -z-10">
+                <div className="absolute bottom-0 h-48 w-full overflow-hidden rounded-b-lg -z-10">
                     <Image 
                         src={selectedRoleData.image}
                         alt={selectedRoleData.title}
                         width={600}
                         height={400}
-                        className="h-full w-full object-cover transition-transform duration-500 scale-100 data-[state=open]:scale-105"
+                        className="h-full w-full object-cover"
                         data-ai-hint={selectedRoleData.imageHint}
-                        data-state={selectedRole ? "open" : "closed"}
                     />
                 </div>
             </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
