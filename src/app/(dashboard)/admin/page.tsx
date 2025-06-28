@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight } from "lucide-react";
+import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -183,10 +183,11 @@ export default function AdminPage() {
             </div>
 
             <Tabs defaultValue="users">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="users">Gerenciar Usuários</TabsTrigger>
                     <TabsTrigger value="opportunities">Moderar Oportunidades</TabsTrigger>
                     <TabsTrigger value="courses">Gerenciar Cursos</TabsTrigger>
+                    <TabsTrigger value="events">Gerenciar Eventos</TabsTrigger>
                 </TabsList>
                 <TabsContent value="users">
                     <Card>
@@ -311,6 +312,26 @@ export default function AdminPage() {
                                     ))}
                                 </TableBody>
                             </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                 <TabsContent value="events">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                             <div>
+                                <CardTitle>Agenda Cultural</CardTitle>
+                                <CardDescription>Crie e gerencie os eventos que aparecerão na página inicial.</CardDescription>
+                            </div>
+                            <Button asChild>
+                                <Link href="/admin/events">Gerenciar Eventos <ArrowRight className="ml-2"/></Link>
+                            </Button>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed rounded-lg p-12">
+                                 <Calendar className="h-12 w-12 mb-4" />
+                                <p className="font-semibold">Nenhum evento agendado recentemente.</p>
+                                <p className="text-sm">Clique no botão para adicionar novos shows, feiras e outros acontecimentos importantes na cidade.</p>
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>

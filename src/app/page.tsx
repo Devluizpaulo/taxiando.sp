@@ -8,6 +8,7 @@ import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock } from "lucide
 import Image from "next/image";
 import Link from "next/link";
 import { QuizSection } from "@/components/quiz-section";
+import { CulturalAgendaSection } from "@/components/cultural-agenda-section";
 
 const blogPosts = [
   {
@@ -140,6 +141,8 @@ export default function Home() {
         </section>
 
         <QuizSection />
+
+        <CulturalAgendaSection />
 
         <section id="blog" className="bg-muted py-16 md:py-24">
           <div className="container mx-auto px-4 md:px-6">
