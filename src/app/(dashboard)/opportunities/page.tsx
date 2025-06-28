@@ -1,5 +1,5 @@
-// Este arquivo foi intencionalmente esvaziado para resolver um conflito de rotas.
-// A página pública de oportunidades é definida em /src/app/opportunities/page.tsx.
-// A existência deste arquivo em /app/(dashboard)/opportunities/page.tsx causava um erro
-// de build no Next.js, pois duas páginas tentavam ocupar a mesma URL.
-// Não adicione um componente React com "export default" aqui.
+// This file has been intentionally emptied to resolve a route conflict.
+// The public opportunities page is defined at /src/app/opportunities/page.tsx.
+// The existence of this file at /app/(dashboard)/opportunities/page.tsx caused a
+// build error in Next.js, as two pages were trying to occupy the same URL.
+// Do not add a React component with a "export default" here.
