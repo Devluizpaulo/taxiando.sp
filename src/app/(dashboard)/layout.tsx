@@ -15,25 +15,32 @@ import {
 import { FileText, LayoutDashboard, LogOut, PanelLeft, Shield } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useAuthProtection } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import React from "react";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuthProtection();
+  const { user, userProfile, loading } = useAuth();
   const router = useRouter();
 
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+  
   const handleSignOut = async () => {
     await auth.signOut();
     router.push('/login');
   };
 
-  if (loading || !user) {
+  if (loading || !user || !userProfile) {
     return (
       <div className="flex min-h-screen w-full">
         <div className="hidden h-screen flex-col gap-4 border-r bg-card p-4 md:flex" style={{width: "16rem"}}>
@@ -79,22 +86,24 @@ export default function DashboardLayout({
                 <Link href="/summarize"><FileText/> Sumarizador</Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/admin"><Shield/> Admin</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            {userProfile?.role === 'admin' && (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/admin"><Shield/> Admin</Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
           <div className="flex w-full items-center gap-3">
             <Avatar>
               <AvatarImage src={user.photoURL ?? `https://placehold.co/40x40.png`} alt="User Avatar" />
-              <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarFallback>{userProfile.name?.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col truncate">
-              <span className="truncate text-sm font-semibold">{user.displayName ?? 'Usuário'}</span>
-              <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+              <span className="truncate text-sm font-semibold">{userProfile.name ?? 'Usuário'}</span>
+              <span className="truncate text-xs text-muted-foreground">{userProfile.email}</span>
             </div>
           </div>
         </SidebarFooter>
