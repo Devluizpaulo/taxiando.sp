@@ -78,7 +78,7 @@ export default function DashboardLayout({
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/dashboard"><LayoutDashboard/> Dashboard</Link>
+                <Link href="/dashboard"><LayoutDashboard/> Meu Painel</Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

@@ -3,84 +3,66 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { BookOpen, Briefcase, Car, FileCheck, UserCircle } from "lucide-react";
+import Link from "next/link";
 
 const courses = [
   { id: 1, title: "Legislação de Trânsito para Taxistas", progress: 75, description: "Domine as leis e regulamentos essenciais para operar em SP." },
   { id: 2, title: "Inglês para Atendimento ao Turista", progress: 40, description: "Aprenda frases e vocabulário para se comunicar com estrangeiros." },
   { id: 3, title: "Direção Defensiva e Primeiros Socorros", progress: 95, description: "Técnicas avançadas para uma condução mais segura e primeiros socorros." },
-  { id: 4, title: "Gestão Financeira para Autônomos", progress: 20, description: "Organize suas finanças e maximize seus lucros." },
 ];
-
-const chartData = [
-  { month: "Jan", hours: 10 },
-  { month: "Fev", hours: 15 },
-  { month: "Mar", hours: 12 },
-  { month: "Abr", hours: 20 },
-  { month: "Mai", hours: 18 },
-  { month: "Jun", hours: 25 },
-];
-
 
 export default function DashboardPage() {
   const completedCourses = courses.filter(c => c.progress > 90).length;
-  const inProgressCourses = courses.length - completedCourses;
+  const inProgressCourses = courses.filter(c => c.progress < 100).length;
 
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="font-headline text-3xl font-bold tracking-tight">Painel de Cursos</h1>
-        <p className="text-muted-foreground">Seu progresso de aprendizado em um só lugar.</p>
+        <h1 className="font-headline text-3xl font-bold tracking-tight">Painel do Motorista</h1>
+        <p className="text-muted-foreground">Sua central de controle para acelerar sua carreira.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Cursos Totais</CardTitle>
-            <CardDescription>Cursos matriculados</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Cursos em Andamento</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{courses.length}</p>
-          </CardContent>
+          <CardContent><div className="text-2xl font-bold">{inProgressCourses}</div></CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle>Em Andamento</CardTitle>
-            <CardDescription>Continue de onde parou</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Cursos Concluídos</CardTitle>
+              <FileCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{inProgressCourses}</p>
-          </CardContent>
+          <CardContent><div className="text-2xl font-bold">{completedCourses}</div></CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle>Concluídos</CardTitle>
-            <CardDescription>Certificados obtidos</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Candidaturas</CardTitle>
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{completedCourses}</p>
-          </CardContent>
+          <CardContent><div className="text-2xl font-bold">4</div></CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle>Horas de Estudo</CardTitle>
-            <CardDescription>Total de horas dedicadas</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Status do Veículo</CardTitle>
+              <Car className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{chartData.reduce((acc, cur) => acc + cur.hours, 0)}h</p>
-          </CardContent>
+          <CardContent><div className="text-2xl font-bold text-green-600">OK</div></CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
-            <h2 className="font-headline text-2xl font-semibold mb-4">Meus Cursos</h2>
+            <h2 className="font-headline text-2xl font-semibold mb-4">Meus Cursos em Andamento</h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            {courses.map((course) => (
+            {courses.filter(c => c.progress < 100).map((course) => (
                 <Card key={course.id}>
                 <CardHeader>
                     <CardTitle className="font-headline text-lg">{course.title}</CardTitle>
-                    <CardDescription>{course.description}</CardDescription>
+                    <CardDescription className="pt-1 text-xs">{course.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Progress value={course.progress} className="w-full" />
@@ -88,7 +70,7 @@ export default function DashboardPage() {
                 </CardContent>
                 <CardFooter>
                     <Button variant="outline" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                    {course.progress > 90 ? 'Revisar' : 'Continuar Curso'}
+                      Continuar Curso
                     </Button>
                 </CardFooter>
                 </Card>
@@ -98,29 +80,22 @@ export default function DashboardPage() {
         <div className="lg:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle>Atividade de Aprendizagem</CardTitle>
-              <CardDescription>Horas de estudo por mês</CardDescription>
+              <CardTitle>Ações Rápidas</CardTitle>
+              <CardDescription>Links úteis para o seu dia a dia.</CardDescription>
             </CardHeader>
-            <CardContent className="pl-2">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}>
-                  <XAxis
-                    dataKey="month"
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `${value}h`}
-                  />
-                  <Bar dataKey="hours" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            <CardContent className="flex flex-col gap-4">
+              <Button asChild variant="outline" className="justify-start">
+                  <Link href="/opportunities"><Briefcase className="mr-2"/> Buscar Oportunidades</Link>
+              </Button>
+              <Button asChild variant="outline" className="justify-start">
+                  <Link href="#"><UserCircle className="mr-2"/> Editar Perfil Público</Link>
+              </Button>
+              <Button asChild variant="outline" className="justify-start">
+                  <Link href="#"><Car className="mr-2"/> Gerenciar Veículo</Link>
+              </Button>
+              <Button asChild variant="outline" className="justify-start">
+                  <Link href="#"><FileCheck className="mr-2"/> Minhas Candidaturas</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
