@@ -250,14 +250,23 @@ export default function CompleteProfilePage() {
                                     <FormItem><FormLabel>Vencimento do Condutax</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                              </div>
-                             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                                 <FormField control={form.control} name="vehicleLicensePlate" render={({ field }) => (
-                                    <FormItem><FormLabel>Placa do Veículo (Alvará)</FormLabel><FormControl><Input placeholder="ABC-1234" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                 <FormField control={form.control} name="alvaraExpiration" render={({ field }) => (
-                                    <FormItem><FormLabel>Vencimento do Alvará</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                             </div>
+                            
+                            <div className="space-y-4 rounded-lg border bg-muted/50 p-6">
+                                <div className="space-y-1">
+                                    <h3 className="text-lg font-semibold">Meu Veículo (Opcional)</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Possui veículo próprio? Cadastre-o para acompanhar o vencimento de documentos e receber alertas.
+                                    </p>
+                                </div>
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                     <FormField control={form.control} name="vehicleLicensePlate" render={({ field }) => (
+                                        <FormItem><FormLabel>Placa do Veículo (Alvará)</FormLabel><FormControl><Input placeholder="ABC-1234" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                     <FormField control={form.control} name="alvaraExpiration" render={({ field }) => (
+                                        <FormItem><FormLabel>Vencimento do Alvará</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
 
