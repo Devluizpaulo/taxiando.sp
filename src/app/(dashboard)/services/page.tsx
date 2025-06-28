@@ -1,27 +1,32 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
+import Link from 'next/link';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Eye, Star, Wrench, Trash2, Tag, DollarSign } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, PlusCircle, Eye, Star, Wrench, Tag, DollarSign, FilePen, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const services = [
-  { id: 'srv_1', name: 'Despachante Veicular Completo', category: 'Despachante', price: 'R$ 550,00', status: 'Ativo' },
-  { id: 'srv_2', name: 'Curso de Reciclagem para Taxistas', category: 'Autoescola', price: 'R$ 300,00', status: 'Ativo' },
-  { id: 'srv_3', name: 'Troca de Óleo e Filtro', category: 'Oficina Mecânica', price: 'R$ 180,00', status: 'Pausado' },
-  { id: 'srv_4', name: 'Instalação de GNV 5ª Geração', category: 'Instaladora GNV', price: 'Sob Consulta', status: 'Ativo' },
+// Mock data
+const mockServices = [
+  { id: 'srv_1', title: 'Despachante Veicular Completo', category: 'Despachante', price: 'R$ 550,00', status: 'Ativo', views: 120, rating: 4.9 },
+  { id: 'srv_2', title: 'Curso de Reciclagem para Taxistas', category: 'Autoescola', price: 'R$ 300,00', status: 'Ativo', views: 85, rating: 4.8 },
+  { id: 'srv_3', title: 'Troca de Óleo e Filtro', category: 'Oficina Mecânica', price: 'R$ 180,00', status: 'Pausado', views: 210, rating: 5.0 },
+  { id: 'srv_4', title: 'Instalação de GNV 5ª Geração', category: 'Instaladora GNV', price: 'Sob Consulta', status: 'Ativo', views: 350, rating: 4.9 },
 ];
+
 
 export default function ServicesPage() {
     const { userProfile, loading } = useAuth();
     const router = useRouter();
+    const [services, setServices] = useState(mockServices);
 
     useEffect(() => {
         if (!loading && (!userProfile || !['provider', 'admin'].includes(userProfile.role))) {
@@ -60,7 +65,7 @@ export default function ServicesPage() {
                 </Card>
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Novos Leads (Mês)</CardTitle>
+                        <CardTitle className="text-sm font-medium">Leads (Mês)</CardTitle>
                         <Eye className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent><div className="text-2xl font-bold">42</div></CardContent>
@@ -74,13 +79,27 @@ export default function ServicesPage() {
                 </Card>
             </div>
 
+             <Card className="bg-accent/30 border-accent/50">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Complete o Perfil da sua Empresa</CardTitle>
+                        <CardDescription>Um perfil completo atrai mais clientes. Adicione sua descrição, endereço e redes sociais.</CardDescription>
+                    </div>
+                    <Button asChild variant="outline">
+                        <Link href="/services/profile">
+                            Completar Perfil <ChevronRight />
+                        </Link>
+                    </Button>
+                </CardHeader>
+            </Card>
+
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle>Meus Serviços Anunciados</CardTitle>
+                        <CardTitle>Meus Anúncios</CardTitle>
                         <CardDescription>Adicione, edite e gerencie a visibilidade dos seus serviços na plataforma.</CardDescription>
                     </div>
-                    <Button><PlusCircle /> Adicionar Novo Serviço</Button>
+                    <Button asChild><Link href="/services/create"><PlusCircle /> Criar Novo Anúncio</Link></Button>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -96,7 +115,7 @@ export default function ServicesPage() {
                         <TableBody>
                             {services.map(service => (
                                 <TableRow key={service.id}>
-                                    <TableCell className="font-medium">{service.name}</TableCell>
+                                    <TableCell className="font-medium">{service.title}</TableCell>
                                     <TableCell>{service.category}</TableCell>
                                     <TableCell>{service.price}</TableCell>
                                     <TableCell>
@@ -108,13 +127,11 @@ export default function ServicesPage() {
                                          <DropdownMenu>
                                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                <DropdownMenuItem>Editar Anúncio</DropdownMenuItem>
-                                                <DropdownMenuItem>Ver Estatísticas</DropdownMenuItem>
+                                                <DropdownMenuItem><FilePen /> Editar</DropdownMenuItem>
                                                 <DropdownMenuItem className={service.status === 'Ativo' ? '' : 'text-green-600'}>
-                                                    {service.status === 'Ativo' ? 'Pausar Anúncio' : 'Reativar Anúncio'}
+                                                    {service.status === 'Ativo' ? 'Pausar Anúncio' : 'Reativar'}
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-600">Remover</DropdownMenuItem>
+                                                <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground">Remover</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>

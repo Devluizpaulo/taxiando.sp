@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar } from "lucide-react";
+import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, Wrench } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -32,6 +32,14 @@ const opportunities = [
     { id: 'opp_3', title: 'Motorista Fim de Semana', company: 'Táxi Legal', status: 'Rejeitado' },
     { id: 'opp_4', title: 'Motorista Bilíngue (Eventos)', company: 'SP TuriTaxi', status: 'Pendente' },
 ];
+
+const serviceListings = [
+    { id: 'srv_1', title: 'Despachante Veicular Completo', provider: 'Despachante Legal', status: 'Pendente' },
+    { id: 'srv_2', title: 'Curso de Reciclagem para Taxistas', provider: 'Autoescola Futuro', status: 'Aprovado' },
+    { id: 'srv_3', title: 'Instalação de GNV 5ª Geração', provider: 'GNV Master', status: 'Rejeitado' },
+    { id: 'srv_4', title: 'Troca de Óleo e Filtro', provider: 'Oficina do Zé', status: 'Pendente' },
+];
+
 
 const courses = [
     { id: 'crs_1', name: 'Legislação de Trânsito', enrolled: 152, completion: '85%' },
@@ -84,8 +92,8 @@ export default function AdminPage() {
         }
     };
 
-    const handleApproval = (action: 'approve' | 'reject', oppId: string) => {
-        console.log(`${action} opportunity ${oppId}`);
+    const handleApproval = (action: 'approve' | 'reject', id: string, type: 'opportunity' | 'service') => {
+        console.log(`${action} ${type} ${id}`);
         // Aqui você implementaria a lógica para aprovar/rejeitar a oportunidade
     };
 
@@ -183,9 +191,10 @@ export default function AdminPage() {
             </div>
 
             <Tabs defaultValue="users">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="users">Gerenciar Usuários</TabsTrigger>
-                    <TabsTrigger value="opportunities">Moderar Oportunidades</TabsTrigger>
+                    <TabsTrigger value="opportunities">Moderar Vagas</TabsTrigger>
+                    <TabsTrigger value="services">Moderar Serviços</TabsTrigger>
                     <TabsTrigger value="courses">Gerenciar Cursos</TabsTrigger>
                     <TabsTrigger value="events">Gerenciar Eventos</TabsTrigger>
                 </TabsList>
@@ -248,15 +257,15 @@ export default function AdminPage() {
                 <TabsContent value="opportunities">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Moderar Oportunidades</CardTitle>
-                            <CardDescription>Aprove ou rejeite as oportunidades postadas na plataforma.</CardDescription>
+                            <CardTitle>Moderar Vagas de Emprego</CardTitle>
+                            <CardDescription>Aprove ou rejeite as vagas postadas pelas frotas na plataforma.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Título da Vaga</TableHead>
-                                        <TableHead>Empresa</TableHead>
+                                        <TableHead>Empresa (Frota)</TableHead>
                                         <TableHead>Status</TableHead>
                                         <TableHead>Ações</TableHead>
                                     </TableRow>
@@ -270,8 +279,45 @@ export default function AdminPage() {
                                             <TableCell>
                                                  {opp.status === 'Pendente' && (
                                                     <div className="flex gap-2">
-                                                        <Button variant="outline" size="sm" onClick={() => handleApproval('approve', opp.id)}>Aprovar</Button>
-                                                        <Button variant="destructive" size="sm" onClick={() => handleApproval('reject', opp.id)}>Rejeitar</Button>
+                                                        <Button variant="outline" size="sm" onClick={() => handleApproval('approve', opp.id, 'opportunity')}>Aprovar</Button>
+                                                        <Button variant="destructive" size="sm" onClick={() => handleApproval('reject', opp.id, 'opportunity')}>Rejeitar</Button>
+                                                    </div>
+                                                 )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                 <TabsContent value="services">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Moderar Serviços e Produtos</CardTitle>
+                            <CardDescription>Aprove ou rejeite os anúncios postados pelos prestadores de serviço.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Título do Anúncio</TableHead>
+                                        <TableHead>Prestador</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Ações</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {serviceListings.map(srv => (
+                                        <TableRow key={srv.id}>
+                                            <TableCell className="font-medium">{srv.title}</TableCell>
+                                            <TableCell>{srv.provider}</TableCell>
+                                            <TableCell><Badge variant={getProfileStatusVariant(srv.status)}>{srv.status}</Badge></TableCell>
+                                            <TableCell>
+                                                 {srv.status === 'Pendente' && (
+                                                    <div className="flex gap-2">
+                                                        <Button variant="outline" size="sm" onClick={() => handleApproval('approve', srv.id, 'service')}>Aprovar</Button>
+                                                        <Button variant="destructive" size="sm" onClick={() => handleApproval('reject', srv.id, 'service')}>Rejeitar</Button>
                                                     </div>
                                                  )}
                                             </TableCell>
