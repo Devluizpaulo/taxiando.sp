@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { QuizSection } from "@/components/quiz-section";
 
 const blogPosts = [
   {
@@ -136,6 +137,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <QuizSection />
 
         <section id="blog" className="bg-muted py-16 md:py-24">
           <div className="container mx-auto px-4 md:px-6">
