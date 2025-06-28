@@ -12,15 +12,48 @@ import {
   SidebarInset,
   SidebarTrigger
 } from "@/components/ui/sidebar";
-import { FileText, LayoutDashboard, PanelLeft, Shield } from "lucide-react";
+import { FileText, LayoutDashboard, LogOut, PanelLeft, Shield } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useAuthProtection } from "@/hooks/use-auth";
+import { auth } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { user, loading } = useAuthProtection();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await auth.signOut();
+    router.push('/login');
+  };
+
+  if (loading || !user) {
+    return (
+      <div className="flex min-h-screen w-full">
+        <div className="hidden h-screen flex-col gap-4 border-r bg-card p-4 md:flex" style={{width: "16rem"}}>
+          <Skeleton className="h-10" />
+          <div className="flex flex-1 flex-col gap-2">
+            <Skeleton className="h-8" />
+            <Skeleton className="h-8" />
+            <Skeleton className="h-8" />
+          </div>
+          <Skeleton className="h-12" />
+        </div>
+        <div className="flex-1 p-6">
+          <Skeleton className="mb-4 h-12 w-1/3" />
+          <Skeleton className="mb-8 h-6 w-1/2" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -54,14 +87,14 @@ export default function DashboardLayout({
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center gap-3">
             <Avatar>
-              <AvatarImage src="https://placehold.co/40x40.png" alt="User Avatar" />
-              <AvatarFallback>SP</AvatarFallback>
+              <AvatarImage src={user.photoURL ?? `https://placehold.co/40x40.png`} alt="User Avatar" />
+              <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold">Sérgio P.</span>
-              <span className="text-xs text-muted-foreground">sergio.p@email.com</span>
+            <div className="flex flex-col truncate">
+              <span className="truncate text-sm font-semibold">{user.displayName ?? 'Usuário'}</span>
+              <span className="truncate text-xs text-muted-foreground">{user.email}</span>
             </div>
           </div>
         </SidebarFooter>
@@ -72,8 +105,9 @@ export default function DashboardLayout({
             <div className="w-full flex-1">
                 {/* Potentially a search bar here */}
             </div>
-            <Button asChild variant="outline">
-              <Link href="/login">Sair</Link>
+            <Button onClick={handleSignOut} variant="outline">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
             </Button>
         </header>
         <main className="flex-1 p-4 sm:p-6">
