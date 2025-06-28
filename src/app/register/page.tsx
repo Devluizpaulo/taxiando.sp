@@ -63,6 +63,14 @@ export default function RegisterPage() {
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
       personType: 'pf',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      name: '',
+      cpf: '',
+      razaoSocial: '',
+      nomeFantasia: '',
+      cnpj: '',
     },
   });
 
@@ -254,4 +262,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
