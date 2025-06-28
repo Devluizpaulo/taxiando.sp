@@ -11,7 +11,7 @@ export interface UserProfile {
     uid: string;
     name: string;
     email: string;
-    role: 'driver' | 'fleet' | 'admin';
+    role: 'driver' | 'fleet' | 'admin' | 'provider';
     createdAt: any;
     profileStatus?: 'incomplete' | 'pending_review' | 'approved' | 'rejected';
     phone?: string;
