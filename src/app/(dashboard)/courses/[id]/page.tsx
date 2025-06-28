@@ -7,6 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Progress } from "@/components/ui/progress";
 import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { type Course, type Module, type Lesson } from "@/lib/types";
 
 // Mock data - Em uma aplicação real, isso viria do Firebase
