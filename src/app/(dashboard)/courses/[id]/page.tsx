@@ -1,56 +1,24 @@
 'use client'
 
+import { useEffect, useState } from 'react';
+import Link from "next/link";
+import { doc, getDoc, DocumentData } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
+import { markLessonAsComplete } from '@/app/actions/course-actions';
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip } from "lucide-react";
-import Link from "next/link";
+import { Skeleton } from '@/components/ui/skeleton';
+import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { type Course, type Lesson } from "@/lib/types";
+import { useToast } from '@/hooks/use-toast';
 
-// Mock data - Em uma aplicação real, isso viria do Firebase
-const courseData: Course = {
-    id: '1',
-    title: "Legislação de Trânsito para Taxistas",
-    description: "Um curso completo sobre as leis, regulamentos e resoluções mais importantes para taxistas que operam na cidade de São Paulo. Mantenha-se atualizado e evite multas.",
-    category: "Legislação",
-    totalLessons: 12,
-    totalDuration: 150, // em minutos
-    modules: [
-        {
-            id: 'm1',
-            title: "Módulo 1: Introdução à Legislação",
-            badge: { name: "Pioneiro da Lei", iconUrl: "" },
-            lessons: [
-                { id: 'l1-1', title: "O Código de Trânsito Brasileiro (CTB)", type: "video", duration: 15, isCompleted: true, supportingMaterials: [{name: "Resumo do CTB.pdf", url: "#"}] },
-                { id: 'l1-2', title: "Hierarquia das Leis de Trânsito", type: "text", duration: 10, isCompleted: true },
-                { id: 'l1-3', title: "Quiz - Módulo 1", type: "quiz", duration: 5, isCompleted: false },
-            ]
-        },
-        {
-            id: 'm2',
-            title: "Módulo 2: Regulamentação do Táxi em SP",
-            lessons: [
-                { id: 'l2-1', title: "Decreto Municipal nº 56.981/2016", type: "video", duration: 20, isCompleted: false },
-                { id: 'l2-2', title: "Uso do Taxímetro e Tarifas", type: "text", duration: 10, isCompleted: false },
-                { id: 'l2-3', title: "Condutas e Deveres do Taxista", type: "text", duration: 15, isCompleted: false },
-            ]
-        },
-        {
-            id: 'm3',
-            title: "Módulo 3: Infrações e Penalidades",
-            badge: { name: "Expert em Multas", iconUrl: "" },
-            lessons: [
-                { id: 'l3-1', title: "Tipos de Infração (Leve, Média, Grave, Gravíssima)", type: "video", duration: 15, isCompleted: false, supportingMaterials: [{name: "Tabela de Infrações.xlsx", url: "#"}, {name: "Guia de Recursos.pdf", url: "#"}] },
-                { id: 'l3-2', title: "Processo de Suspensão e Cassação da CNH", type: "video", duration: 18, isCompleted: false },
-                { id: 'l3-3', title: "Recursos de Multas: Como proceder", type: "text", duration: 12, isCompleted: false },
-                { id: 'l3-4', title: "Quiz - Módulo 3", type: "quiz", duration: 5, isCompleted: false },
-            ]
-        }
-    ]
-};
 
 const getLessonIcon = (type: Lesson['type']) => {
     switch(type) {
@@ -61,11 +29,87 @@ const getLessonIcon = (type: Lesson['type']) => {
 }
 
 export default function CourseDetailsPage({ params }: { params: { id: string } }) {
-    // Em uma aplicação real, você usaria o `params.id` para buscar os dados do curso no Firebase
-    const course = courseData;
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [course, setCourse] = useState<Course | null>(null);
+    const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [completingLessonId, setCompletingLessonId] = useState<string | null>(null);
 
-    const completedLessons = course.modules.flatMap(m => m.lessons).filter(l => l.isCompleted).length;
-    const progress = Math.round((completedLessons / course.totalLessons) * 100);
+    const fetchCourseAndProgress = async () => {
+        if (!user) return;
+
+        try {
+            // Fetch course data
+            const courseDocRef = doc(db, 'courses', params.id);
+            const courseDoc = await getDoc(courseDocRef);
+            if (courseDoc.exists()) {
+                setCourse({ id: courseDoc.id, ...courseDoc.data() } as Course);
+            }
+
+            // Fetch user progress for this course
+            const progressDocRef = doc(db, 'users', user.uid, 'progress', params.id);
+            const progressDoc = await getDoc(progressDocRef);
+            if (progressDoc.exists()) {
+                setCompletedLessons(progressDoc.data().completedLessons || []);
+            }
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar os dados do curso." });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (user) {
+            fetchCourseAndProgress();
+        }
+    }, [user, params.id]);
+
+    const handleCompleteLesson = async (moduleId: string, lessonId: string) => {
+        if (!user || !course) return;
+        setCompletingLessonId(lessonId);
+        try {
+            await markLessonAsComplete({ courseId: course.id, moduleId, lessonId });
+            setCompletedLessons(prev => [...prev, lessonId]);
+            toast({ title: "Aula Concluída!", description: "Seu progresso foi salvo." });
+        } catch (error) {
+            console.error("Error completing lesson:", error);
+            toast({ variant: "destructive", title: "Erro", description: "Não foi possível salvar seu progresso." });
+        } finally {
+            setCompletingLessonId(null);
+        }
+    };
+
+    if (loading) {
+        return (
+             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                <div className="lg:col-span-2 space-y-6">
+                    <Skeleton className="h-8 w-1/4" />
+                    <Skeleton className="h-10 w-3/4" />
+                    <Skeleton className="h-6 w-full" />
+                    <Card><CardHeader><Skeleton className="h-80 w-full" /></CardHeader></Card>
+                </div>
+                <div className="lg:col-span-1">
+                    <Card className="sticky top-20"><CardHeader><Skeleton className="h-64 w-full" /></CardHeader></Card>
+                </div>
+            </div>
+        )
+    }
+
+    if (!course) {
+        return (
+            <div className="text-center">
+                <h1 className="text-2xl font-bold">Curso não encontrado</h1>
+                <p className="text-muted-foreground">O curso que você está procurando não existe ou foi removido.</p>
+                <Button asChild className="mt-4"><Link href="/courses">Voltar ao catálogo</Link></Button>
+            </div>
+        )
+    }
+
+    const totalCompleted = completedLessons.length;
+    const progress = Math.round((totalCompleted / course.totalLessons) * 100);
 
     return (
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -83,12 +127,12 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                         <CardTitle>Conteúdo do Curso</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <Accordion type="single" collapsible className="w-full" defaultValue="m1">
+                        <Accordion type="single" collapsible className="w-full" defaultValue={course.modules[0]?.id}>
                             {course.modules.map(module => (
                                 <AccordionItem key={module.id} value={module.id}>
                                     <AccordionTrigger className="font-bold text-lg hover:no-underline flex justify-between items-center w-full pr-4">
                                         <span>{module.title}</span>
-                                        {module.badge && (
+                                        {module.badge?.name && (
                                             <Badge variant="secondary" className="flex items-center gap-1.5 bg-amber-100 text-amber-800 border-amber-200">
                                                 <Award className="h-4 w-4" />
                                                 <span>Medalha: {module.badge.name}</span>
@@ -97,22 +141,30 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                                     </AccordionTrigger>
                                     <AccordionContent>
                                         <ul className="space-y-1 pt-2">
-                                            {module.lessons.map(lesson => (
+                                            {module.lessons.map(lesson => {
+                                                const isCompleted = completedLessons.includes(lesson.id);
+                                                return (
                                                 <li key={lesson.id} className="flex flex-col rounded-md p-3 hover:bg-muted/50">
                                                     <div className="flex items-center justify-between w-full">
                                                         <div className="flex items-center gap-4">
-                                                            {lesson.isCompleted ? <CheckCircle2 className="h-6 w-6 text-green-500" /> : <Circle className="h-6 w-6 text-muted-foreground/50" />}
+                                                            {isCompleted ? <CheckCircle2 className="h-6 w-6 text-green-500" /> : <Circle className="h-6 w-6 text-muted-foreground/50" />}
                                                             <div className="flex items-center gap-2">
                                                                 {getLessonIcon(lesson.type)}
-                                                                <span className={cn(lesson.isCompleted && "line-through text-muted-foreground")}>{lesson.title}</span>
+                                                                <span className={cn(isCompleted && "line-through text-muted-foreground")}>{lesson.title}</span>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-4">
                                                             <span className="text-sm text-muted-foreground flex items-center gap-1">
                                                                 <Clock className="h-4 w-4"/> {lesson.duration} min
                                                             </span>
-                                                            <Button variant="outline" size="sm">
-                                                                {lesson.isCompleted ? "Revisar" : "Iniciar"}
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm"
+                                                                onClick={() => handleCompleteLesson(module.id, lesson.id)}
+                                                                disabled={isCompleted || completingLessonId === lesson.id}
+                                                            >
+                                                                {completingLessonId === lesson.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                                {isCompleted ? "Revisar" : "Concluir"}
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -123,7 +175,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                                                                 {lesson.supportingMaterials.map(material => (
                                                                     <li key={material.name}>
                                                                         <Button asChild variant="link" className="p-0 h-auto font-normal text-primary">
-                                                                            <a href={material.url} download>
+                                                                            <a href={material.url} target="_blank" rel="noopener noreferrer">
                                                                                 <Paperclip className="h-4 w-4 mr-2" />
                                                                                 {material.name}
                                                                             </a>
@@ -134,7 +186,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                                                         </div>
                                                     )}
                                                 </li>
-                                            ))}
+                                            )})}
                                         </ul>
                                     </AccordionContent>
                                 </AccordionItem>
@@ -153,7 +205,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <Progress value={progress} />
-                        <p className="text-sm text-muted-foreground">{progress}% concluído ({completedLessons} de {course.totalLessons} aulas)</p>
+                        <p className="text-sm text-muted-foreground">{progress}% concluído ({totalCompleted} de {course.totalLessons} aulas)</p>
                         
                         <div className="border-t pt-4 space-y-2">
                             <div className="flex justify-between text-sm">

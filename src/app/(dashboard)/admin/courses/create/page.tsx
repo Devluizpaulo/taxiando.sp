@@ -5,22 +5,25 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { nanoid } from 'nanoid';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, Trash2, FileUp, Sparkles, FileText, Video, ClipboardCheck, GripVertical } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FileUp, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip } from 'lucide-react';
 import { useState } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const supportingMaterialSchema = z.object({
   name: z.string().min(1, "O nome do material é obrigatório."),
-  // No frontend, lidamos com o File object, mas para o schema é mais sobre a referência
-  url: z.string().url("URL inválida.").optional(),
+  url: z.string().url("URL inválida."),
 });
 
 const lessonSchema = z.object({
@@ -31,8 +34,7 @@ const lessonSchema = z.object({
 });
 
 const badgeSchema = z.object({
-    name: z.string().min(3, "O nome da medalha é obrigatório."),
-    // icon: z.instanceof(File).optional() // Placeholder for icon upload
+    name: z.string().min(3, "O nome da medalha é obrigatório.").optional().or(z.literal('')),
 });
 
 const moduleSchema = z.object({
@@ -78,16 +80,62 @@ export default function CreateCoursePage() {
 
     const onSubmit = async (values: CourseFormValues) => {
         setIsSubmitting(true);
-        console.log('Creating course with values:', values);
-        // Lógica de envio para o Firebase aqui
-        setTimeout(() => {
+        try {
+            const courseId = nanoid();
+            let totalLessons = 0;
+            let totalDuration = 0;
+
+            const modulesWithIds = values.modules.map(module => {
+                const lessonsWithIds = module.lessons.map(lesson => {
+                    totalLessons++;
+                    totalDuration += lesson.duration;
+                    return {
+                        ...lesson,
+                        id: nanoid(),
+                    };
+                });
+                
+                const badgeData = (module.badge?.name && module.badge.name.trim() !== '') 
+                    ? { name: module.badge.name.trim(), iconUrl: '' } 
+                    : null;
+
+                return {
+                    ...module,
+                    id: nanoid(),
+                    lessons: lessonsWithIds,
+                    badge: badgeData,
+                };
+            });
+            
+            const courseData = {
+                id: courseId,
+                title: values.title,
+                description: values.description,
+                category: values.category,
+                modules: modulesWithIds,
+                totalLessons,
+                totalDuration,
+                createdAt: serverTimestamp(),
+            };
+            
+            await setDoc(doc(db, 'courses', courseId), courseData);
+
             toast({
                 title: 'Curso Criado com Sucesso!',
-                description: `O curso "${values.title}" foi estruturado.`,
+                description: `O curso "${values.title}" foi estruturado e salvo.`,
             });
             router.push('/admin/courses');
+
+        } catch (error) {
+            console.error("Error creating course: ", error);
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao Criar Curso',
+                description: 'Não foi possível salvar o curso no banco de dados. Tente novamente.',
+            });
+        } finally {
             setIsSubmitting(false);
-        }, 1500);
+        }
     };
 
     return (
@@ -144,7 +192,7 @@ export default function CreateCoursePage() {
 
 
                 <div className="flex justify-between items-center mt-4">
-                    <Button type="button" variant="outline" onClick={() => appendModule({ title: '', lessons: [{ title: '', type: 'video', duration: 10 }] })}>
+                    <Button type="button" variant="outline" onClick={() => appendModule({ title: '', lessons: [{ title: '', type: 'video', duration: 10, materials: [] }] })}>
                         <PlusCircle /> Adicionar Módulo
                     </Button>
                     <Button type="submit" disabled={isSubmitting} size="lg">
@@ -182,39 +230,7 @@ function ModuleField({ moduleIndex, removeModule, form }: { moduleIndex: number,
                 <div className="p-4 pt-0 space-y-4">
                     <h4 className="font-semibold text-muted-foreground">Aulas do Módulo</h4>
                     {lessonFields.map((lessonItem, lessonIndex) => (
-                        <Card key={lessonItem.id} className="p-4 bg-muted/50">
-                            <div className="flex items-start gap-4">
-                                <div className="flex-1 space-y-4">
-                                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.title`} render={({ field }) => (
-                                        <FormItem><FormLabel>Título da Aula</FormLabel><FormControl><Input {...field} placeholder="Ex: Introdução ao CTB" /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                    <div className="grid grid-cols-2 gap-4">
-                                         <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.type`} render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Tipo</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger>{field.value ? <div className="flex items-center gap-2">{lessonTypeIcons[field.value]} {field.value.charAt(0).toUpperCase() + field.value.slice(1)}</div> : "Selecione..."}</SelectTrigger></FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="video"><div className="flex items-center gap-2"><Video /> Vídeo</div></SelectItem>
-                                                        <SelectItem value="text"><div className="flex items-center gap-2"><FileText /> Texto</div></SelectItem>
-                                                        <SelectItem value="quiz"><div className="flex items-center gap-2"><ClipboardCheck /> Quiz</div></SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}/>
-                                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.duration`} render={({ field }) => (
-                                            <FormItem><FormLabel>Duração (min)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )}/>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Material de Apoio (Opcional)</Label>
-                                        <Button type="button" variant="outline" size="sm"><FileUp /> Anexar PDF ou Planilha</Button>
-                                    </div>
-                                </div>
-                                <Button type="button" variant="ghost" size="icon" onClick={() => removeLesson(lessonIndex)} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
-                            </div>
-                        </Card>
+                       <LessonField key={lessonItem.id} form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} removeLesson={removeLesson} />
                     ))}
                     <div className="space-y-2 pt-4 border-t">
                         <h4 className="font-semibold text-muted-foreground">Recompensa do Módulo (Opcional)</h4>
@@ -233,11 +249,72 @@ function ModuleField({ moduleIndex, removeModule, form }: { moduleIndex: number,
                     <Button type="button" variant="destructive" onClick={() => removeModule(moduleIndex)}>
                         <Trash2 /> Remover Módulo
                     </Button>
-                    <Button type="button" variant="secondary" onClick={() => appendLesson({ title: '', type: 'video', duration: 10 })}>
+                    <Button type="button" variant="secondary" onClick={() => appendLesson({ title: '', type: 'video', duration: 10, materials: [] })}>
                         <PlusCircle /> Adicionar Aula
                     </Button>
                 </CardFooter>
-            </CardContent>
+            </AccordionContent>
         </AccordionItem>
     );
+}
+
+
+function LessonField({ form, moduleIndex, lessonIndex, removeLesson }: { form: any, moduleIndex: number, lessonIndex: number, removeLesson: (index: number) => void }) {
+    const { fields: materialFields, append: appendMaterial, remove: removeMaterial } = useFieldArray({
+        control: form.control,
+        name: `modules.${moduleIndex}.lessons.${lessonIndex}.materials`,
+    });
+
+    return (
+        <Card className="p-4 bg-muted/50">
+            <div className="flex items-start gap-4">
+                <div className="flex-1 space-y-4">
+                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.title`} render={({ field }) => (
+                        <FormItem><FormLabel>Título da Aula</FormLabel><FormControl><Input {...field} placeholder="Ex: Introdução ao CTB" /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.type`} render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Tipo</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger>{field.value ? <div className="flex items-center gap-2">{lessonTypeIcons[field.value]} {field.value.charAt(0).toUpperCase() + field.value.slice(1)}</div> : "Selecione..."}</SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="video"><div className="flex items-center gap-2"><Video /> Vídeo</div></SelectItem>
+                                        <SelectItem value="text"><div className="flex items-center gap-2"><FileText /> Texto</div></SelectItem>
+                                        <SelectItem value="quiz"><div className="flex items-center gap-2"><ClipboardCheck /> Quiz</div></SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}/>
+                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.duration`} render={({ field }) => (
+                            <FormItem><FormLabel>Duração (min)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                    </div>
+
+                    <div className="space-y-3 pt-3 border-t border-dashed">
+                        <Label>Material de Apoio (Opcional)</Label>
+                        {materialFields.map((materialItem, materialIndex) => (
+                            <div key={materialItem.id} className="flex items-end gap-2 p-3 rounded-md bg-background/50 border">
+                                <Paperclip className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                <div className="flex-1 grid grid-cols-2 gap-2">
+                                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.materials.${materialIndex}.name`} render={({ field }) => (
+                                        <FormItem><FormLabel className="text-xs">Nome do Arquivo</FormLabel><FormControl><Input {...field} placeholder="Ex: Resumo.pdf" /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                     <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.materials.${materialIndex}.url`} render={({ field }) => (
+                                        <FormItem><FormLabel className="text-xs">URL</FormLabel><FormControl><Input {...field} placeholder="https://..." /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                </div>
+                                <Button type="button" variant="ghost" size="icon" onClick={() => removeMaterial(materialIndex)} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-9 w-9"><Trash2 className="h-4 w-4"/></Button>
+                            </div>
+                        ))}
+                         <Button type="button" variant="outline" size="sm" onClick={() => appendMaterial({ name: '', url: '' })}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Material
+                        </Button>
+                    </div>
+                </div>
+                <Button type="button" variant="ghost" size="icon" onClick={() => removeLesson(lessonIndex)} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
+            </div>
+        </Card>
+    )
 }
