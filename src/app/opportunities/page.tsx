@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
+import { useToast } from '@/hooks/use-toast';
 
 const allOpportunities = [
   { id: 1, title: "Motorista para Zona Sul (Turno Diurno)", company: "Frota Amarela", location: "Zona Sul", type: "Tempo Integral", logo: "https://placehold.co/40x40.png", tags: ["Pontual", "Experiente"] },
@@ -24,12 +25,18 @@ export default function OpportunitiesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [location, setLocation] = useState('Todas');
   const [type, setType] = useState('Todos');
-  const [appliedJobs, setAppliedJobs] = useState<number[]>([]);
+  const [appliedOpportunities, setAppliedOpportunities] = useState<number[]>([]);
+  const { toast } = useToast();
 
-  const handleApply = (jobId: number) => {
-    // In a real app, this would make an API call to save the application.
-    // Here, we just update the local state to give visual feedback.
-    setAppliedJobs(prev => [...prev, jobId]);
+
+  const handleApply = (opportunityId: number) => {
+    // Em um aplicativo real, isso faria uma chamada de API para salvar a candidatura.
+    // Aqui, apenas atualizamos o estado local para dar feedback visual.
+    setAppliedOpportunities(prev => [...prev, opportunityId]);
+    toast({
+        title: "Candidatura Enviada!",
+        description: "Sua candidatura foi registrada. Boa sorte!",
+    });
   };
 
   const filteredOpportunities = useMemo(() => {
@@ -86,7 +93,7 @@ export default function OpportunitiesPage() {
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredOpportunities.map(opp => {
-              const hasApplied = appliedJobs.includes(opp.id);
+              const hasApplied = appliedOpportunities.includes(opp.id);
               return (
                 <Card key={opp.id} className="flex flex-col">
                   <CardHeader>

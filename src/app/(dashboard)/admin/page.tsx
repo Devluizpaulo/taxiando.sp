@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus } from "lucide-react";
+import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -47,7 +48,7 @@ const chartData = [
   { month: "Jun", users: 230 },
 ];
 
-const getProfileStatusVariant = (status: string) => {
+const getProfileStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
         case 'Aprovado': return 'default';
         case 'Pendente': return 'secondary';
@@ -81,6 +82,11 @@ export default function AdminPage() {
         } else {
             setSelectedUsers(prev => prev.filter(id => id !== userId));
         }
+    };
+
+    const handleApproval = (action: 'approve' | 'reject', oppId: string) => {
+        console.log(`${action} opportunity ${oppId}`);
+        // Aqui você implementaria a lógica para aprovar/rejeitar a oportunidade
     };
 
     if (loading || !userProfile || userProfile.role !== 'admin') {
@@ -197,7 +203,7 @@ export default function AdminPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="w-12"><Checkbox onCheckedChange={handleSelectAll} /></TableHead>
+                                        <TableHead className="w-12"><Checkbox onCheckedChange={handleSelectAll} checked={selectedUsers.length > 0 && selectedUsers.length === users.filter(u => u.role === 'Motorista').length} /></TableHead>
                                         <TableHead>Usuário</TableHead>
                                         <TableHead>Perfil</TableHead>
                                         <TableHead>Status do Perfil</TableHead>
@@ -259,12 +265,12 @@ export default function AdminPage() {
                                         <TableRow key={opp.id}>
                                             <TableCell className="font-medium">{opp.title}</TableCell>
                                             <TableCell>{opp.company}</TableCell>
-                                            <TableCell><Badge variant={opp.status === 'Aprovado' ? 'default' : opp.status === 'Pendente' ? 'secondary' : 'destructive'}>{opp.status}</Badge></TableCell>
+                                            <TableCell><Badge variant={getProfileStatusVariant(opp.status)}>{opp.status}</Badge></TableCell>
                                             <TableCell>
                                                  {opp.status === 'Pendente' && (
                                                     <div className="flex gap-2">
-                                                        <Button variant="outline" size="sm">Aprovar</Button>
-                                                        <Button variant="destructive" size="sm">Rejeitar</Button>
+                                                        <Button variant="outline" size="sm" onClick={() => handleApproval('approve', opp.id)}>Aprovar</Button>
+                                                        <Button variant="destructive" size="sm" onClick={() => handleApproval('reject', opp.id)}>Rejeitar</Button>
                                                     </div>
                                                  )}
                                             </TableCell>
@@ -277,9 +283,14 @@ export default function AdminPage() {
                 </TabsContent>
                 <TabsContent value="courses">
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Gerenciar Cursos</CardTitle>
-                            <CardDescription>Monitore a performance e engajamento dos cursos.</CardDescription>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                             <div>
+                                <CardTitle>Gerenciar Cursos</CardTitle>
+                                <CardDescription>Acesse o painel completo para adicionar e editar cursos.</CardDescription>
+                            </div>
+                            <Button asChild>
+                                <Link href="/admin/courses">Gerenciar Cursos <ArrowRight className="ml-2"/></Link>
+                            </Button>
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -288,7 +299,6 @@ export default function AdminPage() {
                                         <TableHead>Nome do Curso</TableHead>
                                         <TableHead>Inscritos</TableHead>
                                         <TableHead>Taxa de Conclusão</TableHead>
-                                        <TableHead>Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -297,16 +307,6 @@ export default function AdminPage() {
                                             <TableCell className="font-medium">{course.name}</TableCell>
                                             <TableCell>{course.enrolled}</TableCell>
                                             <TableCell>{course.completion}</TableCell>
-                                            <TableCell>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
-                                                    <DropdownMenuContent>
-                                                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                        <DropdownMenuItem>Ver Detalhes</DropdownMenuItem>
-                                                        <DropdownMenuItem>Editar</DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

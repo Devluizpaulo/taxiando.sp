@@ -3,13 +3,12 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Briefcase, Car, FileCheck, UserCircle } from "lucide-react";
+import { BookOpen, Briefcase, Car, FileCheck, UserCircle, Search } from "lucide-react";
 import Link from "next/link";
 
 const courses = [
-  { id: 1, title: "Legislação de Trânsito para Taxistas", progress: 75, description: "Domine as leis e regulamentos essenciais para operar em SP." },
-  { id: 2, title: "Inglês para Atendimento ao Turista", progress: 40, description: "Aprenda frases e vocabulário para se comunicar com estrangeiros." },
-  { id: 3, title: "Direção Defensiva e Primeiros Socorros", progress: 95, description: "Técnicas avançadas para uma condução mais segura e primeiros socorros." },
+  { id: "1", title: "Legislação de Trânsito para Taxistas", progress: 75, description: "Domine as leis e regulamentos essenciais para operar em SP." },
+  { id: "2", title: "Inglês para Atendimento ao Turista", progress: 40, description: "Aprenda frases e vocabulário para se comunicar com estrangeiros." },
 ];
 
 export default function DashboardPage() {
@@ -50,7 +49,7 @@ export default function DashboardPage() {
               <CardTitle className="text-sm font-medium">Status do Veículo</CardTitle>
               <Car className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent><div className="text-2xl font-bold text-green-600">OK</div></CardContent>
+          <CardContent><div className="text-2xl font-bold text-primary">OK</div></CardContent>
         </Card>
       </div>
 
@@ -69,8 +68,8 @@ export default function DashboardPage() {
                     <p className="text-sm text-muted-foreground mt-2">{course.progress}% completo</p>
                 </CardContent>
                 <CardFooter>
-                    <Button variant="outline" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                      Continuar Curso
+                    <Button asChild variant="outline" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                      <Link href={`/courses/${course.id}`}>Continuar Curso</Link>
                     </Button>
                 </CardFooter>
                 </Card>
@@ -85,7 +84,10 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <Button asChild variant="outline" className="justify-start">
-                  <Link href="/opportunities"><Briefcase className="mr-2"/> Buscar Oportunidades</Link>
+                  <Link href="/courses"><BookOpen className="mr-2"/> Ver todos os Cursos</Link>
+              </Button>
+              <Button asChild variant="outline" className="justify-start">
+                  <Link href="/opportunities"><Search className="mr-2"/> Buscar Oportunidades</Link>
               </Button>
               <Button asChild variant="outline" className="justify-start">
                   <Link href="/applications"><FileCheck className="mr-2"/> Minhas Candidaturas</Link>
