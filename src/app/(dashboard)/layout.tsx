@@ -50,7 +50,7 @@ export default function DashboardLayout({
               <SidebarMenuButton asChild>
                 <Link href="/admin"><Shield/> Admin</Link>
               </SidebarMenuButton>
-            </MenuItem>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
@@ -73,7 +73,7 @@ export default function DashboardLayout({
                 {/* Potentially a search bar here */}
             </div>
             <Button asChild variant="outline">
-              <Link href="/">Sair</Link>
+              <Link href="/login">Sair</Link>
             </Button>
         </header>
         <main className="flex-1 p-4 sm:p-6">

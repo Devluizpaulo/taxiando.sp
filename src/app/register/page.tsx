@@ -54,8 +54,8 @@ export default function RegisterPage() {
                 <Input id="confirm-password" type="password" required />
             </div>
           </div>
-          <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-            Criar Conta
+          <Button asChild className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+            <Link href="/dashboard">Criar Conta</Link>
           </Button>
         </CardContent>
         <div className="p-6 pt-0 text-center text-sm">

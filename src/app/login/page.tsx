@@ -36,8 +36,8 @@ export default function LoginPage() {
             </div>
             <Input id="password" type="password" required />
           </div>
-          <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-            Entrar
+          <Button asChild className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+            <Link href="/dashboard">Entrar</Link>
           </Button>
         </CardContent>
         <div className="p-6 pt-0 text-center text-sm">
