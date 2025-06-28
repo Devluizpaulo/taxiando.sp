@@ -94,7 +94,7 @@ export default function DashboardPage() {
                   <Link href="#"><Car className="mr-2"/> Gerenciar Veículo</Link>
               </Button>
               <Button asChild variant="outline" className="justify-start">
-                  <Link href="#"><FileCheck className="mr-2"/> Minhas Candidaturas</Link>
+                  <Link href="/applications"><FileCheck className="mr-2"/> Minhas Candidaturas</Link>
               </Button>
             </CardContent>
           </Card>

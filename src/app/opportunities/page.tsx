@@ -24,6 +24,13 @@ export default function OpportunitiesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [location, setLocation] = useState('Todas');
   const [type, setType] = useState('Todos');
+  const [appliedJobs, setAppliedJobs] = useState<number[]>([]);
+
+  const handleApply = (jobId: number) => {
+    // In a real app, this would make an API call to save the application.
+    // Here, we just update the local state to give visual feedback.
+    setAppliedJobs(prev => [...prev, jobId]);
+  };
 
   const filteredOpportunities = useMemo(() => {
     return allOpportunities.filter(opp => {
@@ -78,32 +85,39 @@ export default function OpportunitiesPage() {
           </Card>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredOpportunities.map(opp => (
-              <Card key={opp.id} className="flex flex-col">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="font-headline text-xl">{opp.title}</CardTitle>
-                      <CardDescription>{opp.company} - {opp.location}</CardDescription>
+            {filteredOpportunities.map(opp => {
+              const hasApplied = appliedJobs.includes(opp.id);
+              return (
+                <Card key={opp.id} className="flex flex-col">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="font-headline text-xl">{opp.title}</CardTitle>
+                        <CardDescription>{opp.company} - {opp.location}</CardDescription>
+                      </div>
+                      <Image src={opp.logo} alt={`${opp.company} logo`} width={40} height={40} className="rounded-md" data-ai-hint="company logo" />
                     </div>
-                    <Image src={opp.logo} alt={`${opp.company} logo`} width={40} height={40} className="rounded-md" data-ai-hint="company logo" />
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary">{opp.type}</Badge>
-                    {opp.tags.map(tag => (
-                      <Badge key={tag} variant="outline">{tag}</Badge>
-                    ))}
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                    Ver Detalhes e Aplicar
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary">{opp.type}</Badge>
+                      {opp.tags.map(tag => (
+                        <Badge key={tag} variant="outline">{tag}</Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                      onClick={() => handleApply(opp.id)}
+                      disabled={hasApplied}
+                    >
+                      {hasApplied ? 'Candidatura Enviada' : 'Ver Detalhes e Aplicar'}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              )
+            })}
              {filteredOpportunities.length === 0 && (
                 <div className="col-span-full text-center text-muted-foreground py-16">
                     <p className="text-lg">Nenhuma oportunidade encontrada.</p>
