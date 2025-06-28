@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from "@/components/ui/badge";
@@ -9,16 +10,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign } from "lucide-react";
+import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const users = [
-    { id: 'usr_1', name: 'João da Silva', email: 'joao.silva@example.com', role: 'Motorista', status: 'Ativo' },
-    { id: 'usr_2', name: 'Frota Rápida SP', email: 'contato@frotarapida.com', role: 'Frota', status: 'Ativo' },
-    { id: 'usr_3', name: 'Maria Oliveira', email: 'maria.o@example.com', role: 'Motorista', status: 'Pendente' },
-    { id: 'usr_4', name: 'Carlos Souza', email: 'carlos.souza@example.com', role: 'Motorista', status: 'Inativo' },
+    { id: 'usr_1', name: 'João da Silva', email: 'joao.silva@example.com', role: 'Motorista', profileStatus: 'Aprovado' },
+    { id: 'usr_2', name: 'Frota Rápida SP', email: 'contato@frotarapida.com', role: 'Frota', profileStatus: 'N/A' },
+    { id: 'usr_3', name: 'Maria Oliveira', email: 'maria.o@example.com', role: 'Motorista', profileStatus: 'Pendente' },
+    { id: 'usr_4', name: 'Carlos Souza', email: 'carlos.souza@example.com', role: 'Motorista', profileStatus: 'Rejeitado' },
+    { id: 'usr_5', name: 'Ana Pereira', email: 'ana.p@example.com', role: 'Motorista', profileStatus: 'Aprovado' },
+    { id: 'usr_6', name: 'Pedro Martins', email: 'pedro.m@example.com', role: 'Motorista', profileStatus: 'Pendente' },
 ];
+
 
 const opportunities = [
     { id: 'opp_1', title: 'Motorista Turno da Noite', company: 'Frota Rápida SP', status: 'Aprovado' },
@@ -42,16 +47,51 @@ const chartData = [
   { month: "Jun", users: 230 },
 ];
 
+const getProfileStatusVariant = (status: string) => {
+    switch (status) {
+        case 'Aprovado': return 'default';
+        case 'Pendente': return 'secondary';
+        case 'Rejeitado': return 'destructive';
+        default: return 'outline';
+    }
+};
+
+const getProfileStatusClass = (status: string) => {
+    switch (status) {
+        case 'Aprovado': return 'bg-green-500/20 text-green-700';
+        case 'Pendente': return 'bg-yellow-500/20 text-yellow-700';
+        case 'Rejeitado': return 'bg-red-500/20 text-red-700';
+        default: return '';
+    }
+};
+
 
 export default function AdminPage() {
     const { userProfile, loading } = useAuth();
     const router = useRouter();
+    const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
     useEffect(() => {
         if (!loading && (!userProfile || userProfile.role !== 'admin')) {
             router.push('/dashboard');
         }
     }, [userProfile, loading, router]);
+
+    const handleSelectAll = (checked: boolean | 'indeterminate') => {
+        if (checked === true) {
+            setSelectedUsers(users.filter(u => u.role === 'Motorista').map(u => u.id));
+        } else {
+            setSelectedUsers([]);
+        }
+    };
+
+    const handleSelectUser = (userId: string, checked: boolean) => {
+        if (checked) {
+            setSelectedUsers(prev => [...prev, userId]);
+        } else {
+            setSelectedUsers(prev => prev.filter(id => id !== userId));
+        }
+    };
 
     if (loading || !userProfile || userProfile.role !== 'admin') {
       return (
@@ -81,21 +121,21 @@ export default function AdminPage() {
                         <CardTitle className="text-sm font-medium">Usuários Totais</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">1,254</div></CardContent>
+                    <CardContent><div className="text-2xl font-bold">{users.length}</div></CardContent>
                 </Card>
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Oportunidades Ativas</CardTitle>
                         <Briefcase className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">89</div></CardContent>
+                    <CardContent><div className="text-2xl font-bold">{opportunities.length}</div></CardContent>
                 </Card>
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Cursos Concluídos</CardTitle>
+                        <CardTitle className="text-sm font-medium">Cursos Ativos</CardTitle>
                         <BookOpen className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">+432</div></CardContent>
+                    <CardContent><div className="text-2xl font-bold">{courses.length}</div></CardContent>
                 </Card>
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -124,20 +164,20 @@ export default function AdminPage() {
                 </Card>
                 <Card className="lg:col-span-2">
                      <CardHeader>
-                        <CardTitle>Usuários Recentes</CardTitle>
-                        <CardDescription>Os últimos 5 usuários que se cadastraram.</CardDescription>
+                        <CardTitle>Análise de Cadastros Recentes</CardTitle>
+                        <CardDescription>Os últimos 5 cadastros que precisam de atenção.</CardDescription>
                     </CardHeader>
                     <CardContent>
                          <Table>
-                            <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Perfil</TableHead></TableRow></TableHeader>
+                            <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {users.slice(0,5).map(user => (
+                                {users.filter(u => u.profileStatus !== 'N/A').slice(0,5).map(user => (
                                     <TableRow key={user.id}>
                                         <TableCell>
                                             <div className="font-medium">{user.name}</div>
                                             <div className="text-sm text-muted-foreground">{user.email}</div>
                                         </TableCell>
-                                        <TableCell>{user.role}</TableCell>
+                                        <TableCell><Badge variant={getProfileStatusVariant(user.profileStatus)} className={getProfileStatusClass(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -155,35 +195,49 @@ export default function AdminPage() {
                 <TabsContent value="users">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Todos os Usuários</CardTitle>
-                            <CardDescription>Visualize e gerencie todos os usuários cadastrados na plataforma.</CardDescription>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>Todos os Usuários</CardTitle>
+                                    <CardDescription>Visualize, gerencie e agrupe motoristas para frotas.</CardDescription>
+                                </div>
+                                <Button disabled={selectedUsers.length === 0}><PackagePlus /> Criar Pacote ({selectedUsers.length})</Button>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Nome</TableHead>
+                                        <TableHead className="w-12"><Checkbox onCheckedChange={handleSelectAll} /></TableHead>
+                                        <TableHead>Usuário</TableHead>
                                         <TableHead>Perfil</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Ações</TableHead>
+                                        <TableHead>Status do Perfil</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {users.map(user => (
                                         <TableRow key={user.id}>
+                                            <TableCell><Checkbox 
+                                                disabled={user.role !== 'Motorista'}
+                                                checked={selectedUsers.includes(user.id)}
+                                                onCheckedChange={(checked) => handleSelectUser(user.id, !!checked)}
+                                            /></TableCell>
                                             <TableCell>
                                                 <div className="font-medium">{user.name}</div>
                                                 <div className="text-sm text-muted-foreground">{user.email}</div>
                                             </TableCell>
                                             <TableCell>{user.role}</TableCell>
-                                            <TableCell><Badge variant={user.status === 'Ativo' ? 'default' : user.status === 'Pendente' ? 'secondary' : 'destructive'} className={user.status === 'Ativo' ? "bg-green-500/20 text-green-700" : ""}>{user.status}</Badge></TableCell>
-                                            <TableCell>
+                                            <TableCell><Badge variant={getProfileStatusVariant(user.profileStatus)} className={getProfileStatusClass(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
+                                            <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
-                                                    <DropdownMenuContent>
+                                                    <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                        <DropdownMenuItem>Editar</DropdownMenuItem>
-                                                        <DropdownMenuItem>Desativar</DropdownMenuItem>
+                                                        <DropdownMenuItem>Ver Perfil Completo</DropdownMenuItem>
+                                                        {user.role === 'Motorista' && user.profileStatus === 'Pendente' && <>
+                                                            <DropdownMenuItem>Aprovar Cadastro</DropdownMenuItem>
+                                                            <DropdownMenuItem className="text-red-600">Rejeitar Cadastro</DropdownMenuItem>
+                                                        </>}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </TableCell>
@@ -197,8 +251,8 @@ export default function AdminPage() {
                 <TabsContent value="opportunities">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Aprovar Anúncios</CardTitle>
-                            <CardDescription>Modere as oportunidades postadas na plataforma.</CardDescription>
+                            <CardTitle>Moderar Oportunidades</CardTitle>
+                            <CardDescription>Aprove ou rejeite as oportunidades postadas na plataforma.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -234,7 +288,7 @@ export default function AdminPage() {
                 <TabsContent value="courses">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Desempenho dos Cursos</CardTitle>
+                            <CardTitle>Gerenciar Cursos</CardTitle>
                             <CardDescription>Monitore a performance e engajamento dos cursos.</CardDescription>
                         </CardHeader>
                         <CardContent>
