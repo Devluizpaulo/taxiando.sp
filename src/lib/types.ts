@@ -90,6 +90,7 @@ export interface VehicleApplication {
   driverId: string;
   driverName: string;
   driverPhotoUrl: string;
+  driverProfileStatus: string;
   vehicleId: string;
   vehicleName: string;
   appliedAt: Date;

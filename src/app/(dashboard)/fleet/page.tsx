@@ -21,7 +21,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Car, Users, Eye, PlusCircle, Search, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight } from "lucide-react";
+import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -36,9 +36,9 @@ const initialVehicles: Omit<Vehicle, 'id' | 'fleetId' | 'createdAt'>[] = [
 ];
 
 const applications: VehicleApplication[] = [
-    { id: 'app_1', driverId: 'd_1', driverName: 'Carlos Pereira', driverPhotoUrl: 'https://placehold.co/40x40.png', vehicleId: 'v_1', vehicleName: 'Onix (BRA2E19)', appliedAt: new Date('2024-07-28T10:00:00Z'), status: 'Pendente' },
-    { id: 'app_2', driverId: 'd_2', driverName: 'Ana Costa', driverPhotoUrl: 'https://placehold.co/40x40.png', vehicleId: 'v_1', vehicleName: 'Onix (BRA2E19)', appliedAt: new Date('2024-07-27T15:30:00Z'), status: 'Pendente' },
-    { id: 'app_3', driverId: 'd_3', driverName: 'Ricardo Alves', driverPhotoUrl: 'https://placehold.co/40x40.png', vehicleId: 'v_4', vehicleName: 'Mobi (FGH5I67)', appliedAt: new Date('2024-07-26T09:00:00Z'), status: 'Aprovado' },
+    { id: 'app_1', driverId: 'd_1', driverName: 'Carlos Pereira', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Aprovado', vehicleId: 'v_1', vehicleName: 'Onix (BRA2E19)', appliedAt: new Date('2024-07-28T10:00:00Z'), status: 'Pendente' },
+    { id: 'app_2', driverId: 'd_2', driverName: 'Ana Costa', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Pendente', vehicleId: 'v_1', vehicleName: 'Onix (BRA2E19)', appliedAt: new Date('2024-07-27T15:30:00Z'), status: 'Pendente' },
+    { id: 'app_3', driverId: 'd_3', driverName: 'Ricardo Alves', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Aprovado', vehicleId: 'v_4', vehicleName: 'Mobi (FGH5I67)', appliedAt: new Date('2024-07-26T09:00:00Z'), status: 'Aprovado' },
 ];
 
 const getVehicleStatusVariant = (status: Vehicle['status']): "default" | "secondary" | "destructive" | "outline" => {
@@ -46,6 +46,15 @@ const getVehicleStatusVariant = (status: Vehicle['status']): "default" | "second
         case 'Disponível': return 'default';
         case 'Alugado': return 'secondary';
         case 'Em Manutenção': return 'destructive';
+        default: return 'outline';
+    }
+};
+
+const getProfileStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+        case 'Aprovado': return 'default';
+        case 'Pendente': return 'secondary';
+        case 'Rejeitado': return 'destructive';
         default: return 'outline';
     }
 };
@@ -257,7 +266,7 @@ export default function FleetPage() {
                 </CardHeader>
                 <CardContent>
                      <Table>
-                        <TableHeader><TableRow><TableHead>Motorista</TableHead><TableHead>Veículo Aplicado</TableHead><TableHead>Data</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow><TableHead>Motorista</TableHead><TableHead>Veículo Aplicado</TableHead><TableHead>Status do Perfil</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
                         <TableBody>
                             {applications.map(app => (
                                 <TableRow key={app.id}>
@@ -271,16 +280,24 @@ export default function FleetPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell>{app.vehicleName}</TableCell>
-                                    <TableCell>{app.appliedAt.toLocaleDateString('pt-BR')}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={getProfileStatusVariant(app.driverProfileStatus)}>
+                                            {app.driverProfileStatus === 'Aprovado' && <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
+                                            {app.driverProfileStatus}
+                                        </Badge>
+                                    </TableCell>
                                     <TableCell className="text-right">
-                                        {app.status === 'Pendente' ? (
-                                            <div className="flex gap-2 justify-end">
-                                                <Button variant="outline" size="sm">Aprovar</Button>
-                                                <Button variant="destructive" size="sm">Rejeitar</Button>
-                                            </div>
-                                        ) : (
-                                            <Badge variant={app.status === 'Aprovado' ? 'default' : 'destructive'}>{app.status}</Badge>
-                                        )}
+                                        <div className="flex gap-2 justify-end">
+                                            <Button variant="outline" size="sm">Ver Perfil</Button>
+                                            {app.status === 'Pendente' ? (
+                                                <>
+                                                    <Button variant="outline" size="sm">Aprovar</Button>
+                                                    <Button variant="destructive" size="sm">Rejeitar</Button>
+                                                </>
+                                            ) : (
+                                                <Badge variant={app.status === 'Aprovado' ? 'default' : 'destructive'}>{app.status}</Badge>
+                                            )}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}

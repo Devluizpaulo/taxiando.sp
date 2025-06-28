@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Instagram, MessageSquare, Car, MapPin, Building, Sparkles, User, ShieldCheck, Fuel, Calendar, Wrench, CreditCard } from "lucide-react";
 import { vehiclePerks, fleetAmenities } from '@/lib/data';
+import { useRouter } from 'next/navigation';
+import { ToastAction } from '@/components/ui/toast';
 
 // Mock data for a single vehicle and its fleet
 const vehicle = { 
@@ -56,15 +58,32 @@ const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function RentalDetailsPage({ params }: { params: { id: string } }) {
-    const { user } = useAuth();
+    const { user, userProfile } = useAuth();
+    const router = useRouter();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false); // For now, just a placeholder
 
     const handleApply = () => {
-        if (!user) {
+        if (!user || !userProfile) {
             toast({ variant: "destructive", title: "Acesso Negado", description: "Você precisa estar logado para se candidatar." });
             return;
         }
+        
+        if (userProfile.profileStatus !== 'approved') {
+            toast({
+                variant: "destructive",
+                title: "Perfil Incompleto ou Não Aprovado",
+                description: "Seu perfil precisa estar completo e aprovado por nossa equipe antes de você poder se candidatar.",
+                action: (
+                    <ToastAction altText="Completar Perfil" asChild>
+                        <Button onClick={() => router.push('/profile')}>Completar Perfil</Button>
+                    </ToastAction>
+                ),
+                duration: 8000,
+            });
+            return;
+        }
+
         // Lógica de candidatura
         toast({ title: "Candidatura Enviada!", description: `Sua aplicação para o ${vehicle.make} ${vehicle.model} foi enviada para a ${fleet.name}.` });
     }
