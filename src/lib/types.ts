@@ -34,7 +34,7 @@ export interface Course {
   modules: Module[];
   totalLessons: number;
   totalDuration: number; // in minutes
-  createdAt: Timestamp;
+  createdAt: Timestamp | Date;
   status?: 'Published' | 'Draft';
   students?: number;
 }
@@ -52,3 +52,17 @@ export interface Event {
   mapUrl: string;
   createdAt: Timestamp;
 }
+
+export interface Vehicle {
+  id: string;
+  fleetId: string; // To link to the user (fleet)
+  plate: string;
+  model: string;
+  year: number;
+  status: 'Disponível' | 'Alugado' | 'Em Manutenção';
+  dailyRate: number;
+  imageUrl?: string;
+  createdAt: Timestamp | Date;
+}
+
+    
