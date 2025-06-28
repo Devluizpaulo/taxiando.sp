@@ -12,7 +12,7 @@ import {
   SidebarInset,
   SidebarTrigger
 } from "@/components/ui/sidebar";
-import { FileText, LayoutDashboard, LogOut, PanelLeft, Shield } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, PanelLeft, Shield } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -81,6 +81,13 @@ export default function DashboardLayout({
                 <Link href="/dashboard"><LayoutDashboard/> Meu Painel</Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+             {(userProfile?.role === 'fleet' || userProfile?.role === 'admin') && (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/fleet"><Building/> Minha Frota</Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="/summarize"><FileText/> Sumarizador</Link>
