@@ -6,7 +6,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { doc, getDoc, type Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { type Badge } from '@/lib/types';
+import { type Badge, type FleetAmenity } from '@/lib/types';
 
 
 export interface UserProfile {
@@ -16,14 +16,14 @@ export interface UserProfile {
     createdAt: Timestamp;
     profileStatus?: 'incomplete' | 'pending_review' | 'approved' | 'rejected';
     
-    // Personal & Contact
+    // Driver: Personal & Contact
     name: string;
     phone?: string;
     hasWhatsApp?: boolean;
     bio?: string;
     photoUrl?: string;
 
-    // Documents
+    // Driver: Documents
     cnhNumber?: string;
     cnhCategory?: 'A' | 'B' | 'C' | 'D' | 'E' | 'AB' | 'AC' | 'AD' | 'AE';
     cnhExpiration?: Timestamp;
@@ -33,28 +33,36 @@ export interface UserProfile {
     vehicleLicensePlate?: string;
     cnhPoints?: number;
 
-    // Qualifications
+    // Driver: Qualifications
     specializedCourses?: string[];
+    
+    // Driver: Gamification
+    earnedBadges?: Badge[];
 
-    // Reference
+    // Driver: Reference
     reference?: {
         name: string;
         relationship: string;
         phone: string;
     };
 
-    // Consents
+    // Driver: Consents
     financialConsent?: boolean;
     
-    // For fleets/providers
+    // Fleet/Provider: Business Info
     personType?: 'pf' | 'pj';
     cpf?: string;
     cnpj?: string;
     razaoSocial?: string;
     nomeFantasia?: string;
-    
-    // Gamification
-    earnedBadges?: Badge[];
+    companyDescription?: string;
+    address?: string;
+    amenities?: FleetAmenity[];
+    socialMedia?: {
+        instagram?: string;
+        facebook?: string;
+        whatsapp?: string;
+    };
 }
 
 export function useAuth() {

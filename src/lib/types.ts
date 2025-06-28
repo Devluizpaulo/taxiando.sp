@@ -1,3 +1,4 @@
+
 import { type Timestamp } from "firebase/firestore";
 
 export interface SupportingMaterial {
@@ -16,7 +17,6 @@ export interface Lesson {
   type: 'video' | 'text' | 'quiz';
   duration: number; // in minutes
   supportingMaterials?: SupportingMaterial[];
-  // isCompleted is now user-specific and stored in a different collection
 }
 
 export interface Module {
@@ -53,16 +53,45 @@ export interface Event {
   createdAt: Timestamp;
 }
 
+export interface VehiclePerk {
+  id: string;
+  label: string;
+}
+
+export interface PaymentInfo {
+  terms: string;
+  methods: string[];
+}
+
 export interface Vehicle {
   id: string;
-  fleetId: string; // To link to the user (fleet)
+  fleetId: string;
   plate: string;
+  make: string;
   model: string;
   year: number;
+  condition: string;
+  description: string;
   status: 'Disponível' | 'Alugado' | 'Em Manutenção';
   dailyRate: number;
-  imageUrl?: string;
+  imageUrl: string;
+  paymentInfo: PaymentInfo;
+  perks: VehiclePerk[];
   createdAt: Timestamp | Date;
 }
 
-    
+export interface FleetAmenity {
+    id: string;
+    label: string;
+}
+
+export interface VehicleApplication {
+  id: string;
+  driverId: string;
+  driverName: string;
+  driverPhotoUrl: string;
+  vehicleId: string;
+  vehicleName: string;
+  appliedAt: Date;
+  status: 'Pendente' | 'Aprovado' | 'Rejeitado';
+}
