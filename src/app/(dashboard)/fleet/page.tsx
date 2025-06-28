@@ -26,6 +26,15 @@ const drivers = [
     { id: 'd_3', name: 'Ricardo Alves', rating: 4.9, completedTrips: 2100, avatar: 'https://placehold.co/40x40.png' },
 ];
 
+const getVehicleStatusVariant = (status: string) => {
+    switch (status) {
+        case 'Disponível': return 'default';
+        case 'Alugado': return 'secondary';
+        case 'Em Manutenção': return 'destructive';
+        default: return 'outline';
+    }
+};
+
 export default function FleetPage() {
     const { userProfile, loading } = useAuth();
     const router = useRouter();
@@ -121,7 +130,7 @@ export default function FleetPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={vehicle.status === 'Disponível' ? 'default' : vehicle.status === 'Alugado' ? 'secondary' : 'destructive'} className={vehicle.status === 'Disponível' ? "bg-green-500/20 text-green-700" : ""}>{vehicle.status}</Badge>
+                                        <Badge variant={getVehicleStatusVariant(vehicle.status)}>{vehicle.status}</Badge>
                                     </TableCell>
                                     <TableCell className="font-medium">{vehicle.dailyRate}</TableCell>
                                     <TableCell>

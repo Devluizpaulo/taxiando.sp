@@ -100,7 +100,7 @@ export default function ServicesPage() {
                                     <TableCell>{service.category}</TableCell>
                                     <TableCell>{service.price}</TableCell>
                                     <TableCell>
-                                        <Badge variant={service.status === 'Ativo' ? 'default' : 'secondary'} className={service.status === 'Ativo' ? 'bg-green-500/20 text-green-700' : ''}>
+                                        <Badge variant={service.status === 'Ativo' ? 'default' : 'secondary'}>
                                             {service.status}
                                         </Badge>
                                     </TableCell>

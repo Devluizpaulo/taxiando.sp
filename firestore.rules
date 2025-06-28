@@ -1,13 +1,24 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    function isAdmin() {
+      // Check if the user document exists and the role is 'admin'
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
     match /users/{userId} {
-      // A user can read and update their own document
-      allow read, update: if request.auth.uid == userId;
-      // A new user can create their own document
+      // Allow users to create their own profile upon signup
       allow create: if request.auth.uid == userId;
-      // An admin can read all user documents
-      allow list, get: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      
+      // Allow users to read/update their own profile
+      // Allow admins to read/update any profile
+      allow read, update: if request.auth.uid == userId || isAdmin();
+    }
+    
+    // Allow admins to list all users. This rule needs to be separate.
+    match /users/{document=**} {
+      allow list: if isAdmin();
     }
   }
 }

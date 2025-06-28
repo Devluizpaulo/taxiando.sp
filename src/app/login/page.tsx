@@ -161,7 +161,7 @@ export default function LoginPage() {
                                   )}/>
                                   <FormField control={form.control} name="password" render={({ field }) => (
                                       <FormItem>
-                                          <div className="flex items-center justify-between"><FormLabel className="text-foreground">Senha</FormLabel><Link href="#" className="text-sm text-accent hover:underline">Esqueceu a senha?</Link></div>
+                                          <div className="flex items-center justify-between"><FormLabel className="text-foreground">Senha</FormLabel></div>
                                           <FormControl><Input type="password" required {...field} /></FormControl><FormMessage />
                                       </FormItem>
                                   )}/>

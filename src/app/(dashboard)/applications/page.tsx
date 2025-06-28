@@ -27,18 +27,6 @@ const getStatusVariant = (status: string) => {
     }
 };
 
-const getStatusClass = (status: string) => {
-    switch (status) {
-        case 'Contato Realizado':
-            return 'bg-blue-500/20 text-blue-700';
-        case 'Rejeitado':
-            return 'bg-red-500/20 text-red-700';
-        default:
-            return '';
-    }
-}
-
-
 export default function ApplicationsPage() {
     useAuthProtection();
 
@@ -72,7 +60,7 @@ export default function ApplicationsPage() {
                                     <TableCell>{app.company}</TableCell>
                                     <TableCell>{app.appliedDate}</TableCell>
                                     <TableCell>
-                                        <Badge variant={getStatusVariant(app.status)} className={getStatusClass(app.status)}>{app.status}</Badge>
+                                        <Badge variant={getStatusVariant(app.status)}>{app.status}</Badge>
                                     </TableCell>
                                     <TableCell>
                                         <Button variant="outline" size="sm">Ver Vaga</Button>

@@ -56,16 +56,6 @@ const getProfileStatusVariant = (status: string) => {
     }
 };
 
-const getProfileStatusClass = (status: string) => {
-    switch (status) {
-        case 'Aprovado': return 'bg-green-500/20 text-green-700';
-        case 'Pendente': return 'bg-yellow-500/20 text-yellow-700';
-        case 'Rejeitado': return 'bg-red-500/20 text-red-700';
-        default: return '';
-    }
-};
-
-
 export default function AdminPage() {
     const { userProfile, loading } = useAuth();
     const router = useRouter();
@@ -177,7 +167,7 @@ export default function AdminPage() {
                                             <div className="font-medium">{user.name}</div>
                                             <div className="text-sm text-muted-foreground">{user.email}</div>
                                         </TableCell>
-                                        <TableCell><Badge variant={getProfileStatusVariant(user.profileStatus)} className={getProfileStatusClass(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
+                                        <TableCell><Badge variant={getProfileStatusVariant(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -227,7 +217,7 @@ export default function AdminPage() {
                                                 <div className="text-sm text-muted-foreground">{user.email}</div>
                                             </TableCell>
                                             <TableCell>{user.role}</TableCell>
-                                            <TableCell><Badge variant={getProfileStatusVariant(user.profileStatus)} className={getProfileStatusClass(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
+                                            <TableCell><Badge variant={getProfileStatusVariant(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
@@ -236,7 +226,7 @@ export default function AdminPage() {
                                                         <DropdownMenuItem>Ver Perfil Completo</DropdownMenuItem>
                                                         {user.role === 'Motorista' && user.profileStatus === 'Pendente' && <>
                                                             <DropdownMenuItem>Aprovar Cadastro</DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-red-600">Rejeitar Cadastro</DropdownMenuItem>
+                                                            <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground">Rejeitar Cadastro</DropdownMenuItem>
                                                         </>}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
@@ -269,12 +259,12 @@ export default function AdminPage() {
                                         <TableRow key={opp.id}>
                                             <TableCell className="font-medium">{opp.title}</TableCell>
                                             <TableCell>{opp.company}</TableCell>
-                                            <TableCell><Badge variant={opp.status === 'Aprovado' ? 'default' : opp.status === 'Pendente' ? 'secondary' : 'destructive'} className={opp.status === 'Aprovado' ? "bg-green-500/20 text-green-700" : ""}>{opp.status}</Badge></TableCell>
+                                            <TableCell><Badge variant={opp.status === 'Aprovado' ? 'default' : opp.status === 'Pendente' ? 'secondary' : 'destructive'}>{opp.status}</Badge></TableCell>
                                             <TableCell>
                                                  {opp.status === 'Pendente' && (
                                                     <div className="flex gap-2">
-                                                        <Button variant="outline" size="sm" className="border-green-500 text-green-600 hover:bg-green-500/10 hover:text-green-700">Aprovar</Button>
-                                                        <Button variant="outline" size="sm" className="border-red-500 text-red-600 hover:bg-red-500/10 hover:text-red-700">Rejeitar</Button>
+                                                        <Button variant="outline" size="sm">Aprovar</Button>
+                                                        <Button variant="destructive" size="sm">Rejeitar</Button>
                                                     </div>
                                                  )}
                                             </TableCell>
