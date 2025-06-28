@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,6 +5,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { type Badge } from '@/lib/types';
 
 
 export interface UserProfile {
@@ -29,6 +29,7 @@ export interface UserProfile {
     cnpj?: string;
     razaoSocial?: string;
     nomeFantasia?: string;
+    earnedBadges?: Badge[];
 }
 
 export function useAuth() {

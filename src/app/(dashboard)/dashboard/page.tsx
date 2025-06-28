@@ -3,12 +3,18 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Briefcase, Car, FileCheck, UserCircle, Search } from "lucide-react";
+import { BookOpen, Briefcase, Car, FileCheck, UserCircle, Search, Award, Trophy, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
 const courses = [
   { id: "1", title: "Legislação de Trânsito para Taxistas", progress: 75, description: "Domine as leis e regulamentos essenciais para operar em SP." },
   { id: "2", title: "Inglês para Atendimento ao Turista", progress: 40, description: "Aprenda frases e vocabulário para se comunicar com estrangeiros." },
+];
+
+const achievements = [
+  { name: 'Pioneiro da Lei', icon: Award, course: 'Legislação de Trânsito' },
+  { name: 'Navegador Urbano', icon: Trophy, course: 'Direção Defensiva' },
+  { name: 'Comunicador Global', icon: ShieldCheck, course: 'Inglês para Atendimento' },
 ];
 
 export default function DashboardPage() {
@@ -74,13 +80,23 @@ export default function DashboardPage() {
                 </CardFooter>
                 </Card>
             ))}
+             {inProgressCourses === 0 && (
+                <Card className="sm:col-span-2 flex flex-col items-center justify-center py-12 text-center">
+                    <CardHeader>
+                        <CardTitle>Nenhum curso em andamento</CardTitle>
+                        <CardDescription>Que tal começar um novo desafio?</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild><Link href="/courses">Ver Catálogo de Cursos</Link></Button>
+                    </CardContent>
+                </Card>
+            )}
             </div>
         </div>
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-8">
           <Card>
             <CardHeader>
               <CardTitle>Ações Rápidas</CardTitle>
-              <CardDescription>Links úteis para o seu dia a dia.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <Button asChild variant="outline" className="justify-start">
@@ -94,6 +110,31 @@ export default function DashboardPage() {
               </Button>
             </CardContent>
           </Card>
+          <Card>
+              <CardHeader>
+                <CardTitle>Minhas Conquistas</CardTitle>
+                <CardDescription>Medalhas que você ganhou ao concluir módulos.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {achievements.length > 0 ? (
+                  <ul className="space-y-4">
+                    {achievements.map((ach) => (
+                      <li key={ach.name} className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-yellow-100 text-yellow-600">
+                          <ach.icon className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">{ach.name}</p>
+                          <p className="text-sm text-muted-foreground">Curso: {ach.course}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-center text-muted-foreground py-4">Complete módulos para ganhar medalhas!</p>
+                )}
+              </CardContent>
+            </Card>
         </div>
       </div>
     </div>
