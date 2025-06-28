@@ -2,10 +2,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth, UserProfile } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
@@ -18,25 +18,54 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Camera } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DatePicker } from '@/components/ui/datepicker';
 
 const profileFormSchema = z.object({
+  // Perfil
   name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
+  photoUrl: z.string().url("URL da foto inválida.").optional().or(z.literal('')),
+  bio: z.string().max(300, "O resumo deve ter no máximo 300 caracteres.").optional(),
+
+  // Contato
   phone: z.string().min(10, { message: 'Insira um telefone válido com DDD.' }),
   hasWhatsApp: z.boolean().default(false),
+
+  // Documentos
+  cnhNumber: z.string().min(5, "Número da CNH inválido.").optional().or(z.literal('')),
+  cnhCategory: z.enum(['A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE']).optional(),
+  cnhExpiration: z.date().optional(),
+  cnhPoints: z.coerce.number().min(0).max(40).optional(),
+  condutaxNumber: z.string().optional(),
+  condutaxExpiration: z.date().optional(),
+  vehicleLicensePlate: z.string().optional(),
+  alvaraExpiration: z.date().optional(),
+  
+  // Qualificações
+  specializedCourses: z.array(z.string()).optional(),
+
+  // Referência
   referenceName: z.string().min(3, { message: 'O nome da referência é obrigatório.' }),
   referenceRelationship: z.string().min(3, { message: 'O parentesco/relação é obrigatório.' }),
   referencePhone: z.string().min(10, { message: 'Insira um telefone de referência válido com DDD.' }),
+  
+  // Termos
   financialConsent: z.boolean().refine(val => val === true, {
     message: 'Você deve concordar com a análise financeira.',
-  }),
-  paymentMethod: z.enum(['credit_card', 'bank_slip', 'pix'], {
-    required_error: 'Selecione uma forma de pagamento preferencial.',
   }),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
+const specializedCourseOptions = [
+    { id: 'coletivo', label: 'Transporte Coletivo de Passageiros' },
+    { id: 'escolar', label: 'Transporte Escolar' },
+    { id: 'emergencia', label: 'Veículos de Emergência' },
+    { id: 'mopp', label: 'MOPP (Cargas Perigosas)' },
+];
 
 export default function CompleteProfilePage() {
     const { user, userProfile, loading } = useAuth();
@@ -50,24 +79,42 @@ export default function CompleteProfilePage() {
             name: '',
             phone: '',
             hasWhatsApp: false,
+            photoUrl: '',
+            bio: '',
             referenceName: '',
             referenceRelationship: '',
             referencePhone: '',
             financialConsent: false,
+            specializedCourses: [],
         },
     });
 
     useEffect(() => {
         if (!loading && userProfile) {
+            // Helper to convert Firestore Timestamp to JS Date
+            const toDate = (timestamp: any): Date | undefined => {
+                return timestamp?.toDate ? timestamp.toDate() : undefined;
+            }
+
             form.reset({
                 name: userProfile.name || '',
                 phone: userProfile.phone || '',
                 hasWhatsApp: userProfile.hasWhatsApp || false,
+                photoUrl: userProfile.photoUrl || '',
+                bio: userProfile.bio || '',
+                cnhNumber: userProfile.cnhNumber || '',
+                cnhCategory: userProfile.cnhCategory,
+                cnhExpiration: toDate(userProfile.cnhExpiration),
+                cnhPoints: userProfile.cnhPoints,
+                condutaxNumber: userProfile.condutaxNumber || '',
+                condutaxExpiration: toDate(userProfile.condutaxExpiration),
+                vehicleLicensePlate: userProfile.vehicleLicensePlate || '',
+                alvaraExpiration: toDate(userProfile.alvaraExpiration),
+                specializedCourses: userProfile.specializedCourses || [],
                 referenceName: userProfile.reference?.name || '',
                 referenceRelationship: userProfile.reference?.relationship || '',
                 referencePhone: userProfile.reference?.phone || '',
                 financialConsent: userProfile.financialConsent || false,
-                paymentMethod: userProfile.paymentMethod,
             });
         }
     }, [userProfile, loading, form]);
@@ -77,6 +124,7 @@ export default function CompleteProfilePage() {
             <div className="space-y-6">
                 <Skeleton className="h-10 w-1/3" />
                 <Skeleton className="h-96 w-full" />
+                <Skeleton className="h-64 w-full" />
             </div>
         );
     }
@@ -91,17 +139,16 @@ export default function CompleteProfilePage() {
         try {
             const userDocRef = doc(db, 'users', user.uid);
             await updateDoc(userDocRef, {
-                name: values.name,
-                phone: values.phone,
-                hasWhatsApp: values.hasWhatsApp,
+                ...values,
+                profileStatus: 'pending_review',
+                cnhExpiration: values.cnhExpiration ? Timestamp.fromDate(values.cnhExpiration) : null,
+                condutaxExpiration: values.condutaxExpiration ? Timestamp.fromDate(values.condutaxExpiration) : null,
+                alvaraExpiration: values.alvaraExpiration ? Timestamp.fromDate(values.alvaraExpiration) : null,
                 reference: {
                     name: values.referenceName,
                     relationship: values.referenceRelationship,
                     phone: values.referencePhone,
                 },
-                financialConsent: values.financialConsent,
-                paymentMethod: values.paymentMethod,
-                profileStatus: 'pending_review',
             });
             toast({
                 title: 'Perfil Atualizado!',
@@ -126,15 +173,32 @@ export default function CompleteProfilePage() {
                 <p className="text-muted-foreground">Preencha os campos abaixo para aumentar suas chances de ser aprovado pelas frotas.</p>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Suas Informações</CardTitle>
-                    <CardDescription>Estes dados serão usados em sua ficha de pré-análise.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                            <FormField control={form.control} name="name" render={({ field }) => (
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                    <Card>
+                         <CardHeader>
+                            <CardTitle>Perfil e Contato</CardTitle>
+                            <CardDescription>Apresente-se à comunidade. Uma boa foto e um resumo aumentam suas chances.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex items-center gap-6">
+                                <Avatar className="h-24 w-24">
+                                    <AvatarImage src={form.watch('photoUrl') || undefined} alt={form.watch('name')} />
+                                    <AvatarFallback><Camera className="h-8 w-8 text-muted-foreground"/></AvatarFallback>
+                                </Avatar>
+                                <div className="grid flex-1 gap-2">
+                                     <FormField control={form.control} name="photoUrl" render={({ field }) => (
+                                        <FormItem><FormLabel>URL da Foto de Perfil</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                    <p className="text-xs text-muted-foreground">Cole a URL de uma foto sua. Use um serviço como <a href="https://imgbb.com/" target="_blank" rel="noopener noreferrer" className="underline">imgbb.com</a> para hospedar.</p>
+                                </div>
+                            </div>
+
+                             <FormField control={form.control} name="bio" render={({ field }) => (
+                                <FormItem><FormLabel>Breve Resumo Sobre Você</FormLabel><FormControl><Textarea placeholder="Fale um pouco sobre sua experiência como motorista, seus objetivos e o que você busca." {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+
+                             <FormField control={form.control} name="name" render={({ field }) => (
                                 <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
 
@@ -143,18 +207,110 @@ export default function CompleteProfilePage() {
                                     <FormItem><FormLabel>Telefone</FormLabel><FormControl><Input placeholder="(11) 9..." {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                                  <FormField control={form.control} name="hasWhatsApp" render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mt-8">
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mt-auto">
                                         <div className="space-y-0.5"><FormLabel>Este número tem WhatsApp?</FormLabel></div>
                                         <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                     </FormItem>
                                 )}/>
                             </div>
+                        </CardContent>
+                    </Card>
 
-                            <div className="space-y-2">
-                                <h3 className="text-lg font-medium">Contato de Referência</h3>
-                                <p className="text-sm text-muted-foreground">Pode ser um familiar ou amigo. As frotas podem entrar em contato.</p>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Habilitação e Documentos</CardTitle>
+                            <CardDescription>Mantenha seus documentos em dia para acessar as melhores oportunidades.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                                <FormField control={form.control} name="cnhNumber" render={({ field }) => (
+                                    <FormItem><FormLabel>Nº da CNH</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                 <FormField control={form.control} name="cnhCategory" render={({ field }) => (
+                                    <FormItem><FormLabel>Categoria CNH</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                                            <SelectContent>{['A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE'].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                 <FormField control={form.control} name="cnhExpiration" render={({ field }) => (
+                                    <FormItem><FormLabel>Vencimento da CNH</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                 <FormField control={form.control} name="cnhPoints" render={({ field }) => (
+                                    <FormItem><FormLabel>Pontos na CNH</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
                             </div>
+                             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                                <FormField control={form.control} name="condutaxNumber" render={({ field }) => (
+                                    <FormItem><FormLabel>Nº do Condutax (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                 <FormField control={form.control} name="condutaxExpiration" render={({ field }) => (
+                                    <FormItem><FormLabel>Vencimento do Condutax</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                             </div>
+                             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                                 <FormField control={form.control} name="vehicleLicensePlate" render={({ field }) => (
+                                    <FormItem><FormLabel>Placa do Veículo (Alvará)</FormLabel><FormControl><Input placeholder="ABC-1234" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                 <FormField control={form.control} name="alvaraExpiration" render={({ field }) => (
+                                    <FormItem><FormLabel>Vencimento do Alvará</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                             </div>
+                        </CardContent>
+                    </Card>
 
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Cursos e Qualificações</CardTitle>
+                            <CardDescription>Marque os cursos especializados que você já concluiu.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <FormField
+                                control={form.control}
+                                name="specializedCourses"
+                                render={() => (
+                                    <FormItem className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                    {specializedCourseOptions.map((item) => (
+                                        <FormField
+                                        key={item.id}
+                                        control={form.control}
+                                        name="specializedCourses"
+                                        render={({ field }) => (
+                                            <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                                            <FormControl>
+                                                <Checkbox
+                                                checked={field.value?.includes(item.id)}
+                                                onCheckedChange={(checked) => {
+                                                    return checked
+                                                    ? field.onChange([...(field.value || []), item.id])
+                                                    : field.onChange(
+                                                        field.value?.filter(
+                                                        (value) => value !== item.id
+                                                        )
+                                                    )
+                                                }}
+                                                />
+                                            </FormControl>
+                                            <FormLabel className="font-normal">{item.label}</FormLabel>
+                                            </FormItem>
+                                        )}
+                                        />
+                                    ))}
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                             <CardTitle>Contato de Referência e Termos</CardTitle>
+                             <CardDescription>Informações finais para completar seu perfil.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                                 <FormField control={form.control} name="referenceName" render={({ field }) => (
                                     <FormItem><FormLabel>Nome do Contato</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -166,26 +322,6 @@ export default function CompleteProfilePage() {
                                     <FormItem><FormLabel>Telefone do Contato</FormLabel><FormControl><Input placeholder="(11) 9..." {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                             </div>
-                            
-                            <div className="space-y-2">
-                                <h3 className="text-lg font-medium">Informações Financeiras</h3>
-                            </div>
-
-                             <FormField control={form.control} name="paymentMethod" render={({ field }) => (
-                                <FormItem className="max-w-xs">
-                                    <FormLabel>Forma de Pagamento Preferencial</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
-                                        <SelectItem value="bank_slip">Boleto Bancário</SelectItem>
-                                        <SelectItem value="pix">PIX</SelectItem>
-                                    </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}/>
-
                             <FormField control={form.control} name="financialConsent" render={({ field }) => (
                                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                                     <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
@@ -198,15 +334,17 @@ export default function CompleteProfilePage() {
                                     </div>
                                 </FormItem>
                             )}/>
-                            
-                            <Button type="submit" disabled={isSubmitting} className="w-full md:w-auto">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Salvar e Enviar para Análise
-                            </Button>
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
+                        </CardContent>
+                    </Card>
+                    
+                    <div className="flex justify-end">
+                        <Button type="submit" size="lg" disabled={isSubmitting} className="w-full md:w-auto">
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Salvar e Enviar para Análise
+                        </Button>
+                    </div>
+                </form>
+            </Form>
         </div>
     );
 }

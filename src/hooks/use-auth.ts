@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, type Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { type Badge } from '@/lib/types';
@@ -10,25 +11,49 @@ import { type Badge } from '@/lib/types';
 
 export interface UserProfile {
     uid: string;
-    name: string;
     email: string;
     role: 'driver' | 'fleet' | 'admin' | 'provider';
-    createdAt: any;
+    createdAt: Timestamp;
     profileStatus?: 'incomplete' | 'pending_review' | 'approved' | 'rejected';
+    
+    // Personal & Contact
+    name: string;
     phone?: string;
     hasWhatsApp?: boolean;
+    bio?: string;
+    photoUrl?: string;
+
+    // Documents
+    cnhNumber?: string;
+    cnhCategory?: 'A' | 'B' | 'C' | 'D' | 'E' | 'AB' | 'AC' | 'AD' | 'AE';
+    cnhExpiration?: Timestamp;
+    condutaxNumber?: string;
+    condutaxExpiration?: Timestamp;
+    alvaraExpiration?: Timestamp;
+    vehicleLicensePlate?: string;
+    cnhPoints?: number;
+
+    // Qualifications
+    specializedCourses?: string[];
+
+    // Reference
     reference?: {
         name: string;
         relationship: string;
         phone: string;
     };
+
+    // Consents
     financialConsent?: boolean;
-    paymentMethod?: 'credit_card' | 'bank_slip' | 'pix';
+    
+    // For fleets/providers
     personType?: 'pf' | 'pj';
     cpf?: string;
     cnpj?: string;
     razaoSocial?: string;
     nomeFantasia?: string;
+    
+    // Gamification
     earnedBadges?: Badge[];
 }
 
