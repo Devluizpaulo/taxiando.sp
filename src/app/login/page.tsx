@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -63,6 +64,19 @@ export default function LoginPage() {
 
   const selectedRoleData = roles.find(r => r.id === selectedRole);
 
+  const getLoginTitle = () => {
+      if (!selectedRoleData) return "Acesse sua conta";
+      if (selectedRoleData.id === 'driver') return `Acesse sua conta de ${selectedRoleData.title}`;
+      return `Login da ${selectedRoleData.title}`;
+  }
+  
+  const getLoginLabel = () => {
+      if (!selectedRoleData) return "Email";
+      if (selectedRoleData.id === 'driver') return "Seu Email";
+      return "Email da Empresa";
+  }
+
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
@@ -104,7 +118,7 @@ export default function LoginPage() {
             <div className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95" data-state="open">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-2xl font-headline">Acesse sua conta de {selectedRoleData.title}</CardTitle>
+                        <CardTitle className="text-2xl font-headline">{getLoginTitle()}</CardTitle>
                         <CardDescription>
                             Bem-vindo de volta! Insira suas credenciais.
                         </CardDescription>
@@ -113,7 +127,7 @@ export default function LoginPage() {
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                             <FormField control={form.control} name="email" render={({ field }) => (
-                                <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>{getLoginLabel()}</FormLabel><FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
                             <FormField control={form.control} name="password" render={({ field }) => (
                                 <FormItem>

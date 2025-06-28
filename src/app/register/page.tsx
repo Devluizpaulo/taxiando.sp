@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -17,19 +18,35 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Car, Building, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const registerFormSchema = z.object({
-  name: z.string().min(3, { message: 'O nome deve ter pelo menos 3 caracteres.' }),
-  email: z.string().email({ message: 'Por favor, insira um email válido.' }),
   role: z.enum(['driver', 'fleet', 'provider'], { required_error: 'Você precisa selecionar um tipo de conta.' }),
+  personType: z.enum(['pf', 'pj']).optional(),
+  email: z.string().email({ message: 'Por favor, insira um email válido.' }),
   password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
   confirmPassword: z.string(),
+  name: z.string().optional(),
+  cpf: z.string().optional(),
+  razaoSocial: z.string().optional(),
+  nomeFantasia: z.string().optional(),
+  cnpj: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem.',
   path: ['confirmPassword'],
-});
+}).refine(data => {
+    if (data.role === 'driver') return data.name && data.name.length >= 3;
+    if (data.role !== 'driver' && data.personType === 'pf') return data.name && data.name.length >= 3;
+    return true;
+}, { message: 'O nome completo é obrigatório.', path: ['name']})
+.refine(data => {
+    if (data.role !== 'driver' && data.personType === 'pj') return data.nomeFantasia && data.nomeFantasia.length >= 3;
+    return true;
+}, { message: 'O nome fantasia é obrigatório.', path: ['nomeFantasia']});
+
 
 type Role = 'driver' | 'fleet' | 'provider';
+type PersonType = 'pf' | 'pj';
 
 const roles: { id: Role; title: string; description: string; icon: React.ElementType }[] = [
     { id: 'driver', title: 'Sou Motorista', description: 'Busco oportunidades e qualificação.', icon: Car },
@@ -45,12 +62,12 @@ export default function RegisterPage() {
   const form = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      name: '',
-      email: '',
+      personType: 'pf',
     },
   });
 
   const selectedRole = form.watch('role');
+  const personType = form.watch('personType');
 
   const handleRoleSelect = (role: Role) => {
     form.setValue('role', role, { shouldValidate: true, shouldDirty: true });
@@ -62,18 +79,29 @@ export default function RegisterPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      await updateProfile(user, {
-        displayName: values.name,
-      });
+      const displayName = values.role === 'driver' || values.personType === 'pf' ? values.name : values.nomeFantasia;
+      await updateProfile(user, { displayName });
 
-      await setDoc(doc(db, 'users', user.uid), {
+      const userData: any = {
         uid: user.uid,
-        name: values.name,
         email: values.email,
         role: values.role,
         createdAt: new Date(),
         profileStatus: 'incomplete',
-      });
+      };
+
+      if (values.role === 'driver' || values.personType === 'pf') {
+        userData.name = values.name;
+        userData.personType = 'pf';
+        if (values.cpf) userData.cpf = values.cpf;
+      } else { // PJ
+        userData.personType = 'pj';
+        userData.razaoSocial = values.razaoSocial;
+        userData.nomeFantasia = values.nomeFantasia;
+        if (values.cnpj) userData.cnpj = values.cnpj;
+      }
+
+      await setDoc(doc(db, 'users', user.uid), userData);
 
       router.push('/dashboard');
     } catch (error: any) {
@@ -92,6 +120,70 @@ export default function RegisterPage() {
     }
   }
 
+  const renderFormFields = () => {
+    const isDriver = selectedRole === 'driver';
+    const isCompany = !isDriver && personType === 'pj';
+    const isIndividual = isDriver || personType === 'pf';
+
+    return (
+        <div className="space-y-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" data-state="open">
+            <hr />
+            
+            {isIndividual && (
+                 <FormField control={form.control} name="name" render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Nome Completo</FormLabel>
+                    <FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}/>
+            )}
+
+            {isCompany && (
+                <>
+                    <FormField control={form.control} name="nomeFantasia" render={({ field }) => (
+                        <FormItem><FormLabel>Nome Fantasia</FormLabel><FormControl><Input placeholder="Nome público da sua empresa" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="razaoSocial" render={({ field }) => (
+                        <FormItem><FormLabel>Razão Social</FormLabel><FormControl><Input placeholder="Nome de registro da empresa" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="cnpj" render={({ field }) => (
+                        <FormItem><FormLabel>CNPJ</FormLabel><FormControl><Input placeholder="00.000.000/0000-00" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                </>
+            )}
+
+            <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                <FormLabel>{isIndividual ? "Seu melhor e-mail" : "E-mail de Contato"}</FormLabel>
+                <FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl>
+                <FormMessage />
+                </FormItem>
+            )}/>
+
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="password" render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <FormControl><Input type="password" required {...field} /></FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}/>
+                <FormField control={form.control} name="confirmPassword" render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Confirmar Senha</FormLabel>
+                    <FormControl><Input type="password" required {...field} /></FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}/>
+            </div>
+            <Button type="submit" disabled={isLoading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Criar Conta e Acessar'}
+            </Button>
+        </div>
+    )
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-lg">
@@ -102,7 +194,7 @@ export default function RegisterPage() {
                 </div>
                 <h1 className="font-headline text-2xl font-bold">Táxiando SP</h1>
             </div>
-            <CardTitle className="text-2xl font-headline">Crie sua conta</CardTitle>
+            <CardTitle className="text-2xl font-headline">Crie sua conta gratuita</CardTitle>
             <CardDescription>Primeiro, selecione o seu tipo de perfil.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -134,42 +226,20 @@ export default function RegisterPage() {
                 )}
 
               {selectedRole && (
-                 <div className="space-y-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" data-state="open">
-                    <hr />
-                    <FormField control={form.control} name="name" render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Nome Completo ou Razão Social</FormLabel>
-                        <FormControl><Input placeholder="Seu nome ou nome da sua frota" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}/>
-                    <FormField control={form.control} name="email" render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}/>
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="password" render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Senha</FormLabel>
-                            <FormControl><Input type="password" required {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}/>
-                        <FormField control={form.control} name="confirmPassword" render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Confirmar Senha</FormLabel>
-                            <FormControl><Input type="password" required {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}/>
-                    </div>
-                    <Button type="submit" disabled={isLoading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Criar Conta'}
-                    </Button>
-                 </div>
+                  <>
+                    {selectedRole !== 'driver' ? (
+                        <Tabs defaultValue="pf" className="w-full" onValueChange={(v) => form.setValue('personType', v as PersonType)}>
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="pf">Pessoa Física</TabsTrigger>
+                                <TabsTrigger value="pj">Pessoa Jurídica</TabsTrigger>
+                            </TabsList>
+                             <TabsContent value="pf">{renderFormFields()}</TabsContent>
+                             <TabsContent value="pj">{renderFormFields()}</TabsContent>
+                        </Tabs>
+                    ) : (
+                        renderFormFields()
+                    )}
+                  </>
               )}
             </form>
           </Form>
@@ -184,3 +254,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

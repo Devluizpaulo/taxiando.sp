@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -23,6 +24,11 @@ export interface UserProfile {
     };
     financialConsent?: boolean;
     paymentMethod?: 'credit_card' | 'bank_slip' | 'pix';
+    personType?: 'pf' | 'pj';
+    cpf?: string;
+    cnpj?: string;
+    razaoSocial?: string;
+    nomeFantasia?: string;
 }
 
 export function useAuth() {
