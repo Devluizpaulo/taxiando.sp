@@ -1,28 +1,73 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useEffect, useState, useMemo } from 'react';
+import { useAuth, type UserProfile } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
-import { type Course, type Badge } from '@/lib/types';
+import { collection, getDocs, doc, getDoc, Timestamp } from 'firebase/firestore';
+import { type Course } from '@/lib/types';
 import Link from 'next/link';
+import { differenceInDays, isPast } from 'date-fns';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Briefcase, Car, FileCheck, Search, Award } from 'lucide-react';
+import { BookOpen, Briefcase, FileCheck, Search, Award, AlertTriangle, ShieldCheck, HelpCircle, UserPlus } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+
 
 interface CourseWithProgress extends Course {
     progress: number;
 }
+
+// Helper to calculate profile completeness
+const calculateProfileCompleteness = (profile: UserProfile | null): number => {
+    if (!profile) return 0;
+
+    const totalFields = 10;
+    let filledFields = 0;
+
+    if (profile.photoUrl) filledFields++;
+    if (profile.bio && profile.bio.length > 10) filledFields++;
+    if (profile.phone) filledFields++;
+    if (profile.cnhNumber) filledFields++;
+    if (profile.cnhCategory) filledFields++;
+    if (profile.cnhExpiration) filledFields++;
+    if (profile.condutaxNumber) filledFields++;
+    if (profile.alvaraExpiration) filledFields++;
+    if (profile.reference?.name) filledFields++;
+    if (profile.financialConsent) filledFields++;
+
+    return Math.round((filledFields / totalFields) * 100);
+};
+
+// Helper to determine vehicle status
+const getVehicleStatus = (alvaraTimestamp?: Timestamp): { text: string; icon: React.ElementType; className: string } => {
+    if (!alvaraTimestamp) {
+        return { text: 'Não informado', icon: HelpCircle, className: 'text-muted-foreground' };
+    }
+    const alvaraDate = alvaraTimestamp.toDate();
+    if (isPast(alvaraDate)) {
+        return { text: 'Alvará Vencido', icon: AlertTriangle, className: 'text-destructive' };
+    }
+    const daysRemaining = differenceInDays(alvaraDate, new Date());
+    if (daysRemaining <= 30) {
+        return { text: `Vence em ${daysRemaining}d`, icon: AlertTriangle, className: 'text-amber-600' };
+    }
+    return { text: 'Regular', icon: ShieldCheck, className: 'text-primary' };
+};
+
 
 export default function DashboardPage() {
     const { user, userProfile, loading: authLoading } = useAuth();
     const [loading, setLoading] = useState(true);
     const [inProgressCourses, setInProgressCourses] = useState<CourseWithProgress[]>([]);
     const [completedCoursesCount, setCompletedCoursesCount] = useState(0);
+
+    const profileCompleteness = useMemo(() => calculateProfileCompleteness(userProfile), [userProfile]);
+    const vehicleStatus = useMemo(() => getVehicleStatus(userProfile?.alvaraExpiration), [userProfile?.alvaraExpiration]);
+    const applicationsCount = 4; // Mock data for now
 
     useEffect(() => {
         if (authLoading || !user || !userProfile) return;
@@ -107,34 +152,10 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Cursos em Andamento</CardTitle>
-                        <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{inProgressCourses.length}</div></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Cursos Concluídos</CardTitle>
-                        <FileCheck className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{completedCoursesCount}</div></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Candidaturas</CardTitle>
-                        <Briefcase className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">4</div></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Status do Veículo</CardTitle>
-                        <Car className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent><div className="text-2xl font-bold text-primary">OK</div></CardContent>
-                </Card>
+                <Card><Link href="/courses"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Cursos em Andamento</CardTitle><BookOpen className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{inProgressCourses.length}</div></CardContent></Link></Card>
+                <Card><Link href="/courses"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Cursos Concluídos</CardTitle><FileCheck className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{completedCoursesCount}</div></CardContent></Link></Card>
+                <Card><Link href="/applications"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Candidaturas</CardTitle><Briefcase className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{applicationsCount}</div></CardContent></Link></Card>
+                <Card><Link href="/profile"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Status do Veículo</CardTitle><vehicleStatus.icon className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className={cn("text-2xl font-bold", vehicleStatus.className)}>{vehicleStatus.text}</div></CardContent></Link></Card>
             </div>
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -172,6 +193,23 @@ export default function DashboardPage() {
                     </div>
                 </div>
                 <div className="lg:col-span-1 space-y-8">
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Força do Perfil</CardTitle>
+                            <CardDescription>Um perfil completo aumenta suas chances em até 40%.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <Progress value={profileCompleteness} />
+                            <p className="text-sm text-muted-foreground">{profileCompleteness}% completo</p>
+                            {profileCompleteness < 100 && (
+                                <Button asChild className="w-full">
+                                    <Link href="/profile">
+                                        <UserPlus className="mr-2" /> Completar Perfil
+                                    </Link>
+                                </Button>
+                            )}
+                        </CardContent>
+                    </Card>
                     <Card>
                         <CardHeader>
                             <CardTitle>Ações Rápidas</CardTitle>
@@ -219,3 +257,4 @@ export default function DashboardPage() {
     );
 
     
+}
