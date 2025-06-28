@@ -4,7 +4,7 @@ import { PublicFooter } from "@/components/layout/public-footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock } from "lucide-react";
+import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock, Building } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { QuizSection } from "@/components/quiz-section";
@@ -242,6 +242,22 @@ export default function Home() {
                   </TabsContent>
               </Tabs>
            </div>
+        </section>
+
+        <section id="partners" className="py-16 md:py-24 bg-muted">
+            <div className="container mx-auto px-4 md:px-6">
+                <div className="mb-12 text-center">
+                    <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">Nossos Parceiros</h2>
+                    <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">Empresas que confiam e apoiam a nossa comunidade.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-5">
+                    {[...Array(5)].map((_, i) => (
+                        <div key={i} className="flex items-center justify-center">
+                            <Building className="h-16 w-16 text-muted-foreground/60" />
+                        </div>
+                    ))}
+                </div>
+            </div>
         </section>
 
         <section className="bg-primary py-20">

@@ -13,11 +13,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2 } from "lucide-react";
+import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { type Course, type Lesson } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const getLessonIcon = (type: Lesson['type']) => {
@@ -226,7 +227,20 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                             {progress === 100 ? "Curso Concluído!" : "Continuar Curso"}
                          </Button>
                          {progress === 100 && (
-                             <Button className="w-full" variant="outline">Baixar Certificado</Button>
+                             <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div className="w-full">
+                                            <Button className="w-full" variant="outline" disabled>
+                                                <Lock className="mr-2 h-4 w-4"/> Baixar Certificado (Premium)
+                                            </Button>
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Faça o upgrade para a versão Pro para emitir certificados.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                          )}
                     </CardContent>
                 </Card>

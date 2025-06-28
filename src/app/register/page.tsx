@@ -140,13 +140,18 @@ export default function RegisterPage() {
     return (
         <div className="space-y-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" data-state="open">            
             {isIndividual && (
-                 <FormField control={form.control} name="name" render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Nome Completo</FormLabel>
-                    <FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}/>
+                <>
+                    <FormField control={form.control} name="name" render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Nome Completo</FormLabel>
+                        <FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}/>
+                    <FormField control={form.control} name="cpf" render={({ field }) => (
+                        <FormItem><FormLabel>CPF (Opcional)</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                </>
             )}
 
             {isCompany && (
@@ -158,7 +163,7 @@ export default function RegisterPage() {
                         <FormItem><FormLabel>Razão Social</FormLabel><FormControl><Input placeholder="Nome de registro da empresa" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <FormField control={form.control} name="cnpj" render={({ field }) => (
-                        <FormItem><FormLabel>CNPJ</FormLabel><FormControl><Input placeholder="00.000.000/0000-00" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>CNPJ (Opcional)</FormLabel><FormControl><Input placeholder="00.000.000/0000-00" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                 </>
             )}

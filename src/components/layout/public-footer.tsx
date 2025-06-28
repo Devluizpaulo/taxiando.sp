@@ -16,10 +16,10 @@ export function PublicFooter() {
           © {new Date().getFullYear()} Táxiando SP. Todos os direitos reservados.
         </p>
         <nav className="flex gap-4">
-          <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
+          <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary">
             Termos de Serviço
           </Link>
-          <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
+          <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary">
             Política de Privacidade
           </Link>
         </nav>
