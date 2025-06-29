@@ -1,7 +1,7 @@
 'use server';
 
 import { initializeApp, getApps, App, applicationDefault } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 
 let app: App;
@@ -18,4 +18,4 @@ if (getApps().length === 0) {
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-export { db, auth };
+export { db, auth, Timestamp };
