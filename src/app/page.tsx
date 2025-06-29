@@ -4,11 +4,13 @@ import { PublicFooter } from "@/components/layout/public-footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock, Building } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock, Building, Wrench } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { QuizSection } from "@/components/quiz-section";
 import { CulturalAgendaSection } from "@/components/cultural-agenda-section";
+import { mockJobOpportunities, mockServiceListings } from "@/lib/mock-data";
 
 const blogPosts = [
   {
@@ -37,18 +39,6 @@ const blogPosts = [
   },
 ];
 
-const driverJobs = [
-    { id: 1, title: "Motorista de App (Categoria Comfort)", company: "Frota Rápida SP", location: "Zona Sul, SP", type: "Período Integral" },
-    { id: 2, title: "Taxista para Ponto no Aeroporto de Guarulhos", company: "Cooperativa AeroTÁXI", location: "Guarulhos, SP", type: "Plantões" },
-    { id: 3, title: "Motorista Executivo Bilíngue", company: "SP Prime Drivers", location: "Centro, SP", type: "Período Integral" },
-];
-
-const gasStationJobs = [
-    { id: 1, title: "Frentista (Turno da Noite)", company: "Posto Shell Av. Paulista", location: "Bela Vista, SP", type: "CLT" },
-    { id: 2, title: "Caixa de Loja de Conveniência", company: "Posto Ipiranga Morumbi", location: "Morumbi, SP", type: "Meio Período" },
-    { id: 3, title: "Lubrificador e Trocador de Óleo", company: "Rede Petrobras", location: "Tatuapé, SP", type: "CLT" },
-];
-
 
 export default function Home() {
   return (
@@ -62,7 +52,7 @@ export default function Home() {
                 A plataforma completa para o profissional do volante em SP
               </h1>
               <p className="text-lg text-muted-foreground md:text-xl">
-                Qualificação, notícias e as melhores oportunidades para taxistas, motoristas de app e frentistas. Tudo em um só lugar.
+                Qualificação, notícias e as melhores oportunidades para taxistas e motoristas de app. Tudo em um só lugar.
               </p>
               <div className="flex flex-col gap-4 sm:flex-row">
                 <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
@@ -132,7 +122,7 @@ export default function Home() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Conectamos você às melhores vagas para motoristas e frentistas.
+                    Conectamos você às melhores vagas e serviços para o seu dia a dia.
                   </p>
                 </CardContent>
               </Card>
@@ -182,17 +172,17 @@ export default function Home() {
                     Classificados de Oportunidades
                   </h2>
                   <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-                    Encontre a vaga ideal para acelerar sua carreira.
+                    Encontre a vaga ideal e os melhores serviços para acelerar sua carreira.
                   </p>
               </div>
-              <Tabs defaultValue="drivers" className="w-full">
+              <Tabs defaultValue="jobs" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="drivers">Vagas para Motoristas</TabsTrigger>
-                      <TabsTrigger value="gas_station">Vagas para Frentistas</TabsTrigger>
+                      <TabsTrigger value="jobs"><Briefcase/> Vagas de Emprego</TabsTrigger>
+                      <TabsTrigger value="services"><Wrench/> Serviços e Produtos</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="drivers">
-                      <div className="grid grid-cols-1 gap-6 pt-6 md:grid-cols-3">
-                          {driverJobs.map((job) => (
+                  <TabsContent value="jobs" className="pt-8">
+                      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                          {mockJobOpportunities.slice(0, 3).map((job) => (
                               <Card key={job.id}>
                                   <CardHeader>
                                       <CardTitle className="font-headline text-lg">{job.title}</CardTitle>
@@ -209,32 +199,31 @@ export default function Home() {
                                       </div>
                                   </CardContent>
                                   <CardFooter>
-                                      <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">Ver detalhes</Button>
+                                      <Button asChild className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                                        <Link href="/opportunities">Ver mais vagas</Link>
+                                      </Button>
                                   </CardFooter>
                               </Card>
                           ))}
                       </div>
                   </TabsContent>
-                   <TabsContent value="gas_station">
-                      <div className="grid grid-cols-1 gap-6 pt-6 md:grid-cols-3">
-                          {gasStationJobs.map((job) => (
-                              <Card key={job.id}>
-                                  <CardHeader>
-                                      <CardTitle className="font-headline text-lg">{job.title}</CardTitle>
-                                      <CardDescription>{job.company}</CardDescription>
+                   <TabsContent value="services" className="pt-8">
+                      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                          {mockServiceListings.slice(0, 3).map((srv) => (
+                              <Card key={srv.id} className="flex flex-col overflow-hidden">
+                                  <CardHeader className="p-0">
+                                      <Image src={srv.imageUrl} alt={srv.title} width={600} height={400} className="w-full object-cover aspect-video" data-ai-hint={srv.imageHint}/>
                                   </CardHeader>
-                                  <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
-                                      <div className="flex items-center gap-2">
-                                          <MapPin className="h-4 w-4"/>
-                                          <span>{job.location}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                          <Clock className="h-4 w-4"/>
-                                          <span>{job.type}</span>
-                                      </div>
+                                  <CardContent className="p-4 flex-1">
+                                      <Badge variant="secondary" className="mb-2">{srv.category}</Badge>
+                                      <CardTitle className="font-headline text-lg">{srv.title}</CardTitle>
+                                      <CardDescription>Oferecido por: {srv.provider}</CardDescription>
                                   </CardContent>
-                                  <CardFooter>
-                                      <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">Ver detalhes</Button>
+                                  <CardFooter className="p-4 bg-muted/50 flex justify-between items-center">
+                                    <p className="text-lg font-bold text-primary">{srv.price}</p>
+                                    <Button asChild>
+                                        <Link href="/opportunities">Ver detalhes</Link>
+                                    </Button>
                                   </CardFooter>
                               </Card>
                           ))}
