@@ -21,7 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 import { updateUserProfileStatus, updateListingStatus } from '@/app/actions/admin-actions';
 import type { UserProfile } from '@/components/providers/auth-provider';
-import type { Opportunity, ServiceListing, Course, CreditPackage } from '@/lib/types';
+import type { Opportunity, ServiceListing, Course, CreditPackage, Event } from '@/lib/types';
 
 
 type AdminUser = Pick<UserProfile, 'uid' | 'name' | 'email' | 'role' | 'profileStatus' | 'createdAt'>;
@@ -84,7 +84,7 @@ export default function AdminPage() {
                 const packagesData = packagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CreditPackage));
                 setPackages(packagesData);
 
-                const eventsData = eventsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event[]));
+                const eventsData = eventsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
                 setEvents(eventsData);
                 
                 // Process chart data
@@ -92,9 +92,7 @@ export default function AdminPage() {
                 usersData.forEach(user => {
                     if (user.createdAt) {
                         const date = (user.createdAt as Timestamp).toDate();
-                        const month = format(date, "MMM", {
-                            // locale: ptBR // if you want portuguese months
-                        });
+                        const month = format(date, "MMM");
                         monthlySignups[month] = (monthlySignups[month] || 0) + 1;
                     }
                 });
@@ -156,6 +154,8 @@ export default function AdminPage() {
     if (authLoading || loadingData) {
       return <LoadingScreen />;
     }
+
+    const pendingUsers = users.filter(u => u.profileStatus && u.profileStatus !== 'approved' && u.profileStatus !== 'N/A').slice(0, 5);
     
     return (
         <div className="flex flex-col gap-8">
@@ -197,7 +197,12 @@ export default function AdminPage() {
                          <Table>
                             <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {users.filter(u => u.profileStatus && u.profileStatus !== 'approved' && u.profileStatus !== 'N/A').slice(0,5).map(user => (
+                                {pendingUsers.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={2} className="h-24 text-center text-muted-foreground">Nenhum cadastro pendente.</TableCell>
+                                    </TableRow>
+                                ) : (
+                                    pendingUsers.map(user => (
                                     <TableRow key={user.uid}>
                                         <TableCell>
                                             <div className="font-medium">{user.name}</div>
@@ -205,7 +210,7 @@ export default function AdminPage() {
                                         </TableCell>
                                         <TableCell><Badge variant={getStatusVariant(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
                                     </TableRow>
-                                ))}
+                                )))}
                             </TableBody>
                          </Table>
                     </CardContent>
@@ -244,36 +249,42 @@ export default function AdminPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {users.map(user => (
-                                        <TableRow key={user.uid}>
-                                            <TableCell><Checkbox 
-                                                disabled={user.role !== 'driver'}
-                                                checked={selectedUsers.includes(user.uid)}
-                                                onCheckedChange={(checked) => handleSelectUser(user.uid, !!checked)}
-                                            /></TableCell>
-                                            <TableCell>
-                                                <div className="font-medium">{user.name}</div>
-                                                <div className="text-sm text-muted-foreground">{user.email}</div>
-                                            </TableCell>
-                                            <TableCell>{user.role}</TableCell>
-                                            <TableCell><Badge variant={getStatusVariant(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                        <DropdownMenuItem>Ver Perfil Completo</DropdownMenuItem>
-                                                        {user.role === 'driver' && (user.profileStatus === 'Pendente' || user.profileStatus === 'pending_review') && (
-                                                            <>
-                                                                <DropdownMenuItem onClick={() => handleUserStatusUpdate(user.uid, 'Aprovado')}>Aprovar Cadastro</DropdownMenuItem>
-                                                                <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => handleUserStatusUpdate(user.uid, 'Rejeitado')}>Rejeitar Cadastro</DropdownMenuItem>
-                                                            </>
-                                                        )}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
+                                    {users.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="h-24 text-center">Nenhum usuário encontrado. Cadastre o primeiro!</TableCell>
                                         </TableRow>
-                                    ))}
+                                    ) : (
+                                        users.map(user => (
+                                            <TableRow key={user.uid}>
+                                                <TableCell><Checkbox 
+                                                    disabled={user.role !== 'driver'}
+                                                    checked={selectedUsers.includes(user.uid)}
+                                                    onCheckedChange={(checked) => handleSelectUser(user.uid, !!checked)}
+                                                /></TableCell>
+                                                <TableCell>
+                                                    <div className="font-medium">{user.name}</div>
+                                                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                                                </TableCell>
+                                                <TableCell>{user.role}</TableCell>
+                                                <TableCell><Badge variant={getStatusVariant(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
+                                                <TableCell className="text-right">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                                            <DropdownMenuItem>Ver Perfil Completo</DropdownMenuItem>
+                                                            {user.role === 'driver' && (user.profileStatus === 'Pendente' || user.profileStatus === 'pending_review') && (
+                                                                <>
+                                                                    <DropdownMenuItem onClick={() => handleUserStatusUpdate(user.uid, 'Aprovado')}>Aprovar Cadastro</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => handleUserStatusUpdate(user.uid, 'Rejeitado')}>Rejeitar Cadastro</DropdownMenuItem>
+                                                                </>
+                                                            )}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>
@@ -296,21 +307,27 @@ export default function AdminPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {opportunities.map(opp => (
-                                        <TableRow key={opp.id}>
-                                            <TableCell className="font-medium">{opp.vehicle}</TableCell>
-                                            <TableCell>{opp.provider}</TableCell>
-                                            <TableCell><Badge variant={getStatusVariant(opp.status)}>{opp.status}</Badge></TableCell>
-                                            <TableCell>
-                                                 {opp.status === 'Pendente' && (
-                                                    <div className="flex gap-2">
-                                                        <Button variant="outline" size="sm" onClick={() => handleListingApproval(opp.id, 'opportunities', 'Aprovado')}>Aprovar</Button>
-                                                        <Button variant="destructive" size="sm" onClick={() => handleListingApproval(opp.id, 'opportunities', 'Rejeitado')}>Rejeitar</Button>
-                                                    </div>
-                                                 )}
-                                            </TableCell>
+                                    {opportunities.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="h-24 text-center">Nenhuma oportunidade de locação pendente.</TableCell>
                                         </TableRow>
-                                    ))}
+                                    ) : (
+                                        opportunities.map(opp => (
+                                            <TableRow key={opp.id}>
+                                                <TableCell className="font-medium">{opp.vehicle}</TableCell>
+                                                <TableCell>{opp.provider}</TableCell>
+                                                <TableCell><Badge variant={getStatusVariant(opp.status)}>{opp.status}</Badge></TableCell>
+                                                <TableCell>
+                                                     {opp.status === 'Pendente' && (
+                                                        <div className="flex gap-2">
+                                                            <Button variant="outline" size="sm" onClick={() => handleListingApproval(opp.id, 'opportunities', 'Aprovado')}>Aprovar</Button>
+                                                            <Button variant="destructive" size="sm" onClick={() => handleListingApproval(opp.id, 'opportunities', 'Rejeitado')}>Rejeitar</Button>
+                                                        </div>
+                                                     )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>
@@ -333,21 +350,27 @@ export default function AdminPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {services.map(srv => (
-                                        <TableRow key={srv.id}>
-                                            <TableCell className="font-medium">{srv.title}</TableCell>
-                                            <TableCell>{srv.provider}</TableCell>
-                                            <TableCell><Badge variant={getStatusVariant(srv.status)}>{srv.status}</Badge></TableCell>
-                                            <TableCell>
-                                                 {srv.status === 'Pendente' && (
-                                                    <div className="flex gap-2">
-                                                        <Button variant="outline" size="sm" onClick={() => handleListingApproval(srv.id, 'services', 'Aprovado')}>Aprovar</Button>
-                                                        <Button variant="destructive" size="sm" onClick={() => handleListingApproval(srv.id, 'services', 'Rejeitado')}>Rejeitar</Button>
-                                                    </div>
-                                                 )}
-                                            </TableCell>
+                                    {services.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="h-24 text-center">Nenhum serviço pendente de moderação.</TableCell>
                                         </TableRow>
-                                    ))}
+                                    ) : (
+                                        services.map(srv => (
+                                            <TableRow key={srv.id}>
+                                                <TableCell className="font-medium">{srv.title}</TableCell>
+                                                <TableCell>{srv.provider}</TableCell>
+                                                <TableCell><Badge variant={getStatusVariant(srv.status)}>{srv.status}</Badge></TableCell>
+                                                <TableCell>
+                                                     {srv.status === 'Pendente' && (
+                                                        <div className="flex gap-2">
+                                                            <Button variant="outline" size="sm" onClick={() => handleListingApproval(srv.id, 'services', 'Aprovado')}>Aprovar</Button>
+                                                            <Button variant="destructive" size="sm" onClick={() => handleListingApproval(srv.id, 'services', 'Rejeitado')}>Rejeitar</Button>
+                                                        </div>
+                                                     )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>

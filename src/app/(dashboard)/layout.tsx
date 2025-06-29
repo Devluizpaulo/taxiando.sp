@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { LoadingScreen } from "@/components/loading-screen";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 
 export default function DashboardLayout({
   children,
@@ -46,14 +47,10 @@ export default function DashboardLayout({
     return <LoadingScreen className="fixed inset-0 z-50" />;
   }
   
-  // After the initial auth check, if there's no user, the effect above will redirect.
-  // We can show a loading screen until the redirect happens.
   if (!user) {
       return <LoadingScreen className="fixed inset-0 z-50" />;
   }
 
-  // The user is authenticated, but the profile might still be loading.
-  // We render the layout shell with placeholders.
   return (
     <SidebarProvider>
       <Sidebar>
@@ -183,7 +180,38 @@ export default function DashboardLayout({
             </Button>
         </header>
         <main className="flex flex-1 flex-col p-4 sm:p-6">
-            {userProfile ? children : <LoadingScreen />}
+            {(() => {
+              if (userProfile) {
+                return children;
+              }
+              // Auth check is done, user is logged in, but no profile was found in DB
+              if (!loading && user && !userProfile) {
+                return (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <Card className="max-w-md text-center">
+                      <CardHeader>
+                        <CardTitle>Perfil não encontrado</CardTitle>
+                        <CardDescription>
+                          Não foi possível carregar os dados do seu perfil.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                          Isso pode acontecer se a sua conta foi criada manualmente e o perfil
+                          no banco de dados ainda não existe. Certifique-se de que um
+                          documento de usuário com a role correta existe no Firestore.
+                        </p>
+                      </CardContent>
+                      <CardFooter className="flex justify-center">
+                        <Button onClick={() => window.location.reload()}>Recarregar Página</Button>
+                      </CardFooter>
+                    </Card>
+                  </div>
+                );
+              }
+              // Otherwise, show the loading screen while auth is in progress
+              return <LoadingScreen />;
+            })()}
         </main>
       </SidebarInset>
     </SidebarProvider>
