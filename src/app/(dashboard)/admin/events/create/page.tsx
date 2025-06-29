@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -85,7 +86,7 @@ export default function CreateEventPage() {
         } finally {
             setIsSubmitting(false);
         }
-    };
+    }
 
     return (
         <Form {...form}>
@@ -144,7 +145,7 @@ export default function CreateEventPage() {
                             <FormItem><FormLabel>URL da Imagem de Capa</FormLabel><FormControl><Input {...field} placeholder="https://exemplo.com/imagem.png" /></FormControl><FormMessage /></FormItem>
                         )}/>
                           <FormField control={form.control} name="mapUrl" render={({ field }) => (
-                            <FormItem><FormLabel>URL do Google Maps para o Local</FormLabel><FormControl><Input {...field} placeholder="https://maps.app.goo.gl/..." /></FormControl><FormMessage /></FormMessage>
+                            <FormItem><FormLabel>URL do Google Maps para o Local</FormLabel><FormControl><Input {...field} placeholder="https://maps.app.goo.gl/..." /></FormControl><FormMessage /></FormItem>
                         )}/>
                      </CardContent>
                 </Card>
