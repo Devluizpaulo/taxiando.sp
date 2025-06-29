@@ -1,6 +1,5 @@
 
-import { collection, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { adminDB, Timestamp } from '@/lib/firebase-admin';
 import { type Event } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,15 +15,15 @@ async function fetchEvents(): Promise<Event[]> {
     const nextWeek = new Date();
     nextWeek.setDate(today.getDate() + 7);
 
-    const eventsCollection = collection(db, 'events');
-    const q = query(
-      eventsCollection,
-      where('startDate', '>=', Timestamp.fromDate(today)),
-      where('startDate', '<=', Timestamp.fromDate(nextWeek)),
-      orderBy('startDate', 'asc')
-    );
+    const eventsCollection = adminDB.collection('events');
+    const q = eventsCollection
+      .where('startDate', '>=', Timestamp.fromDate(today))
+      .where('startDate', '<=', Timestamp.fromDate(nextWeek))
+      .orderBy('startDate', 'asc');
 
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await q.get();
+    
+    // The Admin SDK returns data compatible with the Event type, including Timestamps
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
   } catch (error) {
     console.error("Error fetching events: ", error);
