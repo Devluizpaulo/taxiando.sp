@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Button } from "../ui/button";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 
 export function PublicHeader() {
@@ -56,6 +56,10 @@ export function PublicHeader() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Menu</SheetTitle>
+                <SheetDescription>Navegação principal do site.</SheetDescription>
+              </SheetHeader>
               <nav className="grid gap-6 text-lg font-medium mt-10">
                  {navLinks.map((link) => (
                     <Link 
