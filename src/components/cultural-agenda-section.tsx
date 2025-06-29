@@ -1,36 +1,30 @@
+
 'use client';
 
-import { useEffect, useState } from 'react';
-import { collection, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { useEffect, useState, useMemo } from 'react';
+import { collection, getDocs, query, where, orderBy, Timestamp, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { type Event } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-import { MapPin, Calendar, Lightbulb, TrafficCone, MoveRight, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { MoveRight, Loader2, Calendar } from 'lucide-react';
+import { format, isToday, isTomorrow, parseISO, startOfTomorrow, addDays, startOfToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-async function fetchEvents(): Promise<Event[]> {
+async function fetchUpcomingEvents(): Promise<Event[]> {
   try {
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const diffToMonday = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-
-    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), diffToMonday);
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999);
+    const today = startOfToday();
+    const nextSevenDays = addDays(today, 7);
 
     const eventsCollection = collection(db, 'events');
     const q = query(
       eventsCollection,
-      where('startDate', '>=', startOfWeek),
-      where('startDate', '<=', endOfWeek),
-      orderBy('startDate', 'asc')
+      where('startDate', '>=', today),
+      where('startDate', '<', nextSevenDays),
+      orderBy('startDate', 'asc'),
+      limit(20) // Limit to a reasonable number of events
     );
 
     const querySnapshot = await getDocs(q);
@@ -48,34 +42,76 @@ async function fetchEvents(): Promise<Event[]> {
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("Error fetching weekly events: ", errorMessage);
+    console.error("Error fetching upcoming events: ", errorMessage);
     return [];
   }
 }
+
+const getDateLabel = (dateString: string) => {
+    const date = parseISO(dateString);
+    if (isToday(date)) return 'Hoje';
+    if (isTomorrow(date)) return 'Amanhã';
+    return format(date, "EEEE, dd/MM", { locale: ptBR });
+};
+
+
+const EventCard = ({ event }: { event: Event }) => {
+    const startTime = format(new Date(event.startDate as string), "HH:mm");
+    return (
+        <div className="w-80 flex-shrink-0 snap-start">
+            <Card className="flex flex-col h-full overflow-hidden bg-card shadow-md hover:shadow-lg transition-shadow">
+                <CardHeader className="p-0">
+                <div className="relative aspect-[16/9] w-full">
+                    <Image src={event.imageUrl} alt={event.title} fill className="object-cover" data-ai-hint="event concert festival" />
+                </div>
+                </CardHeader>
+                <CardContent className="flex-1 p-4">
+                    <p className="text-sm font-bold text-primary">{startTime}</p>
+                    <CardTitle className="font-headline text-lg mt-1 line-clamp-2">{event.title}</CardTitle>
+                    <CardDescription className="text-xs mt-1 line-clamp-1">{event.location}</CardDescription>
+                </CardContent>
+                <CardFooter className="p-4 bg-muted/30">
+                    <Button asChild variant="outline" size="sm" className="w-full">
+                        <Link href={event.mapUrl} target="_blank" rel="noopener noreferrer">
+                        Ver no Mapa <MoveRight className="ml-2" />
+                        </Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    );
+}
+
 
 export function CulturalAgendaSection() {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchEvents().then(data => {
+        fetchUpcomingEvents().then(data => {
             setEvents(data);
             setLoading(false);
         });
     }, []);
 
+    const groupedEvents = useMemo(() => {
+        const groups: Record<string, Event[]> = {};
+        events.forEach(event => {
+            const dateKey = (event.startDate as string).split('T')[0];
+            if (!groups[dateKey]) {
+                groups[dateKey] = [];
+            }
+            groups[dateKey].push(event);
+        });
+        return groups;
+    }, [events]);
+
+    const sortedDates = useMemo(() => Object.keys(groupedEvents).sort(), [groupedEvents]);
+
     if (loading) {
         return (
             <section id="agenda" className="py-16 md:py-24">
                 <div className="container mx-auto px-4 md:px-6">
-                    <div className="mb-12 text-center">
-                        <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
-                            Agenda Cultural de SP
-                        </h2>
-                        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-                            Fique por dentro dos principais eventos da cidade e planeje suas corridas.
-                        </p>
-                    </div>
                     <div className="flex justify-center items-center h-40">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
@@ -85,7 +121,7 @@ export function CulturalAgendaSection() {
     }
 
     if (!events || events.length === 0) {
-        return null;
+        return null; // Don't render the section if there are no events
     }
 
     return (
@@ -99,58 +135,23 @@ export function CulturalAgendaSection() {
                         Fique por dentro dos principais eventos da cidade e planeje suas corridas.
                     </p>
                 </div>
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-                    {events.map((event) => {
-                        const startDate = new Date(event.startDate as string);
-                        
-                        if (isNaN(startDate.getTime())) return null;
-
-                        return (
-                        <Card key={event.id} className="flex flex-col overflow-hidden bg-card">
-                            <CardHeader className="p-0">
-                            <div className="relative aspect-[16/9] w-full">
-                                <Image src={event.imageUrl} alt={event.title} fill className="object-cover" data-ai-hint="event concert festival" />
+                <div className="space-y-10">
+                    {sortedDates.map(date => (
+                        <div key={date}>
+                            <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
+                                <Calendar className="text-primary"/> 
+                                <span className="capitalize">{getDateLabel(date)}</span>
+                            </h3>
+                            <div className="flex overflow-x-auto space-x-6 pb-4 -mx-4 px-4 snap-x snap-mandatory">
+                                {groupedEvents[date].map((event) => (
+                                    <EventCard key={event.id} event={event} />
+                                ))}
                             </div>
-                            <div className="p-6">
-                                <CardTitle className="font-headline text-xl">{event.title}</CardTitle>
-                                <CardDescription className="flex items-center gap-2 pt-1"><MapPin className="h-4 w-4" /> {event.location}</CardDescription>
-                            </div>
-                            </CardHeader>
-                            <CardContent className="flex-1 space-y-4 px-6 pt-0">
-                            <p className="text-sm text-muted-foreground">{event.description}</p>
-                            <div className="space-y-3 text-sm border-t pt-4">
-                                <div className="flex items-start gap-3">
-                                <Calendar className="h-4 w-4 flex-shrink-0 mt-0.5 text-primary" />
-                                <div>
-                                    <span className="font-semibold">Data:</span> {format(startDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                                </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                <Lightbulb className="h-4 w-4 flex-shrink-0 mt-0.5 text-primary" />
-                                <div>
-                                    <span className="font-semibold">Dica:</span> {event.bestTime}
-                                </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                <TrafficCone className="h-4 w-4 flex-shrink-0 mt-0.5 text-primary" />
-                                <div>
-                                    <span className="font-semibold">Trânsito:</span> {event.trafficTips}
-                                </div>
-                                </div>
-                            </div>
-                            </CardContent>
-                            <CardFooter className="px-6 pb-6">
-                            <Button asChild variant="outline" className="w-full">
-                                <Link href={event.mapUrl} target="_blank" rel="noopener noreferrer">
-                                Ver no Mapa <MoveRight className="ml-2" />
-                                </Link>
-                            </Button>
-                            </CardFooter>
-                        </Card>
-                        )
-                    })}
+                        </div>
+                    ))}
                 </div>
             </div>
         </section>
     );
 }
+
