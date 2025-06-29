@@ -12,15 +12,15 @@ import {
   SidebarInset,
   SidebarTrigger
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, PanelLeft, Shield, FilePen, Search, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-import { Skeleton } from "@/components/ui/skeleton";
 import React from "react";
+import { LoadingScreen } from "@/components/loading-screen";
 
 export default function DashboardLayout({
   children,
@@ -42,24 +42,7 @@ export default function DashboardLayout({
   };
 
   if (loading || !user || !userProfile) {
-    return (
-      <div className="flex min-h-screen w-full">
-        <div className="hidden h-screen flex-col gap-4 border-r bg-card p-4 md:flex" style={{width: "16rem"}}>
-          <Skeleton className="h-10" />
-          <div className="flex flex-1 flex-col gap-2">
-            <Skeleton className="h-8" />
-            <Skeleton className="h-8" />
-            <Skeleton className="h-8" />
-          </div>
-          <Skeleton className="h-12" />
-        </div>
-        <div className="flex-1 p-6">
-          <Skeleton className="mb-4 h-12 w-1/3" />
-          <Skeleton className="mb-8 h-6 w-1/2" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
