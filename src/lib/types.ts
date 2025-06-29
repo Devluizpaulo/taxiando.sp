@@ -107,15 +107,17 @@ export interface Course {
 export interface Event {
   id: string;
   title: string;
-  description: string;
   location: string;
-  imageUrl: string;
-  startDate: Timestamp | string; // Allow string for serialized data
-  endDate: Timestamp | string; // Allow string for serialized data
-  bestTime: string;
+  description: string;
+  driverSummary: string;
+  peakTimes: string;
   trafficTips: string;
+  pickupPoints: string;
   mapUrl: string;
-  createdAt: Timestamp | string; // Allow string for serialized data
+  imageUrl: string;
+  startDate: Timestamp | string;
+  endDate: Timestamp | string;
+  createdAt: Timestamp | string;
 }
 
 export interface VehiclePerk {

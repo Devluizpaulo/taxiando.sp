@@ -32,8 +32,10 @@ const eventFormSchema = z.object({
   imageUrl: z.string().min(1, "A URL ou os dados da imagem são obrigatórios."),
   startDate: z.date({ required_error: "A data de início é obrigatória." }),
   endDate: z.date({ required_error: "A data de término é obrigatória." }),
-  bestTime: z.string().min(5, { message: "A dica de melhor horário é obrigatória." }),
+  driverSummary: z.string().min(5, { message: "O resumo tático é obrigatório." }),
+  peakTimes: z.string().min(5, { message: "A dica de horários de pico é obrigatória." }),
   trafficTips: z.string().min(5, { message: "A dica de trânsito é obrigatória." }),
+  pickupPoints: z.string().min(5, { message: "A sugestão de pontos de embarque é obrigatória." }),
   mapUrl: z.string().min(1, "A URL do mapa é obrigatória."),
 }).refine(data => data.endDate >= data.startDate, {
   message: "A data de término deve ser posterior ou igual à data de início.",
@@ -43,7 +45,7 @@ const eventFormSchema = z.object({
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
-const EventPreviewCard = ({ title, location, imageUrl, description, startDate, bestTime, trafficTips }: Partial<EventFormValues>) => {
+const EventPreviewCard = ({ title, location, imageUrl, description, startDate, peakTimes, trafficTips }: Partial<EventFormValues>) => {
     return (
         <Card className="flex flex-col overflow-hidden bg-card shadow-lg">
             <CardHeader className="p-0">
@@ -75,7 +77,7 @@ const EventPreviewCard = ({ title, location, imageUrl, description, startDate, b
                     <div className="flex items-start gap-2">
                         <Lightbulb className="h-3 w-3 flex-shrink-0 mt-0.5 text-primary" />
                         <div className="truncate">
-                            <span className="font-semibold">Dica:</span> {bestTime || "Melhor horário"}
+                            <span className="font-semibold">Pico:</span> {peakTimes || "Horários de pico"}
                         </div>
                     </div>
                     <div className="flex items-start gap-2">
@@ -109,8 +111,10 @@ export default function CreateEventPage() {
             description: '',
             location: '',
             imageUrl: '',
-            bestTime: '',
+            driverSummary: '',
+            peakTimes: '',
             trafficTips: '',
+            pickupPoints: '',
             mapUrl: '',
         },
     });
@@ -124,15 +128,17 @@ export default function CreateEventPage() {
             description: "A IA está gerando os detalhes do evento. Isso pode levar alguns segundos.",
         });
         try {
-            const result = await planEvent({ locationQuery: searchQuery });
+            const result = await planEvent({ eventQuery: searchQuery });
             
-            form.setValue('title', searchQuery, { shouldValidate: true });
+            form.setValue('title', result.title, { shouldValidate: true });
             form.setValue('location', result.location, { shouldValidate: true });
             form.setValue('description', result.description, { shouldValidate: true });
             form.setValue('imageUrl', result.imageUrl, { shouldValidate: true });
             form.setValue('mapUrl', result.mapUrl, { shouldValidate: true });
-            form.setValue('bestTime', result.bestTime, { shouldValidate: true });
+            form.setValue('driverSummary', result.driverSummary, { shouldValidate: true });
+            form.setValue('peakTimes', result.peakTimes, { shouldValidate: true });
             form.setValue('trafficTips', result.trafficTips, { shouldValidate: true });
+            form.setValue('pickupPoints', result.pickupPoints, { shouldValidate: true });
 
             toast({
                 title: "Detalhes Preenchidos!",
@@ -144,7 +150,7 @@ export default function CreateEventPage() {
             toast({
                 variant: 'destructive',
                 title: 'Erro ao Gerar Detalhes',
-                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manualmente.',
+                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manually.',
             });
         } finally {
             setIsGenerating(false);
@@ -184,8 +190,10 @@ export default function CreateEventPage() {
                 imageUrl: finalImageUrl,
                 startDate: Timestamp.fromDate(values.startDate),
                 endDate: Timestamp.fromDate(values.endDate),
-                bestTime: values.bestTime,
+                driverSummary: values.driverSummary,
+                peakTimes: values.peakTimes,
                 trafficTips: values.trafficTips,
+                pickupPoints: values.pickupPoints,
                 mapUrl: values.mapUrl,
                 createdAt: serverTimestamp(),
             };
@@ -222,17 +230,18 @@ export default function CreateEventPage() {
                      <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> Assistente de IA para Eventos</CardTitle>
-                            <CardDescription>Digite o nome de um local (ex: "Museu do Ipiranga") e deixe a IA preencher os detalhes e gerar uma imagem para você.</CardDescription>
+                            <CardDescription>Digite a descrição de um evento (ex: "Show da Taylor Swift no Allianz Parque, 45 mil pessoas...") e deixe a IA preencher os detalhes para você.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex gap-2">
-                                <Input 
+                            <div className="flex flex-col gap-2">
+                                <Textarea 
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Digite o nome de um local ou atração..."
+                                placeholder="Descreva o evento aqui..."
                                 disabled={isGenerating}
+                                rows={3}
                                 />
-                                <Button type="button" onClick={handleGenerateDetails} disabled={isGenerating || !searchQuery}>
+                                <Button type="button" onClick={handleGenerateDetails} disabled={isGenerating || !searchQuery} className="self-end">
                                 {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                                 {isGenerating ? 'Gerando...' : 'Gerar Detalhes'}
                                 </Button>
@@ -269,15 +278,21 @@ export default function CreateEventPage() {
 
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Dicas para Motoristas</CardTitle>
-                                    <CardDescription>Informações úteis para ajudar os profissionais a se planejarem.</CardDescription>
+                                    <CardTitle>Dicas Táticas para Motoristas</CardTitle>
+                                    <CardDescription>Informações geradas pela IA para ajudar os profissionais.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
-                                    <FormField control={form.control} name="bestTime" render={({ field }) => (
-                                        <FormItem><FormLabel>Melhor Horário para Atendimento</FormLabel><FormControl><Input {...field} placeholder="Ex: Picos de movimento são na abertura e no encerramento." /></FormControl><FormMessage /></FormItem>
+                                    <FormField control={form.control} name="driverSummary" render={({ field }) => (
+                                        <FormItem><FormLabel>Resumo Tático</FormLabel><FormControl><Textarea {...field} placeholder="Resumo da oportunidade para o motorista." /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                    <FormField control={form.control} name="peakTimes" render={({ field }) => (
+                                        <FormItem><FormLabel>Horários de Pico (Chegada e Saída)</FormLabel><FormControl><Input {...field} placeholder="Ex: Chegada: 18h-20h, Saída: 23h-00:30h" /></FormControl><FormMessage /></FormItem>
                                     )}/>
                                     <FormField control={form.control} name="trafficTips" render={({ field }) => (
-                                        <FormItem><FormLabel>Dicas de Trânsito</FormLabel><FormControl><Textarea {...field} placeholder="Ex: Ruas próximas como a Rua Direita estarão bloqueadas. Prefira o acesso pela Av. Rangel Pestana." /></FormControl><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>Dicas de Trânsito</FormLabel><FormControl><Textarea {...field} placeholder="Ex: Ruas próximas podem estar bloqueadas. Prefira acesso pela Av. XYZ." /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                     <FormField control={form.control} name="pickupPoints" render={({ field }) => (
+                                        <FormItem><FormLabel>Sugestão de Pontos de Embarque</FormLabel><FormControl><Textarea {...field} placeholder="Ex: Embarque sugerido na Rua ABC, esquina com a Rua 123, para fugir do fluxo." /></FormControl><FormMessage /></FormItem>
                                     )}/>
                                 </CardContent>
                             </Card>
