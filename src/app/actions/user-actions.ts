@@ -1,5 +1,4 @@
 'use server';
-console.log('[USER ACTION] File loaded.');
 
 import { revalidatePath } from 'next/cache';
 import { db, auth as serverAuth, Timestamp } from '@/lib/firebase-admin';
@@ -16,11 +15,13 @@ const adminSchema = baseSchema.extend({
   role: z.literal('admin'),
   name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
   cpf: z.string().min(11, { message: 'O CPF é obrigatório.' }),
+  personType: z.literal('pf').optional(), // Included for consistency
 });
 
 const driverSchema = baseSchema.extend({
   role: z.literal('driver'),
   name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
+  personType: z.literal('pf').optional(), // Included for consistency
 });
 
 const fleetPfSchema = baseSchema.extend({
@@ -35,6 +36,8 @@ const fleetPjSchema = baseSchema.extend({
     razaoSocial: z.string().optional(),
     cnpj: z.string().optional(),
 });
+const fleetSchema = z.discriminatedUnion('personType', [fleetPfSchema, fleetPjSchema]);
+
 
 const providerPfSchema = baseSchema.extend({
     role: z.literal('provider'),
@@ -49,16 +52,15 @@ const providerPjSchema = baseSchema.extend({
     razaoSocial: z.string().optional(),
     cnpj: z.string().optional(),
 });
+const providerSchema = z.discriminatedUnion('personType', [providerPfSchema, providerPjSchema]);
 
 
 // Union of all possible schemas
 const registrationSchema = z.discriminatedUnion("role", [
     adminSchema,
     driverSchema,
-    fleetPfSchema,
-    fleetPjSchema,
-    providerPfSchema,
-    providerPjSchema,
+    fleetSchema,
+    providerSchema,
 ]);
 
 
@@ -69,54 +71,43 @@ export async function registerUser(data: any) {
         console.log('[USER ACTION] Data validated successfully for role:', validatedData.role);
 
         if (validatedData.role === 'admin') {
-            console.log('[USER ACTION] Admin registration: Checking for existing admin...');
             const usersRef = db.collection('users');
             const adminQuery = await usersRef.where('role', '==', 'admin').limit(1).get();
             if (!adminQuery.empty) {
-                console.error('[USER ACTION] ERROR: An admin user already exists.');
                 return { success: false, error: 'Um administrador já existe. Não é possível criar outro.' };
             }
-            console.log('[USER ACTION] No existing admin found. Proceeding.');
         }
 
-        console.log('[USER ACTION] Creating user in Firebase Auth...');
         const userRecord = await serverAuth.createUser({
             email: validatedData.email,
             password: validatedData.password,
             displayName: 'name' in validatedData ? validatedData.name : validatedData.nomeFantasia,
         });
-        console.log(`[USER ACTION] Firebase Auth user created successfully. UID: ${userRecord.uid}`);
-
-        // Base user data object
-        const userData: Record<string, any> = {
+        
+        // This is the critical part: build the object safely for Firestore
+        const { password, ...payload } = validatedData;
+        
+        const userData: { [key: string]: any } = {
             uid: userRecord.uid,
-            email: validatedData.email,
-            role: validatedData.role,
+            email: payload.email,
+            role: payload.role,
             createdAt: Timestamp.now(),
-            profileStatus: validatedData.role === 'admin' ? 'approved' : 'incomplete',
+            profileStatus: payload.role === 'admin' ? 'approved' : 'incomplete',
         };
 
-        // Add role-specific fields
-        switch (validatedData.role) {
-            case 'admin':
-                userData.name = validatedData.name;
-                userData.cpf = validatedData.cpf;
-                break;
-            case 'driver':
-                userData.name = validatedData.name;
-                userData.personType = 'pf';
-                break;
-            case 'fleet':
-            case 'provider':
-                 userData.personType = validatedData.personType;
-                if (validatedData.personType === 'pf') {
-                    userData.name = validatedData.name;
-                } else {
-                    userData.nomeFantasia = validatedData.nomeFantasia;
-                    userData.razaoSocial = validatedData.razaoSocial;
-                    userData.cnpj = validatedData.cnpj;
-                }
-                break;
+        if ('name' in payload) userData.name = payload.name;
+        if ('cpf' in payload) userData.cpf = payload.cpf;
+
+        if ('personType' in payload) {
+            userData.personType = payload.personType;
+            if (payload.personType === 'pj') {
+                if ('nomeFantasia' in payload) userData.nomeFantasia = payload.nomeFantasia;
+                if (payload.razaoSocial) userData.razaoSocial = payload.razaoSocial;
+                if (payload.cnpj) userData.cnpj = payload.cnpj;
+            }
+        } else if (payload.role === 'driver') {
+            // Ensure driver has personType pf
+            userData.personType = 'pf';
         }
         
         console.log('[USER ACTION] Preparing to save user profile to Firestore. Data:', userData);
@@ -129,17 +120,18 @@ export async function registerUser(data: any) {
     } catch (error: any) {
         let errorMessage = 'Não foi possível criar a conta.';
          if (error instanceof z.ZodError) {
-            errorMessage = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ');
+            console.error("Zod Validation Error:", error.flatten());
+            errorMessage = error.errors.map(e => e.message).join('; ');
         } else if (error.code === 'auth/email-already-exists') {
             errorMessage = 'Este email já está em uso por outra conta.';
         } else {
-             errorMessage = 'Ocorreu um erro inesperado. Por favor, tente novamente.';
+             errorMessage = 'Ocorreu um erro inesperado durante o cadastro. Verifique os dados e tente novamente.';
         }
         
         console.error("================ REGISTRATION FAILED ================");
         console.error("Error Code:", error.code);
         console.error("Error Message:", error.message);
-        console.error("Error Object:", error);
+        console.error("Full Error Object:", error);
         console.error("=====================================================");
 
         return { success: false, error: errorMessage };
