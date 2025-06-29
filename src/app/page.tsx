@@ -11,6 +11,7 @@ import Link from "next/link";
 import { QuizSection } from "@/components/quiz-section";
 import { CulturalAgendaSection } from "@/components/cultural-agenda-section";
 import { mockVehicles, mockServiceListings } from "@/lib/mock-data";
+import { trackPageView } from "./actions/analytics-actions";
 
 const blogPosts = [
   {
@@ -40,7 +41,9 @@ const blogPosts = [
 ];
 
 
-export default function Home() {
+export default async function Home() {
+  await trackPageView('home');
+  
   return (
     <div className="flex min-h-screen flex-col">
       <PublicHeader />

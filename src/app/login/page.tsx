@@ -19,6 +19,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { PublicHeader } from '@/components/layout/public-header';
 import { PublicFooter } from '@/components/layout/public-footer';
+import { trackLogin } from '../actions/analytics-actions';
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
@@ -42,7 +43,8 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof loginFormSchema>) {
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      await trackLogin(userCredential.user.uid);
       router.push('/dashboard');
     } catch (error: any) {
       console.error('Login failed:', error);
