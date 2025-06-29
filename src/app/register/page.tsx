@@ -61,8 +61,13 @@ const registerSchema = z.discriminatedUnion("role", [
     path: ["confirmPassword"],
 }).refine(data => {
     if (data.role === 'fleet' || data.role === 'provider') {
-        if (data.personType === 'pf') return !!data.name && !!data.cpf;
-        if (data.personType === 'pj') return !!data.nomeFantasia; // CNPJ is optional
+        if (data.personType === 'pf') {
+             if (!data.name || data.name.length < 3) return false;
+             if (!data.cpf || data.cpf.length < 11) return false;
+        }
+        if (data.personType === 'pj') {
+            if (!data.nomeFantasia || data.nomeFantasia.length < 3) return false;
+        }
     }
     return true;
 }, {
