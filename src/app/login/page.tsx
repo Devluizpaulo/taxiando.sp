@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -15,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Car, Building, Wrench, ArrowLeft } from 'lucide-react';
+import { Loader2, Car, Building, Wrench, ArrowLeft, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { PublicHeader } from '@/components/layout/public-header';
@@ -26,12 +25,13 @@ const loginFormSchema = z.object({
   password: z.string().min(1, { message: 'A senha é obrigatória.' }),
 });
 
-type Role = 'driver' | 'fleet' | 'provider';
+type Role = 'driver' | 'fleet' | 'provider' | 'admin';
 
 const roles: { id: Role; title: string; description: string; icon: React.ElementType, image: string, imageHint: string }[] = [
     { id: 'driver', title: 'Motorista', description: 'Acesse seu painel e encontre veículos para alugar.', icon: Car, image: 'https://placehold.co/600x400.png', imageHint: 'taxi city night' },
     { id: 'fleet', title: 'Frota', description: 'Gerencie seus veículos e motoristas.', icon: Building, image: 'https://placehold.co/600x400.png', imageHint: 'modern office building' },
     { id: 'provider', title: 'Prestador', description: 'Gerencie seus serviços e anúncios.', icon: Wrench, image: 'https://placehold.co/600x400.png', imageHint: 'car workshop' },
+    { id: 'admin', title: 'Administrador', description: 'Gerencie a plataforma e usuários.', icon: Shield, image: 'https://placehold.co/600x400.png', imageHint: 'server room data center' },
 ];
 
 export default function LoginPage() {
@@ -68,15 +68,23 @@ export default function LoginPage() {
   const selectedRoleData = roles.find(r => r.id === selectedRole);
 
   const getLoginTitle = () => {
-      if (!selectedRoleData) return "Acesse sua conta";
-      if (selectedRoleData.id === 'driver') return `Login de ${selectedRoleData.title}`;
-      return `Login da ${selectedRoleData.title}`;
+    if (!selectedRoleData) return "Acesse sua conta";
+    switch(selectedRoleData.id) {
+        case 'driver':
+        case 'provider':
+        case 'admin':
+            return `Login de ${selectedRoleData.title}`;
+        case 'fleet':
+            return `Login da ${selectedRoleData.title}`;
+        default:
+            return `Acesse sua conta`;
+    }
   }
   
   const getLoginLabel = () => {
       if (!selectedRoleData) return "Email";
-      if (selectedRoleData.id === 'driver') return "Seu Email";
-      return "Email da Empresa";
+      if (selectedRoleData.id === 'fleet') return "Email da Empresa";
+      return "Seu Email";
   }
 
 
