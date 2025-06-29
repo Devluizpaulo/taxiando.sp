@@ -7,9 +7,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import Image from 'next/image';
 
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -20,6 +21,8 @@ import Link from 'next/link';
 import { PublicHeader } from '@/components/layout/public-header';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { trackLogin } from '../actions/analytics-actions';
+import { type UserProfile } from '@/lib/types';
+
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
@@ -45,7 +48,23 @@ export default function LoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       await trackLogin(userCredential.user.uid);
-      router.push('/dashboard');
+
+      // Fetch user role from Firestore to redirect correctly
+      const userDocRef = doc(db, 'users', userCredential.user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userProfile = userDoc.data() as UserProfile;
+        if (userProfile.role === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/dashboard');
+        }
+      } else {
+        // Fallback to dashboard if profile doesn't exist for some reason
+        router.push('/dashboard');
+      }
+
     } catch (error: any) {
       console.error('Login failed:', error);
       toast({
