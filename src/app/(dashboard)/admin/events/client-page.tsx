@@ -10,28 +10,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { LoadingScreen } from '@/components/loading-screen';
 
 export default function EventsClientPage({ initialEvents }: { initialEvents: Event[] }) {
-    useAuthProtection({ requiredRoles: ['admin'] });
+    const { loading } = useAuthProtection({ requiredRoles: ['admin'] });
     const [events, setEvents] = useState<Event[]>(initialEvents);
-    const [loading, setLoading] = useState(false); // Data is pre-fetched, so loading is minimal
 
     if (loading) {
-        return (
-            <div className="flex flex-col gap-8">
-                <Skeleton className="h-10 w-1/3" />
-                <Skeleton className="h-6 w-1/2" />
-                <Card>
-                    <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
-                    <CardContent className="space-y-2">
-                        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-                    </CardContent>
-                </Card>
-            </div>
-        );
+        return <LoadingScreen />;
     }
 
     return (

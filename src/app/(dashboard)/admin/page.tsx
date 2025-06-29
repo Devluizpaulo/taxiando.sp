@@ -11,10 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, Wrench, CreditCard, ShoppingCart } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
-import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { mockUsers, mockOpportunities, mockServiceListings, mockCourses } from '@/lib/mock-data';
 import { useState } from 'react';
+import { LoadingScreen } from '@/components/loading-screen';
 
 const chartData = [
   { month: "Jan", users: 50 },
@@ -35,10 +35,9 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
 };
 
 export default function AdminPage() {
-    useAuthProtection({ requiredRoles: ['admin'] });
+    const { loading: authLoading } = useAuthProtection({ requiredRoles: ['admin'] });
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     
-    const { loading: authLoading } = useAuthProtection();
 
     const handleSelectAll = (checked: boolean | 'indeterminate') => {
         if (checked === true) {
@@ -61,18 +60,7 @@ export default function AdminPage() {
     };
 
     if (authLoading) {
-      return (
-        <div className="flex flex-col gap-8">
-          <Skeleton className="h-10 w-1/2" />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-          </div>
-          <Skeleton className="h-96" />
-        </div>
-      );
+      return <LoadingScreen />;
     }
     
     return (

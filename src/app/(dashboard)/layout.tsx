@@ -42,7 +42,7 @@ export default function DashboardLayout({
   };
 
   if (loading || !user || !userProfile) {
-    return <LoadingScreen />;
+    return <LoadingScreen className="fixed inset-0 z-50" />;
   }
 
   return (
@@ -153,7 +153,7 @@ export default function DashboardLayout({
               Sair
             </Button>
         </header>
-        <main className="flex-1 p-4 sm:p-6">
+        <main className="flex flex-1 flex-col p-4 sm:p-6">
             {children}
         </main>
       </SidebarInset>

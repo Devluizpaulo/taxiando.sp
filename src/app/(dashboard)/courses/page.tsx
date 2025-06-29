@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { BookOpen, Clock, MoveRight } from "lucide-react";
 import Link from "next/link";
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingScreen } from '@/components/loading-screen';
 
 
 export default function CoursesPage() {
@@ -45,20 +45,7 @@ export default function CoursesPage() {
     }, [searchTerm, allCourses]);
 
   if (loading) {
-    return (
-       <div className="flex flex-col gap-8">
-            <div>
-                <Skeleton className="h-10 w-1/3" />
-                <Skeleton className="mt-2 h-6 w-1/2" />
-            </div>
-            <Card><CardContent className="p-4"><Skeleton className="h-10 max-w-sm" /></CardContent></Card>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Skeleton className="h-64" />
-                <Skeleton className="h-64" />
-                <Skeleton className="h-64" />
-            </div>
-        </div>
-    )
+    return <LoadingScreen />;
   }
 
   return (

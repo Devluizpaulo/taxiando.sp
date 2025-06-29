@@ -10,12 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Instagram, MessageSquare, Car, MapPin, Building, Sparkles, User, ShieldCheck, Fuel, Calendar, Wrench, CreditCard } from "lucide-react";
 import { vehiclePerks, fleetAmenities } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 import { ToastAction } from '@/components/ui/toast';
 import { FacebookIcon } from '@/components/icons/facebook-icon';
+import { LoadingScreen } from '@/components/loading-screen';
 
 const vehicle = { 
     id: 'v_1',
@@ -51,10 +51,9 @@ const fleet = {
 }
 
 export default function RentalDetailsPage({ params }: { params: { id: string } }) {
-    const { user, userProfile } = useAuth();
+    const { user, userProfile, loading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
-    const [loading, setLoading] = useState(false); 
 
     const handleApply = () => {
         if (!user || !userProfile) {
@@ -81,12 +80,7 @@ export default function RentalDetailsPage({ params }: { params: { id: string } }
     }
 
     if (loading) {
-        return (
-             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-                <div className="lg:col-span-2 space-y-6"><Skeleton className="h-96 w-full rounded-lg" /><Skeleton className="h-64 w-full" /></div>
-                <div className="lg:col-span-1"><Card><CardHeader><Skeleton className="h-80 w-full" /></CardHeader></Card></div>
-            </div>
-        )
+        return <LoadingScreen className="h-full" />;
     }
 
     return (

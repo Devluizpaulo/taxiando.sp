@@ -11,8 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, Eye, Star, Wrench, Tag, DollarSign, FilePen, ChevronRight } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { mockServiceListings } from '@/lib/mock-data';
+import { LoadingScreen } from '@/components/loading-screen';
 
 
 export default function ServicesPage() {
@@ -20,17 +20,7 @@ export default function ServicesPage() {
     const [services, setServices] = useState(mockServiceListings);
 
     if (loading) {
-        return (
-          <div className="flex flex-col gap-8">
-            <Skeleton className="h-10 w-1/2" />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Skeleton className="h-28" />
-              <Skeleton className="h-28" />
-              <Skeleton className="h-28" />
-            </div>
-            <Skeleton className="h-96" />
-          </div>
-        );
+        return <LoadingScreen />;
     }
     
     return (

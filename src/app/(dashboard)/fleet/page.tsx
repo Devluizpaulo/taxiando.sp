@@ -21,12 +21,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight } from "lucide-react";
-import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { vehiclePerks } from '@/lib/data';
 import { mockVehicles, mockApplications } from '@/lib/mock-data';
+import { LoadingScreen } from '@/components/loading-screen';
 
 
 const getVehicleStatusVariant = (status: Vehicle['status']): "default" | "secondary" | "destructive" | "outline" => {
@@ -181,14 +181,7 @@ export default function FleetPage() {
 
 
     if (loading) {
-        return (
-            <div className="flex flex-col gap-8">
-                <Skeleton className="h-10 w-1/2" />
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"><Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" /></div>
-                <Skeleton className="h-96" />
-                <Skeleton className="h-96" />
-            </div>
-        );
+        return <LoadingScreen />;
     }
 
     return (

@@ -15,10 +15,10 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Instagram, MessageSquare } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FacebookIcon } from '@/components/icons/facebook-icon';
+import { LoadingScreen } from '@/components/loading-screen';
 
 const providerProfileSchema = z.object({
   personType: z.enum(['pf', 'pj']),
@@ -81,13 +81,7 @@ export default function ProviderProfilePage() {
     }, [userProfile, loading, form]);
 
      if (loading || !userProfile) {
-        return (
-            <div className="space-y-6">
-                <Skeleton className="h-10 w-1/3" />
-                <Skeleton className="h-96 w-full" />
-                <Skeleton className="h-64 w-full" />
-            </div>
-        );
+        return <LoadingScreen />;
     }
 
     const onSubmit = async (values: ProviderProfileValues) => {

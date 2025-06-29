@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingScreen } from '@/components/loading-screen';
 
 export default function AdminBillingPage() {
     const [packages, setPackages] = useState<CreditPackage[]>([]);
@@ -36,17 +36,7 @@ export default function AdminBillingPage() {
     }, []);
 
     if (loading) {
-        return (
-            <div className="flex flex-col gap-8">
-                <Skeleton className="h-10 w-1/3" />
-                <Card>
-                    <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
-                    <CardContent className="space-y-2">
-                        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-                    </CardContent>
-                </Card>
-            </div>
-        );
+        return <LoadingScreen />;
     }
 
     return (

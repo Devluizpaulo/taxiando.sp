@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from "next/link";
-import { doc, getDoc, DocumentData } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { markLessonAsComplete } from '@/app/actions/course-actions';
@@ -12,13 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from '@/components/ui/skeleton';
 import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { type Course, type Lesson } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { LoadingScreen } from '@/components/loading-screen';
 
 
 const getLessonIcon = (type: Lesson['type']) => {
@@ -84,19 +84,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
     };
 
     if (loading) {
-        return (
-             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-                <div className="lg:col-span-2 space-y-6">
-                    <Skeleton className="h-8 w-1/4" />
-                    <Skeleton className="h-10 w-3/4" />
-                    <Skeleton className="h-6 w-full" />
-                    <Card><CardHeader><Skeleton className="h-80 w-full" /></CardHeader></Card>
-                </div>
-                <div className="lg:col-span-1">
-                    <Card className="sticky top-20"><CardHeader><Skeleton className="h-64 w-full" /></CardHeader></Card>
-                </div>
-            </div>
-        )
+        return <LoadingScreen />;
     }
 
     if (!course) {

@@ -13,8 +13,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Briefcase, FileCheck, Search, Award, AlertTriangle, ShieldCheck, HelpCircle, UserPlus, Car } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { LoadingScreen } from '@/components/loading-screen';
 
 
 interface CourseWithProgress extends Course {
@@ -123,31 +123,7 @@ export default function DashboardPage() {
     }, [user, userProfile, authLoading]);
 
     if (authLoading || loading) {
-        return (
-            <div className="flex flex-col gap-8">
-                <Skeleton className="h-10 w-1/2" />
-                <Skeleton className="h-6 w-1/3" />
-                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Skeleton className="h-28" />
-                    <Skeleton className="h-28" />
-                    <Skeleton className="h-28" />
-                    <Skeleton className="h-28" />
-                </div>
-                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-                    <div className="lg:col-span-2 space-y-4">
-                        <Skeleton className="h-8 w-1/3" />
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                           <Skeleton className="h-52" />
-                           <Skeleton className="h-52" />
-                        </div>
-                    </div>
-                    <div className="lg:col-span-1 space-y-8">
-                       <Skeleton className="h-48" />
-                       <Skeleton className="h-64" />
-                    </div>
-                 </div>
-            </div>
-        );
+        return <LoadingScreen />;
     }
     
     return (

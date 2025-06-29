@@ -2,12 +2,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useAuth, UserProfile } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -19,10 +19,10 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Camera } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DatePicker } from '@/components/ui/datepicker';
+import { LoadingScreen } from '@/components/loading-screen';
 
 const profileFormSchema = z.object({
   // Perfil
@@ -120,13 +120,7 @@ export default function CompleteProfilePage() {
     }, [userProfile, loading, form]);
 
     if (loading) {
-        return (
-            <div className="space-y-6">
-                <Skeleton className="h-10 w-1/3" />
-                <Skeleton className="h-96 w-full" />
-                <Skeleton className="h-64 w-full" />
-            </div>
-        );
+        return <LoadingScreen />;
     }
     
     if (!user) {

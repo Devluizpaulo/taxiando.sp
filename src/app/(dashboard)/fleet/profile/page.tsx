@@ -16,10 +16,10 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Instagram, MessageSquare } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { fleetAmenities } from '@/lib/data';
 import { FacebookIcon } from '@/components/icons/facebook-icon';
+import { LoadingScreen } from '@/components/loading-screen';
 
 const fleetProfileSchema = z.object({
   companyDescription: z.string().min(20, "A descrição deve ter no mínimo 20 caracteres.").max(500, "A descrição deve ter no máximo 500 caracteres."),
@@ -67,13 +67,7 @@ export default function FleetProfilePage() {
     }, [userProfile, loading, form]);
 
      if (loading || !userProfile) {
-        return (
-            <div className="space-y-6">
-                <Skeleton className="h-10 w-1/3" />
-                <Skeleton className="h-96 w-full" />
-                <Skeleton className="h-64 w-full" />
-            </div>
-        );
+        return <LoadingScreen />;
     }
 
     const onSubmit = async (values: FleetProfileValues) => {

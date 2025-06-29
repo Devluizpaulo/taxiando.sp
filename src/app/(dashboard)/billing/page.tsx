@@ -15,8 +15,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { CreditCard, Loader2, ShoppingCart } from "lucide-react";
-import { Skeleton } from '@/components/ui/skeleton';
 import { mockTransactions } from '@/lib/mock-data';
+import { LoadingScreen } from '@/components/loading-screen';
 
 export default function BillingPage() {
     const { user, userProfile, setUserProfile, loading: authLoading } = useAuth();
@@ -87,21 +87,7 @@ export default function BillingPage() {
     }
 
     if (authLoading || loading) {
-         return (
-            <div className="flex flex-col gap-8">
-                <Skeleton className="h-10 w-1/3" />
-                <Skeleton className="h-6 w-1/2" />
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Skeleton className="h-28" />
-                </div>
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    <Skeleton className="h-56" />
-                    <Skeleton className="h-56" />
-                    <Skeleton className="h-56" />
-                </div>
-                <Skeleton className="h-64" />
-            </div>
-        );
+         return <LoadingScreen />;
     }
 
     return (

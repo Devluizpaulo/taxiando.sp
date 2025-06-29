@@ -10,9 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, BookCopy, BarChart2, Loader2 } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, BookCopy, BarChart2 } from 'lucide-react';
 import Link from 'next/link';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingScreen } from '@/components/loading-screen';
 
 
 export default function AdminCoursesPage() {
@@ -40,24 +40,7 @@ export default function AdminCoursesPage() {
     }, []);
 
     if (loading) {
-      return (
-        <div className="flex flex-col gap-8">
-            <Skeleton className="h-10 w-1/3" />
-            <Skeleton className="h-6 w-1/2" />
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Skeleton className="h-28" />
-                <Skeleton className="h-28" />
-            </div>
-            <Card>
-                <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
-                <CardContent className="space-y-2">
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                </CardContent>
-            </Card>
-        </div>
-      )
+      return <LoadingScreen />;
     }
 
     return (
