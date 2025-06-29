@@ -1,4 +1,5 @@
 'use server';
+console.log('[USER ACTION] File loaded.');
 
 import { revalidatePath } from 'next/cache';
 import { db, auth as serverAuth } from '@/lib/firebase-admin';
@@ -46,7 +47,7 @@ export async function registerUser(data: any) {
             personType: z.enum(['pf', 'pj']).optional()
         }).parse(data);
 
-        let validatedData;
+        let validatedData: any;
         
         console.log(`[USER ACTION] Validating for role: ${role}, personType: ${personType}`);
         // Server-side validation based on role
@@ -86,15 +87,15 @@ export async function registerUser(data: any) {
 
         console.log('[USER ACTION] Creating user in Firebase Auth...');
         const userRecord = await serverAuth.createUser({
-            email: data.email,
-            password: data.password,
-            displayName: data.name || data.nomeFantasia,
+            email: validatedData.email,
+            password: validatedData.password,
+            displayName: validatedData.name || validatedData.nomeFantasia,
         });
         console.log(`[USER ACTION] Firebase Auth user created successfully. UID: ${userRecord.uid}`);
 
         const userData: any = {
             uid: userRecord.uid,
-            email: data.email,
+            email: validatedData.email,
             role: role,
             createdAt: new Date(),
             profileStatus: 'incomplete', // Default for all new users except admin
@@ -105,16 +106,16 @@ export async function registerUser(data: any) {
             userData.cpf = validatedData.cpf;
             userData.profileStatus = 'approved';
         } else if (role === 'driver') {
-            userData.name = (validatedData as z.infer<typeof driverSchema>).name;
+            userData.name = validatedData.name;
             userData.personType = 'pf';
         } else { // Fleet or Provider
             userData.personType = personType;
             if (personType === 'pf') {
-                userData.name = (validatedData as z.infer<typeof companyPfSchema>).name;
+                userData.name = validatedData.name;
             } else {
-                userData.razaoSocial = (validatedData as z.infer<typeof companyPjSchema>).razaoSocial;
-                userData.nomeFantasia = (validatedData as z.infer<typeof companyPjSchema>).nomeFantasia;
-                userData.cnpj = (validatedData as z.infer<typeof companyPjSchema>).cnpj;
+                userData.razaoSocial = validatedData.razaoSocial;
+                userData.nomeFantasia = validatedData.nomeFantasia;
+                userData.cnpj = validatedData.cnpj;
             }
         }
         
@@ -131,12 +132,14 @@ export async function registerUser(data: any) {
             errorMessage = error.errors.map(e => e.message).join(' ');
         } else if (error.code === 'auth/email-already-exists') {
             errorMessage = 'Este email já está em uso por outra conta.';
+        } else {
+             errorMessage = 'Ocorreu um erro. Por favor, tente novamente.';
         }
         
         console.error("================ REGISTRATION FAILED ================");
         console.error("Error Code:", error.code);
         console.error("Error Message:", error.message);
-        console.error("Full Error Object:", JSON.stringify(error, null, 2));
+        console.error("Full Error Object:", error);
         console.error("=====================================================");
 
         return { success: false, error: errorMessage };
