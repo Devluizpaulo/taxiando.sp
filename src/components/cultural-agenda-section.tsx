@@ -11,14 +11,23 @@ import { ptBR } from 'date-fns/locale';
 
 async function fetchEvents(): Promise<Event[]> {
   try {
-    const today = new Date();
-    const nextWeek = new Date();
-    nextWeek.setDate(today.getDate() + 7);
+    const now = new Date();
+    // Sunday is 0, Monday is 1, etc. We'll define the week as Monday to Sunday.
+    const dayOfWeek = now.getDay();
+    const diffToMonday = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust for Sunday
+
+    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), diffToMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
 
     const eventsCollection = adminDB.collection('events');
+    // Find events starting within the current calendar week (Monday to Sunday)
     const q = eventsCollection
-      .where('startDate', '>=', Timestamp.fromDate(today))
-      .where('startDate', '<=', Timestamp.fromDate(nextWeek))
+      .where('startDate', '>=', Timestamp.fromDate(startOfWeek))
+      .where('startDate', '<=', Timestamp.fromDate(endOfWeek))
       .orderBy('startDate', 'asc');
 
     const querySnapshot = await q.get();
@@ -26,7 +35,8 @@ async function fetchEvents(): Promise<Event[]> {
     // The Admin SDK returns data compatible with the Event type, including Timestamps
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
   } catch (error) {
-    console.error("Error fetching events: ", error);
+    console.error("Error fetching weekly events: ", error);
+    // If there's an error (e.g., missing permissions or indexes), return empty so the section is hidden
     return [];
   }
 }
@@ -34,7 +44,8 @@ async function fetchEvents(): Promise<Event[]> {
 export async function CulturalAgendaSection() {
   const events = await fetchEvents();
 
-  if (events.length === 0) {
+  // If there are no events for the current week, the entire section will be hidden.
+  if (!events || events.length === 0) {
     return null;
   }
 
@@ -52,6 +63,7 @@ export async function CulturalAgendaSection() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           {events.map((event) => {
             const startDate = (event.startDate as unknown as Timestamp)?.toDate();
+            // This check is important in case of malformed data in Firestore.
             if (!startDate) return null;
 
             return (
