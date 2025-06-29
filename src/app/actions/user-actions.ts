@@ -25,10 +25,12 @@ export async function registerUser(data: RegisterFormData) {
         // --- Logic for Admin Creation ---
         if (validatedData.role === 'admin') {
             const usersRef = db.collection('users');
+            // Query for any document where the role is 'admin'.
             const adminQuery = await usersRef.where('role', '==', 'admin').limit(1).get();
 
+            // If the query returns any documents, an admin already exists.
             if (!adminQuery.empty) {
-                return { success: false, error: 'Um administrador já existe para esta plataforma.' };
+                return { success: false, error: 'Um administrador já existe para esta plataforma. Não é possível criar outro.' };
             }
         }
         // --- End Admin Logic ---
@@ -49,6 +51,7 @@ export async function registerUser(data: RegisterFormData) {
         if (validatedData.role === 'admin') {
             userData.name = validatedData.name;
             userData.cpf = validatedData.cpf;
+            // Admins are automatically approved.
             userData.profileStatus = 'approved';
         } else if (validatedData.role === 'driver') {
             userData.name = validatedData.name;
@@ -66,6 +69,7 @@ export async function registerUser(data: RegisterFormData) {
             }
         }
         
+        // The firestore.rules now allow this operation for the new user.
         await db.collection('users').doc(userRecord.uid).set(userData);
 
         revalidatePath('/');
