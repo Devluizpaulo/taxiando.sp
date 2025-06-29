@@ -5,6 +5,65 @@ import { type Timestamp } from "firebase/firestore";
 // they should be converted to a serializable format like an ISO string or number.
 // The client can then convert them back to Date objects.
 
+export interface UserProfile {
+    uid: string;
+    email: string;
+    role: 'driver' | 'fleet' | 'admin' | 'provider';
+    createdAt: Timestamp;
+    profileStatus?: 'incomplete' | 'pending_review' | 'approved' | 'rejected' | 'N/A';
+    
+    // Driver: Personal & Contact
+    name?: string;
+    phone?: string;
+    hasWhatsApp?: boolean;
+    bio?: string;
+    photoUrl?: string;
+
+    // Driver: Documents
+    cnhNumber?: string;
+    cnhCategory?: 'A' | 'B' | 'C' | 'D' | 'E' | 'AB' | 'AC' | 'AD' | 'AE';
+    cnhExpiration?: Timestamp;
+    condutaxNumber?: string;
+    condutaxExpiration?: Timestamp;
+    alvaraExpiration?: Timestamp;
+    vehicleLicensePlate?: string;
+    cnhPoints?: number;
+
+    // Driver: Qualifications
+    specializedCourses?: string[];
+    
+    // Driver: Gamification
+    earnedBadges?: Badge[];
+
+    // Driver: Reference
+    reference?: {
+        name: string;
+        relationship: string;
+        phone: string;
+    };
+
+    // Driver: Consents
+    financialConsent?: boolean;
+    
+    // Fleet/Provider: Business Info
+    personType?: 'pf' | 'pj';
+    cpf?: string;
+    cnpj?: string;
+    razaoSocial?: string;
+    nomeFantasia?: string;
+    companyDescription?: string;
+    address?: string;
+    amenities?: FleetAmenity[];
+    socialMedia?: {
+        instagram?: string;
+        facebook?: string;
+        whatsapp?: string;
+    };
+
+    // Billing
+    credits?: number;
+}
+
 export interface SupportingMaterial {
   name: string;
   url: string; 
