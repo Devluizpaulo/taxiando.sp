@@ -3,7 +3,7 @@ import { PT_Sans, Poppins } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
-import { AuthProvider } from '@/hooks/use-auth';
+import { AuthProvider } from '@/components/providers/auth-provider';
 
 export const metadata: Metadata = {
   title: 'Táxiando SP',
