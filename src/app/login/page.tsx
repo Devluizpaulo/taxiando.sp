@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -90,7 +89,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 w-full h-full [backface-visibility:hidden]">
           <Card className="h-full flex flex-col">
               <CardHeader className="text-center">
-                  <Image src="/logo.png" alt="Táxiando SP Logo" width={180} height={170} className="h-20 w-auto mx-auto mb-4" />
+                  <Image src="/logo.png" alt="Táxiando SP Logo" width={180} height={170} className="h-24 w-auto mx-auto mb-4 rounded-xl shadow-lg" />
                   <p className="text-muted-foreground">Selecione seu perfil para continuar.</p>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col justify-center gap-4">

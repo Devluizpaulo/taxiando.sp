@@ -12,7 +12,7 @@ import {
   SidebarInset,
   SidebarTrigger
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, PanelLeft, Shield, FilePen, Search, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, PanelLeft, Shield, FilePen, Search, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -72,8 +72,10 @@ export default function DashboardLayout({
             Navegação principal da plataforma Táxiando SP.
           </SheetDescription>
         </SheetHeader>
-        <SidebarHeader className="border-b border-sidebar-border">
-            <Image src="/logo.png" alt="Táxiando SP Logo" width={150} height={142} className="h-10 w-auto" />
+        <SidebarHeader className="border-b border-sidebar-border p-4">
+            <Link href="/dashboard">
+              <Image src="/logo.png" alt="Táxiando SP Logo" width={150} height={142} className="h-12 w-auto rounded-lg shadow-md" />
+            </Link>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
@@ -87,11 +89,6 @@ export default function DashboardLayout({
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <Link href="/profile"><FilePen/> Completar Perfil</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/rentals"><KeyRound/> Alugar Veículo</Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -136,6 +133,16 @@ export default function DashboardLayout({
                     <SidebarMenuButton asChild>
                         <Link href="/admin"><Shield/> Painel Admin</Link>
                     </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                        <Link href="/admin/courses"><BookOpen/> Gerenciar Cursos</Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/admin/events"><Calendar/> Gerenciar Eventos</Link>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                     <SidebarMenuButton asChild>

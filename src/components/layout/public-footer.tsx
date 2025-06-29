@@ -5,7 +5,7 @@ export function PublicFooter() {
   return (
     <footer className="border-t">
       <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-8 md:flex-row md:px-6">
-        <Image src="/logo.png" alt="Táxiando SP Logo" width={150} height={142} className="h-12 w-auto" />
+        <Image src="/logo.png" alt="Táxiando SP Logo" width={150} height={142} className="h-14 w-auto rounded-md shadow-sm" />
         <p className="text-sm text-muted-foreground">
           © {new Date().getFullYear()} Táxiando SP. Todos os direitos reservados.
         </p>

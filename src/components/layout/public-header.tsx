@@ -20,7 +20,7 @@ export function PublicHeader() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="Táxiando SP Logo" width={150} height={142} className="h-12 w-auto" priority />
+            <Image src="/logo.png" alt="Táxiando SP Logo" width={150} height={142} className="h-14 w-auto rounded-md shadow-sm" priority />
         </Link>
         <nav className="hidden items-center gap-6 md:flex">
           {navLinks.map((link) => (

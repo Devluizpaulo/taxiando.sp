@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -213,7 +212,7 @@ export default function RegisterPage() {
         <div className="absolute inset-0 w-full h-full [backface-visibility:hidden]">
           <Card className="h-full flex flex-col">
               <CardHeader className="text-center">
-                  <Image src="/logo.png" alt="Táxiando SP Logo" width={180} height={170} className="h-20 w-auto mx-auto mb-4" />
+                  <Image src="/logo.png" alt="Táxiando SP Logo" width={180} height={170} className="h-24 w-auto mx-auto mb-4 rounded-xl shadow-lg" />
                   <CardTitle className="text-2xl font-headline">Crie sua conta gratuita</CardTitle>
                   <CardDescription>Primeiro, selecione o seu tipo de perfil.</CardDescription>
               </CardHeader>
