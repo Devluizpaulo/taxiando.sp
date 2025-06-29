@@ -1,8 +1,10 @@
 
 'use server';
 
-import { db, auth as serverAuth, Timestamp } from '@/lib/firebase-admin';
+import { db, serverAuth } from '@/lib/firebase-admin';
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
+import { Timestamp } from 'firebase-admin/firestore';
 
 const passwordSchema = z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' });
 const baseSchema = z.object({
@@ -61,13 +63,8 @@ const registerSchema = z.discriminatedUnion("role", [
 
 export async function registerUser(data: any) {
     try {
-        // Sanitize CPF and CNPJ inputs before validation
-        if (data.cpf) {
-            data.cpf = data.cpf.replace(/\D/g, '');
-        }
-        if (data.cnpj) {
-            data.cnpj = data.cnpj.replace(/\D/g, '');
-        }
+        if (data.cpf) data.cpf = data.cpf.replace(/\D/g, '');
+        if (data.cnpj) data.cnpj = data.cnpj.replace(/\D/g, '');
 
         const validatedData = registerSchema.parse(data);
         
@@ -79,35 +76,31 @@ export async function registerUser(data: any) {
             profileStatus: 'incomplete',
             credits: 0,
         }
-        if (validatedData.role === 'admin') {
-            userData.profileStatus = 'approved';
-        }
 
         switch (validatedData.role) {
             case 'admin':
             case 'driver':
-                if (validatedData.name) userData.name = validatedData.name;
-                if (validatedData.cpf) userData.cpf = validatedData.cpf;
                 displayName = validatedData.name;
+                userData.name = validatedData.name;
+                userData.cpf = validatedData.cpf;
+                if (validatedData.role === 'admin') {
+                    userData.profileStatus = 'approved';
+                }
                 break;
             
             case 'fleet':
             case 'provider':
-                if (validatedData.personType) userData.personType = validatedData.personType;
+                userData.personType = validatedData.personType;
                 if (validatedData.personType === 'pf') {
-                    if (!validatedData.name || !validatedData.cpf) {
-                        throw new Error('Nome e CPF são obrigatórios para Pessoa Física.');
-                    }
-                    userData.name = validatedData.name;
-                    userData.cpf = validatedData.cpf;
-                    displayName = validatedData.name;
+                    displayName = validatedData.name!;
+                    userData.name = validatedData.name!;
+                    userData.cpf = validatedData.cpf!;
                 } else { // 'pj'
-                    if (!validatedData.nomeFantasia) {
-                         throw new Error('Nome Fantasia é obrigatório para Pessoa Jurídica.');
+                    displayName = validatedData.nomeFantasia!;
+                    userData.nomeFantasia = validatedData.nomeFantasia!;
+                    if (validatedData.cnpj) {
+                        userData.cnpj = validatedData.cnpj;
                     }
-                    if (validatedData.nomeFantasia) userData.nomeFantasia = validatedData.nomeFantasia;
-                    if (validatedData.cnpj) userData.cnpj = validatedData.cnpj;
-                    displayName = validatedData.nomeFantasia;
                 }
                 break;
         }
@@ -118,8 +111,6 @@ export async function registerUser(data: any) {
             displayName: displayName,
         });
         
-        userData.uid = userRecord.uid;
-
         await db.collection('users').doc(userRecord.uid).set(userData);
 
         revalidatePath('/');
@@ -132,8 +123,10 @@ export async function registerUser(data: any) {
              errorMessage = error.errors.map(e => e.message).join('; ');
         } else if (error.code === 'auth/email-already-exists') {
             errorMessage = 'Este email já está em uso por outra conta.';
+        } else if (error.message) {
+            errorMessage = error.message;
         } else {
-            if(error.message) errorMessage = error.message;
+             console.error("Unknown registration error:", error);
         }
         
         return { success: false, error: errorMessage };

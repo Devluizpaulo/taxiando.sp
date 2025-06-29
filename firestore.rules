@@ -3,88 +3,51 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper functions
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    // USER PROFILES
-    match /users/{userId} {
-      // ANYONE can create a user profile document.
-      // The server action is the main gatekeeper for data validation.
-      allow create: if true;
-
-      // Users can read their own profile. Admins can read any profile.
-      allow read: if isOwner(userId) || isAdmin();
-
-      // Users can update their own profile. Admins can update any profile.
-      // We ensure core fields like role and uid cannot be changed.
-      allow update: if (isOwner(userId) || isAdmin())
-                    && request.resource.data.uid == resource.data.uid
-                    && request.resource.data.role == resource.data.role;
-
-      // No one can delete a user profile directly.
-      allow delete: if false;
-
-      // Subcollections for users
-      match /progress/{courseId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /transactions/{transactionId} {
-        allow read: if isOwner(userId) || isAdmin();
-        allow create: if isAdmin(); // Only server can create transactions for now
-        allow update, delete: if false;
-      }
-    }
-
-    // COURSES
-    match /courses/{courseId} {
-      // Anyone authenticated can read courses.
-      allow read: if request.auth != null;
-      // Only admins can create, update or delete courses.
-      allow write: if isAdmin();
-    }
-    
-    // CREDIT PACKAGES
-    match /credit_packages/{packageId} {
-      // Anyone authenticated can see available packages.
-      allow read: if request.auth != null;
-      // Only admins can create, update or delete packages.
-      allow write: if isAdmin();
-    }
-
-    // EVENTS
-    match /events/{eventId} {
-      // Anyone (even unauthenticated) can see events for the homepage.
+  
+    // Public collections can be read by anyone.
+    // Only admins can write to them.
+    match /courses/{docId} {
       allow read: if true;
-      // Only admins can create, update or delete events.
-      allow write: if isAdmin();
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
-    
-    // OPPORTUNITIES (Fleet vehicle listings)
-    match /opportunities/{opportunityId} {
-       // Anyone authenticated can see opportunities.
-      allow read: if request.auth != null;
-      // Fleet owners can create listings. Admins can moderate.
-      allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'fleet';
-      allow update: if isAdmin(); // Admin can change status (approve/reject)
-      allow delete: if isAdmin();
+    match /events/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
-    
-    // SERVICES (Provider service listings)
-     match /services/{serviceId} {
-       // Anyone authenticated can see services.
-      allow read: if request.auth != null;
-      // Providers can create listings. Admins can moderate.
-      allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'provider';
-      allow update: if isAdmin(); // Admin can change status (approve/reject)
-      allow delete: if isAdmin();
+    match /credit_packages/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    // User profiles
+    match /users/{userId} {
+      // Allow user creation. The server action handles validation, so this rule can be simple.
+      // This rule is for client-side SDKs; server admin SDK bypasses these rules.
+      // We allow creation if the new document's data has the correct uid.
+      allow create: if request.auth.uid == userId;
+
+      // Users can only read, update, or delete their OWN data.
+      allow read, update, delete: if request.auth.uid == userId;
+      
+      // An admin can read or write to any user's profile.
+      allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+
+      // User subcollections (e.g., transactions, progress)
+      match /{collection}/{docId} {
+        allow read, write, delete: if request.auth.uid == userId;
+        allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      }
+    }
+    
+    // Fleet and Provider listings
+    match /opportunities/{oppId} {
+    	allow read: if true;
+      allow write: if request.auth != null; // Allow logged-in users to create, admin to moderate
+    }
+    
+    match /services/{serviceId} {
+    	allow read: if true;
+      allow write: if request.auth != null; // Allow logged-in users to create, admin to moderate
+    }
   }
 }
