@@ -35,7 +35,8 @@ async function fetchEvents(): Promise<Event[]> {
     // The Admin SDK returns data compatible with the Event type, including Timestamps
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
   } catch (error) {
-    console.error("Error fetching weekly events: ", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error fetching weekly events: ", errorMessage);
     // If there's an error (e.g., missing permissions or indexes), return empty so the section is hidden
     return [];
   }
