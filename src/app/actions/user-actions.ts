@@ -39,6 +39,7 @@ const companyPjSchema = baseSchema.extend({
 
 
 export async function registerUser(data: any) {
+    console.log('[USER ACTION] Received registration data:', JSON.stringify(data, null, 2));
     try {
         const { role, personType } = z.object({ 
             role: z.enum(['driver', 'fleet', 'provider', 'admin']),
@@ -47,19 +48,24 @@ export async function registerUser(data: any) {
 
         let validatedData;
         
+        console.log(`[USER ACTION] Validating for role: ${role}, personType: ${personType}`);
         // Server-side validation based on role
         switch (role) {
             case 'admin':
                 validatedData = adminSchema.parse(data);
+                console.log('[USER ACTION] Admin data validated. Checking for existing admin...');
                 const usersRef = db.collection('users');
                 const adminQuery = await usersRef.where('role', '==', 'admin').limit(1).get();
                 if (!adminQuery.empty) {
+                    console.error('[USER ACTION] ERROR: An admin user already exists.');
                     return { success: false, error: 'Um administrador já existe. Não é possível criar outro.' };
                 }
+                console.log('[USER ACTION] No existing admin found. Proceeding.');
                 break;
             
             case 'driver':
                  validatedData = driverSchema.parse(data);
+                 console.log('[USER ACTION] Driver data validated.');
                 break;
             
             case 'fleet':
@@ -71,17 +77,20 @@ export async function registerUser(data: any) {
                 } else {
                      throw new Error("Tipo de pessoa (PF/PJ) é obrigatório para frotas e prestadores.");
                 }
+                console.log('[USER ACTION] Fleet/Provider data validated.');
                 break;
             
             default:
                 throw new Error("Tipo de perfil inválido.");
         }
 
+        console.log('[USER ACTION] Creating user in Firebase Auth...');
         const userRecord = await serverAuth.createUser({
             email: data.email,
             password: data.password,
             displayName: data.name || data.nomeFantasia,
         });
+        console.log(`[USER ACTION] Firebase Auth user created successfully. UID: ${userRecord.uid}`);
 
         const userData: any = {
             uid: userRecord.uid,
@@ -109,7 +118,9 @@ export async function registerUser(data: any) {
             }
         }
         
+        console.log('[USER ACTION] Preparing to save user profile to Firestore. Data:', JSON.stringify(userData, null, 2));
         await db.collection('users').doc(userRecord.uid).set(userData);
+        console.log(`[USER ACTION] User profile saved to Firestore for UID: ${userRecord.uid}`);
 
         revalidatePath('/');
         return { success: true, uid: userRecord.uid };
@@ -121,7 +132,13 @@ export async function registerUser(data: any) {
         } else if (error.code === 'auth/email-already-exists') {
             errorMessage = 'Este email já está em uso por outra conta.';
         }
-        console.error("Registration failed:", error);
+        
+        console.error("================ REGISTRATION FAILED ================");
+        console.error("Error Code:", error.code);
+        console.error("Error Message:", error.message);
+        console.error("Full Error Object:", JSON.stringify(error, null, 2));
+        console.error("=====================================================");
+
         return { success: false, error: errorMessage };
     }
 }
