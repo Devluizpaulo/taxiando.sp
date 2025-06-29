@@ -1,14 +1,18 @@
 
 import { type Timestamp } from "firebase/firestore";
 
+// Note: When passing Timestamps from server components to client components,
+// they should be converted to a serializable format like an ISO string or number.
+// The client can then convert them back to Date objects.
+
 export interface SupportingMaterial {
   name: string;
-  url: string; // URL to the file in Firebase Storage
+  url: string; 
 }
 
 export interface Badge {
     name: string;
-    iconUrl: string; // URL to the badge icon
+    iconUrl: string; 
 }
 
 export interface Lesson {
@@ -34,7 +38,7 @@ export interface Course {
   modules: Module[];
   totalLessons: number;
   totalDuration: number; // in minutes
-  createdAt: Timestamp | Date;
+  createdAt: Timestamp | string; // Allow string for serialized data
   status?: 'Published' | 'Draft';
   students?: number;
 }
@@ -45,12 +49,12 @@ export interface Event {
   description: string;
   location: string;
   imageUrl: string;
-  startDate: Timestamp;
-  endDate: Timestamp;
+  startDate: Timestamp | string; // Allow string for serialized data
+  endDate: Timestamp | string; // Allow string for serialized data
   bestTime: string;
   trafficTips: string;
   mapUrl: string;
-  createdAt: Timestamp;
+  createdAt: Timestamp | string; // Allow string for serialized data
 }
 
 export interface VehiclePerk {

@@ -16,7 +16,7 @@ import { LoadingScreen } from '@/components/loading-screen';
 
 export default function EventsClientPage({ initialEvents }: { initialEvents: Event[] }) {
     const { loading } = useAuthProtection({ requiredRoles: ['admin'] });
-    const [events, setEvents] = useState<Event[]>(initialEvents);
+    const [events] = useState<Event[]>(initialEvents);
 
     if (loading) {
         return <LoadingScreen />;
