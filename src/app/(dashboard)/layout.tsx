@@ -21,6 +21,7 @@ import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { LoadingScreen } from "@/components/loading-screen";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardLayout({
   children,
@@ -41,10 +42,18 @@ export default function DashboardLayout({
     router.push('/login');
   };
 
-  if (loading || !user || !userProfile) {
+  if (loading) {
     return <LoadingScreen className="fixed inset-0 z-50" />;
   }
+  
+  // After the initial auth check, if there's no user, the effect above will redirect.
+  // We can show a loading screen until the redirect happens.
+  if (!user) {
+      return <LoadingScreen className="fixed inset-0 z-50" />;
+  }
 
+  // The user is authenticated, but the profile might still be loading.
+  // We render the layout shell with placeholders.
   return (
     <SidebarProvider>
       <Sidebar>
@@ -54,91 +63,111 @@ export default function DashboardLayout({
             </Link>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
-             {userProfile?.role === 'driver' && (
-              <>
+            {userProfile ? (
+              <SidebarMenu>
+                {userProfile?.role === 'driver' && (
+                <>
+                    <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                        <Link href="/dashboard"><LayoutDashboard/> Meu Painel</Link>
+                    </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                        <Link href="/profile"><FilePen/> Completar Perfil</Link>
+                    </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                        <Link href="/courses"><BookOpen/> Cursos</Link>
+                    </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                        <Link href="/applications"><CheckSquare/> Minhas Candidaturas</Link>
+                    </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </>
+                )}
+                {(userProfile?.role === 'fleet' || userProfile?.role === 'admin') && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/dashboard"><LayoutDashboard/> Meu Painel</Link>
-                  </SidebarMenuButton>
+                    <SidebarMenuButton asChild>
+                    <Link href="/fleet"><Building/> Minha Frota</Link>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
+                )}
+                {userProfile?.role === 'provider' && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/profile"><FilePen/> Completar Perfil</Link>
-                  </SidebarMenuButton>
+                    <SidebarMenuButton asChild>
+                    <Link href="/services"><Wrench/> Meus Serviços</Link>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
+                )}
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/courses"><BookOpen/> Cursos</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/applications"><CheckSquare/> Minhas Candidaturas</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </>
-            )}
-             {(userProfile?.role === 'fleet' || userProfile?.role === 'admin') && (
-              <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/fleet"><Building/> Minha Frota</Link>
+                    <Link href="/billing"><CreditCard/> Faturamento e Créditos</Link>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
-             {userProfile?.role === 'provider' && (
-              <SidebarMenuItem>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/services"><Wrench/> Meus Serviços</Link>
+                    <Link href="/summarize"><FileText/> Sumarizador</Link>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
+                </SidebarMenuItem>
+                {userProfile?.role === 'admin' && (
+                <>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                            <Link href="/admin"><Shield/> Painel Admin</Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                            <Link href="/admin/courses"><BookOpen/> Gerenciar Cursos</Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                        <Link href="/admin/events"><Calendar/> Gerenciar Eventos</Link>
+                    </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                            <Link href="/admin/billing"><ShoppingCart/> Pacotes de Crédito</Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </>
+                )}
+            </SidebarMenu>
+            ) : (
+                <div className="p-2 space-y-2">
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                </div>
             )}
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/billing"><CreditCard/> Faturamento e Créditos</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/summarize"><FileText/> Sumarizador</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            {userProfile?.role === 'admin' && (
-              <>
-                <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                        <Link href="/admin"><Shield/> Painel Admin</Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                        <Link href="/admin/courses"><BookOpen/> Gerenciar Cursos</Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/admin/events"><Calendar/> Gerenciar Eventos</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                        <Link href="/admin/billing"><ShoppingCart/> Pacotes de Crédito</Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-              </>
-            )}
-          </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
           <div className="flex w-full items-center gap-3">
-            <Avatar>
-              <AvatarImage src={user.photoURL ?? `https://placehold.co/40x40.png`} alt="User Avatar" />
-              <AvatarFallback>{userProfile.name?.charAt(0).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col truncate">
-              <span className="truncate text-sm font-semibold">{userProfile.name ?? 'Usuário'}</span>
-              <span className="truncate text-xs text-muted-foreground">{userProfile.email}</span>
-            </div>
+            {userProfile ? (
+            <>
+              <Avatar>
+                <AvatarImage src={user.photoURL ?? `https://placehold.co/40x40.png`} alt="User Avatar" />
+                <AvatarFallback>{userProfile.name?.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col truncate">
+                <span className="truncate text-sm font-semibold">{userProfile.name ?? 'Usuário'}</span>
+                <span className="truncate text-xs text-muted-foreground">{userProfile.email}</span>
+              </div>
+            </>
+            ) : (
+              <>
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-full" />
+                </div>
+              </>
+            )}
           </div>
         </SidebarFooter>
       </Sidebar>
@@ -154,7 +183,7 @@ export default function DashboardLayout({
             </Button>
         </header>
         <main className="flex flex-1 flex-col p-4 sm:p-6">
-            {children}
+            {userProfile ? children : <LoadingScreen />}
         </main>
       </SidebarInset>
     </SidebarProvider>
