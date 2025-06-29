@@ -21,7 +21,7 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Checkbox } from '@/components/ui/checkbox';
 
 import { updateUserProfileStatus, updateListingStatus } from '@/app/actions/admin-actions';
-import type { UserProfile } from '@/components/providers/auth-provider';
+import type { UserProfile } from '@/lib/types';
 import type { Opportunity, ServiceListing, Course, CreditPackage, Event } from '@/lib/types';
 
 
@@ -468,3 +468,5 @@ export default function AdminPage() {
         </div>
     );
 }
+
+    
