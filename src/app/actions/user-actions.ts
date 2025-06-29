@@ -69,7 +69,6 @@ export async function registerUser(data: RegisterFormData) {
             }
         }
         
-        // The firestore.rules now allow this operation for the new user.
         await db.collection('users').doc(userRecord.uid).set(userData);
 
         revalidatePath('/');
