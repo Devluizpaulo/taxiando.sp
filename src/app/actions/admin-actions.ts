@@ -3,13 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { type UserProfile } from '@/components/providers/auth-provider';
+import { type UserProfile } from '@/lib/types';
 
 export async function updateUserProfileStatus(userId: string, newStatus: 'Aprovado' | 'Rejeitado' | 'Pendente') {
     try {
         const userRef = doc(db, 'users', userId);
         
-        // Map friendly names to DB status names if needed, though they seem consistent.
         let dbStatus: UserProfile['profileStatus'] = 'pending_review';
         if (newStatus === 'Aprovado') dbStatus = 'approved';
         if (newStatus === 'Rejeitado') dbStatus = 'rejected';
@@ -32,7 +31,6 @@ export async function updateListingStatus(
     try {
         const listingRef = doc(db, collectionName, listingId);
         
-        // For services, 'Aprovado' status from moderation should make it 'Ativo'.
         const finalStatus = collectionName === 'services' && newStatus === 'Aprovado' ? 'Ativo' : newStatus;
         
         await updateDoc(listingRef, { status: finalStatus });
@@ -43,3 +41,5 @@ export async function updateListingStatus(
         return { success: false, error: (error as Error).message };
     }
 }
+
+    
