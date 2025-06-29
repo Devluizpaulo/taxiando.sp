@@ -1,51 +1,84 @@
-'use server';
+{'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, setDoc, serverTimestamp, getDoc, query, limit } from 'firebase/firestore';
+import { db, auth as serverAuth } from '@/lib/firebase-admin'; // Use Admin SDK on the server
+import { z } from 'zod';
 
-interface CreateProfileData {
-    userId: string;
-    email: string | null;
-    name: string;
-    phone: string;
-}
+const registerFormSchema = z.object({
+  role: z.enum(['driver', 'fleet', 'provider', 'admin']),
+  personType: z.enum(['pf', 'pj']).optional(),
+  email: z.string().email(),
+  password: z.string().min(6),
+  name: z.string().optional(),
+  cpf: z.string().optional(),
+  razaoSocial: z.string().optional(),
+  nomeFantasia: z.string().optional(),
+  cnpj: z.string().optional(),
+});
 
-export async function createUserProfile(data: CreateProfileData) {
-    if (!data.userId) {
-        throw new Error('ID do usuário inválido.');
+type RegisterFormData = z.infer<typeof registerFormSchema>;
+
+export async function registerUser(data: RegisterFormData) {
+    try {
+        const validatedData = registerFormSchema.parse(data);
+
+        // --- Logic for Admin Creation ---
+        if (validatedData.role === 'admin') {
+            const usersRef = db.collection('users');
+            const adminQuery = await usersRef.where('role', '==', 'admin').limit(1).get();
+
+            if (!adminQuery.empty) {
+                return { success: false, error: 'Um administrador já existe para esta plataforma.' };
+            }
+        }
+        // --- End Admin Logic ---
+
+        const userRecord = await serverAuth.createUser({
+            email: validatedData.email,
+            password: validatedData.password,
+            displayName: validatedData.name || validatedData.nomeFantasia,
+        });
+
+        const userData: any = {
+            uid: userRecord.uid,
+            email: validatedData.email,
+            role: validatedData.role,
+            createdAt: new Date(),
+        };
+
+        if (validatedData.role === 'admin') {
+            userData.name = validatedData.name;
+            userData.cpf = validatedData.cpf;
+            userData.profileStatus = 'approved';
+        } else if (validatedData.role === 'driver') {
+            userData.name = validatedData.name;
+            userData.personType = 'pf';
+            userData.profileStatus = 'incomplete';
+        } else { // Fleet or Provider
+            userData.personType = validatedData.personType;
+            userData.profileStatus = 'incomplete';
+            if (validatedData.personType === 'pf') {
+                userData.name = validatedData.name;
+            } else {
+                userData.razaoSocial = validatedData.razaoSocial;
+                userData.nomeFantasia = validatedData.nomeFantasia;
+                userData.cnpj = validatedData.cnpj;
+            }
+        }
+        
+        await db.collection('users').doc(userRecord.uid).set(userData);
+
+        revalidatePath('/');
+        return { success: true, uid: userRecord.uid };
+
+    } catch (error: any) {
+        let errorMessage = 'Não foi possível criar a conta.';
+        if (error.code === 'auth/email-already-exists') {
+            errorMessage = 'Este email já está em uso por outra conta.';
+        } else if (error instanceof z.ZodError) {
+            errorMessage = error.errors.map(e => e.message).join(' ');
+        }
+        console.error("Registration failed:", error);
+        return { success: false, error: errorMessage };
     }
-
-    const userRef = doc(db, 'users', data.userId);
-    const userDoc = await getDoc(userRef);
-
-    // If the user document already exists, they somehow landed on the welcome page again.
-    // Just redirect them to the dashboard.
-    if (userDoc.exists()) {
-        redirect('/dashboard');
-        return;
-    }
-
-    // Check if this is the first user in the collection.
-    // If so, they become the administrator.
-    const usersCollectionRef = collection(db, 'users');
-    const q = query(usersCollectionRef, limit(1));
-    const snapshot = await getDocs(q);
-    const isFirstUser = snapshot.empty;
-
-    const profileData = {
-        uid: data.userId,
-        email: data.email,
-        name: data.name,
-        phone: data.phone,
-        role: isFirstUser ? 'admin' : 'driver', // Assign 'admin' role if first user, otherwise 'driver'.
-        profileStatus: isFirstUser ? 'approved' : 'incomplete', // Admins are approved by default.
-        createdAt: serverTimestamp(),
-    };
-
-    await setDoc(userRef, profileData);
-
-    revalidatePath('/'); // Revalidate all paths to ensure data consistency
-    redirect('/dashboard');
 }

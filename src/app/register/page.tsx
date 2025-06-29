@@ -5,23 +5,21 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
 import Image from 'next/image';
 
-import { auth, db } from '@/lib/firebase';
+import { registerUser } from '@/app/actions/user-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Car, Building, Wrench, ArrowLeft } from 'lucide-react';
+import { Loader2, Car, Building, Wrench, ArrowLeft, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const registerFormSchema = z.object({
-  role: z.enum(['driver', 'fleet', 'provider'], { required_error: 'Você precisa selecionar um tipo de conta.' }),
+  role: z.enum(['driver', 'fleet', 'provider', 'admin'], { required_error: 'Você precisa selecionar um tipo de conta.' }),
   personType: z.enum(['pf', 'pj']).optional(),
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
   password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
@@ -34,7 +32,14 @@ const registerFormSchema = z.object({
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem.',
   path: ['confirmPassword'],
-}).refine(data => {
+})
+.refine(data => !(data.role === 'admin' && (!data.name || data.name.length < 3)), {
+    message: 'O nome completo é obrigatório para administrador.', path: ['name'],
+})
+.refine(data => !(data.role === 'admin' && (!data.cpf || data.cpf.length < 11)), {
+    message: 'O CPF é obrigatório para administrador.', path: ['cpf'],
+})
+.refine(data => {
     if (data.role === 'driver') return data.name && data.name.length >= 3;
     if (data.role !== 'driver' && data.personType === 'pf') return data.name && data.name.length >= 3;
     return true;
@@ -45,13 +50,14 @@ const registerFormSchema = z.object({
 }, { message: 'O nome fantasia é obrigatório.', path: ['nomeFantasia']});
 
 
-type Role = 'driver' | 'fleet' | 'provider';
+type Role = 'driver' | 'fleet' | 'provider' | 'admin';
 type PersonType = 'pf' | 'pj';
 
 const roles: { id: Role; title: string; description: string; icon: React.ElementType, image: string, imageHint: string }[] = [
     { id: 'driver', title: 'Sou Motorista', description: 'Busco veículos para alugar e qualificação.', icon: Car, image: 'https://placehold.co/600x400.png', imageHint: 'taxi city night' },
     { id: 'fleet', title: 'Sou uma Frota', description: 'Quero oferecer veículos para aluguel.', icon: Building, image: 'https://placehold.co/600x400.png', imageHint: 'modern office building' },
     { id: 'provider', title: 'Sou Prestador', description: 'Ofereço serviços para motoristas e frotas.', icon: Wrench, image: 'https://placehold.co/600x400.png', imageHint: 'car workshop' },
+    { id: 'admin', title: 'Sou Administrador', description: 'Quero gerenciar toda a plataforma.', icon: Shield, image: 'https://placehold.co/600x400.png', imageHint: 'server room data center' },
 ];
 
 export default function RegisterPage() {
@@ -86,72 +92,54 @@ export default function RegisterPage() {
   async function onSubmit(values: z.infer<typeof registerFormSchema>) {
     setIsLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      const user = userCredential.user;
-
-      const displayName = values.role === 'driver' || values.personType === 'pf' ? values.name : values.nomeFantasia;
-      await updateProfile(user, { displayName });
-
-      const userData: any = {
-        uid: user.uid,
-        email: values.email,
-        role: values.role,
-        createdAt: new Date(),
-        profileStatus: 'incomplete',
-      };
-
-      if (values.role === 'driver' || values.personType === 'pf') {
-        userData.name = values.name;
-        userData.personType = 'pf';
-        if (values.cpf) userData.cpf = values.cpf;
-      } else { // PJ
-        userData.personType = 'pj';
-        userData.razaoSocial = values.razaoSocial;
-        userData.nomeFantasia = values.nomeFantasia;
-        if (values.cnpj) userData.cnpj = values.cnpj;
+      const result = await registerUser(values);
+      if (result.success) {
+        // Firebase Auth sign-in is handled server-side, but the client needs to know.
+        // A full page reload will trigger the AuthProvider to pick up the new session.
+        router.push('/dashboard');
+        router.refresh(); 
+      } else {
+         toast({
+          variant: 'destructive',
+          title: 'Erro no Cadastro',
+          description: result.error,
+        });
       }
-
-      await setDoc(doc(db, 'users', user.uid), userData);
-
-      router.push('/dashboard');
-    } catch (error: any)
-    {
-      console.error('Registration failed:', error);
-      let errorMessage = 'Não foi possível criar a conta. Tente novamente.';
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'Este email já está em uso.';
-      }
-      toast({
-        variant: 'destructive',
-        title: 'Erro no Cadastro',
-        description: errorMessage,
-      });
+    } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro Inesperado',
+          description: 'Ocorreu um erro. Por favor, tente novamente.',
+        });
     } finally {
       setIsLoading(false);
     }
   }
 
   const renderFormFields = () => {
+    const isAdmin = currentRoleFromForm === 'admin';
     const isDriver = currentRoleFromForm === 'driver';
-    const isCompany = !isDriver && personType === 'pj';
-    const isIndividual = isDriver || personType === 'pf';
+    const isCompany = !isDriver && !isAdmin && personType === 'pj';
+    const isIndividualProvider = !isDriver && !isAdmin && personType === 'pf';
 
     return (
         <div className="space-y-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" data-state="open">            
-            {isIndividual && (
-                <>
-                    <FormField control={form.control} name="name" render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Nome Completo</FormLabel>
-                        <FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}/>
-                    <FormField control={form.control} name="cpf" render={({ field }) => (
-                        <FormItem><FormLabel>CPF (Opcional)</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-                </>
+            {(isDriver || isIndividualProvider || isAdmin) && (
+                <FormField control={form.control} name="name" render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Nome Completo</FormLabel>
+                    <FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}/>
             )}
+
+            {(isDriver || isAdmin) && (
+                 <FormField control={form.control} name="cpf" render={({ field }) => (
+                    <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+            )}
+
 
             {isCompany && (
                 <>
@@ -169,7 +157,7 @@ export default function RegisterPage() {
 
             <FormField control={form.control} name="email" render={({ field }) => (
                 <FormItem>
-                <FormLabel>{isIndividual ? "Seu melhor e-mail" : "E-mail de Contato"}</FormLabel>
+                <FormLabel>E-mail</FormLabel>
                 <FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl>
                 <FormMessage />
                 </FormItem>
@@ -271,7 +259,7 @@ export default function RegisterPage() {
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                   {currentRoleFromForm && (
                                       <>
-                                        {currentRoleFromForm !== 'driver' ? (
+                                        {currentRoleFromForm !== 'driver' && currentRoleFromForm !== 'admin' ? (
                                             <Tabs defaultValue="pf" className="w-full" onValueChange={(v) => form.setValue('personType', v as PersonType)}>
                                                 <TabsList className="grid w-full grid-cols-2">
                                                     <TabsTrigger value="pf">Pessoa Física</TabsTrigger>
