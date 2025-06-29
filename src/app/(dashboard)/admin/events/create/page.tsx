@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -162,7 +163,7 @@ export default function CreateEventPage() {
             if (values.imageUrl.startsWith('data:image')) {
                 toast({ title: "Processando imagem...", description: "Comprimindo e fazendo upload da imagem para o armazenamento." });
                 
-                const imageFile = await imageCompression.dataUrlToFile(values.imageUrl, `${eventId}.png`);
+                const imageFile = await imageCompression.getFilefromDataUrl(values.imageUrl, `${eventId}.png`);
                 
                 const options = {
                     maxSizeMB: 0.5, // Target 500KB
