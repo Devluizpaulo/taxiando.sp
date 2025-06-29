@@ -38,7 +38,7 @@ const profileFormSchema = z.object({
   cnhNumber: z.string().min(5, "Número da CNH inválido.").optional().or(z.literal('')),
   cnhCategory: z.enum(['A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE']).optional(),
   cnhExpiration: z.date().optional(),
-  cnhPoints: z.coerce.number().min(0).max(40).optional(),
+  cnhPoints: z.coerce.number().min(0).max(40).optional().nullable(),
   condutaxNumber: z.string().optional(),
   condutaxExpiration: z.date().optional(),
   vehicleLicensePlate: z.string().optional(),
@@ -81,11 +81,19 @@ export default function CompleteProfilePage() {
             hasWhatsApp: false,
             photoUrl: '',
             bio: '',
+            cnhNumber: '',
+            cnhCategory: undefined,
+            cnhExpiration: undefined,
+            cnhPoints: null,
+            condutaxNumber: '',
+            condutaxExpiration: undefined,
+            vehicleLicensePlate: '',
+            alvaraExpiration: undefined,
+            specializedCourses: [],
             referenceName: '',
             referenceRelationship: '',
             referencePhone: '',
             financialConsent: false,
-            specializedCourses: [],
         },
     });
 
@@ -105,7 +113,7 @@ export default function CompleteProfilePage() {
                 cnhNumber: userProfile.cnhNumber || '',
                 cnhCategory: userProfile.cnhCategory,
                 cnhExpiration: toDate(userProfile.cnhExpiration),
-                cnhPoints: userProfile.cnhPoints,
+                cnhPoints: userProfile.cnhPoints ?? null,
                 condutaxNumber: userProfile.condutaxNumber || '',
                 condutaxExpiration: toDate(userProfile.condutaxExpiration),
                 vehicleLicensePlate: userProfile.vehicleLicensePlate || '',
@@ -132,8 +140,12 @@ export default function CompleteProfilePage() {
         setIsSubmitting(true);
         try {
             const userDocRef = doc(db, 'users', user.uid);
-            await updateDoc(userDocRef, {
-                ...values,
+            
+            const { cnhPoints, ...restOfValues } = values;
+
+            const dataToSave = {
+                ...restOfValues,
+                cnhPoints: cnhPoints === null ? undefined : cnhPoints, // Store as undefined if null
                 profileStatus: 'pending_review',
                 cnhExpiration: values.cnhExpiration ? Timestamp.fromDate(values.cnhExpiration) : null,
                 condutaxExpiration: values.condutaxExpiration ? Timestamp.fromDate(values.condutaxExpiration) : null,
@@ -143,7 +155,10 @@ export default function CompleteProfilePage() {
                     relationship: values.referenceRelationship,
                     phone: values.referencePhone,
                 },
-            });
+            };
+            
+            await updateDoc(userDocRef, dataToSave);
+
             toast({
                 title: 'Perfil Atualizado!',
                 description: 'Seus dados foram enviados para análise. Boa sorte!',
@@ -189,7 +204,7 @@ export default function CompleteProfilePage() {
                             </div>
 
                              <FormField control={form.control} name="bio" render={({ field }) => (
-                                <FormItem><FormLabel>Breve Resumo Sobre Você</FormLabel><FormControl><Textarea placeholder="Fale um pouco sobre sua experiência como motorista, seus objetivos e o que você busca." {...field} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Breve Resumo Sobre Você</FormLabel><FormControl><Textarea placeholder="Fale um pouco sobre sua experiência como motorista, seus objetivos e o que você busca." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                             )}/>
 
                              <FormField control={form.control} name="name" render={({ field }) => (
@@ -218,7 +233,7 @@ export default function CompleteProfilePage() {
                         <CardContent className="space-y-6">
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
                                 <FormField control={form.control} name="cnhNumber" render={({ field }) => (
-                                    <FormItem><FormLabel>Nº da CNH</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Nº da CNH</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                                  <FormField control={form.control} name="cnhCategory" render={({ field }) => (
                                     <FormItem><FormLabel>Categoria CNH</FormLabel>
@@ -233,12 +248,12 @@ export default function CompleteProfilePage() {
                                     <FormItem><FormLabel>Vencimento da CNH</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                                  <FormField control={form.control} name="cnhPoints" render={({ field }) => (
-                                    <FormItem><FormLabel>Pontos na CNH</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Pontos na CNH</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                             </div>
                              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                                 <FormField control={form.control} name="condutaxNumber" render={({ field }) => (
-                                    <FormItem><FormLabel>Nº do Condutax (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Nº do Condutax (Opcional)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                                  <FormField control={form.control} name="condutaxExpiration" render={({ field }) => (
                                     <FormItem><FormLabel>Vencimento do Condutax</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
@@ -254,7 +269,7 @@ export default function CompleteProfilePage() {
                                 </div>
                                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                      <FormField control={form.control} name="vehicleLicensePlate" render={({ field }) => (
-                                        <FormItem><FormLabel>Placa do Veículo (Alvará)</FormLabel><FormControl><Input placeholder="ABC-1234" {...field} /></FormControl><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>Placa do Veículo (Alvará)</FormLabel><FormControl><Input placeholder="ABC-1234" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
                                     )}/>
                                      <FormField control={form.control} name="alvaraExpiration" render={({ field }) => (
                                         <FormItem><FormLabel>Vencimento do Alvará</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
