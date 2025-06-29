@@ -76,38 +76,40 @@ export default function DashboardPage() {
     const applicationsCount = 4; // Mock data for now
 
     useEffect(() => {
-        if (authLoading || !user || !userProfile) return;
+        if (!user) return;
 
         const fetchDashboardData = async () => {
             setLoading(true);
             try {
-                // Fetch all courses
-                const coursesSnapshot = await getDocs(collection(db, 'courses'));
-                const allCourses = coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
-
-                // Fetch user progress for all courses
-                const progressPromises = allCourses.map(course => 
-                    getDoc(doc(db, 'users', user.uid, 'progress', course.id))
-                );
-                const progressSnapshots = await Promise.all(progressPromises);
-
+                // 1. Get all progress documents for the user to see which courses they've started
+                const progressCollectionRef = collection(db, 'users', user.uid, 'progress');
+                const progressSnapshot = await getDocs(progressCollectionRef);
+                
                 const userInProgress: CourseWithProgress[] = [];
                 let userCompletedCount = 0;
 
-                progressSnapshots.forEach((progressSnap, index) => {
-                    if (progressSnap.exists()) {
-                        const course = allCourses[index];
-                        const progressData = progressSnap.data();
-                        const completedLessons = progressData.completedLessons || [];
-                        const progressPercentage = Math.round((completedLessons.length / course.totalLessons) * 100);
+                if (!progressSnapshot.empty) {
+                    // 2. For each progress document, fetch the corresponding full course details
+                    const coursePromises = progressSnapshot.docs.map(async (progressDoc) => {
+                        const courseId = progressDoc.id;
+                        const courseDocRef = doc(db, 'courses', courseId);
+                        const courseDoc = await getDoc(courseDocRef);
 
-                        if (progressPercentage < 100) {
-                            userInProgress.push({ ...course, progress: progressPercentage });
-                        } else {
-                            userCompletedCount++;
+                        if (courseDoc.exists()) {
+                            const courseData = { id: courseDoc.id, ...courseDoc.data() } as Course;
+                            const progressData = progressDoc.data();
+                            const completedLessons = progressData.completedLessons || [];
+                            const progressPercentage = courseData.totalLessons > 0 ? Math.round((completedLessons.length / courseData.totalLessons) * 100) : 0;
+                            
+                            if (progressPercentage < 100) {
+                                userInProgress.push({ ...courseData, progress: progressPercentage });
+                            } else {
+                                userCompletedCount++;
+                            }
                         }
-                    }
-                });
+                    });
+                    await Promise.all(coursePromises);
+                }
                 
                 setInProgressCourses(userInProgress);
                 setCompletedCoursesCount(userCompletedCount);
@@ -120,7 +122,7 @@ export default function DashboardPage() {
         };
 
         fetchDashboardData();
-    }, [user, userProfile, authLoading]);
+    }, [user]);
 
     if (authLoading || loading) {
         return <LoadingScreen />;
