@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -45,90 +46,87 @@ const providerSchema = baseSchema.extend({
 
 
 export async function registerUser(data: any) {
+    console.log('[USER ACTION] Received data:', data);
     try {
-        let validatedData;
-        
-        // --- Step 1: Validate data based on role ---
+        let displayName = data.email;
+        const userData: { [key: string]: any } = {
+            email: data.email,
+            role: data.role,
+            createdAt: Timestamp.now(),
+            profileStatus: data.role === 'admin' ? 'approved' : 'incomplete',
+        };
+
+        // --- Step 1: Validate data and build user object based on role ---
         switch (data.role) {
-            case 'admin':
-                validatedData = adminSchema.parse(data);
+            case 'admin': {
+                const validated = adminSchema.parse(data);
+                userData.name = validated.name;
+                userData.cpf = validated.cpf;
+                displayName = validated.name;
                 break;
-            case 'driver':
-                validatedData = driverSchema.parse(data);
+            }
+            case 'driver': {
+                const validated = driverSchema.parse(data);
+                userData.name = validated.name;
+                displayName = validated.name;
                 break;
+            }
             case 'fleet':
-                validatedData = fleetSchema.parse(data);
-                 if (validatedData.personType === 'pf' && (!validatedData.name || validatedData.name.length < 3)) {
-                    throw new Error('O nome completo é obrigatório para Pessoa Física.');
-                }
-                if (validatedData.personType === 'pj' && (!validatedData.nomeFantasia || validatedData.nomeFantasia.length < 3)) {
-                    throw new Error('O nome fantasia é obrigatório para Pessoa Jurídica.');
-                }
-                break;
-            case 'provider':
-                validatedData = providerSchema.parse(data);
-                 if (validatedData.personType === 'pf' && (!validatedData.name || validatedData.name.length < 3)) {
-                    throw new Error('O nome completo é obrigatório para Pessoa Física.');
-                }
-                if (validatedData.personType === 'pj' && (!validatedData.nomeFantasia || validatedData.nomeFantasia.length < 3)) {
-                    throw new Error('O nome fantasia é obrigatório para Pessoa Jurídica.');
+            case 'provider': {
+                const validated = data.role === 'fleet' ? fleetSchema.parse(data) : providerSchema.parse(data);
+                userData.personType = validated.personType;
+                if (validated.personType === 'pf') {
+                    if (!validated.name || validated.name.length < 3) throw new Error('Nome completo é obrigatório para Pessoa Física.');
+                    userData.name = validated.name;
+                    displayName = validated.name;
+                } else {
+                    if (!validated.nomeFantasia || validated.nomeFantasia.length < 3) throw new Error('Nome Fantasia é obrigatório para Pessoa Jurídica.');
+                    userData.nomeFantasia = validated.nomeFantasia;
+                    displayName = validated.nomeFantasia;
+                    if (validated.razaoSocial) userData.razaoSocial = validated.razaoSocial;
+                    if (validated.cnpj) userData.cnpj = validated.cnpj;
                 }
                 break;
+            }
             default:
                 throw new Error('Tipo de perfil inválido.');
         }
 
-        // --- Step 2: Check for existing admin if creating one ---
-        if (validatedData.role === 'admin') {
-            const usersRef = db.collection('users');
-            const adminQuery = await usersRef.where('role', '==', 'admin').limit(1).get();
-            if (!adminQuery.empty) {
-                return { success: false, error: 'Um administrador já existe. Não é possível criar outro.' };
-            }
-        }
-        
-        // --- Step 3: Create Auth User ---
-        const userRecord = await serverAuth.createUser({
-            email: validatedData.email,
-            password: validatedData.password,
-            displayName: 'name' in validatedData && validatedData.name ? validatedData.name : ('nomeFantasia' in validatedData ? validatedData.nomeFantasia : validatedData.email),
-        });
-        
-        // --- Step 4: Build Firestore Document, including only defined fields ---
-        const { password, ...payload } = validatedData;
-        const userData: { [key: string]: any } = {
-            uid: userRecord.uid,
-            email: payload.email,
-            role: payload.role,
-            createdAt: Timestamp.now(),
-            profileStatus: payload.role === 'admin' ? 'approved' : 'incomplete',
-        };
+        console.log('[USER ACTION] Data validated. User object to be created:', userData);
 
-        if (payload.name) userData.name = payload.name;
-        if ('cpf' in payload && payload.cpf) userData.cpf = payload.cpf;
-        if (payload.personType) userData.personType = payload.personType;
-        if (payload.nomeFantasia) userData.nomeFantasia = payload.nomeFantasia;
-        if (payload.razaoSocial) userData.razaoSocial = payload.razaoSocial;
-        if (payload.cnpj) userData.cnpj = payload.cnpj;
+        // --- Step 2: Create Auth User ---
+        console.log('[USER ACTION] Creating auth user...');
+        const userRecord = await serverAuth.createUser({
+            email: data.email,
+            password: data.password,
+            displayName: displayName,
+        });
+        console.log('[USER ACTION] Auth user created:', userRecord.uid);
         
-        // --- Step 5: Save to Firestore ---
+        userData.uid = userRecord.uid;
+
+        // --- Step 3: Save to Firestore ---
+        console.log('[USER ACTION] Saving user profile to Firestore:', userData);
         await db.collection('users').doc(userRecord.uid).set(userData);
+        console.log('[USER ACTION] User profile saved successfully.');
 
         revalidatePath('/');
         return { success: true, uid: userRecord.uid };
 
     } catch (error: any) {
-        let errorMessage = 'Não foi possível criar a conta.';
-         if (error instanceof z.ZodError) {
-            errorMessage = error.errors.map(e => e.message).join('; ');
+        console.error("--- REGISTRATION FAILED ---");
+        let errorMessage = 'Não foi possível criar a conta. Verifique os dados e tente novamente.';
+        
+        if (error instanceof z.ZodError) {
+             console.error('Zod Validation Error:', error.errors);
+             errorMessage = error.errors.map(e => e.message).join('; ');
         } else if (error.code === 'auth/email-already-exists') {
             errorMessage = 'Este email já está em uso por outra conta.';
-        } else if (error.message) {
-            errorMessage = error.message;
+        } else {
+            console.error('Generic Error:', error);
+            if(error.message) errorMessage = error.message;
         }
         
-        console.error("REGISTRATION FAILED:", errorMessage, error);
-
         return { success: false, error: errorMessage };
     }
 }
