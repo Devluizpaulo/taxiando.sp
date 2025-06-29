@@ -1,4 +1,4 @@
-{'use server';
+'use server';
 
 import { revalidatePath } from 'next/cache';
 import { db, auth as serverAuth } from '@/lib/firebase-admin'; // Use Admin SDK on the server
