@@ -27,56 +27,25 @@ const baseSchema = z.object({
   password: passwordSchema,
 });
 
-const registerSchema = z.discriminatedUnion("role", [
-  baseSchema.extend({
-    role: z.literal("driver"),
-    name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
-    cpf: z.string().min(11, { message: 'O CPF é obrigatório e deve conter 11 dígitos.' }),
-  }),
-  baseSchema.extend({
-    role: z.literal("admin"),
-    name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
-    cpf: z.string().min(11, { message: 'O CPF é obrigatório e deve conter 11 dígitos.' }),
-  }),
-  baseSchema.extend({
-    role: z.literal("fleet"),
-    personType: z.enum(['pf', 'pj']),
-    name: z.string().optional(),
-    cpf: z.string().optional(),
-    nomeFantasia: z.string().optional(),
-    cnpj: z.string().optional(),
-  }),
-   baseSchema.extend({
-    role: z.literal("provider"),
-    personType: z.enum(['pf', 'pj']),
-    name: z.string().optional(),
-    cpf: z.string().optional(),
-    nomeFantasia: z.string().optional(),
-    cnpj: z.string().optional(),
-  })
-]).and(z.object({
+// This schema is a placeholder for the client-side form.
+// The real, strict validation happens on the server in user-actions.ts.
+const registerFormSchema = z.object({
+    role: z.enum(['driver', 'fleet', 'provider', 'admin']),
+    email: z.string().email({ message: "O e-mail é obrigatório."}),
+    password: passwordSchema,
     confirmPassword: passwordSchema,
-})).refine(data => data.password === data.confirmPassword, {
+    name: z.string().optional(),
+    cpf: z.string().optional(),
+    personType: z.enum(['pf', 'pj']).optional(),
+    nomeFantasia: z.string().optional(),
+    cnpj: z.string().optional(),
+}).refine(data => data.password === data.confirmPassword, {
     message: "As senhas não coincidem.",
     path: ["confirmPassword"],
-}).refine(data => {
-    if (data.role === 'fleet' || data.role === 'provider') {
-        if (data.personType === 'pf') {
-             if (!data.name || data.name.length < 3) return false;
-             if (!data.cpf || data.cpf.length < 11) return false;
-        }
-        if (data.personType === 'pj') {
-            if (!data.nomeFantasia || data.nomeFantasia.length < 3) return false;
-        }
-    }
-    return true;
-}, {
-    message: "Preencha os campos obrigatórios para o tipo de pessoa selecionado.",
-    path: ["name"], // Or another relevant field
 });
 
 
-type RegisterFormValues = z.infer<typeof registerSchema>;
+type RegisterFormValues = z.infer<typeof registerFormSchema>;
 type Role = 'driver' | 'fleet' | 'provider' | 'admin';
 type PersonType = 'pf' | 'pj';
 
@@ -92,19 +61,22 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'select_role' | 'fill_form'>('select_role');
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [selectedRole, setSelectedRole] = useState<Role>('driver');
 
   const form = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(registerFormSchema),
     defaultValues: {
+      role: 'driver',
       email: '',
       password: '',
       confirmPassword: '',
+      personType: 'pf',
     },
   });
 
   const handleRoleSelect = (role: Role) => {
     setSelectedRole(role);
+    form.reset(); // Reset form when changing role
     form.setValue('role', role);
     if (role === 'fleet' || role === 'provider') {
       form.setValue('personType', 'pf'); // Default to PF
@@ -114,8 +86,6 @@ export default function RegisterPage() {
 
   const handleBack = () => {
     setStep('select_role');
-    setSelectedRole(null);
-    form.reset();
   }
 
   async function onSubmit(values: RegisterFormValues) {
@@ -124,11 +94,11 @@ export default function RegisterPage() {
       const result = await registerUser(values);
       if (result.success) {
         await signInWithEmailAndPassword(auth, values.email, values.password);
-        router.push('/dashboard');
         toast({
             title: "Cadastro realizado com sucesso!",
-            description: "Bem-vindo(a) à plataforma.",
+            description: "Bem-vindo(a) à plataforma. Estamos te redirecionando...",
         });
+        router.push('/dashboard');
       } else {
          toast({
           variant: 'destructive',
@@ -149,11 +119,12 @@ export default function RegisterPage() {
   }
 
   const personType = form.watch('personType');
+  const roleData = roles.find(r => r.id === selectedRole);
 
   const renderFormFields = () => {
-    if (!selectedRole) return null;
+    if (!roleData) return null;
 
-    const isCompany = selectedRole === 'fleet' || selectedRole === 'provider';
+    const isCompany = roleData.id === 'fleet' || roleData.id === 'provider';
     
     return (
         <div className="space-y-4">
@@ -182,13 +153,13 @@ export default function RegisterPage() {
                 />
             )}
 
-            {(selectedRole === 'driver' || selectedRole === 'admin' || (isCompany && personType === 'pf')) && (
+            {(roleData.id === 'driver' || roleData.id === 'admin' || (isCompany && personType === 'pf')) && (
                 <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
             )}
             
-            {(selectedRole === 'driver' || selectedRole === 'admin' || (isCompany && personType === 'pf')) && (
+            {(roleData.id === 'driver' || roleData.id === 'admin' || (isCompany && personType === 'pf')) && (
                  <FormField control={form.control} name="cpf" render={({ field }) => (
                     <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
@@ -198,9 +169,6 @@ export default function RegisterPage() {
                 <>
                     <FormField control={form.control} name="nomeFantasia" render={({ field }) => (
                         <FormItem><FormLabel>Nome Fantasia</FormLabel><FormControl><Input placeholder="Nome público da sua empresa" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-                    <FormField control={form.control} name="razaoSocial" render={({ field }) => (
-                        <FormItem><FormLabel>Razão Social (Opcional)</FormLabel><FormControl><Input placeholder="Nome de registro da empresa" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <FormField control={form.control} name="cnpj" render={({ field }) => (
                         <FormItem><FormLabel>CNPJ (Opcional)</FormLabel><FormControl><Input placeholder="00.000.000/0000-00" {...field} /></FormControl><FormMessage /></FormItem>
@@ -261,7 +229,7 @@ export default function RegisterPage() {
                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={handleBack}><ArrowLeft /></Button>
                             <div>
                                 <CardTitle className="text-2xl font-headline">Finalize seu Cadastro</CardTitle>
-                                <CardDescription>Preencha os dados para o perfil de <span className="font-bold text-foreground">{roles.find(r => r.id === selectedRole)?.title.replace('Sou ', '')}</span>.</CardDescription>
+                                {roleData && <CardDescription>Preencha os dados para o perfil de <span className="font-bold text-foreground">{roleData.title.replace('Sou ', '')}</span>.</CardDescription>}
                             </div>
                         </div>
                     </CardHeader>

@@ -1,11 +1,11 @@
-
 'use server';
 
-import { db, auth } from '@/lib/firebase-admin';
+import { db, auth as adminAuth } from '@/lib/firebase-admin';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { Timestamp } from 'firebase-admin/firestore';
 
+// Schemas for validation
 const passwordSchema = z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' });
 
 const registerSchema = z.discriminatedUnion("role", [
@@ -14,14 +14,12 @@ const registerSchema = z.discriminatedUnion("role", [
     name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
     cpf: z.string().min(11, { message: 'O CPF é obrigatório e deve conter 11 dígitos.' }),
     email: z.string().email({ message: 'Por favor, insira um email válido.' }),
-    password: passwordSchema,
   }),
   z.object({
     role: z.literal("admin"),
     name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
     cpf: z.string().min(11, { message: 'O CPF é obrigatório e deve conter 11 dígitos.' }),
     email: z.string().email({ message: 'Por favor, insira um email válido.' }),
-    password: passwordSchema,
   }),
   z.object({
     role: z.literal("fleet"),
@@ -31,7 +29,6 @@ const registerSchema = z.discriminatedUnion("role", [
     nomeFantasia: z.string().optional(),
     cnpj: z.string().optional(),
     email: z.string().email({ message: 'Por favor, insira um email válido.' }),
-    password: passwordSchema,
   }),
   z.object({
     role: z.literal("provider"),
@@ -41,9 +38,9 @@ const registerSchema = z.discriminatedUnion("role", [
     nomeFantasia: z.string().optional(),
     cnpj: z.string().optional(),
     email: z.string().email({ message: 'Por favor, insira um email válido.' }),
-    password: passwordSchema,
   })
 ]).and(z.object({
+    password: passwordSchema,
     confirmPassword: passwordSchema,
 })).refine(data => data.password === data.confirmPassword, {
     message: "As senhas não coincidem.",
@@ -51,26 +48,28 @@ const registerSchema = z.discriminatedUnion("role", [
 }).refine(data => {
     if (data.role === 'fleet' || data.role === 'provider') {
         if (data.personType === 'pf') {
-             if (!data.name || data.name.length < 3) return false;
-             if (!data.cpf || data.cpf.length < 11) return false;
+             return data.name && data.name.length >= 3 && data.cpf && data.cpf.length >= 11;
         }
         if (data.personType === 'pj') {
-            if (!data.nomeFantasia || data.nomeFantasia.length < 3) return false;
+            return data.nomeFantasia && data.nomeFantasia.length >= 3;
         }
     }
     return true;
 }, {
     message: "Preencha os campos obrigatórios para o tipo de pessoa selecionado.",
-    path: ["name"], // Or another relevant field
+    path: ["name"], // Attach error to a common field
 });
 
 
 export async function registerUser(data: any) {
     try {
-        if (data.cpf) data.cpf = data.cpf.replace(/\D/g, '');
-        if (data.cnpj) data.cnpj = data.cnpj.replace(/\D/g, '');
-
-        const validatedData = registerSchema.parse(data);
+        const cleanedData = {
+            ...data,
+            cpf: data.cpf ? data.cpf.replace(/\D/g, '') : undefined,
+            cnpj: data.cnpj ? data.cnpj.replace(/\D/g, '') : undefined,
+        };
+        
+        const validatedData = registerSchema.parse(cleanedData);
         
         let displayName = validatedData.email;
         const userData: { [key:string]: any } = {
@@ -79,7 +78,7 @@ export async function registerUser(data: any) {
             createdAt: Timestamp.now(),
             profileStatus: 'incomplete',
             credits: 0,
-        }
+        };
 
         switch (validatedData.role) {
             case 'admin':
@@ -109,7 +108,7 @@ export async function registerUser(data: any) {
                 break;
         }
 
-        const userRecord = await auth.createUser({
+        const userRecord = await adminAuth.createUser({
             email: validatedData.email,
             password: validatedData.password,
             displayName: displayName,
@@ -129,8 +128,6 @@ export async function registerUser(data: any) {
             errorMessage = 'Este email já está em uso por outra conta.';
         } else if (error.message) {
             errorMessage = error.message;
-        } else {
-             console.error("Unknown registration error:", error);
         }
         
         return { success: false, error: errorMessage };
