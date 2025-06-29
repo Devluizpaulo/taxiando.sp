@@ -1,13 +1,21 @@
-import * as admin from 'firebase-admin';
+'use server';
 
-// Check if the app is already initialized to prevent errors
-if (!admin.apps.length) {
-    // initializeApp() will use the GOOGLE_APPLICATION_CREDENTIALS environment variable
-    // or Application Default Credentials if available in a Google Cloud environment.
-    admin.initializeApp();
+import { initializeApp, getApps, App, applicationDefault } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
+
+let app: App;
+
+if (getApps().length === 0) {
+    // In a Google-managed environment, applicationDefault() should find credentials.
+    app = initializeApp({
+        credential: applicationDefault(),
+    });
+} else {
+    app = getApps()[0];
 }
 
-const db = admin.firestore();
-const auth = admin.auth();
+const db = getFirestore(app);
+const auth = getAuth(app);
 
 export { db, auth };
