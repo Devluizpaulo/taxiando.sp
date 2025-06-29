@@ -7,10 +7,11 @@ import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
-import { ref, uploadString, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { nanoid } from 'nanoid';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import imageCompression from 'browser-image-compression';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -142,7 +143,7 @@ export default function CreateEventPage() {
             toast({
                 variant: 'destructive',
                 title: 'Erro ao Gerar Detalhes',
-                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manualmente.',
+                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manually.',
             });
         } finally {
             setIsGenerating(false);
@@ -156,13 +157,24 @@ export default function CreateEventPage() {
             const eventId = nanoid();
             let finalImageUrl = values.imageUrl;
 
-            // If the image is a data URI from our AI, upload it to Firebase Storage
+            // If the image is a data URI from our AI, compress it, upload it to Firebase Storage
             // and replace the data URI with the public URL.
             if (values.imageUrl.startsWith('data:image')) {
-                toast({ title: "Processando imagem...", description: "Fazendo upload da imagem gerada para o armazenamento." });
-                const storageRef = ref(storage, `events/${eventId}.png`);
-                const uploadResult = await uploadString(storageRef, values.imageUrl, 'data_url');
-                finalImageUrl = await getDownloadURL(uploadResult.ref);
+                toast({ title: "Processando imagem...", description: "Comprimindo e fazendo upload da imagem para o armazenamento." });
+                
+                const imageFile = await imageCompression.dataUrlToFile(values.imageUrl, `${eventId}.png`);
+                
+                const options = {
+                    maxSizeMB: 0.5, // Target 500KB
+                    maxWidthOrHeight: 1280, // Resize to a reasonable dimension
+                    useWebWorker: true,
+                }
+                
+                const compressedFile = await imageCompression(imageFile, options);
+
+                const storageRef = ref(storage, `events/${compressedFile.name}`);
+                await uploadBytes(storageRef, compressedFile);
+                finalImageUrl = await getDownloadURL(storageRef);
             }
 
             const eventData = {
