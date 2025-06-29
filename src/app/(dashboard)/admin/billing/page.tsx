@@ -1,9 +1,6 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
+import { adminDB } from '@/lib/firebase-admin';
 import { type CreditPackage } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
@@ -12,41 +9,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
-import { LoadingScreen } from '@/components/loading-screen';
 
-export default function AdminBillingPage() {
-    const [packages, setPackages] = useState<CreditPackage[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchPackages = async () => {
-            const cacheKey = 'cached_admin_billing_packages';
-            try {
-                 const cachedData = sessionStorage.getItem(cacheKey);
-                if (cachedData) {
-                    setPackages(JSON.parse(cachedData));
-                    setLoading(false);
-                    return;
-                }
-
-                const packagesCollection = collection(db, 'credit_packages');
-                const q = query(packagesCollection, orderBy('price', 'asc'));
-                const querySnapshot = await getDocs(q);
-                const packagesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CreditPackage));
-                setPackages(packagesData);
-                sessionStorage.setItem(cacheKey, JSON.stringify(packagesData));
-            } catch (error) {
-                console.error("Error fetching credit packages: ", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchPackages();
-    }, []);
-
-    if (loading) {
-        return <LoadingScreen />;
+async function getPackages(): Promise<CreditPackage[]> {
+    try {
+        const packagesCollection = adminDB.collection('credit_packages');
+        const q = query(packagesCollection, orderBy('price', 'asc'));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CreditPackage));
+    } catch (error) {
+        console.error("Error fetching credit packages: ", error);
+        return [];
     }
+}
+
+export default async function AdminBillingPage() {
+    const packages = await getPackages();
 
     return (
         <div className="flex flex-col gap-8">

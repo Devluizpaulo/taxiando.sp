@@ -1,105 +1,83 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper function to check if the user is an admin
+    
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Default deny all reads and writes
+    // Default deny all to ensure explicit rules are set.
     match /{document=**} {
       allow read, write: if false;
     }
-    
-    // USERS: 
-    // - Allow user creation by anyone (for signup)
-    // - Authenticated users can read their own data
-    // - Authenticated users can update their own data
-    // - Admins can read/write any user document
+
+    // Users can create their own profile after signing up
+    // and can only read/update their own data.
+    // Admins can manage any user.
     match /users/{userId} {
       allow create: if request.auth != null;
       allow read, update: if request.auth.uid == userId || isAdmin();
-    }
-    
-    // COURSES: 
-    // - Authenticated users can read all courses
-    // - Admins can create, update, and delete courses
-    match /courses/{courseId} {
-        allow read: if request.auth != null;
-        allow write: if isAdmin();
-    }
-    
-    // USER PROGRESS:
-    // - Users can read and write to their own progress subcollection
-    match /users/{userId}/progress/{courseId} {
-        allow read, write: if request.auth.uid == userId;
+      // Allow fleets/admins to view basic driver info, and drivers to view fleet info
+      // This can be expanded with more granular rules later.
+      allow get: if request.auth != null; 
     }
 
-    // EVENTS:
-    // - Anyone can read events
-    // - Admins can write events
+    // Publicly readable collections for any visitor
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
     match /events/{eventId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-
-    // CREDIT PACKAGES:
-    // - Anyone can read credit packages
-    // - Admins can write credit packages
+    
     match /credit_packages/{packageId} {
-       allow read: if true;
-       allow write: if isAdmin();
-    }
-    
-    // COUPONS:
-    // - Only admins can read/write coupons
-    match /coupons/{couponId} {
-        allow read, write: if isAdmin();
-    }
-    
-    // NOTIFICATIONS:
-    // - Authenticated users can read notifications
-    // - Admins can create notifications
-    match /notifications/{notificationId} {
-        allow read: if request.auth != null;
-        allow create: if isAdmin();
-        allow update, delete: if false; // Prevent modification
-    }
-    
-    // SETTINGS:
-    // - Only admins can read/write settings
-    match /settings/{docId} {
-        allow read, write: if isAdmin();
-    }
-    
-    // ANALYTICS:
-    // - Reads and writes are handled by server-side logic (actions),
-    //   so client access is denied.
-     match /analytics/{docId} {
-        allow read, write: if false;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // OPPORTUNITIES & SERVICES (Classifieds)
-    // - Anyone can read listings that are 'approved' or 'Ativo'
-    // - Users can only create their own listings
-    // - Admins can write to any listing
-    function isOwner(collectionName, resourceId) {
-        return get(/databases/$(database)/documents/$(collectionName)/$(resourceId)).data.providerId == request.auth.uid;
-    }
-
-    match /opportunities/{oppId} {
-        allow read: if resource.data.status == 'Aprovado' || isAdmin();
-        allow create: if request.auth != null;
-        allow update: if isOwner('opportunities', oppId) || isAdmin();
-    }
-    
     match /services/{serviceId} {
-        allow read: if resource.data.status == 'Ativo' || isAdmin();
-        allow create: if request.auth != null;
-        allow update: if isOwner('services', serviceId) || isAdmin();
+      allow read: if true;
+      // Allow creation/updates by providers or admins.
+      // (For now, admin-only write access is simpler and safer)
+      allow write: if isAdmin();
+    }
+
+    match /opportunities/{opportunityId} {
+      allow read: if true;
+      // Allow creation/updates by fleets or admins.
+      // (For now, admin-only write access is simpler and safer)
+      allow write: if isAdmin();
+    }
+
+    // Admin-only collections
+    match /coupons/{couponId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /analytics/{analyticId} {
+      allow read, write: if isAdmin(); // Lock down analytics to admins
+    }
+
+    // User-specific subcollections
+    match /users/{userId}/progress/{progressId} {
+      allow read, write: if request.auth.uid == userId || isAdmin();
+    }
+
+    match /users/{userId}/transactions/{transactionId} {
+      allow read, write: if request.auth.uid == userId || isAdmin();
     }
   }
 }
