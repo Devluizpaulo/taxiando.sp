@@ -27,7 +27,7 @@ const loginFormSchema = z.object({
 type Role = 'driver' | 'fleet' | 'provider';
 
 const roles: { id: Role; title: string; description: string; icon: React.ElementType, image: string, imageHint: string }[] = [
-    { id: 'driver', title: 'Motorista', description: 'Acesse seu painel pessoal e oportunidades.', icon: Car, image: 'https://placehold.co/600x400.png', imageHint: 'taxi city night' },
+    { id: 'driver', title: 'Motorista', description: 'Acesse seu painel e encontre veículos para alugar.', icon: Car, image: 'https://placehold.co/600x400.png', imageHint: 'taxi city night' },
     { id: 'fleet', title: 'Frota', description: 'Gerencie seus veículos e motoristas.', icon: Building, image: 'https://placehold.co/600x400.png', imageHint: 'modern office building' },
     { id: 'provider', title: 'Prestador', description: 'Gerencie seus serviços e anúncios.', icon: Wrench, image: 'https://placehold.co/600x400.png', imageHint: 'car workshop' },
 ];

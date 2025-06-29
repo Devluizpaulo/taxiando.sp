@@ -93,6 +93,7 @@ export interface VehicleApplication {
   driverProfileStatus: string;
   vehicleId: string;
   vehicleName: string;
+  company: string;
   appliedAt: Date;
   status: 'Pendente' | 'Aprovado' | 'Rejeitado';
 }

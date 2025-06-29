@@ -10,7 +10,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { QuizSection } from "@/components/quiz-section";
 import { CulturalAgendaSection } from "@/components/cultural-agenda-section";
-import { mockJobOpportunities, mockServiceListings } from "@/lib/mock-data";
+import { mockVehicles, mockServiceListings } from "@/lib/mock-data";
 
 const blogPosts = [
   {
@@ -59,7 +59,7 @@ export default function Home() {
                   <Link href="/register">Comece Agora</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <Link href="/opportunities">Ver Oportunidades <MoveRight className="ml-2" /></Link>
+                  <Link href="/rentals">Alugar Veículo <MoveRight className="ml-2" /></Link>
                 </Button>
               </div>
             </div>
@@ -118,11 +118,11 @@ export default function Home() {
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-primary">
                     <Briefcase className="h-8 w-8" />
                   </div>
-                  <CardTitle className="font-headline mt-4">Vagas e Classificados</CardTitle>
+                  <CardTitle className="font-headline mt-4">Aluguel e Classificados</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Conectamos você às melhores vagas e serviços para o seu dia a dia.
+                    Conectamos você às melhores frotas e serviços para o seu dia a dia.
                   </p>
                 </CardContent>
               </Card>
@@ -169,38 +169,35 @@ export default function Home() {
            <div className="container mx-auto px-4 md:px-6">
               <div className="mb-12 text-center">
                   <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
-                    Classificados de Oportunidades
+                    Oportunidades em Destaque
                   </h2>
                   <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-                    Encontre a vaga ideal e os melhores serviços para acelerar sua carreira.
+                    Encontre o veículo ideal e os melhores serviços para acelerar sua carreira.
                   </p>
               </div>
-              <Tabs defaultValue="jobs" className="w-full">
+              <Tabs defaultValue="rentals" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="jobs"><Briefcase/> Vagas de Emprego</TabsTrigger>
+                      <TabsTrigger value="rentals"><Briefcase/> Veículos para Alugar</TabsTrigger>
                       <TabsTrigger value="services"><Wrench/> Serviços e Produtos</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="jobs" className="pt-8">
+                  <TabsContent value="rentals" className="pt-8">
                       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                          {mockJobOpportunities.slice(0, 3).map((job) => (
-                              <Card key={job.id}>
-                                  <CardHeader>
-                                      <CardTitle className="font-headline text-lg">{job.title}</CardTitle>
-                                      <CardDescription>{job.company}</CardDescription>
+                          {mockVehicles.slice(0, 3).map((vehicle) => (
+                              <Card key={vehicle.plate}>
+                                  <CardHeader className="p-0 relative">
+                                    <Image src={vehicle.imageUrl} alt={`${vehicle.make} ${vehicle.model}`} width={600} height={400} className="w-full object-cover aspect-video" data-ai-hint="car front view"/>
+                                     <Badge className="absolute top-3 right-3 text-lg py-1 px-3 bg-primary/90 text-primary-foreground font-bold border-2 border-primary-foreground/50">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(vehicle.dailyRate)}
+                                        <span className="text-xs font-normal ml-1">/dia</span>
+                                    </Badge>
                                   </CardHeader>
-                                  <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
-                                      <div className="flex items-center gap-2">
-                                          <MapPin className="h-4 w-4"/>
-                                          <span>{job.location}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                          <Clock className="h-4 w-4"/>
-                                          <span>{job.type}</span>
-                                      </div>
+                                  <CardContent className="p-4 flex-1">
+                                      <CardTitle className="font-headline text-lg">{vehicle.make} {vehicle.model}</CardTitle>
+                                      <CardDescription>{vehicle.year} &bull; {vehicle.condition}</CardDescription>
                                   </CardContent>
                                   <CardFooter>
                                       <Button asChild className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                                        <Link href="/opportunities">Ver mais vagas</Link>
+                                        <Link href="/rentals">Ver mais veículos</Link>
                                       </Button>
                                   </CardFooter>
                               </Card>
@@ -222,7 +219,7 @@ export default function Home() {
                                   <CardFooter className="p-4 bg-muted/50 flex justify-between items-center">
                                     <p className="text-lg font-bold text-primary">{srv.price}</p>
                                     <Button asChild>
-                                        <Link href="/opportunities">Ver detalhes</Link>
+                                        <Link href="/services/marketplace">Ver detalhes</Link>
                                     </Button>
                                   </CardFooter>
                               </Card>

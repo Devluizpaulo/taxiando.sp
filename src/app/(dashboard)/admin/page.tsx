@@ -26,7 +26,7 @@ const chartData = [
   { month: "Jun", users: 230 },
 ];
 
-const getProfileStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
         case 'Aprovado': return 'default';
         case 'Pendente': return 'secondary';
@@ -128,7 +128,7 @@ export default function AdminPage() {
                                             <div className="font-medium">{user.name}</div>
                                             <div className="text-sm text-muted-foreground">{user.email}</div>
                                         </TableCell>
-                                        <TableCell><Badge variant={getProfileStatusVariant(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
+                                        <TableCell><Badge variant={getStatusVariant(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -140,7 +140,7 @@ export default function AdminPage() {
             <Tabs defaultValue="users">
                 <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
                     <TabsTrigger value="users">Gerenciar Usuários</TabsTrigger>
-                    <TabsTrigger value="opportunities">Moderar Vagas</TabsTrigger>
+                    <TabsTrigger value="opportunities">Moderar Locações</TabsTrigger>
                     <TabsTrigger value="services">Moderar Serviços</TabsTrigger>
                     <TabsTrigger value="courses">Gerenciar Cursos</TabsTrigger>
                     <TabsTrigger value="events">Gerenciar Eventos</TabsTrigger>
@@ -181,7 +181,7 @@ export default function AdminPage() {
                                                 <div className="text-sm text-muted-foreground">{user.email}</div>
                                             </TableCell>
                                             <TableCell>{user.role}</TableCell>
-                                            <TableCell><Badge variant={getProfileStatusVariant(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
+                                            <TableCell><Badge variant={getStatusVariant(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
@@ -205,15 +205,15 @@ export default function AdminPage() {
                 <TabsContent value="opportunities">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Moderar Vagas de Emprego</CardTitle>
-                            <CardDescription>Aprove ou rejeite as vagas postadas pelas frotas na plataforma.</CardDescription>
+                            <CardTitle>Moderar Oportunidades de Locação</CardTitle>
+                            <CardDescription>Aprove ou rejeite os veículos anunciados para locação por frotas ou particulares (Porta Branca).</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Título da Vaga</TableHead>
-                                        <TableHead>Empresa (Frota)</TableHead>
+                                        <TableHead>Veículo Anunciado</TableHead>
+                                        <TableHead>Anunciante</TableHead>
                                         <TableHead>Status</TableHead>
                                         <TableHead>Ações</TableHead>
                                     </TableRow>
@@ -221,9 +221,9 @@ export default function AdminPage() {
                                 <TableBody>
                                     {mockOpportunities.map(opp => (
                                         <TableRow key={opp.id}>
-                                            <TableCell className="font-medium">{opp.title}</TableCell>
-                                            <TableCell>{opp.company}</TableCell>
-                                            <TableCell><Badge variant={getProfileStatusVariant(opp.status)}>{opp.status}</Badge></TableCell>
+                                            <TableCell className="font-medium">{opp.vehicle}</TableCell>
+                                            <TableCell>{opp.provider}</TableCell>
+                                            <TableCell><Badge variant={getStatusVariant(opp.status)}>{opp.status}</Badge></TableCell>
                                             <TableCell>
                                                  {opp.status === 'Pendente' && (
                                                     <div className="flex gap-2">
@@ -260,7 +260,7 @@ export default function AdminPage() {
                                         <TableRow key={srv.id}>
                                             <TableCell className="font-medium">{srv.title}</TableCell>
                                             <TableCell>{srv.provider}</TableCell>
-                                            <TableCell><Badge variant={getProfileStatusVariant(srv.status)}>{srv.status}</Badge></TableCell>
+                                            <TableCell><Badge variant={getStatusVariant(srv.status)}>{srv.status}</Badge></TableCell>
                                             <TableCell>
                                                  {srv.status === 'Pendente' && (
                                                     <div className="flex gap-2">
@@ -298,10 +298,10 @@ export default function AdminPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {mockCourses.map(course => (
-                                        <TableRow key={course.id}>
-                                            <TableCell className="font-medium">{course.name}</TableCell>
-                                            <TableCell>{course.enrolled}</TableCell>
-                                            <TableCell>{course.completion}</TableCell>
+                                        <TableRow key={course.title}>
+                                            <TableCell className="font-medium">{course.title}</TableCell>
+                                            <TableCell>{course.students}</TableCell>
+                                            <TableCell>N/A</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

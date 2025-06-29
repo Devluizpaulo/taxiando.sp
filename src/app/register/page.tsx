@@ -50,8 +50,8 @@ type Role = 'driver' | 'fleet' | 'provider';
 type PersonType = 'pf' | 'pj';
 
 const roles: { id: Role; title: string; description: string; icon: React.ElementType, image: string, imageHint: string }[] = [
-    { id: 'driver', title: 'Sou Motorista', description: 'Busco oportunidades e qualificação.', icon: Car, image: 'https://placehold.co/600x400.png', imageHint: 'taxi city night' },
-    { id: 'fleet', title: 'Sou uma Frota', description: 'Quero gerenciar veículos e encontrar motoristas.', icon: Building, image: 'https://placehold.co/600x400.png', imageHint: 'modern office building' },
+    { id: 'driver', title: 'Sou Motorista', description: 'Busco veículos para alugar e qualificação.', icon: Car, image: 'https://placehold.co/600x400.png', imageHint: 'taxi city night' },
+    { id: 'fleet', title: 'Sou uma Frota', description: 'Quero oferecer veículos para aluguel.', icon: Building, image: 'https://placehold.co/600x400.png', imageHint: 'modern office building' },
     { id: 'provider', title: 'Sou Prestador', description: 'Ofereço serviços para motoristas e frotas.', icon: Wrench, image: 'https://placehold.co/600x400.png', imageHint: 'car workshop' },
 ];
 

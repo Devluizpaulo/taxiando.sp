@@ -1,13 +1,12 @@
 
 'use client';
 
-import { useState, useEffect, SetStateAction, Dispatch } from 'react';
+import { useState, useEffect, SetStateAction, Dispatch, createContext, useContext, ReactNode } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { doc, getDoc, type Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { type Badge, type FleetAmenity, type CreditPackage, type Transaction } from '@/lib/types';
-
+import { type Badge, type FleetAmenity } from '@/lib/types';
 
 export interface UserProfile {
     uid: string;
@@ -68,7 +67,16 @@ export interface UserProfile {
     credits?: number;
 }
 
-export function useAuth() {
+interface AuthContextType {
+    user: User | null;
+    userProfile: UserProfile | null;
+    loading: boolean;
+    setUserProfile: Dispatch<SetStateAction<UserProfile | null>>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,7 +102,18 @@ export function useAuth() {
     return () => unsubscribe();
   }, []);
 
-  return { user, userProfile, loading, setUserProfile };
+  const value = { user, userProfile, loading, setUserProfile };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
 
 

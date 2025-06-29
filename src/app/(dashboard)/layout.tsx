@@ -99,11 +99,6 @@ export default function DashboardLayout({
                     <Link href="/courses"><BookOpen/> Cursos</Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/opportunities"><Search/> Oportunidades</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <Link href="/applications"><CheckSquare/> Minhas Candidaturas</Link>

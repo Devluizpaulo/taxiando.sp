@@ -27,19 +27,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { vehiclePerks } from '@/lib/data';
+import { mockVehicles, mockApplications } from '@/lib/mock-data';
 
-
-const initialVehicles: Omit<Vehicle, 'id' | 'fleetId' | 'createdAt'>[] = [
-  { plate: 'BRA2E19', make: 'Chevrolet', model: 'Onix', year: 2022, status: 'Disponível', dailyRate: 120, imageUrl: 'https://placehold.co/600x400.png', condition: 'Novo', description: 'Carro novo, completo, com ar, direção e som bluetooth.', paymentInfo: { terms: 'Diária (Seg-Sáb)', methods: ['Cartão de Crédito', 'PIX'] }, perks: [{ id: 'full_tank', label: 'Tanque Cheio' }, { id: 'car_wash', label: 'Lava-rápido' }] },
-  { plate: 'XYZ1A23', make: 'Hyundai', model: 'HB20', year: 2023, status: 'Alugado', dailyRate: 135, imageUrl: 'https://placehold.co/600x400.png', condition: 'Semi-novo', description: 'Modelo mais recente, super econômico. Ideal para o dia a dia.', paymentInfo: { terms: 'Semanal', methods: ['PIX', 'Boleto'] }, perks: [{ id: 'insurance', label: 'Seguro Passageiro' }] },
-  { plate: 'FGH5I67', make: 'Fiat', model: 'Cronos', year: 2021, status: 'Em Manutenção', dailyRate: 110, imageUrl: 'https://placehold.co/600x400.png', condition: 'Usado', description: 'Porta-malas gigante, perfeito para viagens e aeroporto.', paymentInfo: { terms: 'Diária (Seg-Seg)', methods: ['Dinheiro'] }, perks: [] },
-];
-
-const initialApplications: VehicleApplication[] = [
-    { id: 'app_1', driverId: 'd_1', driverName: 'Carlos Pereira', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Aprovado', vehicleId: 'v_1', vehicleName: 'Onix (BRA2E19)', appliedAt: new Date('2024-07-28T10:00:00Z'), status: 'Pendente' },
-    { id: 'app_2', driverId: 'd_2', driverName: 'Ana Costa', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Pendente', vehicleId: 'v_1', vehicleName: 'Onix (BRA2E19)', appliedAt: new Date('2024-07-27T15:30:00Z'), status: 'Pendente' },
-    { id: 'app_3', driverId: 'd_3', driverName: 'Ricardo Alves', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Aprovado', vehicleId: 'v_4', vehicleName: 'Mobi (FGH5I67)', appliedAt: new Date('2024-07-26T09:00:00Z'), status: 'Aprovado' },
-];
 
 const getVehicleStatusVariant = (status: Vehicle['status']): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
@@ -82,9 +71,8 @@ export default function FleetPage() {
     const router = useRouter();
     const { toast } = useToast();
     
-    // State
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-    const [applications, setApplications] = useState<VehicleApplication[]>(initialApplications);
+    const [applications, setApplications] = useState<VehicleApplication[]>(mockApplications);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -100,7 +88,7 @@ export default function FleetPage() {
         if (!loading && (!userProfile || !['fleet', 'admin'].includes(userProfile.role))) {
             router.push('/dashboard');
         } else {
-             const vWithIds = initialVehicles.map((v, i) => ({ ...v, id: `v_${i+1}`, fleetId: 'mockFleetId', createdAt: new Date() }))
+             const vWithIds = mockVehicles.map((v, i) => ({ ...v, id: `v_${i+1}`, fleetId: 'mockFleetId', createdAt: new Date() }))
              setVehicles(vWithIds);
         }
     }, [userProfile, loading, router]);
@@ -147,7 +135,6 @@ export default function FleetPage() {
 
     const confirmDelete = () => {
         if (!vehicleToDelete) return;
-        // Lógica para deletar do DB viria aqui
         setVehicles(vehicles.filter(v => v.id !== vehicleToDelete.id));
         toast({ title: "Veículo Removido", description: `O veículo ${vehicleToDelete.plate} foi removido da sua frota.`});
         setIsDeleteDialogOpen(false);
@@ -166,7 +153,6 @@ export default function FleetPage() {
     
     const onSubmit = async (values: VehicleFormValues) => {
         setIsSubmitting(true);
-        // Lógica para salvar no DB viria aqui
         
         const vehicleData = {
             ...values,
@@ -177,12 +163,11 @@ export default function FleetPage() {
             perks: values.perks?.map(perkId => vehiclePerks.find(p => p.id === perkId)!) || []
         };
         
-        // Simulação
         setTimeout(() => {
-            if (selectedVehicle) { // Edit
+            if (selectedVehicle) {
                 setVehicles(vehicles.map(v => v.id === selectedVehicle.id ? { ...v, ...vehicleData, id: v.id, fleetId: v.fleetId, createdAt: v.createdAt } : v));
                 toast({ title: "Veículo Atualizado!", description: "Os dados do veículo foram salvos." });
-            } else { // Create
+            } else { 
                 const newVehicle: Vehicle = { 
                     id: `v_${Date.now()}`, 
                     ...vehicleData,

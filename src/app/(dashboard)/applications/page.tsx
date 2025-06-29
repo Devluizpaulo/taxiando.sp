@@ -9,10 +9,9 @@ import { mockApplications } from "@/lib/mock-data";
 
 const getStatusVariant = (status: string) => {
     switch (status) {
-        case 'Contato Realizado':
+        case 'Aprovado':
             return 'default';
-        case 'Em Análise':
-        case 'Visualizado':
+        case 'Pendente':
             return 'secondary';
         case 'Rejeitado':
             return 'destructive';
@@ -28,21 +27,21 @@ export default function ApplicationsPage() {
         <div className="flex flex-col gap-8">
             <div>
                 <h1 className="font-headline text-3xl font-bold tracking-tight">Minhas Candidaturas</h1>
-                <p className="text-muted-foreground">Acompanhe o status das suas aplicações para as oportunidades.</p>
+                <p className="text-muted-foreground">Acompanhe o status das suas solicitações de aluguel de veículos.</p>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Histórico de Candidaturas</CardTitle>
-                    <CardDescription>Aqui você pode ver todas as vagas para as quais se candidatou e o andamento do processo seletivo.</CardDescription>
+                    <CardTitle>Histórico de Solicitações</CardTitle>
+                    <CardDescription>Aqui você pode ver todos os veículos para os quais enviou uma solicitação e o andamento do processo.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Oportunidade</TableHead>
-                                <TableHead>Empresa</TableHead>
-                                <TableHead>Data da Aplicação</TableHead>
+                                <TableHead>Veículo</TableHead>
+                                <TableHead>Frota / Locador</TableHead>
+                                <TableHead>Data da Solicitação</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Ações</TableHead>
                             </TableRow>
@@ -50,14 +49,14 @@ export default function ApplicationsPage() {
                         <TableBody>
                             {mockApplications.map(app => (
                                 <TableRow key={app.id}>
-                                    <TableCell className="font-medium">{app.title}</TableCell>
+                                    <TableCell className="font-medium">{app.vehicleName}</TableCell>
                                     <TableCell>{app.company}</TableCell>
-                                    <TableCell>{app.appliedDate}</TableCell>
+                                    <TableCell>{new Date(app.appliedAt).toLocaleDateString('pt-BR')}</TableCell>
                                     <TableCell>
                                         <Badge variant={getStatusVariant(app.status)}>{app.status}</Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <Button variant="outline" size="sm">Ver Vaga</Button>
+                                        <Button variant="outline" size="sm">Ver Veículo</Button>
                                     </TableCell>
                                 </TableRow>
                             ))}

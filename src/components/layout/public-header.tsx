@@ -11,7 +11,7 @@ export function PublicHeader() {
 
   const navLinks = [
     { href: "/", label: "Início" },
-    { href: "/opportunities", label: "Oportunidades" },
+    { href: "/rentals", label: "Alugar Veículo" },
     { href: "/faq", label: "FAQ" },
     { href: "/contact", label: "Contato" },
   ];

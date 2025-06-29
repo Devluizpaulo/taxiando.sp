@@ -3,6 +3,7 @@ import { PT_Sans, Poppins } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
+import { AuthProvider } from '@/hooks/use-auth';
 
 export const metadata: Metadata = {
   title: 'Táxiando SP',
@@ -35,7 +36,9 @@ export default function RootLayout({
         ptSans.variable,
         poppins.variable
       )}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <Toaster />
       </body>
     </html>
