@@ -17,13 +17,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Car, Building, Wrench, ArrowLeft, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 
 const passwordSchema = z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' });
 
-// This schema is a placeholder for the client-side form.
-// The real, strict validation happens on the server in user-actions.ts.
 const registerFormSchema = z.object({
     role: z.enum(['driver', 'fleet', 'provider', 'admin']),
     email: z.string().email({ message: "O e-mail é obrigatório."}),
@@ -75,7 +71,6 @@ export default function RegisterPage() {
 
   const handleRoleSelect = (role: Role) => {
     setSelectedRole(role);
-    // Reset the form with all fields initialized to avoid uncontrolled-to-controlled errors
     form.reset({
       role: role,
       email: '',
@@ -99,12 +94,11 @@ export default function RegisterPage() {
     try {
       const result = await registerUser(values);
       if (result.success) {
-        await signInWithEmailAndPassword(auth, values.email, values.password);
         toast({
             title: "Cadastro realizado com sucesso!",
-            description: "Bem-vindo(a) à plataforma. Estamos te redirecionando...",
+            description: "Você já pode fazer login com suas novas credenciais.",
         });
-        router.push('/dashboard');
+        router.push('/login');
       } else {
          toast({
           variant: 'destructive',
