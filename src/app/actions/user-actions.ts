@@ -6,8 +6,8 @@ import { z } from 'zod';
 
 // Base schema for common fields
 const baseSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+  email: z.string().email({ message: 'Por favor, insira um email válido.' }),
+  password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
 });
 
 // Schema for Admin
@@ -25,9 +25,13 @@ const driverSchema = baseSchema.extend({
 
 // Schemas for Fleet/Provider (PF and PJ)
 const companyPfSchema = baseSchema.extend({
+    role: z.union([z.literal('fleet'), z.literal('provider')]),
+    personType: z.literal('pf'),
     name: z.string().min(3, 'O nome é obrigatório.'),
 });
 const companyPjSchema = baseSchema.extend({
+    role: z.union([z.literal('fleet'), z.literal('provider')]),
+    personType: z.literal('pj'),
     nomeFantasia: z.string().min(3, 'O nome fantasia é obrigatório.'),
     razaoSocial: z.string().optional(),
     cnpj: z.string().optional(),
@@ -42,8 +46,8 @@ export async function registerUser(data: any) {
         }).parse(data);
 
         let validatedData;
-        let finalRole = role;
-
+        
+        // Server-side validation based on role
         switch (role) {
             case 'admin':
                 validatedData = adminSchema.parse(data);
@@ -62,8 +66,10 @@ export async function registerUser(data: any) {
             case 'provider':
                 if (personType === 'pf') {
                     validatedData = companyPfSchema.parse(data);
-                } else {
+                } else if (personType === 'pj') {
                     validatedData = companyPjSchema.parse(data);
+                } else {
+                     throw new Error("Tipo de pessoa (PF/PJ) é obrigatório para frotas e prestadores.");
                 }
                 break;
             
@@ -80,26 +86,26 @@ export async function registerUser(data: any) {
         const userData: any = {
             uid: userRecord.uid,
             email: data.email,
-            role: finalRole,
+            role: role,
             createdAt: new Date(),
             profileStatus: 'incomplete', // Default for all new users except admin
         };
         
-        if (finalRole === 'admin') {
-            userData.name = data.name;
-            userData.cpf = data.cpf;
+        if (role === 'admin') {
+            userData.name = validatedData.name;
+            userData.cpf = validatedData.cpf;
             userData.profileStatus = 'approved';
-        } else if (finalRole === 'driver') {
-            userData.name = data.name;
+        } else if (role === 'driver') {
+            userData.name = (validatedData as z.infer<typeof driverSchema>).name;
             userData.personType = 'pf';
         } else { // Fleet or Provider
             userData.personType = personType;
             if (personType === 'pf') {
-                userData.name = data.name;
+                userData.name = (validatedData as z.infer<typeof companyPfSchema>).name;
             } else {
-                userData.razaoSocial = data.razaoSocial;
-                userData.nomeFantasia = data.nomeFantasia;
-                userData.cnpj = data.cnpj;
+                userData.razaoSocial = (validatedData as z.infer<typeof companyPjSchema>).razaoSocial;
+                userData.nomeFantasia = (validatedData as z.infer<typeof companyPjSchema>).nomeFantasia;
+                userData.cnpj = (validatedData as z.infer<typeof companyPjSchema>).cnpj;
             }
         }
         

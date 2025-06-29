@@ -15,11 +15,11 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Car, Building, Wrench, ArrowLeft, Shield } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
+// Zod schema for client-side validation. The server will perform the definitive validation.
 const registerFormSchema = z.object({
   role: z.enum(['driver', 'fleet', 'provider', 'admin'], { required_error: 'Você precisa selecionar um tipo de conta.' }),
   personType: z.enum(['pf', 'pj']).optional(),
@@ -34,29 +34,40 @@ const registerFormSchema = z.object({
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem.',
   path: ['confirmPassword'],
-});
-
+}).refine((data) => {
+    if (data.role === 'admin' || data.role === 'driver' || ((data.role === 'fleet' || data.role === 'provider') && data.personType === 'pf')) {
+        return !!data.name && data.name.trim().length >= 3;
+    }
+    return true;
+}, { message: 'O nome completo é obrigatório.', path: ['name']})
+.refine((data) => {
+    if (data.role === 'admin') return !!data.cpf && data.cpf.trim().length >= 11;
+    return true;
+}, { message: 'O CPF é obrigatório e deve ter 11 dígitos.', path: ['cpf']})
+.refine((data) => {
+    if ((data.role === 'fleet' || data.role === 'provider') && data.personType === 'pj') return !!data.nomeFantasia && data.nomeFantasia.trim().length >= 3;
+    return true;
+}, { message: 'O nome fantasia é obrigatório.', path: ['nomeFantasia']});
 
 type Role = 'driver' | 'fleet' | 'provider' | 'admin';
 type PersonType = 'pf' | 'pj';
 
-const roles: { id: Role; title: string; description: string; icon: React.ElementType, image: string, imageHint: string }[] = [
-    { id: 'driver', title: 'Sou Motorista', description: 'Busco veículos para alugar e qualificação.', icon: Car, image: 'https://placehold.co/600x400.png', imageHint: 'taxi city night' },
-    { id: 'fleet', title: 'Sou uma Frota', description: 'Quero oferecer veículos para aluguel.', icon: Building, image: 'https://placehold.co/600x400.png', imageHint: 'modern office building' },
-    { id: 'provider', title: 'Sou Prestador', description: 'Ofereço serviços para motoristas e frotas.', icon: Wrench, image: 'https://placehold.co/600x400.png', imageHint: 'car workshop' },
-    { id: 'admin', title: 'Sou Administrador', description: 'Quero gerenciar toda a plataforma.', icon: Shield, image: 'https://placehold.co/600x400.png', imageHint: 'server room data center' },
+const roles: { id: Role; title: string; description: string; icon: React.ElementType }[] = [
+    { id: 'driver', title: 'Sou Motorista', description: 'Busco veículos para alugar e qualificação.', icon: Car },
+    { id: 'fleet', title: 'Sou uma Frota', description: 'Quero oferecer veículos para aluguel.', icon: Building },
+    { id: 'provider', title: 'Sou Prestador', description: 'Ofereço serviços para motoristas e frotas.', icon: Wrench },
+    { id: 'admin', title: 'Sou Administrador', description: 'Quero gerenciar toda a plataforma.', icon: Shield },
 ];
 
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  
+  const [step, setStep] = useState<'select_role' | 'fill_form'>('select_role');
+
   const form = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      personType: 'pf',
       email: '',
       password: '',
       confirmPassword: '',
@@ -67,13 +78,18 @@ export default function RegisterPage() {
       cnpj: '',
     },
   });
-
-  const currentRoleFromForm = form.watch('role');
+  
+  const selectedRole = form.watch('role');
   const personType = form.watch('personType');
 
   const handleRoleSelect = (role: Role) => {
-    form.setValue('role', role, { shouldValidate: true, shouldDirty: true });
-    setSelectedRole(role);
+    form.setValue('role', role);
+    if (role === 'driver' || role === 'admin') {
+      form.setValue('personType', 'pf');
+    } else {
+      form.setValue('personType', 'pf'); // Default to PF for fleet/provider
+    }
+    setStep('fill_form');
   }
 
   async function onSubmit(values: z.infer<typeof registerFormSchema>) {
@@ -81,7 +97,6 @@ export default function RegisterPage() {
     try {
       const result = await registerUser(values);
       if (result.success) {
-        // Sign in the user after successful registration
         await signInWithEmailAndPassword(auth, values.email, values.password);
         router.push('/dashboard');
         toast({
@@ -107,108 +122,71 @@ export default function RegisterPage() {
   }
 
   const renderFormFields = () => {
-    const isAdmin = currentRoleFromForm === 'admin';
-    const isDriver = currentRoleFromForm === 'driver';
-    const isCompany = !isDriver && !isAdmin && personType === 'pj';
-    const isIndividualProvider = !isDriver && !isAdmin && personType === 'pf';
+    const isAdmin = selectedRole === 'admin';
+    const isDriver = selectedRole === 'driver';
+    const isCompany = selectedRole === 'fleet' || selectedRole === 'provider';
 
     return (
-        <div className="space-y-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" data-state="open">            
-            {(isDriver || isIndividualProvider || isAdmin) && (
+        <div className="space-y-4">
+            {(isDriver || isAdmin || (isCompany && personType === 'pf')) && (
                 <FormField control={form.control} name="name" render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Nome Completo</FormLabel>
-                    <FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl>
-                    <FormMessage />
-                    </FormItem>
+                    <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
             )}
-
-            {isAdmin && (
-                 <FormField control={form.control} name="cpf" render={({ field }) => (
-                    <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-            )}
-
-
-            {isCompany && (
+             {isCompany && personType === 'pj' && (
                 <>
                     <FormField control={form.control} name="nomeFantasia" render={({ field }) => (
                         <FormItem><FormLabel>Nome Fantasia</FormLabel><FormControl><Input placeholder="Nome público da sua empresa" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <FormField control={form.control} name="razaoSocial" render={({ field }) => (
-                        <FormItem><FormLabel>Razão Social</FormLabel><FormControl><Input placeholder="Nome de registro da empresa" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Razão Social (Opcional)</FormLabel><FormControl><Input placeholder="Nome de registro da empresa" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <FormField control={form.control} name="cnpj" render={({ field }) => (
                         <FormItem><FormLabel>CNPJ (Opcional)</FormLabel><FormControl><Input placeholder="00.000.000/0000-00" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                 </>
             )}
-
+            {isAdmin && (
+                 <FormField control={form.control} name="cpf" render={({ field }) => (
+                    <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+            )}
             <FormField control={form.control} name="email" render={({ field }) => (
-                <FormItem>
-                <FormLabel>E-mail</FormLabel>
-                <FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl>
-                <FormMessage />
-                </FormItem>
+                <FormItem><FormLabel>E-mail</FormLabel><FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl><FormMessage /></FormItem>
             )}/>
-
             <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="password" render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Senha</FormLabel>
-                    <FormControl><Input type="password" required {...field} /></FormControl>
-                    <FormMessage />
-                    </FormItem>
+                    <FormItem><FormLabel>Senha</FormLabel><FormControl><Input type="password" required {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="confirmPassword" render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Confirmar Senha</FormLabel>
-                    <FormControl><Input type="password" required {...field} /></FormControl>
-                    <FormMessage />
-                    </FormItem>
+                    <FormItem><FormLabel>Confirmar Senha</FormLabel><FormControl><Input type="password" required {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
             </div>
-            <Button type="submit" disabled={isLoading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Criar Conta e Acessar'}
-            </Button>
         </div>
     )
   }
 
-  const selectedRoleData = roles.find(r => r.id === selectedRole);
-
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden [perspective:1000px]">
-      <div 
-        className={cn(
-          "w-full max-w-lg h-[680px] sm:h-[620px] relative transition-transform duration-700 ease-in-out [transform-style:preserve-3d]",
-          selectedRole ? '[transform:rotateY(180deg)]' : '[transform:rotateY(0deg)]'
-        )}
-      >
-        {/* Front Face: Role Selection */}
-        <div className="absolute inset-0 w-full h-full [backface-visibility:hidden]">
-          <Card className="h-full flex flex-col">
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+      <Card className="w-full max-w-lg">
+        {step === 'select_role' && (
+           <>
               <CardHeader className="text-center">
                   <Image src="/logo.png" alt="Táxiando SP Logo" width={180} height={170} className="h-24 w-auto mx-auto mb-4 rounded-xl shadow-lg" />
                   <CardTitle className="text-2xl font-headline">Crie sua conta gratuita</CardTitle>
                   <CardDescription>Primeiro, selecione o seu tipo de perfil.</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-center gap-4">
-                    {roles.map((role) => (
-                      <Card 
-                          key={role.id}
-                          onClick={() => handleRoleSelect(role.id)}
-                          className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-primary"
-                      >
-                          <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
-                              <role.icon className="h-8 w-8 text-primary" />
-                              <div>
-                                  <CardTitle className="text-lg">{role.title}</CardTitle>
-                                  <CardDescription className="text-xs">{role.description}</CardDescription>
-                              </div>
-                          </CardHeader>
-                      </Card>
+              <CardContent className="flex flex-col gap-4">
+                  {roles.map((role) => (
+                    <Card key={role.id} onClick={() => handleRoleSelect(role.id)} className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-primary">
+                        <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
+                            <role.icon className="h-8 w-8 text-primary" />
+                            <div>
+                                <CardTitle className="text-lg">{role.title}</CardTitle>
+                                <CardDescription className="text-xs">{role.description}</CardDescription>
+                            </div>
+                        </CardHeader>
+                    </Card>
                   ))}
               </CardContent>
               <CardFooter className="justify-center text-sm">
@@ -217,61 +195,55 @@ export default function RegisterPage() {
                       Faça login
                   </Link>
               </CardFooter>
-          </Card>
-        </div>
-
-        {/* Back Face: Form */}
-        <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)]">
-          {selectedRole && selectedRoleData && (
-              <Card className="h-full w-full overflow-hidden shadow-2xl relative">
-                  <Image 
-                      src={selectedRoleData.image}
-                      alt={selectedRoleData.title}
-                      fill
-                      className="object-cover"
-                      data-ai-hint={selectedRoleData.imageHint}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
-                  
-                  <div className="relative h-full flex flex-col justify-between p-2 sm:p-6">
-                      <div>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/20 hover:bg-white/30 text-white" onClick={() => setSelectedRole(null)}>
-                              <ArrowLeft />
-                          </Button>
-                      </div>
-                      
-                      <div className="bg-background/80 backdrop-blur-sm p-4 sm:p-6 rounded-lg border border-white/20 shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" data-state="open">
-                          <CardHeader className="p-0 mb-4 text-center">
-                              <CardTitle className="text-xl sm:text-2xl font-headline text-foreground">Cadastro de {selectedRoleData.title.split(' ')[2]}</CardTitle>
-                          </CardHeader>
-                          <CardContent className="p-0">
-                             <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                  {currentRoleFromForm && (
-                                      <>
-                                        {currentRoleFromForm !== 'driver' && currentRoleFromForm !== 'admin' ? (
-                                            <Tabs defaultValue="pf" className="w-full" onValueChange={(v) => form.setValue('personType', v as PersonType)}>
-                                                <TabsList className="grid w-full grid-cols-2">
-                                                    <TabsTrigger value="pf">Pessoa Física</TabsTrigger>
-                                                    <TabsTrigger value="pj">Pessoa Jurídica</TabsTrigger>
-                                                </TabsList>
-                                                <TabsContent value="pf" className="pt-4">{renderFormFields()}</TabsContent>
-                                                <TabsContent value="pj" className="pt-4">{renderFormFields()}</TabsContent>
-                                            </Tabs>
-                                        ) : (
-                                            <div className="pt-4">{renderFormFields()}</div>
-                                        )}
-                                      </>
-                                  )}
-                                </form>
-                              </Form>
-                          </CardContent>
-                      </div>
-                  </div>
-              </Card>
-          )}
-        </div>
-      </div>
+            </>
+        )}
+        {step === 'fill_form' && (
+             <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
+                    <CardHeader>
+                        <div className="flex items-center gap-4">
+                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {form.reset(); setStep('select_role')}}><ArrowLeft /></Button>
+                            <div>
+                                <CardTitle className="text-2xl font-headline">Finalize seu Cadastro</CardTitle>
+                                <CardDescription>Preencha os dados para o perfil de <span className="font-bold text-foreground">{roles.find(r => r.id === selectedRole)?.title.replace('Sou ', '')}</span>.</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {(selectedRole === 'fleet' || selectedRole === 'provider') && (
+                             <FormField
+                                control={form.control}
+                                name="personType"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-3">
+                                    <FormLabel>Tipo de Conta</FormLabel>
+                                    <FormControl>
+                                        <Tabs defaultValue={field.value} onValueChange={(v) => field.onChange(v as PersonType)} className="w-full">
+                                            <TabsList className="grid w-full grid-cols-2">
+                                                <TabsTrigger value="pf">Pessoa Física</TabsTrigger>
+                                                <TabsTrigger value="pj">Pessoa Jurídica</TabsTrigger>
+                                            </TabsList>
+                                        </Tabs>
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+                       {renderFormFields()}
+                    </CardContent>
+                    <CardFooter className="flex flex-col gap-4">
+                        <Button type="submit" disabled={isLoading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Criar Conta e Acessar'}
+                        </Button>
+                        <p className="text-xs text-muted-foreground text-center">
+                            Ao se cadastrar, você concorda com nossos <Link href="/terms" className="underline">Termos de Serviço</Link> e <Link href="/privacy" className="underline">Política de Privacidade</Link>.
+                        </p>
+                    </CardFooter>
+                </form>
+            </Form>
+        )}
+      </Card>
     </div>
   );
 }
