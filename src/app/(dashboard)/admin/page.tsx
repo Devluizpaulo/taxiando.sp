@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -15,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart } from "lucide-react";
+import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2 } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -56,6 +57,8 @@ export default function AdminPage() {
     const [chartData, setChartData] = useState<{ month: string, users: number }[]>([]);
 
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+    const [updatingUserStatus, setUpdatingUserStatus] = useState<string | null>(null);
+    const [updatingListingStatus, setUpdatingListingStatus] = useState<string | null>(null);
     
     useEffect(() => {
         const fetchData = async () => {
@@ -128,26 +131,36 @@ export default function AdminPage() {
     };
     
     const handleUserStatusUpdate = async (userId: string, newStatus: 'Aprovado' | 'Rejeitado' | 'Pendente') => {
-        const result = await updateUserProfileStatus(userId, newStatus);
-        if (result.success) {
-            toast({ title: 'Sucesso', description: 'Status do usuário atualizado.' });
-            setUsers(prev => prev.map(u => u.uid === userId ? { ...u, profileStatus: newStatus.toLowerCase() as UserProfile['profileStatus'] } : u));
-        } else {
-            toast({ variant: 'destructive', title: 'Erro', description: result.error });
+        setUpdatingUserStatus(userId);
+        try {
+            const result = await updateUserProfileStatus(userId, newStatus);
+            if (result.success) {
+                toast({ title: 'Sucesso', description: 'Status do usuário atualizado.' });
+                setUsers(prev => prev.map(u => u.uid === userId ? { ...u, profileStatus: newStatus.toLowerCase() as UserProfile['profileStatus'] } : u));
+            } else {
+                toast({ variant: 'destructive', title: 'Erro', description: result.error });
+            }
+        } finally {
+            setUpdatingUserStatus(null);
         }
     }
 
     const handleListingApproval = async (id: string, type: 'opportunities' | 'services', newStatus: 'Aprovado' | 'Rejeitado') => {
-        const result = await updateListingStatus(id, type, newStatus);
-        if (result.success) {
-            toast({ title: 'Sucesso', description: `Status do anúncio atualizado para ${newStatus}.`});
-            if (type === 'opportunities') {
-                setOpportunities(prev => prev.filter(o => o.id !== id));
+        setUpdatingListingStatus(id);
+        try {
+            const result = await updateListingStatus(id, type, newStatus);
+            if (result.success) {
+                toast({ title: 'Sucesso', description: `Status do anúncio atualizado para ${newStatus}.`});
+                if (type === 'opportunities') {
+                    setOpportunities(prev => prev.filter(o => o.id !== id));
+                } else {
+                    setServices(prev => prev.filter(s => s.id !== id));
+                }
             } else {
-                setServices(prev => prev.filter(s => s.id !== id));
+                toast({ variant: 'destructive', title: 'Erro', description: result.error });
             }
-        } else {
-            toast({ variant: 'destructive', title: 'Erro', description: result.error });
+        } finally {
+            setUpdatingListingStatus(null);
         }
     };
 
@@ -241,7 +254,7 @@ export default function AdminPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="w-12"><Checkbox onCheckedChange={handleSelectAll} checked={selectedUsers.length > 0 && selectedUsers.length === users.filter(u => u.role === 'driver').length} /></TableHead>
+                                        <TableHead className="w-12"><Checkbox onCheckedChange={handleSelectAll} checked={selectedUsers.length > 0 && selectedUsers.length === users.filter(u => u.role === 'driver').map(u => u.uid).length} /></TableHead>
                                         <TableHead>Usuário</TableHead>
                                         <TableHead>Perfil</TableHead>
                                         <TableHead>Status do Perfil</TableHead>
@@ -274,10 +287,17 @@ export default function AdminPage() {
                                                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
                                                             <DropdownMenuItem>Ver Perfil Completo</DropdownMenuItem>
                                                             {user.role === 'driver' && (user.profileStatus === 'Pendente' || user.profileStatus === 'pending_review') && (
-                                                                <>
-                                                                    <DropdownMenuItem onClick={() => handleUserStatusUpdate(user.uid, 'Aprovado')}>Aprovar Cadastro</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => handleUserStatusUpdate(user.uid, 'Rejeitado')}>Rejeitar Cadastro</DropdownMenuItem>
-                                                                </>
+                                                                updatingUserStatus === user.uid ? (
+                                                                    <DropdownMenuItem disabled>
+                                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                        Atualizando...
+                                                                    </DropdownMenuItem>
+                                                                ) : (
+                                                                    <>
+                                                                        <DropdownMenuItem onClick={() => handleUserStatusUpdate(user.uid, 'Aprovado')}>Aprovar Cadastro</DropdownMenuItem>
+                                                                        <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => handleUserStatusUpdate(user.uid, 'Rejeitado')}>Rejeitar Cadastro</DropdownMenuItem>
+                                                                    </>
+                                                                )
                                                             )}
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
@@ -320,8 +340,14 @@ export default function AdminPage() {
                                                 <TableCell>
                                                      {opp.status === 'Pendente' && (
                                                         <div className="flex gap-2">
-                                                            <Button variant="outline" size="sm" onClick={() => handleListingApproval(opp.id, 'opportunities', 'Aprovado')}>Aprovar</Button>
-                                                            <Button variant="destructive" size="sm" onClick={() => handleListingApproval(opp.id, 'opportunities', 'Rejeitado')}>Rejeitar</Button>
+                                                            {updatingListingStatus === opp.id ? (
+                                                                <Button variant="outline" size="sm" disabled><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processando...</Button>
+                                                            ) : (
+                                                                <>
+                                                                    <Button variant="outline" size="sm" onClick={() => handleListingApproval(opp.id, 'opportunities', 'Aprovado')}>Aprovar</Button>
+                                                                    <Button variant="destructive" size="sm" onClick={() => handleListingApproval(opp.id, 'opportunities', 'Rejeitado')}>Rejeitar</Button>
+                                                                </>
+                                                            )}
                                                         </div>
                                                      )}
                                                 </TableCell>
@@ -363,8 +389,14 @@ export default function AdminPage() {
                                                 <TableCell>
                                                      {srv.status === 'Pendente' && (
                                                         <div className="flex gap-2">
-                                                            <Button variant="outline" size="sm" onClick={() => handleListingApproval(srv.id, 'services', 'Aprovado')}>Aprovar</Button>
-                                                            <Button variant="destructive" size="sm" onClick={() => handleListingApproval(srv.id, 'services', 'Rejeitado')}>Rejeitar</Button>
+                                                            {updatingListingStatus === srv.id ? (
+                                                                <Button variant="outline" size="sm" disabled><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processando...</Button>
+                                                            ) : (
+                                                                <>
+                                                                    <Button variant="outline" size="sm" onClick={() => handleListingApproval(srv.id, 'services', 'Aprovado')}>Aprovar</Button>
+                                                                    <Button variant="destructive" size="sm" onClick={() => handleListingApproval(srv.id, 'services', 'Rejeitado')}>Rejeitar</Button>
+                                                                </>
+                                                            )}
                                                         </div>
                                                      )}
                                                 </TableCell>
