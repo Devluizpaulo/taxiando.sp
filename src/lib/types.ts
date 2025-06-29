@@ -123,7 +123,15 @@ export interface ServiceListing {
   provider: string;
   category: string;
   price: string;
-  status: 'Ativo' | 'Pausado' | 'Pendente';
+  status: 'Ativo' | 'Pausado' | 'Pendente' | 'Aprovado' | 'Rejeitado';
   imageUrl: string;
   imageHint: string;
+}
+
+export interface Opportunity {
+  id: string;
+  vehicle: string;
+  provider: string;
+  type: 'Frota' | 'Porta Branca';
+  status: 'Pendente' | 'Aprovado' | 'Rejeitado';
 }

@@ -1,47 +1,121 @@
-
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { collection, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useAuthProtection } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+
+import { LoadingScreen } from '@/components/loading-screen';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, Wrench, CreditCard, ShoppingCart } from "lucide-react";
+import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Checkbox } from '@/components/ui/checkbox';
-import { mockUsers, mockOpportunities, mockServiceListings, mockCourses } from '@/lib/mock-data';
-import { useState } from 'react';
-import { LoadingScreen } from '@/components/loading-screen';
 
-const chartData = [
-  { month: "Jan", users: 50 },
-  { month: "Fev", users: 75 },
-  { month: "Mar", users: 120 },
-  { month: "Abr", users: 110 },
-  { month: "Mai", users: 180 },
-  { month: "Jun", users: 230 },
-];
+import { updateUserProfileStatus, updateListingStatus } from '@/app/actions/admin-actions';
+import type { UserProfile } from '@/components/providers/auth-provider';
+import type { Opportunity, ServiceListing, Course, CreditPackage } from '@/lib/types';
 
-const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+
+type AdminUser = Pick<UserProfile, 'uid' | 'name' | 'email' | 'role' | 'profileStatus' | 'createdAt'>;
+
+const getStatusVariant = (status?: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
-        case 'Aprovado': return 'default';
-        case 'Pendente': return 'secondary';
-        case 'Rejeitado': return 'destructive';
+        case 'Aprovado':
+        case 'approved':
+        case 'Ativo':
+             return 'default';
+        case 'Pendente': 
+        case 'pending_review':
+            return 'secondary';
+        case 'Rejeitado':
+        case 'rejected':
+            return 'destructive';
         default: return 'outline';
     }
 };
 
 export default function AdminPage() {
     const { loading: authLoading } = useAuthProtection({ requiredRoles: ['admin'] });
+    const { toast } = useToast();
+
+    const [loadingData, setLoadingData] = useState(true);
+    const [users, setUsers] = useState<AdminUser[]>([]);
+    const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+    const [services, setServices] = useState<ServiceListing[]>([]);
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [packages, setPackages] = useState<CreditPackage[]>([]);
+    const [events, setEvents] = useState<Event[]>([]);
+    const [chartData, setChartData] = useState<{ month: string, users: number }[]>([]);
+
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [usersSnapshot, oppsSnapshot, servicesSnapshot, coursesSnapshot, packagesSnapshot, eventsSnapshot] = await Promise.all([
+                    getDocs(query(collection(db, 'users'), orderBy('createdAt', 'desc'))),
+                    getDocs(query(collection(db, 'opportunities'), where('status', '==', 'Pendente'))),
+                    getDocs(query(collection(db, 'services'), where('status', '==', 'Pendente'))),
+                    getDocs(collection(db, 'courses')),
+                    getDocs(collection(db, 'credit_packages')),
+                    getDocs(query(collection(db, 'events'), orderBy('startDate', 'desc'), where('startDate', '>=', new Date())))
+                ]);
+
+                const usersData = usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as AdminUser));
+                setUsers(usersData);
+
+                const oppsData = oppsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Opportunity));
+                setOpportunities(oppsData);
+
+                const servicesData = servicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceListing));
+                setServices(servicesData);
+                
+                const coursesData = coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+                setCourses(coursesData);
+                
+                const packagesData = packagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CreditPackage));
+                setPackages(packagesData);
+
+                const eventsData = eventsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event[]));
+                setEvents(eventsData);
+                
+                // Process chart data
+                const monthlySignups: { [key: string]: number } = {};
+                usersData.forEach(user => {
+                    if (user.createdAt) {
+                        const date = (user.createdAt as Timestamp).toDate();
+                        const month = format(date, "MMM", {
+                            // locale: ptBR // if you want portuguese months
+                        });
+                        monthlySignups[month] = (monthlySignups[month] || 0) + 1;
+                    }
+                });
+                const chartDataFormatted = Object.keys(monthlySignups).map(month => ({ month, users: monthlySignups[month] }));
+                setChartData(chartDataFormatted);
+
+
+            } catch (error) {
+                console.error("Failed to fetch admin data:", error);
+                toast({ variant: 'destructive', title: 'Erro ao carregar dados', description: 'Não foi possível buscar os dados do painel.' });
+            } finally {
+                setLoadingData(false);
+            }
+        };
+
+        fetchData();
+    }, [toast]);
 
     const handleSelectAll = (checked: boolean | 'indeterminate') => {
         if (checked === true) {
-            setSelectedUsers(mockUsers.filter(u => u.role === 'Motorista').map(u => u.id));
+            setSelectedUsers(users.filter(u => u.role === 'driver').map(u => u.uid));
         } else {
             setSelectedUsers([]);
         }
@@ -54,12 +128,32 @@ export default function AdminPage() {
             setSelectedUsers(prev => prev.filter(id => id !== userId));
         }
     };
+    
+    const handleUserStatusUpdate = async (userId: string, newStatus: 'Aprovado' | 'Rejeitado' | 'Pendente') => {
+        const result = await updateUserProfileStatus(userId, newStatus);
+        if (result.success) {
+            toast({ title: 'Sucesso', description: 'Status do usuário atualizado.' });
+            setUsers(prev => prev.map(u => u.uid === userId ? { ...u, profileStatus: newStatus.toLowerCase() as UserProfile['profileStatus'] } : u));
+        } else {
+            toast({ variant: 'destructive', title: 'Erro', description: result.error });
+        }
+    }
 
-    const handleApproval = (action: 'approve' | 'reject', id: string, type: 'opportunity' | 'service') => {
-        console.log(`${action} ${type} ${id}`);
+    const handleListingApproval = async (id: string, type: 'opportunities' | 'services', newStatus: 'Aprovado' | 'Rejeitado') => {
+        const result = await updateListingStatus(id, type, newStatus);
+        if (result.success) {
+            toast({ title: 'Sucesso', description: `Status do anúncio atualizado para ${newStatus}.`});
+            if (type === 'opportunities') {
+                setOpportunities(prev => prev.filter(o => o.id !== id));
+            } else {
+                setServices(prev => prev.filter(s => s.id !== id));
+            }
+        } else {
+            toast({ variant: 'destructive', title: 'Erro', description: result.error });
+        }
     };
 
-    if (authLoading) {
+    if (authLoading || loadingData) {
       return <LoadingScreen />;
     }
     
@@ -71,18 +165,18 @@ export default function AdminPage() {
             </div>
             
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Usuários Totais</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{mockUsers.length}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Oportunidades Ativas</CardTitle><Briefcase className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{mockOpportunities.length}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Cursos Ativos</CardTitle><BookOpen className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{mockCourses.length}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Pacotes de Crédito</CardTitle><CreditCard className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">3</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Receita (Mês)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">R$ 15.231,89</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Usuários Totais</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{users.length}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Pendentes (Locação)</CardTitle><Briefcase className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{opportunities.length}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Cursos Ativos</CardTitle><BookOpen className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{courses.length}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Pacotes de Crédito</CardTitle><CreditCard className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{packages.length}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Receita (Mês)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">R$ 0,00</div></CardContent></Card>
             </div>
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
                 <Card className="lg:col-span-3">
                      <CardHeader>
                         <CardTitle>Crescimento de Usuários</CardTitle>
-                        <CardDescription>Novos usuários cadastrados nos últimos 6 meses.</CardDescription>
+                        <CardDescription>Novos usuários cadastrados nos últimos meses.</CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
                         <ResponsiveContainer width="100%" height={300}>
@@ -96,15 +190,15 @@ export default function AdminPage() {
                 </Card>
                 <Card className="lg:col-span-2">
                      <CardHeader>
-                        <CardTitle>Análise de Cadastros Recentes</CardTitle>
-                        <CardDescription>Os últimos 5 cadastros que precisam de atenção.</CardDescription>
+                        <CardTitle>Cadastros Recentes para Análise</CardTitle>
+                        <CardDescription>Os últimos cadastros que precisam de atenção.</CardDescription>
                     </CardHeader>
                     <CardContent>
                          <Table>
                             <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {mockUsers.filter(u => u.profileStatus !== 'N/A').slice(0,5).map(user => (
-                                    <TableRow key={user.id}>
+                                {users.filter(u => u.profileStatus && u.profileStatus !== 'approved' && u.profileStatus !== 'N/A').slice(0,5).map(user => (
+                                    <TableRow key={user.uid}>
                                         <TableCell>
                                             <div className="font-medium">{user.name}</div>
                                             <div className="text-sm text-muted-foreground">{user.email}</div>
@@ -142,7 +236,7 @@ export default function AdminPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="w-12"><Checkbox onCheckedChange={handleSelectAll} checked={selectedUsers.length > 0 && selectedUsers.length === mockUsers.filter(u => u.role === 'Motorista').length} /></TableHead>
+                                        <TableHead className="w-12"><Checkbox onCheckedChange={handleSelectAll} checked={selectedUsers.length > 0 && selectedUsers.length === users.filter(u => u.role === 'driver').length} /></TableHead>
                                         <TableHead>Usuário</TableHead>
                                         <TableHead>Perfil</TableHead>
                                         <TableHead>Status do Perfil</TableHead>
@@ -150,12 +244,12 @@ export default function AdminPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {mockUsers.map(user => (
-                                        <TableRow key={user.id}>
+                                    {users.map(user => (
+                                        <TableRow key={user.uid}>
                                             <TableCell><Checkbox 
-                                                disabled={user.role !== 'Motorista'}
-                                                checked={selectedUsers.includes(user.id)}
-                                                onCheckedChange={(checked) => handleSelectUser(user.id, !!checked)}
+                                                disabled={user.role !== 'driver'}
+                                                checked={selectedUsers.includes(user.uid)}
+                                                onCheckedChange={(checked) => handleSelectUser(user.uid, !!checked)}
                                             /></TableCell>
                                             <TableCell>
                                                 <div className="font-medium">{user.name}</div>
@@ -169,10 +263,12 @@ export default function AdminPage() {
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                                                         <DropdownMenuItem>Ver Perfil Completo</DropdownMenuItem>
-                                                        {user.role === 'Motorista' && user.profileStatus === 'Pendente' && <>
-                                                            <DropdownMenuItem>Aprovar Cadastro</DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground">Rejeitar Cadastro</DropdownMenuItem>
-                                                        </>}
+                                                        {user.role === 'driver' && (user.profileStatus === 'Pendente' || user.profileStatus === 'pending_review') && (
+                                                            <>
+                                                                <DropdownMenuItem onClick={() => handleUserStatusUpdate(user.uid, 'Aprovado')}>Aprovar Cadastro</DropdownMenuItem>
+                                                                <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => handleUserStatusUpdate(user.uid, 'Rejeitado')}>Rejeitar Cadastro</DropdownMenuItem>
+                                                            </>
+                                                        )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </TableCell>
@@ -200,7 +296,7 @@ export default function AdminPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {mockOpportunities.map(opp => (
+                                    {opportunities.map(opp => (
                                         <TableRow key={opp.id}>
                                             <TableCell className="font-medium">{opp.vehicle}</TableCell>
                                             <TableCell>{opp.provider}</TableCell>
@@ -208,8 +304,8 @@ export default function AdminPage() {
                                             <TableCell>
                                                  {opp.status === 'Pendente' && (
                                                     <div className="flex gap-2">
-                                                        <Button variant="outline" size="sm" onClick={() => handleApproval('approve', opp.id, 'opportunity')}>Aprovar</Button>
-                                                        <Button variant="destructive" size="sm" onClick={() => handleApproval('reject', opp.id, 'opportunity')}>Rejeitar</Button>
+                                                        <Button variant="outline" size="sm" onClick={() => handleListingApproval(opp.id, 'opportunities', 'Aprovado')}>Aprovar</Button>
+                                                        <Button variant="destructive" size="sm" onClick={() => handleListingApproval(opp.id, 'opportunities', 'Rejeitado')}>Rejeitar</Button>
                                                     </div>
                                                  )}
                                             </TableCell>
@@ -237,7 +333,7 @@ export default function AdminPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {mockServiceListings.map(srv => (
+                                    {services.map(srv => (
                                         <TableRow key={srv.id}>
                                             <TableCell className="font-medium">{srv.title}</TableCell>
                                             <TableCell>{srv.provider}</TableCell>
@@ -245,8 +341,8 @@ export default function AdminPage() {
                                             <TableCell>
                                                  {srv.status === 'Pendente' && (
                                                     <div className="flex gap-2">
-                                                        <Button variant="outline" size="sm" onClick={() => handleApproval('approve', srv.id, 'service')}>Aprovar</Button>
-                                                        <Button variant="destructive" size="sm" onClick={() => handleApproval('reject', srv.id, 'service')}>Rejeitar</Button>
+                                                        <Button variant="outline" size="sm" onClick={() => handleListingApproval(srv.id, 'services', 'Aprovado')}>Aprovar</Button>
+                                                        <Button variant="destructive" size="sm" onClick={() => handleListingApproval(srv.id, 'services', 'Rejeitado')}>Rejeitar</Button>
                                                     </div>
                                                  )}
                                             </TableCell>
@@ -269,24 +365,7 @@ export default function AdminPage() {
                             </Button>
                         </CardHeader>
                         <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Nome do Curso</TableHead>
-                                        <TableHead>Inscritos</TableHead>
-                                        <TableHead>Taxa de Conclusão</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {mockCourses.map(course => (
-                                        <TableRow key={course.title}>
-                                            <TableCell className="font-medium">{course.title}</TableCell>
-                                            <TableCell>{course.students}</TableCell>
-                                            <TableCell>N/A</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                            <p>{courses.length} cursos cadastrados. Acesse a página de gerenciamento para mais detalhes.</p>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -304,7 +383,7 @@ export default function AdminPage() {
                         <CardContent>
                             <div className="flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed rounded-lg p-12">
                                  <Calendar className="h-12 w-12 mb-4" />
-                                <p className="font-semibold">Nenhum evento agendado recentemente.</p>
+                                <p className="font-semibold">{events.length} eventos futuros cadastrados.</p>
                                 <p className="text-sm">Clique no botão para adicionar novos shows, feiras e outros acontecimentos importantes na cidade.</p>
                             </div>
                         </CardContent>
@@ -324,7 +403,7 @@ export default function AdminPage() {
                         <CardContent>
                            <div className="flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed rounded-lg p-12">
                                  <ShoppingCart className="h-12 w-12 mb-4" />
-                                <p className="font-semibold">Nenhum pacote de crédito criado.</p>
+                                <p className="font-semibold">{packages.length} pacotes de crédito criados.</p>
                                 <p className="text-sm">Clique no botão para criar pacotes de créditos que os usuários poderão comprar.</p>
                             </div>
                         </CardContent>
