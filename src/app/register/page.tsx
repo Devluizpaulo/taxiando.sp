@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -19,24 +20,58 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
-// This client-side schema is just for basic validation and structure.
-// The definitive, strict validation happens on the server.
-const registerFormSchema = z.object({
-  role: z.enum(['driver', 'fleet', 'provider', 'admin']),
-  personType: z.enum(['pf', 'pj']).optional(),
+const passwordSchema = z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' });
+
+const baseSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
-  password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
-  confirmPassword: z.string(),
-  name: z.string().optional(),
-  cpf: z.string().optional(),
-  razaoSocial: z.string().optional(),
-  nomeFantasia: z.string().optional(),
-  cnpj: z.string().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'As senhas não coincidem.',
-  path: ['confirmPassword'],
+  password: passwordSchema,
 });
 
+const registerSchema = z.discriminatedUnion("role", [
+  baseSchema.extend({
+    role: z.literal("driver"),
+    name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
+    cpf: z.string().min(11, { message: 'O CPF é obrigatório e deve conter 11 dígitos.' }),
+  }),
+  baseSchema.extend({
+    role: z.literal("admin"),
+    name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
+    cpf: z.string().min(11, { message: 'O CPF é obrigatório e deve conter 11 dígitos.' }),
+  }),
+  baseSchema.extend({
+    role: z.literal("fleet"),
+    personType: z.enum(['pf', 'pj']),
+    name: z.string().optional(),
+    cpf: z.string().optional(),
+    nomeFantasia: z.string().optional(),
+    cnpj: z.string().optional(),
+  }),
+   baseSchema.extend({
+    role: z.literal("provider"),
+    personType: z.enum(['pf', 'pj']),
+    name: z.string().optional(),
+    cpf: z.string().optional(),
+    nomeFantasia: z.string().optional(),
+    cnpj: z.string().optional(),
+  })
+]).and(z.object({
+    confirmPassword: passwordSchema,
+})).refine(data => data.password === data.confirmPassword, {
+    message: "As senhas não coincidem.",
+    path: ["confirmPassword"],
+}).refine(data => {
+    if (data.role === 'fleet' || data.role === 'provider') {
+        if (data.personType === 'pf') return !!data.name && !!data.cpf;
+        if (data.personType === 'pj') return !!data.nomeFantasia; // CNPJ is optional
+    }
+    return true;
+}, {
+    message: "Preencha os campos obrigatórios para o tipo de pessoa selecionado.",
+    path: ["name"], // Or another relevant field
+});
+
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
 type Role = 'driver' | 'fleet' | 'provider' | 'admin';
 type PersonType = 'pf' | 'pj';
 
@@ -52,35 +87,33 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'select_role' | 'fill_form'>('select_role');
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
-  const form = useForm<z.infer<typeof registerFormSchema>>({
-    resolver: zodResolver(registerFormSchema),
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       email: '',
       password: '',
       confirmPassword: '',
-      name: '',
-      cpf: '',
-      razaoSocial: '',
-      nomeFantasia: '',
-      cnpj: '',
     },
   });
-  
-  const selectedRole = form.watch('role');
-  const personType = form.watch('personType');
 
   const handleRoleSelect = (role: Role) => {
+    setSelectedRole(role);
     form.setValue('role', role);
-    if (role === 'driver' || role === 'admin') {
-      form.setValue('personType', 'pf');
-    } else {
-      form.setValue('personType', 'pf'); // Default to PF for fleet/provider
+    if (role === 'fleet' || role === 'provider') {
+      form.setValue('personType', 'pf'); // Default to PF
     }
     setStep('fill_form');
   }
 
-  async function onSubmit(values: z.infer<typeof registerFormSchema>) {
+  const handleBack = () => {
+    setStep('select_role');
+    setSelectedRole(null);
+    form.reset();
+  }
+
+  async function onSubmit(values: RegisterFormValues) {
     setIsLoading(true);
     try {
       const result = await registerUser(values);
@@ -95,10 +128,11 @@ export default function RegisterPage() {
          toast({
           variant: 'destructive',
           title: 'Erro no Cadastro',
-          description: result.error,
+          description: result.error || 'Ocorreu um erro desconhecido.',
         });
       }
     } catch (error) {
+        console.error("Submit error:", error);
         toast({
           variant: 'destructive',
           title: 'Erro Inesperado',
@@ -109,19 +143,53 @@ export default function RegisterPage() {
     }
   }
 
-  const renderFormFields = () => {
-    const isAdmin = selectedRole === 'admin';
-    const isDriver = selectedRole === 'driver';
-    const isCompany = selectedRole === 'fleet' || selectedRole === 'provider';
+  const personType = form.watch('personType');
 
+  const renderFormFields = () => {
+    if (!selectedRole) return null;
+
+    const isCompany = selectedRole === 'fleet' || selectedRole === 'provider';
+    
     return (
         <div className="space-y-4">
-            {(isDriver || isAdmin || (isCompany && personType === 'pf')) && (
+            {isCompany && (
+                 <FormField
+                    control={form.control}
+                    name="personType"
+                    render={({ field }) => (
+                        <FormItem className="space-y-3">
+                        <FormLabel>Tipo de Conta</FormLabel>
+                        <FormControl>
+                            <Tabs
+                                defaultValue={field.value}
+                                onValueChange={(v) => field.onChange(v as PersonType)}
+                                className="w-full"
+                            >
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="pf">Pessoa Física</TabsTrigger>
+                                    <TabsTrigger value="pj">Pessoa Jurídica</TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            )}
+
+            {(selectedRole === 'driver' || selectedRole === 'admin' || (isCompany && personType === 'pf')) && (
                 <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
             )}
-             {isCompany && personType === 'pj' && (
+            
+            {(selectedRole === 'driver' || selectedRole === 'admin' || (isCompany && personType === 'pf')) && (
+                 <FormField control={form.control} name="cpf" render={({ field }) => (
+                    <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+            )}
+
+            {isCompany && personType === 'pj' && (
                 <>
                     <FormField control={form.control} name="nomeFantasia" render={({ field }) => (
                         <FormItem><FormLabel>Nome Fantasia</FormLabel><FormControl><Input placeholder="Nome público da sua empresa" {...field} /></FormControl><FormMessage /></FormItem>
@@ -134,13 +202,9 @@ export default function RegisterPage() {
                     )}/>
                 </>
             )}
-            {isAdmin && (
-                 <FormField control={form.control} name="cpf" render={({ field }) => (
-                    <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-            )}
+
             <FormField control={form.control} name="email" render={({ field }) => (
-                <FormItem><FormLabel>E-mail</FormLabel><FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>E-mail de Acesso</FormLabel><FormControl><Input type="email" placeholder="seu@email.com" {...field} /></FormControl><FormMessage /></FormItem>
             )}/>
             <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="password" render={({ field }) => (
@@ -157,7 +221,7 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-lg">
-        {step === 'select_role' && (
+        {step === 'select_role' ? (
            <>
               <CardHeader className="text-center">
                   <Image src="/logo.png" alt="Táxiando SP Logo" width={180} height={170} className="h-24 w-auto mx-auto mb-4 rounded-xl shadow-lg" />
@@ -184,13 +248,12 @@ export default function RegisterPage() {
                   </Link>
               </CardFooter>
             </>
-        )}
-        {step === 'fill_form' && (
+        ) : (
              <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     <CardHeader>
                         <div className="flex items-center gap-4">
-                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {form.reset(); setStep('select_role')}}><ArrowLeft /></Button>
+                           <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={handleBack}><ArrowLeft /></Button>
                             <div>
                                 <CardTitle className="text-2xl font-headline">Finalize seu Cadastro</CardTitle>
                                 <CardDescription>Preencha os dados para o perfil de <span className="font-bold text-foreground">{roles.find(r => r.id === selectedRole)?.title.replace('Sou ', '')}</span>.</CardDescription>
@@ -198,26 +261,6 @@ export default function RegisterPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {(selectedRole === 'fleet' || selectedRole === 'provider') && (
-                             <FormField
-                                control={form.control}
-                                name="personType"
-                                render={({ field }) => (
-                                    <FormItem className="space-y-3">
-                                    <FormLabel>Tipo de Conta</FormLabel>
-                                    <FormControl>
-                                        <Tabs defaultValue={field.value} onValueChange={(v) => field.onChange(v as PersonType)} className="w-full">
-                                            <TabsList className="grid w-full grid-cols-2">
-                                                <TabsTrigger value="pf">Pessoa Física</TabsTrigger>
-                                                <TabsTrigger value="pj">Pessoa Jurídica</TabsTrigger>
-                                            </TabsList>
-                                        </Tabs>
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        )}
                        {renderFormFields()}
                     </CardContent>
                     <CardFooter className="flex flex-col gap-4">
