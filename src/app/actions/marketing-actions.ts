@@ -2,18 +2,18 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { adminDB } from '@/lib/firebase-admin';
-import { collection, doc, addDoc, serverTimestamp, getDocs, query, where, Timestamp, getDoc, orderBy, limit, setDoc } from 'firebase-admin/firestore';
+import { adminDB, Timestamp as AdminTimestamp } from '@/lib/firebase-admin';
+import admin from 'firebase-admin';
 import { type Coupon, type Notification, type UserProfile } from '@/lib/types';
 import { auth } from '@/lib/firebase';
 
 
 export async function createCoupon(couponData: Omit<Coupon, 'id' | 'createdAt' | 'uses'>) {
     try {
-        await addDoc(collection(adminDB, 'coupons'), {
+        await adminDB.collection('coupons').add({
             ...couponData,
             uses: 0,
-            createdAt: serverTimestamp(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         revalidatePath('/admin/marketing/coupons');
         return { success: true, message: 'Cupom criado com sucesso!' };
@@ -26,9 +26,9 @@ export async function createCoupon(couponData: Omit<Coupon, 'id' | 'createdAt' |
 
 export async function sendNotification(notificationData: Omit<Notification, 'id' | 'createdAt'>) {
      try {
-        await addDoc(collection(adminDB, 'notifications'), {
+        await adminDB.collection('notifications').add({
             ...notificationData,
-            createdAt: serverTimestamp(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         return { success: true, message: 'Notificação enviada com sucesso!' };
     } catch (error) {
@@ -43,24 +43,22 @@ export async function getNotificationsForUser(): Promise<{notifications: Notific
     if (!currentUser) return { notifications: [], newNotificationCount: 0 };
 
     try {
-        const userDoc = await getDoc(doc(adminDB, 'users', currentUser.uid));
-        if (!userDoc.exists()) return { notifications: [], newNotificationCount: 0 };
+        const userDoc = await adminDB.collection('users').doc(currentUser.uid).get();
+        if (!userDoc.exists) return { notifications: [], newNotificationCount: 0 };
         const userProfile = userDoc.data() as UserProfile;
         
-        const q = query(
-            collection(adminDB, 'notifications'), 
-            where('targetAudience', 'in', ['all', userProfile.role]),
-            orderBy('createdAt', 'desc'),
-            limit(10)
-        );
+        const q = adminDB.collection('notifications')
+            .where('targetAudience', 'in', ['all', userProfile.role])
+            .orderBy('createdAt', 'desc')
+            .limit(10);
 
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await q.get();
         const notifications = querySnapshot.docs.map(doc => {
              const data = doc.data();
              return {
                 id: doc.id,
                 ...data,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+                createdAt: (data.createdAt as AdminTimestamp).toDate().toISOString(),
              } as Notification
         });
 
@@ -80,9 +78,9 @@ export async function markNotificationsAsRead() {
     if (!currentUser) return { success: false, error: "Usuário não autenticado." };
     
     try {
-        const userRef = doc(adminDB, 'users', currentUser.uid);
-        await setDoc(userRef, {
-            lastNotificationCheck: serverTimestamp()
+        const userRef = adminDB.collection('users').doc(currentUser.uid);
+        await userRef.set({
+            lastNotificationCheck: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
         return { success: true };
     } catch (error) {
@@ -94,17 +92,17 @@ export async function markNotificationsAsRead() {
 // Helper to get all coupons for the admin panel
 export async function getAllCoupons(): Promise<Coupon[]> {
     try {
-        const couponsCollection = collection(adminDB, 'coupons');
-        const q = query(couponsCollection, orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
+        const couponsCollection = adminDB.collection('coupons');
+        const q = couponsCollection.orderBy('createdAt', 'desc');
+        const querySnapshot = await q.get();
         
         return querySnapshot.docs.map(doc => {
             const data = doc.data();
             return {
                 id: doc.id,
                 ...data,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-                expiresAt: data.expiresAt ? (data.expiresAt as Timestamp).toDate().toISOString() : undefined,
+                createdAt: (data.createdAt as AdminTimestamp).toDate().toISOString(),
+                expiresAt: data.expiresAt ? (data.expiresAt as AdminTimestamp).toDate().toISOString() : undefined,
             } as Coupon;
         });
     } catch (error) {
