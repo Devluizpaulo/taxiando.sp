@@ -3,7 +3,7 @@
 
 import { auth } from '@/lib/firebase';
 import { adminDB, Timestamp as AdminTimestamp } from '@/lib/firebase-admin';
-import { doc, runTransaction, serverTimestamp, collection, getDoc, increment, setDoc } from 'firebase/firestore';
+import { doc, runTransaction, serverTimestamp, collection, getDoc, increment, setDoc } from 'firebase-admin/firestore';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { type CreditPackage, type Coupon } from '@/lib/types';
 import { getPaymentSettings } from './admin-actions';

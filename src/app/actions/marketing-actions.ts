@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { adminDB } from '@/lib/firebase-admin';
-import { collection, doc, addDoc, serverTimestamp, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, serverTimestamp, getDocs, query, where, Timestamp, getDoc, orderBy, limit, setDoc } from 'firebase-admin/firestore';
 import { type Coupon, type Notification, type UserProfile } from '@/lib/types';
 import { auth } from '@/lib/firebase';
 

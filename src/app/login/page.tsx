@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { PublicHeader } from '@/components/layout/public-header';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { trackLogin } from '../actions/analytics-actions';
+import { ensureInitialData } from '../actions/admin-actions';
 import { type UserProfile } from '@/lib/types';
 
 
@@ -56,6 +57,8 @@ export default function LoginPage() {
       if (userDoc.exists()) {
         const userProfile = userDoc.data() as UserProfile;
         if (userProfile.role === 'admin') {
+          toast({ title: "Verificando dados iniciais...", description: "Garantindo que a plataforma esteja pronta." });
+          await ensureInitialData();
           router.push('/admin');
         } else {
           router.push('/dashboard');
