@@ -1,3 +1,4 @@
+
 "use client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
@@ -15,7 +16,7 @@ import {
   SidebarInset,
   SidebarTrigger
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { LoadingScreen } from "@/components/loading-screen";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NotificationBell } from "@/components/notification-bell";
 
 export default function DashboardLayout({
   children,
@@ -142,6 +144,23 @@ export default function DashboardLayout({
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Marketing</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                 <SidebarMenuItem>
+                                    <SidebarMenuButton asChild>
+                                        <Link href="/admin/marketing/coupons"><Tag className="text-teal-500" /> Cupons</Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                 <SidebarMenuItem>
+                                    <SidebarMenuButton asChild>
+                                        <Link href="/admin/marketing/notifications"><Megaphone className="text-pink-500" /> Notificações</Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
                      <SidebarGroup>
                         <SidebarGroupLabel>Configurações</SidebarGroupLabel>
                         <SidebarGroupContent>
@@ -196,10 +215,13 @@ export default function DashboardLayout({
             <div className="w-full flex-1">
                 {/* Potentially a search bar here */}
             </div>
-            <Button onClick={handleSignOut} variant="outline">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </Button>
+            <div className="flex items-center gap-4">
+              <NotificationBell />
+              <Button onClick={handleSignOut} variant="outline">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+              </Button>
+            </div>
         </header>
         <main className="flex flex-1 flex-col p-4 sm:p-6">
             {userProfile ? children : <LoadingScreen />}

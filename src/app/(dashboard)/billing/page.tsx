@@ -16,9 +16,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CreditCard, Loader2, ShoppingCart, AlertCircle } from "lucide-react";
+import { CreditCard, Loader2, ShoppingCart, AlertCircle, Tag, Ticket } from "lucide-react";
 import { mockTransactions } from '@/lib/mock-data';
 import { LoadingScreen } from '@/components/loading-screen';
+import { Input } from '@/components/ui/input';
 
 export default function BillingPage() {
     const { user, userProfile, setUserProfile, loading: authLoading } = useAuth();
@@ -32,6 +33,7 @@ export default function BillingPage() {
     const [preferenceId, setPreferenceId] = useState<string | null>(null);
     const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
     const [mercadoPagoKey, setMercadoPagoKey] = useState<string | null>(null);
+    const [couponCode, setCouponCode] = useState('');
 
     useEffect(() => {
         const status = searchParams.get('status');
@@ -92,11 +94,19 @@ export default function BillingPage() {
         setSelectedPackage(pkg);
 
         try {
-            const result = await createPaymentPreference({ packageId: pkg.id, userId: user.uid });
-            if (result.preferenceId) {
+            const result = await createPaymentPreference({
+                packageId: pkg.id,
+                userId: user.uid,
+                couponCode: couponCode || undefined,
+            });
+
+            if (result.success && result.preferenceId) {
                 setPreferenceId(result.preferenceId);
+                 if (result.discountApplied) {
+                    toast({ title: "Cupom Aplicado!", description: `Desconto de ${result.discountApplied.description} aplicado com sucesso.`});
+                }
             } else {
-                throw new Error("ID de preferência não retornado.");
+                throw new Error(result.error || "ID de preferência não retornado.");
             }
         } catch (error) {
              toast({
@@ -122,16 +132,35 @@ export default function BillingPage() {
                 <p className="text-muted-foreground">Gerencie seus créditos, compras e histórico de transações.</p>
             </div>
             
-            <Card className="lg:w-1/3">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Meu Saldo</CardTitle>
-                    <CreditCard className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{userProfile?.credits ?? 0} créditos</div>
-                    <p className="text-xs text-muted-foreground">Use seus créditos para destacar anúncios, emitir certificados e mais.</p>
-                </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Meu Saldo</CardTitle>
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{userProfile?.credits ?? 0} créditos</div>
+                        <p className="text-xs text-muted-foreground">Use seus créditos para destacar anúncios, emitir certificados e mais.</p>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Cupom de Desconto</CardTitle>
+                        <Ticket className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-center gap-2">
+                            <Input 
+                                placeholder="Insira seu cupom" 
+                                value={couponCode}
+                                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                            />
+                        </div>
+                         <p className="text-xs text-muted-foreground mt-2">Possui um código? Insira aqui antes de escolher o pacote.</p>
+                    </CardContent>
+                </Card>
+            </div>
+
 
             <div className="space-y-4">
                 <h2 className="font-headline text-2xl font-semibold">Comprar Créditos</h2>

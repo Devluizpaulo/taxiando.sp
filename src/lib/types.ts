@@ -60,9 +60,10 @@ export interface UserProfile {
         whatsapp?: string;
     };
 
-    // Billing & Analytics
+    // Billing, Analytics & Notifications
     credits?: number;
     loginCount?: number;
+    lastNotificationCheck?: Timestamp;
 }
 
 export interface SupportingMaterial {
@@ -219,4 +220,26 @@ export interface AnalyticsData {
         totalRevenue?: number;
         packagesSold?: number;
     }
+}
+
+export interface Coupon {
+    id: string;
+    code: string;
+    discountType: 'percentage' | 'fixed';
+    discountValue: number;
+    maxUses?: number;
+    uses: number;
+    isActive: boolean;
+    expiresAt?: Timestamp | string;
+    createdAt: Timestamp | string;
+}
+
+export interface Notification {
+    id: string;
+    title: string;
+    message: string;
+    targetAudience: 'all' | 'drivers' | 'fleets' | 'providers' | 'admins';
+    icon?: string;
+    link?: string;
+    createdAt: Timestamp | string;
 }
