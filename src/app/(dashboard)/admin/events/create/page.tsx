@@ -6,7 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { nanoid } from 'nanoid';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -153,9 +154,21 @@ export default function CreateEventPage() {
         setIsSubmitting(true);
         try {
             const eventId = nanoid();
+            let finalImageUrl = values.imageUrl;
+
+            // If the image is a data URI from our AI, upload it to Firebase Storage
+            // and replace the data URI with the public URL.
+            if (values.imageUrl.startsWith('data:image')) {
+                toast({ title: "Processando imagem...", description: "Fazendo upload da imagem gerada para o armazenamento." });
+                const storageRef = ref(storage, `events/${eventId}.png`);
+                const uploadResult = await uploadString(storageRef, values.imageUrl, 'data_url');
+                finalImageUrl = await getDownloadURL(uploadResult.ref);
+            }
+
             const eventData = {
                 id: eventId,
                 ...values,
+                imageUrl: finalImageUrl, // Overwrite with the storage URL if it was a data URI
                 startDate: Timestamp.fromDate(values.startDate),
                 endDate: Timestamp.fromDate(values.endDate),
                 createdAt: serverTimestamp(),
