@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, SetStateAction, Dispatch, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, SetStateAction, createContext, useContext, ReactNode } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { doc, getDoc, type Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -71,7 +71,7 @@ interface AuthContextType {
     user: User | null;
     userProfile: UserProfile | null;
     loading: boolean;
-    setUserProfile: Dispatch<SetStateAction<UserProfile | null>>;
+    setUserProfile: (value: SetStateAction<UserProfile | null>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
