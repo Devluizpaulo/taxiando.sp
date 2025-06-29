@@ -60,8 +60,9 @@ export interface UserProfile {
         whatsapp?: string;
     };
 
-    // Billing
+    // Billing & Analytics
     credits?: number;
+    loginCount?: number;
 }
 
 export interface SupportingMaterial {
@@ -197,4 +198,25 @@ export interface Opportunity {
   provider: string;
   type: 'Frota' | 'Porta Branca';
   status: 'Pendente' | 'Aprovado' | 'Rejeitado';
+}
+
+export interface PaymentGatewaySettings {
+    mercadoPago: {
+        publicKey?: string;
+        accessToken?: string;
+        enabledMethods?: ('pix' | 'credit_card' | 'debit_card' | 'account_money')[];
+    }
+}
+
+export interface AnalyticsData {
+    pageViews?: {
+        home?: number;
+    };
+    logins?: {
+        total?: number;
+    };
+    sales?: {
+        totalRevenue?: number;
+        packagesSold?: number;
+    }
 }

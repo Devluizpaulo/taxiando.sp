@@ -1,13 +1,15 @@
-import { initializeApp, getApps } from 'firebase-admin/app';
+import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 
-// This pattern ensures that the Firebase Admin app is initialized only once.
+let app: App;
 if (getApps().length === 0) {
-  initializeApp();
+  app = initializeApp();
+} else {
+  app = getApps()[0];
 }
 
-const adminAuth = getAuth();
-const db = getFirestore();
+const adminAuth = getAuth(app);
+const adminDB = getFirestore(app);
 
-export { adminAuth, db, Timestamp };
+export { adminAuth, adminDB, Timestamp };

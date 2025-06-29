@@ -8,11 +8,14 @@ import {
   SidebarFooter, 
   SidebarMenu, 
   SidebarMenuItem, 
-  SidebarMenuButton, 
+  SidebarMenuButton,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
   SidebarInset,
   SidebarTrigger
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -114,24 +117,43 @@ export default function DashboardLayout({
                 <>
                     <SidebarMenuItem>
                         <SidebarMenuButton asChild>
-                            <Link href="/admin"><Shield/> Painel Admin</Link>
+                            <Link href="/admin"><Shield className="text-red-500" /> Painel Admin</Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
-                            <Link href="/admin/courses"><BookOpen/> Gerenciar Cursos</Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                        <Link href="/admin/events"><Calendar/> Gerenciar Eventos</Link>
-                    </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
-                            <Link href="/admin/billing"><ShoppingCart/> Pacotes de Crédito</Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Gestão</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild>
+                                        <Link href="/admin/courses"><BookOpen className="text-blue-500" /> Cursos</Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild>
+                                        <Link href="/admin/events"><Calendar className="text-orange-500" /> Eventos</Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild>
+                                        <Link href="/admin/billing"><ShoppingCart className="text-green-500" /> Pacotes de Crédito</Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                     <SidebarGroup>
+                        <SidebarGroupLabel>Configurações</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                 <SidebarMenuItem>
+                                    <SidebarMenuButton asChild>
+                                        <Link href="/admin/settings/payments"><CreditCard className="text-indigo-500" /> Pagamentos</Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
                 </>
                 )}
             </SidebarMenu>

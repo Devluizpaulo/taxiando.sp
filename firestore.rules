@@ -1,56 +1,63 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+  
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
     
     match /users/{userId} {
-      // A user can create their own profile document, but only if the document ID matches their UID.
-      allow create: if request.auth != null && request.auth.uid == userId;
+      allow read: if isAuth();
+      allow create: if request.auth.uid == userId; // Allows a user to create their own doc
+      allow update: if isAuth() && (request.auth.uid == userId || isAdmin());
       
-      // A user can read their own profile, and admins can read any profile.
-      allow read: if request.auth != null && (request.auth.uid == userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      match /transactions/{transactionId} {
+        allow read: if isAuth() && request.auth.uid == userId || isAdmin();
+        allow create: if isAdmin(); // Only trusted server/admin can create transactions
+      }
       
-      // A user can update their own profile.
-      allow update: if request.auth.uid == userId;
-
-      // Generally, don't allow users to delete their profiles directly.
-      allow delete: if false;
+      match /progress/{courseId} {
+        allow read, write: if isAuth() && request.auth.uid == userId;
+      }
     }
-
+    
+    // Public read, admin write
     match /courses/{courseId} {
-      allow read: if request.auth != null;
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow read: if true;
+      allow write: if isAdmin();
     }
-
+    
     match /events/{eventId} {
-      allow read: if true; // Publicly readable
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow read: if true;
+      allow write: if isAdmin();
     }
     
     match /credit_packages/{packageId} {
-      allow read: if request.auth != null;
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow read: if true;
+      allow write: if isAdmin();
     }
     
-    // User-specific subcollections (like progress or transactions)
-    match /users/{userId}/{collection}/{docId} {
-        allow read, write: if request.auth.uid == userId;
+    match /opportunities/{oppId} {
+      allow read, write: if isAuth();
     }
-
-    // Rules for opportunities and services require admin moderation
-     match /opportunities/{opportunityId} {
-      allow read: if request.auth != null;
-      // Allow creation by fleets, update by admins
-      allow create: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'fleet';
-      allow update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
+    
     match /services/{serviceId} {
-      allow read: if request.auth != null;
-      // Allow creation by providers, update by admins
-      allow create: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'provider';
-      allow update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow read, write: if isAuth();
+    }
+
+    match /settings/{settingId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /analytics/{analyticId} {
+      allow read: if isAdmin();
+      // Write access is handled by server-side actions with admin credentials, which bypass these rules.
+      allow write: if false; 
     }
   }
 }
