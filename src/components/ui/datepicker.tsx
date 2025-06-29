@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -24,8 +23,15 @@ export function DatePicker({
   onChange: (date?: Date) => void;
   className?: string;
 }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const handleSelect = (date?: Date) => {
+    onChange(date);
+    setIsOpen(false);
+  };
+
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
           variant={"outline"}
@@ -43,7 +49,7 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={value}
-          onSelect={onChange}
+          onSelect={handleSelect}
           initialFocus
           locale={ptBR}
         />
