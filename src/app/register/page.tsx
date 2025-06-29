@@ -17,6 +17,8 @@ import { Loader2, Car, Building, Wrench, ArrowLeft, Shield } from 'lucide-react'
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 const registerFormSchema = z.object({
   role: z.enum(['driver', 'fleet', 'provider', 'admin'], { required_error: 'Você precisa selecionar um tipo de conta.' }),
@@ -32,22 +34,7 @@ const registerFormSchema = z.object({
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem.',
   path: ['confirmPassword'],
-})
-.refine(data => !(data.role === 'admin' && (!data.name || data.name.length < 3)), {
-    message: 'O nome completo é obrigatório para administrador.', path: ['name'],
-})
-.refine(data => !(data.role === 'admin' && (!data.cpf || data.cpf.length < 11)), {
-    message: 'O CPF é obrigatório para administrador.', path: ['cpf'],
-})
-.refine(data => {
-    if (data.role === 'driver') return data.name && data.name.length >= 3;
-    if (data.role !== 'driver' && data.personType === 'pf') return data.name && data.name.length >= 3;
-    return true;
-}, { message: 'O nome completo é obrigatório.', path: ['name']})
-.refine(data => {
-    if (data.role !== 'driver' && data.personType === 'pj') return data.nomeFantasia && data.nomeFantasia.length >= 3;
-    return true;
-}, { message: 'O nome fantasia é obrigatório.', path: ['nomeFantasia']});
+});
 
 
 type Role = 'driver' | 'fleet' | 'provider' | 'admin';
@@ -94,10 +81,13 @@ export default function RegisterPage() {
     try {
       const result = await registerUser(values);
       if (result.success) {
-        // Firebase Auth sign-in is handled server-side, but the client needs to know.
-        // A full page reload will trigger the AuthProvider to pick up the new session.
+        // Sign in the user after successful registration
+        await signInWithEmailAndPassword(auth, values.email, values.password);
         router.push('/dashboard');
-        router.refresh(); 
+        toast({
+            title: "Cadastro realizado com sucesso!",
+            description: "Bem-vindo(a) à plataforma.",
+        });
       } else {
          toast({
           variant: 'destructive',
@@ -134,7 +124,7 @@ export default function RegisterPage() {
                 )}/>
             )}
 
-            {(isDriver || isAdmin) && (
+            {isAdmin && (
                  <FormField control={form.control} name="cpf" render={({ field }) => (
                     <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>

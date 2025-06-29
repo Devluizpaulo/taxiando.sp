@@ -3,53 +3,51 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    function isAuthOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+    // Default deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
     }
 
-    function isAdmin() {
-      // Check if the requesting user has an 'admin' role in their user document.
-      return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
+    // Allow user profile creation if data is valid
     match /users/{userId} {
-      // Allow creation of a user document if the UID inside the document
-      // matches the document's ID. This is a basic sanity check that can be
-      // done without authentication, allowing the server-side signup to work.
-      // The server-side code is responsible for all other validation (e.g., one admin only).
       allow create: if request.resource.data.uid == userId;
 
-      // Once created, only the owner or an admin can access/modify.
-      allow read: if isAuthOwner(userId) || isAdmin();
+      // Allow users to read/update their own profile
+      allow read, update: if request.auth != null && request.auth.uid == userId;
 
-      // User cannot change their own role. Admins can.
-      allow update: if (isAuthOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin();
-      
-      // Only an admin can delete a user document.
-      allow delete: if isAdmin();
+      // Allow admins to read/update any user profile
+      allow read, update: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
-    
-    // Admins can manage these collections
-    match /courses/{docId} { allow read, write: if isAdmin(); }
-    match /events/{docId} { allow read, write: if isAdmin(); }
-    match /credit_packages/{docId} { allow read, write: if isAdmin(); }
-    
-    // Authenticated users (fleets) can create opportunities, but only admins can manage all
-    match /opportunities/{docId} { 
-      allow read, create: if request.auth != null;
-      allow update, delete: if isAdmin();
+
+    // Publicly readable collections (e.g., courses, events)
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
-    
-    // Authenticated users (providers) can create services, but only admins can manage all
-    match /services/{docId} { 
-      allow read, create: if request.auth != null;
-      allow update, delete: if isAdmin();
+    match /events/{eventId} {
+      allow read: if true;
+       allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
-    
-    // Rules for user subcollections (progress, transactions, etc.)
+    match /credit_packages/{packageId} {
+        allow read: if true;
+        allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // User-specific subcollections
     match /users/{userId}/{collection}/{docId} {
-      allow read, write: if isAuthOwner(userId) || isAdmin();
+        // Allow users to manage their own subcollections (progress, transactions)
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Listings (Opportunities, Services)
+    match /opportunities/{opportunityId} {
+        allow read: if true; // Publicly readable
+        // Allow write only by admin (for moderation) or owner (if you add an owner field)
+        allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+     match /services/{serviceId} {
+        allow read: if true; // Publicly readable
+        allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }
