@@ -1,10 +1,11 @@
+
 'use server';
 
 import { auth } from '@/lib/firebase';
-import { adminDB } from '@/lib/firebase-admin';
+import { adminDB, Timestamp as AdminTimestamp } from '@/lib/firebase-admin';
 import { doc, runTransaction, serverTimestamp, collection, getDoc, increment, setDoc } from 'firebase/firestore';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
-import { type CreditPackage } from '@/lib/types';
+import { type CreditPackage, type Coupon } from '@/lib/types';
 import { getPaymentSettings } from './admin-actions';
 import { headers } from 'next/headers';
 
@@ -60,16 +61,29 @@ export async function purchaseCredits(params: PurchaseCreditsParams) {
 interface CreatePreferenceParams {
     packageId: string;
     userId: string;
+    couponCode?: string;
 }
 
-export async function createPaymentPreference({ packageId, userId }: CreatePreferenceParams) {
+type CreatePreferenceResult = {
+    success: true;
+    preferenceId: string;
+    discountApplied?: {
+        code: string;
+        description: string;
+    }
+} | {
+    success: false;
+    error: string;
+}
+
+
+export async function createPaymentPreference({ packageId, userId, couponCode }: CreatePreferenceParams): Promise<CreatePreferenceResult> {
      const { currentUser } = auth;
     if (!currentUser || currentUser.uid !== userId) {
-        throw new Error('Usuário não autenticado ou inválido.');
+        return { success: false, error: 'Usuário não autenticado ou inválido.' };
     }
 
     try {
-        // 1. Get package and user details
         const packageRef = doc(adminDB, 'credit_packages', packageId);
         const userRef = doc(adminDB, 'users', userId);
         
@@ -79,29 +93,53 @@ export async function createPaymentPreference({ packageId, userId }: CreatePrefe
             getPaymentSettings()
         ]);
 
-        if (!packageSnap.exists()) throw new Error('Pacote não encontrado.');
-        if (!userSnap.exists()) throw new Error('Usuário não encontrado.');
-        if (!settings.mercadoPago.accessToken) throw new Error('Credenciais de pagamento não configuradas.');
+        if (!packageSnap.exists()) return { success: false, error: 'Pacote não encontrado.' };
+        if (!userSnap.exists()) return { success: false, error: 'Usuário não encontrado.' };
+        if (!settings.mercadoPago.accessToken) return { success: false, error: 'Credenciais de pagamento não configuradas.' };
 
         const pkg = packageSnap.data() as CreditPackage;
         const user = userSnap.data();
+        let finalPrice = pkg.price;
+        let discountApplied;
 
-        // 2. Configure Mercado Pago client
+        if (couponCode) {
+            const couponQuery = await adminDB.collection('coupons').where('code', '==', couponCode).limit(1).get();
+            if (!couponQuery.empty) {
+                const couponDoc = couponQuery.docs[0];
+                const coupon = couponDoc.data() as Coupon;
+                const expiresAt = coupon.expiresAt ? (coupon.expiresAt as AdminTimestamp).toDate() : null;
+
+                if (coupon.isActive && (!expiresAt || expiresAt > new Date()) && (coupon.maxUses === undefined || coupon.uses < coupon.maxUses)) {
+                    if (coupon.discountType === 'percentage') {
+                        finalPrice = pkg.price * (1 - coupon.discountValue / 100);
+                        discountApplied = { code: coupon.code, description: `${coupon.discountValue}% OFF` };
+                    } else if (coupon.discountType === 'fixed') {
+                        finalPrice = Math.max(0, pkg.price - coupon.discountValue);
+                        discountApplied = { code: coupon.code, description: `R$ ${coupon.discountValue.toFixed(2)} OFF` };
+                    }
+                } else {
+                     return { success: false, error: 'Cupom inválido ou expirado.' };
+                }
+            } else {
+                 return { success: false, error: 'Cupom não encontrado.' };
+            }
+        }
+        
+        finalPrice = parseFloat(finalPrice.toFixed(2));
+
         const client = new MercadoPagoConfig({ accessToken: settings.mercadoPago.accessToken });
         const preference = new Preference(client);
-
         const origin = headers().get('origin');
         
-        // 3. Create preference object
         const result = await preference.create({
             body: {
                 items: [
                     {
                         id: pkg.id,
                         title: pkg.name,
-                        description: pkg.description,
+                        description: discountApplied ? `Com cupom: ${discountApplied.code}` : pkg.description,
                         quantity: 1,
-                        unit_price: pkg.price,
+                        unit_price: finalPrice,
                         currency_id: 'BRL',
                     }
                 ],
@@ -118,18 +156,19 @@ export async function createPaymentPreference({ packageId, userId }: CreatePrefe
                 metadata: {
                     user_id: userId,
                     package_id: packageId,
+                    coupon_applied: discountApplied?.code || null,
                 },
             }
         });
 
         if (!result.id) {
-            throw new Error('Falha ao criar preferência de pagamento.');
+            return { success: false, error: 'Falha ao criar preferência de pagamento.' };
         }
 
-        return { preferenceId: result.id };
+        return { success: true, preferenceId: result.id, discountApplied };
     } catch (error) {
         console.error('Erro ao criar preferência de pagamento:', error);
         const errorMessage = (error as any)?.cause?.message || (error as Error).message;
-        throw new Error(`Falha ao iniciar pagamento: ${errorMessage}`);
+        return { success: false, error: `Falha ao iniciar pagamento: ${errorMessage}` };
     }
 }

@@ -1,63 +1,105 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    function isAuth() {
-      return request.auth != null;
-    }
-    
+    // Helper function to check if the user is an admin
     function isAdmin() {
-      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Default deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
     }
     
+    // USERS: 
+    // - Allow user creation by anyone (for signup)
+    // - Authenticated users can read their own data
+    // - Authenticated users can update their own data
+    // - Admins can read/write any user document
     match /users/{userId} {
-      allow read: if isAuth();
-      allow create: if request.auth.uid == userId; // Allows a user to create their own doc
-      allow update: if isAuth() && (request.auth.uid == userId || isAdmin());
-      
-      match /transactions/{transactionId} {
-        allow read: if isAuth() && request.auth.uid == userId || isAdmin();
-        allow create: if isAdmin(); // Only trusted server/admin can create transactions
-      }
-      
-      match /progress/{courseId} {
-        allow read, write: if isAuth() && request.auth.uid == userId;
-      }
+      allow create: if request.auth != null;
+      allow read, update: if request.auth.uid == userId || isAdmin();
     }
     
-    // Public read, admin write
+    // COURSES: 
+    // - Authenticated users can read all courses
+    // - Admins can create, update, and delete courses
     match /courses/{courseId} {
-      allow read: if true;
-      allow write: if isAdmin();
+        allow read: if request.auth != null;
+        allow write: if isAdmin();
     }
     
+    // USER PROGRESS:
+    // - Users can read and write to their own progress subcollection
+    match /users/{userId}/progress/{courseId} {
+        allow read, write: if request.auth.uid == userId;
+    }
+
+    // EVENTS:
+    // - Anyone can read events
+    // - Admins can write events
     match /events/{eventId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    
+
+    // CREDIT PACKAGES:
+    // - Anyone can read credit packages
+    // - Admins can write credit packages
     match /credit_packages/{packageId} {
-      allow read: if true;
-      allow write: if isAdmin();
+       allow read: if true;
+       allow write: if isAdmin();
     }
     
+    // COUPONS:
+    // - Only admins can read/write coupons
+    match /coupons/{couponId} {
+        allow read, write: if isAdmin();
+    }
+    
+    // NOTIFICATIONS:
+    // - Authenticated users can read notifications
+    // - Admins can create notifications
+    match /notifications/{notificationId} {
+        allow read: if request.auth != null;
+        allow create: if isAdmin();
+        allow update, delete: if false; // Prevent modification
+    }
+    
+    // SETTINGS:
+    // - Only admins can read/write settings
+    match /settings/{docId} {
+        allow read, write: if isAdmin();
+    }
+    
+    // ANALYTICS:
+    // - Reads and writes are handled by server-side logic (actions),
+    //   so client access is denied.
+     match /analytics/{docId} {
+        allow read, write: if false;
+    }
+
+    // OPPORTUNITIES & SERVICES (Classifieds)
+    // - Anyone can read listings that are 'approved' or 'Ativo'
+    // - Users can only create their own listings
+    // - Admins can write to any listing
+    function isOwner(collectionName, resourceId) {
+        return get(/databases/$(database)/documents/$(collectionName)/$(resourceId)).data.providerId == request.auth.uid;
+    }
+
     match /opportunities/{oppId} {
-      allow read, write: if isAuth();
+        allow read: if resource.data.status == 'Aprovado' || isAdmin();
+        allow create: if request.auth != null;
+        allow update: if isOwner('opportunities', oppId) || isAdmin();
     }
     
     match /services/{serviceId} {
-      allow read, write: if isAuth();
-    }
-
-    match /settings/{settingId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /analytics/{analyticId} {
-      allow read: if isAdmin();
-      // Write access is handled by server-side actions with admin credentials, which bypass these rules.
-      allow write: if false; 
+        allow read: if resource.data.status == 'Ativo' || isAdmin();
+        allow create: if request.auth != null;
+        allow update: if isOwner('services', serviceId) || isAdmin();
     }
   }
 }
