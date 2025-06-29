@@ -1,43 +1,47 @@
 
 'use server';
 
-import { db, serverAuth } from '@/lib/firebase-admin';
+import { db, auth } from '@/lib/firebase-admin';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { Timestamp } from 'firebase-admin/firestore';
 
 const passwordSchema = z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' });
-const baseSchema = z.object({
-  email: z.string().email({ message: 'Por favor, insira um email válido.' }),
-  password: passwordSchema,
-});
 
 const registerSchema = z.discriminatedUnion("role", [
-  baseSchema.extend({
+  z.object({
     role: z.literal("driver"),
     name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
     cpf: z.string().min(11, { message: 'O CPF é obrigatório e deve conter 11 dígitos.' }),
+    email: z.string().email({ message: 'Por favor, insira um email válido.' }),
+    password: passwordSchema,
   }),
-  baseSchema.extend({
+  z.object({
     role: z.literal("admin"),
     name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
     cpf: z.string().min(11, { message: 'O CPF é obrigatório e deve conter 11 dígitos.' }),
+    email: z.string().email({ message: 'Por favor, insira um email válido.' }),
+    password: passwordSchema,
   }),
-  baseSchema.extend({
+  z.object({
     role: z.literal("fleet"),
     personType: z.enum(['pf', 'pj']),
     name: z.string().optional(),
     cpf: z.string().optional(),
     nomeFantasia: z.string().optional(),
     cnpj: z.string().optional(),
+    email: z.string().email({ message: 'Por favor, insira um email válido.' }),
+    password: passwordSchema,
   }),
-   baseSchema.extend({
+  z.object({
     role: z.literal("provider"),
     personType: z.enum(['pf', 'pj']),
     name: z.string().optional(),
     cpf: z.string().optional(),
     nomeFantasia: z.string().optional(),
     cnpj: z.string().optional(),
+    email: z.string().email({ message: 'Por favor, insira um email válido.' }),
+    password: passwordSchema,
   })
 ]).and(z.object({
     confirmPassword: passwordSchema,
@@ -57,7 +61,7 @@ const registerSchema = z.discriminatedUnion("role", [
     return true;
 }, {
     message: "Preencha os campos obrigatórios para o tipo de pessoa selecionado.",
-    path: ["name"],
+    path: ["name"], // Or another relevant field
 });
 
 
@@ -105,7 +109,7 @@ export async function registerUser(data: any) {
                 break;
         }
 
-        const userRecord = await serverAuth.createUser({
+        const userRecord = await auth.createUser({
             email: validatedData.email,
             password: validatedData.password,
             displayName: displayName,
