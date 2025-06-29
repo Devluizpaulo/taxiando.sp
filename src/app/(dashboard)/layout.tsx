@@ -42,12 +42,8 @@ export default function DashboardLayout({
     router.push('/login');
   };
 
-  if (loading) {
+  if (loading || !user) {
     return <LoadingScreen className="fixed inset-0 z-50" />;
-  }
-  
-  if (!user) {
-      return <LoadingScreen className="fixed inset-0 z-50" />;
   }
 
   return (
@@ -179,17 +175,7 @@ export default function DashboardLayout({
             </Button>
         </header>
         <main className="flex flex-1 flex-col p-4 sm:p-6">
-            {(() => {
-              if (userProfile) {
-                return children;
-              }
-              // Auth check is done, user is logged in, but no profile was found in DB
-              if (!loading && user && !userProfile) {
-                redirect('/welcome');
-              }
-              // Otherwise, show the loading screen while auth is in progress
-              return <LoadingScreen />;
-            })()}
+            {userProfile ? children : <LoadingScreen />}
         </main>
       </SidebarInset>
     </SidebarProvider>
