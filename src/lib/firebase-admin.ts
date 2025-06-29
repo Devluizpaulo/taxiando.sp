@@ -1,18 +1,20 @@
-import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 
-let app: App;
-
-if (getApps().length === 0) {
-    // In a managed environment, initializeApp() with no arguments should find default credentials.
-    // This is the most robust way for App Hosting.
-    app = initializeApp();
-} else {
-    app = getApps()[0];
+// This function ensures we only initialize the app once.
+const getAdminApp = (): App => {
+    if (getApps().length > 0) {
+        return getApps()[0];
+    }
+    // In a managed environment like App Hosting, initializeApp() with no arguments
+    // should find default credentials automatically.
+    return initializeApp();
 }
 
-const db = getFirestore(app);
-const auth = getAuth(app);
+// Export the initialized services
+export const adminAuth = getAuth(getAdminApp());
+export const db = getFirestore(getAdminApp());
 
-export { db, auth, Timestamp };
+// Export Timestamp type as well
+export { Timestamp };

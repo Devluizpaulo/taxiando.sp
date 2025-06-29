@@ -1,42 +1,41 @@
 'use server';
 
-import { db, auth as adminAuth } from '@/lib/firebase-admin';
+import { db, adminAuth } from '@/lib/firebase-admin';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { Timestamp } from 'firebase-admin/firestore';
 
-// Schemas for validation
 const passwordSchema = z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' });
 
 const registerSchema = z.discriminatedUnion("role", [
   z.object({
     role: z.literal("driver"),
     name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
-    cpf: z.string().min(11, { message: 'O CPF é obrigatório e deve conter 11 dígitos.' }),
+    cpf: z.string().transform(v => v.replace(/\D/g, '')).refine(v => v.length === 11, { message: 'O CPF é obrigatório e deve conter 11 dígitos.' }),
     email: z.string().email({ message: 'Por favor, insira um email válido.' }),
   }),
   z.object({
     role: z.literal("admin"),
     name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
-    cpf: z.string().min(11, { message: 'O CPF é obrigatório e deve conter 11 dígitos.' }),
+    cpf: z.string().transform(v => v.replace(/\D/g, '')).refine(v => v.length === 11, { message: 'O CPF é obrigatório e deve conter 11 dígitos.' }),
     email: z.string().email({ message: 'Por favor, insira um email válido.' }),
   }),
   z.object({
     role: z.literal("fleet"),
     personType: z.enum(['pf', 'pj']),
     name: z.string().optional(),
-    cpf: z.string().optional(),
+    cpf: z.string().optional().transform(v => v?.replace(/\D/g, '') || ''),
     nomeFantasia: z.string().optional(),
-    cnpj: z.string().optional(),
+    cnpj: z.string().optional().transform(v => v?.replace(/\D/g, '') || ''),
     email: z.string().email({ message: 'Por favor, insira um email válido.' }),
   }),
   z.object({
     role: z.literal("provider"),
     personType: z.enum(['pf', 'pj']),
     name: z.string().optional(),
-    cpf: z.string().optional(),
+    cpf: z.string().optional().transform(v => v?.replace(/\D/g, '') || ''),
     nomeFantasia: z.string().optional(),
-    cnpj: z.string().optional(),
+    cnpj: z.string().optional().transform(v => v?.replace(/\D/g, '') || ''),
     email: z.string().email({ message: 'Por favor, insira um email válido.' }),
   })
 ]).and(z.object({
@@ -57,19 +56,13 @@ const registerSchema = z.discriminatedUnion("role", [
     return true;
 }, {
     message: "Preencha os campos obrigatórios para o tipo de pessoa selecionado.",
-    path: ["name"], // Attach error to a common field
+    path: ["name"],
 });
 
 
 export async function registerUser(data: any) {
     try {
-        const cleanedData = {
-            ...data,
-            cpf: data.cpf ? data.cpf.replace(/\D/g, '') : undefined,
-            cnpj: data.cnpj ? data.cnpj.replace(/\D/g, '') : undefined,
-        };
-        
-        const validatedData = registerSchema.parse(cleanedData);
+        const validatedData = registerSchema.parse(data);
         
         let displayName = validatedData.email;
         const userData: { [key:string]: any } = {
@@ -130,6 +123,8 @@ export async function registerUser(data: any) {
             errorMessage = error.message;
         }
         
+        console.error("REGISTRATION ERROR: ", JSON.stringify(error, null, 2));
+
         return { success: false, error: errorMessage };
     }
 }
