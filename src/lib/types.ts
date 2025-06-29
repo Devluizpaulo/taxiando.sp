@@ -76,13 +76,28 @@ export interface Badge {
     iconUrl: string; 
 }
 
+export interface QuizOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: QuizOption[];
+}
+
 export interface Lesson {
   id: string;
   title: string;
   type: 'video' | 'text' | 'quiz';
   duration: number; // in minutes
   supportingMaterials?: SupportingMaterial[];
+  questions?: QuizQuestion[];
+  passingScore?: number; // As a percentage, e.g., 70
 }
+
 
 export interface Module {
   id: string;
