@@ -197,7 +197,7 @@ export default function Home() {
                                   </CardContent>
                                   <CardFooter>
                                       <Button asChild className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                                        <Link href="/rentals">Ver mais veículos</Link>
+                                        <Link href={`/rentals/${vehicle.id}`}>Ver mais veículos</Link>
                                       </Button>
                                   </CardFooter>
                               </Card>

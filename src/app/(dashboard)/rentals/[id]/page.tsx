@@ -1,2 +1,3 @@
-// Este arquivo foi esvaziado para resolver um conflito de rotas do Next.js.
-// A página correta para esta rota está em /src/app/rentals/[id]/page.tsx.
+// This file is intentionally left without a default export to resolve a Next.js routing conflict.
+// The active page for this route is located at /src/app/rentals/[id]/page.tsx
+export {};
