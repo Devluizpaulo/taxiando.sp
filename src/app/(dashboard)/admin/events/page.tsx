@@ -21,12 +21,21 @@ export default function AdminEventsPage() {
 
     useEffect(() => {
         const fetchEvents = async () => {
+            const cacheKey = 'cached_admin_events';
             try {
+                const cachedData = sessionStorage.getItem(cacheKey);
+                if (cachedData) {
+                    setEvents(JSON.parse(cachedData));
+                    setLoading(false);
+                    return;
+                }
+
                 const eventsCollection = collection(db, 'events');
                 const q = query(eventsCollection, orderBy('startDate', 'desc'));
                 const querySnapshot = await getDocs(q);
                 const eventsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
                 setEvents(eventsData);
+                sessionStorage.setItem(cacheKey, JSON.stringify(eventsData));
             } catch (error) {
                 console.error("Error fetching events: ", error);
             } finally {

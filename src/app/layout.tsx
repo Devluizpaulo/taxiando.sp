@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
 import { AuthProvider } from '@/components/providers/auth-provider';
+import { CookieConsentBanner } from '@/components/cookie-consent-banner';
 
 export const metadata: Metadata = {
   title: 'Táxiando SP',
@@ -40,6 +41,7 @@ export default function RootLayout({
           {children}
         </AuthProvider>
         <Toaster />
+        <CookieConsentBanner />
       </body>
     </html>
   );
