@@ -1,69 +1,56 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isAuth() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isAuth() && request.auth.uid == userId;
-    }
-
-    function isAdmin() {
-      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    // User profiles
+    
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow create: if isAuth(); // Allow creation for any authenticated user during signup
-      allow update: if isOwner(userId) || isAdmin();
-      allow delete: if false; // Deletion should be handled by a server function
+      // A user can create their own profile document, but only if the document ID matches their UID.
+      allow create: if request.auth != null && request.auth.uid == userId;
       
-      // Subcollections
-      match /progress/{courseId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /transactions/{transactionId} {
-        allow read, write: if isOwner(userId);
-      }
+      // A user can read their own profile, and admins can read any profile.
+      allow read: if request.auth != null && (request.auth.uid == userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      
+      // A user can update their own profile.
+      allow update: if request.auth.uid == userId;
+
+      // Generally, don't allow users to delete their profiles directly.
+      allow delete: if false;
     }
 
-    // Courses can be read by any authenticated user, but only written by admins.
     match /courses/{courseId} {
-      allow read: if isAuth();
-      allow write: if isAdmin();
+      allow read: if request.auth != null;
+      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
-    
-    // Events are public, but only writable by admins.
+
     match /events/{eventId} {
-        allow read: if true;
-        allow write: if isAdmin();
+      allow read: if true; // Publicly readable
+      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
-    // Credit packages are readable by authenticated users, writable by admins.
     match /credit_packages/{packageId} {
-        allow read: if isAuth();
-        allow write: if isAdmin();
+      allow read: if request.auth != null;
+      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // User-specific subcollections (like progress or transactions)
+    match /users/{userId}/{collection}/{docId} {
+        allow read, write: if request.auth.uid == userId;
     }
 
-    // Opportunities: readable by authenticated users, writable by admins or fleet owners
-    match /opportunities/{oppId} {
-        allow read: if isAuth();
-        // Allow create for fleet/admin, update for admin
-        allow create: if isAuth() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'fleet' || isAdmin());
-        allow update: if isAdmin();
-        allow delete: if isAdmin();
+    // Rules for opportunities and services require admin moderation
+     match /opportunities/{opportunityId} {
+      allow read: if request.auth != null;
+      // Allow creation by fleets, update by admins
+      allow create: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'fleet';
+      allow update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Services: readable by authenticated users, writable by admins or providers
     match /services/{serviceId} {
-        allow read: if isAuth();
-        allow create: if isAuth() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'provider' || isAdmin());
-        allow update: if isAdmin();
-        allow delete: if isAdmin();
+      allow read: if request.auth != null;
+      // Allow creation by providers, update by admins
+      allow create: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'provider';
+      allow update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }

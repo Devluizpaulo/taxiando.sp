@@ -7,8 +7,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Image from 'next/image';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getFirestore, doc, setDoc, Timestamp } from 'firebase/firestore';
 
-import { registerUser } from '@/app/actions/user-actions';
+import { app } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -33,6 +35,35 @@ const registerFormSchema = z.object({
 }).refine(data => data.password === data.confirmPassword, {
     message: "As senhas não coincidem.",
     path: ["confirmPassword"],
+}).superRefine((data, ctx) => {
+    const cleanCpf = data.cpf?.replace(/\D/g, '') || '';
+    const cleanCnpj = data.cnpj?.replace(/\D/g, '') || '';
+
+    if (data.role === 'driver' || data.role === 'admin') {
+        if (!data.name || data.name.trim().length < 3) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'O nome completo é obrigatório.', path: ['name'] });
+        }
+        if (cleanCpf.length !== 11) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'O CPF é obrigatório e deve conter 11 dígitos.', path: ['cpf'] });
+        }
+    }
+    if (data.role === 'fleet' || data.role === 'provider') {
+        if (data.personType === 'pf') {
+            if (!data.name || data.name.trim().length < 3) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'O nome completo é obrigatório.', path: ['name'] });
+            }
+            if (cleanCpf.length !== 11) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'O CPF é obrigatório e deve conter 11 dígitos.', path: ['cpf'] });
+            }
+        } else if (data.personType === 'pj') {
+            if (!data.nomeFantasia || data.nomeFantasia.trim().length < 3) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'O nome fantasia é obrigatório.', path: ['nomeFantasia'] });
+            }
+            if (cleanCnpj && cleanCnpj.length !== 14) {
+                 ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Se preenchido, o CNPJ deve ter 14 dígitos.', path: ['cnpj'] });
+            }
+        }
+    }
 });
 
 
@@ -92,26 +123,64 @@ export default function RegisterPage() {
   async function onSubmit(values: RegisterFormValues) {
     setIsLoading(true);
     try {
-      const result = await registerUser(values);
-      if (result.success) {
+        const { email, password, role, personType, name, cpf, nomeFantasia, cnpj } = values;
+
+        // Create user in Firebase Auth
+        const auth = getAuth(app);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Prepare user profile data for Firestore
+        const cleanCpf = cpf?.replace(/\D/g, '');
+        const cleanCnpj = cnpj?.replace(/\D/g, '');
+        const userData: { [key: string]: any } = {
+            email: user.email,
+            role: role,
+            createdAt: Timestamp.now(),
+            profileStatus: role === 'admin' ? 'approved' : 'incomplete',
+            credits: 0,
+        };
+
+        let displayName = user.email;
+
+        // Add fields only if they have a value
+        if (name && name.trim()) {
+          userData.name = name.trim();
+          displayName = name.trim();
+        }
+        if (cleanCpf) userData.cpf = cleanCpf;
+        if (personType) userData.personType = personType;
+
+        if (nomeFantasia && nomeFantasia.trim()) {
+            userData.nomeFantasia = nomeFantasia.trim();
+            if (personType === 'pj') {
+              displayName = nomeFantasia.trim();
+            }
+        }
+        if (cleanCnpj) userData.cnpj = cleanCnpj;
+        
+        // Save user profile to Firestore
+        const db = getFirestore(app);
+        await setDoc(doc(db, 'users', user.uid), userData);
+
         toast({
             title: "Cadastro realizado com sucesso!",
-            description: "Você já pode fazer login com suas novas credenciais.",
+            description: "Você será redirecionado para a página de login.",
         });
         router.push('/login');
-      } else {
-         toast({
-          variant: 'destructive',
-          title: 'Erro no Cadastro',
-          description: result.error || 'Ocorreu um erro desconhecido.',
-        });
-      }
-    } catch (error) {
-        console.error("Submit error:", error);
+
+    } catch (error: any) {
+        let errorMessage = 'Não foi possível criar a conta. Verifique os dados e tente novamente.';
+        if (error.code === 'auth/email-already-in-use') {
+            errorMessage = 'Este email já está em uso por outra conta.';
+        } else if (error instanceof z.ZodError) {
+             errorMessage = error.errors.map(e => e.message).join('; ');
+        }
+        console.error("REGISTRATION ERROR:", error);
         toast({
           variant: 'destructive',
-          title: 'Erro Inesperado',
-          description: 'Ocorreu um erro. Por favor, tente novamente.',
+          title: 'Erro no Cadastro',
+          description: errorMessage,
         });
     } finally {
       setIsLoading(false);
