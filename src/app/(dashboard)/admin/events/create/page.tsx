@@ -150,7 +150,7 @@ export default function CreateEventPage() {
             toast({
                 variant: 'destructive',
                 title: 'Erro ao Gerar Detalhes',
-                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manually.',
+                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manualmente.',
             });
         } finally {
             setIsGenerating(false);
@@ -167,7 +167,7 @@ export default function CreateEventPage() {
             if (values.imageUrl.startsWith('data:image')) {
                 toast({ title: "Processando imagem...", description: "Comprimindo e fazendo upload da imagem para o armazenamento." });
                 
-                const imageFile = await imageCompression.getFilefromDataUrl(values.imageUrl, `${eventId}.png`);
+                const imageFile = await imageCompression.dataURLtoFile(values.imageUrl, `${eventId}.png`);
                 
                 const options = {
                     maxSizeMB: 0.5,
