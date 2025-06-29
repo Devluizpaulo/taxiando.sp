@@ -10,66 +10,75 @@ const baseSchema = z.object({
   password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
 });
 
-// Schemas for each role, extending the base
+// Schema for Admin
 const adminSchema = baseSchema.extend({
   role: z.literal('admin'),
   name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
   cpf: z.string().min(11, { message: 'O CPF é obrigatório.' }),
-  personType: z.literal('pf').optional(), // Included for consistency
 });
 
+// Schema for Driver
 const driverSchema = baseSchema.extend({
   role: z.literal('driver'),
   name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
-  personType: z.literal('pf').optional(), // Included for consistency
 });
 
-const fleetPfSchema = baseSchema.extend({
-    role: z.literal('fleet'),
-    personType: z.literal('pf'),
-    name: z.string().min(3, 'O nome é obrigatório.'),
-});
-const fleetPjSchema = baseSchema.extend({
-    role: z.literal('fleet'),
-    personType: z.literal('pj'),
-    nomeFantasia: z.string().min(3, 'O nome fantasia é obrigatório.'),
-    razaoSocial: z.string().optional(),
-    cnpj: z.string().optional(),
-});
-const fleetSchema = z.discriminatedUnion('personType', [fleetPfSchema, fleetPjSchema]);
-
-
-const providerPfSchema = baseSchema.extend({
-    role: z.literal('provider'),
-    personType: z.literal('pf'),
-    name: z.string().min(3, 'O nome é obrigatório.'),
+// Schema for Fleet (PF or PJ)
+const fleetSchema = baseSchema.extend({
+  role: z.literal('fleet'),
+  personType: z.enum(['pf', 'pj']),
+  name: z.string().optional(),
+  nomeFantasia: z.string().optional(),
+  razaoSocial: z.string().optional(),
+  cnpj: z.string().optional(),
 });
 
-const providerPjSchema = baseSchema.extend({
-    role: z.literal('provider'),
-    personType: z.literal('pj'),
-    nomeFantasia: z.string().min(3, 'O nome fantasia é obrigatório.'),
-    razaoSocial: z.string().optional(),
-    cnpj: z.string().optional(),
+// Schema for Provider (PF or PJ)
+const providerSchema = baseSchema.extend({
+  role: z.literal('provider'),
+  personType: z.enum(['pf', 'pj']),
+  name: z.string().optional(),
+  nomeFantasia: z.string().optional(),
+  razaoSocial: z.string().optional(),
+  cnpj: z.string().optional(),
 });
-const providerSchema = z.discriminatedUnion('personType', [providerPfSchema, providerPjSchema]);
-
-
-// Union of all possible schemas
-const registrationSchema = z.discriminatedUnion("role", [
-    adminSchema,
-    driverSchema,
-    fleetSchema,
-    providerSchema,
-]);
 
 
 export async function registerUser(data: any) {
-    console.log('[USER ACTION] Received registration data:', data);
     try {
-        const validatedData = registrationSchema.parse(data);
-        console.log('[USER ACTION] Data validated successfully for role:', validatedData.role);
+        let validatedData;
+        
+        // --- Step 1: Validate data based on role ---
+        switch (data.role) {
+            case 'admin':
+                validatedData = adminSchema.parse(data);
+                break;
+            case 'driver':
+                validatedData = driverSchema.parse(data);
+                break;
+            case 'fleet':
+                validatedData = fleetSchema.parse(data);
+                 if (validatedData.personType === 'pf' && (!validatedData.name || validatedData.name.length < 3)) {
+                    throw new Error('O nome completo é obrigatório para Pessoa Física.');
+                }
+                if (validatedData.personType === 'pj' && (!validatedData.nomeFantasia || validatedData.nomeFantasia.length < 3)) {
+                    throw new Error('O nome fantasia é obrigatório para Pessoa Jurídica.');
+                }
+                break;
+            case 'provider':
+                validatedData = providerSchema.parse(data);
+                 if (validatedData.personType === 'pf' && (!validatedData.name || validatedData.name.length < 3)) {
+                    throw new Error('O nome completo é obrigatório para Pessoa Física.');
+                }
+                if (validatedData.personType === 'pj' && (!validatedData.nomeFantasia || validatedData.nomeFantasia.length < 3)) {
+                    throw new Error('O nome fantasia é obrigatório para Pessoa Jurídica.');
+                }
+                break;
+            default:
+                throw new Error('Tipo de perfil inválido.');
+        }
 
+        // --- Step 2: Check for existing admin if creating one ---
         if (validatedData.role === 'admin') {
             const usersRef = db.collection('users');
             const adminQuery = await usersRef.where('role', '==', 'admin').limit(1).get();
@@ -77,16 +86,16 @@ export async function registerUser(data: any) {
                 return { success: false, error: 'Um administrador já existe. Não é possível criar outro.' };
             }
         }
-
+        
+        // --- Step 3: Create Auth User ---
         const userRecord = await serverAuth.createUser({
             email: validatedData.email,
             password: validatedData.password,
-            displayName: 'name' in validatedData ? validatedData.name : validatedData.nomeFantasia,
+            displayName: 'name' in validatedData && validatedData.name ? validatedData.name : ('nomeFantasia' in validatedData ? validatedData.nomeFantasia : validatedData.email),
         });
         
-        // This is the critical part: build the object safely for Firestore
+        // --- Step 4: Build Firestore Document, including only defined fields ---
         const { password, ...payload } = validatedData;
-        
         const userData: { [key: string]: any } = {
             uid: userRecord.uid,
             email: payload.email,
@@ -95,24 +104,15 @@ export async function registerUser(data: any) {
             profileStatus: payload.role === 'admin' ? 'approved' : 'incomplete',
         };
 
-        if ('name' in payload) userData.name = payload.name;
-        if ('cpf' in payload) userData.cpf = payload.cpf;
-
-        if ('personType' in payload) {
-            userData.personType = payload.personType;
-            if (payload.personType === 'pj') {
-                if ('nomeFantasia' in payload) userData.nomeFantasia = payload.nomeFantasia;
-                if (payload.razaoSocial) userData.razaoSocial = payload.razaoSocial;
-                if (payload.cnpj) userData.cnpj = payload.cnpj;
-            }
-        } else if (payload.role === 'driver') {
-            // Ensure driver has personType pf
-            userData.personType = 'pf';
-        }
+        if (payload.name) userData.name = payload.name;
+        if ('cpf' in payload && payload.cpf) userData.cpf = payload.cpf;
+        if (payload.personType) userData.personType = payload.personType;
+        if (payload.nomeFantasia) userData.nomeFantasia = payload.nomeFantasia;
+        if (payload.razaoSocial) userData.razaoSocial = payload.razaoSocial;
+        if (payload.cnpj) userData.cnpj = payload.cnpj;
         
-        console.log('[USER ACTION] Preparing to save user profile to Firestore. Data:', userData);
+        // --- Step 5: Save to Firestore ---
         await db.collection('users').doc(userRecord.uid).set(userData);
-        console.log(`[USER ACTION] User profile saved to Firestore for UID: ${userRecord.uid}`);
 
         revalidatePath('/');
         return { success: true, uid: userRecord.uid };
@@ -120,19 +120,14 @@ export async function registerUser(data: any) {
     } catch (error: any) {
         let errorMessage = 'Não foi possível criar a conta.';
          if (error instanceof z.ZodError) {
-            console.error("Zod Validation Error:", error.flatten());
             errorMessage = error.errors.map(e => e.message).join('; ');
         } else if (error.code === 'auth/email-already-exists') {
             errorMessage = 'Este email já está em uso por outra conta.';
-        } else {
-             errorMessage = 'Ocorreu um erro inesperado durante o cadastro. Verifique os dados e tente novamente.';
+        } else if (error.message) {
+            errorMessage = error.message;
         }
         
-        console.error("================ REGISTRATION FAILED ================");
-        console.error("Error Code:", error.code);
-        console.error("Error Message:", error.message);
-        console.error("Full Error Object:", error);
-        console.error("=====================================================");
+        console.error("REGISTRATION FAILED:", errorMessage, error);
 
         return { success: false, error: errorMessage };
     }

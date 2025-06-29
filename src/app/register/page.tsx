@@ -15,13 +15,14 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Car, Building, Wrench, ArrowLeft, Shield } from 'lucide-react';
 import Link from 'next/link';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
-// Zod schema for client-side validation. The server will perform the definitive validation.
+// This client-side schema is just for basic validation and structure.
+// The definitive, strict validation happens on the server.
 const registerFormSchema = z.object({
-  role: z.enum(['driver', 'fleet', 'provider', 'admin'], { required_error: 'Você precisa selecionar um tipo de conta.' }),
+  role: z.enum(['driver', 'fleet', 'provider', 'admin']),
   personType: z.enum(['pf', 'pj']).optional(),
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
   password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
@@ -34,20 +35,7 @@ const registerFormSchema = z.object({
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem.',
   path: ['confirmPassword'],
-}).refine((data) => {
-    if (data.role === 'admin' || data.role === 'driver' || ((data.role === 'fleet' || data.role === 'provider') && data.personType === 'pf')) {
-        return !!data.name && data.name.trim().length >= 3;
-    }
-    return true;
-}, { message: 'O nome completo é obrigatório.', path: ['name']})
-.refine((data) => {
-    if (data.role === 'admin') return !!data.cpf && data.cpf.trim().length >= 11;
-    return true;
-}, { message: 'O CPF é obrigatório e deve ter 11 dígitos.', path: ['cpf']})
-.refine((data) => {
-    if ((data.role === 'fleet' || data.role === 'provider') && data.personType === 'pj') return !!data.nomeFantasia && data.nomeFantasia.trim().length >= 3;
-    return true;
-}, { message: 'O nome fantasia é obrigatório.', path: ['nomeFantasia']});
+});
 
 type Role = 'driver' | 'fleet' | 'provider' | 'admin';
 type PersonType = 'pf' | 'pj';
