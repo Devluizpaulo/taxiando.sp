@@ -3,7 +3,7 @@
 
 import { auth } from '@/lib/firebase';
 import { adminDB, Timestamp as AdminTimestamp } from '@/lib/firebase-admin';
-import { doc, runTransaction, serverTimestamp, collection, getDoc, increment, setDoc } from 'firebase-admin/firestore';
+import admin from 'firebase-admin';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { type CreditPackage, type Coupon } from '@/lib/types';
 import { getPaymentSettings } from './admin-actions';
@@ -25,17 +25,17 @@ export async function purchaseCredits(params: PurchaseCreditsParams) {
     }
     
     try {
-        await runTransaction(adminDB, async (transaction) => {
-            const userRef = doc(adminDB, 'users', params.userId);
-            const salesRef = doc(adminDB, 'analytics', 'sales');
+        await adminDB.runTransaction(async (transaction) => {
+            const userRef = adminDB.collection('users').doc(params.userId);
+            const salesRef = adminDB.collection('analytics').doc('sales');
 
             // 1. Update user's credit balance
             transaction.update(userRef, {
-                credits: increment(params.credits)
+                credits: admin.firestore.FieldValue.increment(params.credits)
             });
 
             // 2. Create a transaction record in user's subcollection
-            const userTransactionRef = doc(collection(userRef, 'transactions'));
+            const userTransactionRef = userRef.collection('transactions').doc();
             transaction.set(userTransactionRef, {
                 packageId: params.packageId,
                 packageName: params.packageName,
@@ -43,13 +43,13 @@ export async function purchaseCredits(params: PurchaseCreditsParams) {
                 amountPaid: params.amountPaid,
                 paymentId: params.paymentId,
                 type: 'purchase',
-                createdAt: serverTimestamp(),
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
 
              // 3. Update global analytics
             transaction.set(salesRef, {
-                totalRevenue: increment(params.amountPaid),
-                packagesSold: increment(1),
+                totalRevenue: admin.firestore.FieldValue.increment(params.amountPaid),
+                packagesSold: admin.firestore.FieldValue.increment(1),
             }, { merge: true });
         });
     } catch (error) {
@@ -84,17 +84,17 @@ export async function createPaymentPreference({ packageId, userId, couponCode }:
     }
 
     try {
-        const packageRef = doc(adminDB, 'credit_packages', packageId);
-        const userRef = doc(adminDB, 'users', userId);
+        const packageRef = adminDB.collection('credit_packages').doc(packageId);
+        const userRef = adminDB.collection('users').doc(userId);
         
         const [packageSnap, userSnap, settings] = await Promise.all([
-            getDoc(packageRef),
-            getDoc(userRef),
+            packageRef.get(),
+            userRef.get(),
             getPaymentSettings()
         ]);
 
-        if (!packageSnap.exists()) return { success: false, error: 'Pacote não encontrado.' };
-        if (!userSnap.exists()) return { success: false, error: 'Usuário não encontrado.' };
+        if (!packageSnap.exists) return { success: false, error: 'Pacote não encontrado.' };
+        if (!userSnap.exists) return { success: false, error: 'Usuário não encontrado.' };
         if (!settings.mercadoPago.accessToken) return { success: false, error: 'Credenciais de pagamento não configuradas.' };
 
         const pkg = packageSnap.data() as CreditPackage;

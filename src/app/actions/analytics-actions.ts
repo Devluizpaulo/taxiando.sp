@@ -1,13 +1,13 @@
 
 'use server';
-import { doc, increment, setDoc } from 'firebase-admin/firestore';
 import { adminDB } from '@/lib/firebase-admin';
+import admin from 'firebase-admin';
 
 export async function trackPageView(page: string) {
     try {
-        const docRef = doc(adminDB, 'analytics', 'page_views');
-        await setDoc(docRef, {
-            [page]: increment(1)
+        const docRef = adminDB.collection('analytics').doc('page_views');
+        await docRef.set({
+            [page]: admin.firestore.FieldValue.increment(1)
         }, { merge: true });
     } catch (error) {
         // Fail silently so it doesn't break the page load
@@ -17,13 +17,13 @@ export async function trackPageView(page: string) {
 
 export async function trackLogin(userId: string) {
     try {
-        const userRef = doc(adminDB, 'users', userId);
-        const analyticsRef = doc(adminDB, 'analytics', 'logins');
+        const userRef = adminDB.collection('users').doc(userId);
+        const analyticsRef = adminDB.collection('analytics').doc('logins');
         
         // Increment on both user profile and central analytics doc
         await Promise.all([
-            setDoc(userRef, { loginCount: increment(1) }, { merge: true }),
-            setDoc(analyticsRef, { total: increment(1) }, { merge: true })
+            userRef.set({ loginCount: admin.firestore.FieldValue.increment(1) }, { merge: true }),
+            analyticsRef.set({ total: admin.firestore.FieldValue.increment(1) }, { merge: true })
         ]);
 
     } catch (error) {

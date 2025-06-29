@@ -2,19 +2,18 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { doc, updateDoc, setDoc, getDoc } from 'firebase-admin/firestore';
 import { adminDB } from '@/lib/firebase-admin';
 import { type UserProfile, type PaymentGatewaySettings, type AnalyticsData } from '@/lib/types';
 
 export async function updateUserProfileStatus(userId: string, newStatus: 'Aprovado' | 'Rejeitado' | 'Pendente') {
     try {
-        const userRef = doc(adminDB, 'users', userId);
+        const userRef = adminDB.collection('users').doc(userId);
         
         let dbStatus: UserProfile['profileStatus'] = 'pending_review';
         if (newStatus === 'Aprovado') dbStatus = 'approved';
         if (newStatus === 'Rejeitado') dbStatus = 'rejected';
 
-        await updateDoc(userRef, { profileStatus: dbStatus });
+        await userRef.update({ profileStatus: dbStatus });
 
         revalidatePath('/admin');
         return { success: true };
@@ -30,11 +29,11 @@ export async function updateListingStatus(
     newStatus: 'Aprovado' | 'Rejeitado'
 ) {
     try {
-        const listingRef = doc(adminDB, collectionName, listingId);
+        const listingRef = adminDB.collection(collectionName).doc(listingId);
         
         const finalStatus = collectionName === 'services' && newStatus === 'Aprovado' ? 'Ativo' : newStatus;
         
-        await updateDoc(listingRef, { status: finalStatus });
+        await listingRef.update({ status: finalStatus });
         revalidatePath('/admin');
         return { success: true };
     } catch (error) {
@@ -44,10 +43,10 @@ export async function updateListingStatus(
 }
 
 export async function getPaymentSettings(): Promise<PaymentGatewaySettings> {
-    const docRef = doc(adminDB, 'settings', 'payment');
-    const docSnap = await getDoc(docRef);
+    const docRef = adminDB.collection('settings').doc('payment');
+    const docSnap = await docRef.get();
 
-    if (docSnap.exists()) {
+    if (docSnap.exists) {
         return docSnap.data() as PaymentGatewaySettings;
     }
     // Return default empty structure if not found
@@ -56,8 +55,8 @@ export async function getPaymentSettings(): Promise<PaymentGatewaySettings> {
 
 export async function updatePaymentSettings(data: PaymentGatewaySettings) {
     try {
-        const docRef = doc(adminDB, 'settings', 'payment');
-        await setDoc(docRef, data, { merge: true });
+        const docRef = adminDB.collection('settings').doc('payment');
+        await docRef.set(data, { merge: true });
 
         revalidatePath('/admin/settings/payments');
         return { success: true, message: 'Configurações salvas com sucesso!' };
@@ -69,29 +68,29 @@ export async function updatePaymentSettings(data: PaymentGatewaySettings) {
 
 export async function ensureInitialData() {
     try {
-        const settingsRef = doc(adminDB, 'settings', 'payment');
-        const analyticsPageViewsRef = doc(adminDB, 'analytics', 'page_views');
-        const analyticsLoginsRef = doc(adminDB, 'analytics', 'logins');
-        const analyticsSalesRef = doc(adminDB, 'analytics', 'sales');
+        const settingsRef = adminDB.collection('settings').doc('payment');
+        const analyticsPageViewsRef = adminDB.collection('analytics').doc('page_views');
+        const analyticsLoginsRef = adminDB.collection('analytics').doc('logins');
+        const analyticsSalesRef = adminDB.collection('analytics').doc('sales');
 
-        const settingsSnap = await getDoc(settingsRef);
-        if (!settingsSnap.exists()) {
-            await setDoc(settingsRef, { mercadoPago: { publicKey: '', accessToken: '' } });
+        const settingsSnap = await settingsRef.get();
+        if (!settingsSnap.exists) {
+            await settingsRef.set({ mercadoPago: { publicKey: '', accessToken: '' } });
         }
 
-        const pageViewsSnap = await getDoc(analyticsPageViewsRef);
-        if (!pageViewsSnap.exists()) {
-            await setDoc(analyticsPageViewsRef, { home: 0 });
+        const pageViewsSnap = await analyticsPageViewsRef.get();
+        if (!pageViewsSnap.exists) {
+            await analyticsPageViewsRef.set({ home: 0 });
         }
         
-        const loginsSnap = await getDoc(analyticsLoginsRef);
-        if (!loginsSnap.exists()) {
-            await setDoc(analyticsLoginsRef, { total: 0 });
+        const loginsSnap = await analyticsLoginsRef.get();
+        if (!loginsSnap.exists) {
+            await analyticsLoginsRef.set({ total: 0 });
         }
 
-        const salesSnap = await getDoc(analyticsSalesRef);
-        if (!salesSnap.exists()) {
-            await setDoc(analyticsSalesRef, { totalRevenue: 0, packagesSold: 0 });
+        const salesSnap = await analyticsSalesRef.get();
+        if (!salesSnap.exists) {
+            await analyticsSalesRef.set({ totalRevenue: 0, packagesSold: 0 });
         }
         
         return { success: true };
@@ -104,20 +103,20 @@ export async function ensureInitialData() {
 
 export async function getAdminDashboardAnalytics(): Promise<AnalyticsData> {
     try {
-        const pageViewsRef = doc(adminDB, 'analytics', 'page_views');
-        const loginsRef = doc(adminDB, 'analytics', 'logins');
-        const salesRef = doc(adminDB, 'analytics', 'sales');
+        const pageViewsRef = adminDB.collection('analytics').doc('page_views');
+        const loginsRef = adminDB.collection('analytics').doc('logins');
+        const salesRef = adminDB.collection('analytics').doc('sales');
 
         const [pageViewsSnap, loginsSnap, salesSnap] = await Promise.all([
-            getDoc(pageViewsRef),
-            getDoc(loginsRef),
-            getDoc(salesRef),
+            pageViewsRef.get(),
+            loginsRef.get(),
+            salesRef.get(),
         ]);
 
         const analytics: AnalyticsData = {
-            pageViews: pageViewsSnap.exists() ? pageViewsSnap.data() : { home: 0 },
-            logins: loginsSnap.exists() ? loginsSnap.data() : { total: 0 },
-            sales: salesSnap.exists() ? salesSnap.data() : { totalRevenue: 0, packagesSold: 0 },
+            pageViews: pageViewsSnap.exists ? pageViewsSnap.data() : { home: 0 },
+            logins: loginsSnap.exists ? loginsSnap.data() : { total: 0 },
+            sales: salesSnap.exists ? salesSnap.data() : { totalRevenue: 0, packagesSold: 0 },
         };
 
         return analytics;
