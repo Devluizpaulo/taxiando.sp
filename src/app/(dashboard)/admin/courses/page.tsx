@@ -1,8 +1,6 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import Link from 'next/link';
+import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
+import { adminDB } from '@/lib/firebase-admin';
 import { type Course } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
@@ -11,46 +9,32 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, BookCopy, BarChart2 } from 'lucide-react';
-import Link from 'next/link';
-import { LoadingScreen } from '@/components/loading-screen';
 
 
-export default function AdminCoursesPage() {
-    const [courses, setCourses] = useState<Course[]>([]);
-    const [loading, setLoading] = useState(true);
-    // Mock data for stats, can be replaced with real data later
-    const totalStudents = courses.reduce((acc, c) => acc + (c.students || 0), 0);
-
-     useEffect(() => {
-        const fetchCourses = async () => {
-            const cacheKey = 'cached_admin_courses';
-            try {
-                const cachedData = sessionStorage.getItem(cacheKey);
-                if (cachedData) {
-                    setCourses(JSON.parse(cachedData));
-                    setLoading(false);
-                    return;
-                }
-
-                const coursesCollection = collection(db, 'courses');
-                const q = query(coursesCollection, orderBy('createdAt', 'desc'));
-                const querySnapshot = await getDocs(q);
-                const coursesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
-                setCourses(coursesData);
-                sessionStorage.setItem(cacheKey, JSON.stringify(coursesData));
-            } catch (error) {
-                console.error("Error fetching courses: ", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchCourses();
-    }, []);
-
-    if (loading) {
-      return <LoadingScreen />;
+async function getCourses(): Promise<Course[]> {
+    try {
+        const coursesCollection = adminDB.collection('courses');
+        const q = query(coursesCollection, orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const coursesData = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                ...data,
+                id: doc.id,
+                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+            } as Course;
+        });
+        return coursesData;
+    } catch (error) {
+        console.error("Error fetching courses: ", error);
+        return [];
     }
+}
+
+
+export default async function AdminCoursesPage() {
+    const courses = await getCourses();
+    const totalStudents = courses.reduce((acc, c) => acc + (c.students || 0), 0);
 
     return (
         <div className="flex flex-col gap-8">
