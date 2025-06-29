@@ -1,15 +1,12 @@
-import { initializeApp, getApps, App } from 'firebase-admin/app';
+import admin from 'firebase-admin';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 
-let app: App;
-if (getApps().length === 0) {
-  app = initializeApp();
-} else {
-  app = getApps()[0];
+if (admin.apps.length === 0) {
+    admin.initializeApp();
 }
 
-const adminAuth = getAuth(app);
-const adminDB = getFirestore(app);
+const adminDB = getFirestore();
+const adminAuth = getAuth();
 
 export { adminAuth, adminDB, Timestamp };
