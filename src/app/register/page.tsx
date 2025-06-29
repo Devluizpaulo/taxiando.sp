@@ -213,12 +213,7 @@ export default function RegisterPage() {
         <div className="absolute inset-0 w-full h-full [backface-visibility:hidden]">
           <Card className="h-full flex flex-col">
               <CardHeader className="text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.035-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.035.84-1.875 1.875-1.875h.75c1.035 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.035.84-1.875 1.875-1.875h.75c1.035 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z" /></svg>
-                      </div>
-                      <h1 className="font-headline text-2xl font-bold">Táxiando SP</h1>
-                  </div>
+                  <Image src="/logo.png" alt="Táxiando SP Logo" width={180} height={170} className="h-20 w-auto mx-auto mb-4" />
                   <CardTitle className="text-2xl font-headline">Crie sua conta gratuita</CardTitle>
                   <CardDescription>Primeiro, selecione o seu tipo de perfil.</CardDescription>
               </CardHeader>

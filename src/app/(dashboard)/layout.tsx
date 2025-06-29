@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Building, FileText, LayoutDashboard, LogOut, PanelLeft, Shield, FilePen, Search, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { auth } from "@/lib/firebase";
@@ -72,14 +73,7 @@ export default function DashboardLayout({
           </SheetDescription>
         </SheetHeader>
         <SidebarHeader className="border-b border-sidebar-border">
-            <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-                        <path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.035-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.035.84-1.875 1.875-1.875h.75c1.035 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.035.84-1.875 1.875-1.875h.75c1.035 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z" />
-                    </svg>
-                </div>
-                <h2 className="text-lg font-headline font-semibold">Táxiando SP</h2>
-            </div>
+            <Image src="/logo.png" alt="Táxiando SP Logo" width={150} height={142} className="h-10 w-auto" />
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
