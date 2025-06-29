@@ -27,16 +27,20 @@ export async function createUserProfile(data: CreateProfileData) {
         return;
     }
 
-    // To ensure robustness, we will no longer automatically assign the admin role here.
-    // The first user will be created as a standard driver and must be promoted to 'admin' manually in the Firebase console.
-    // This avoids potential race conditions or errors in an empty database environment.
+    // Check if this is the first user in the collection.
+    // If so, they become the administrator.
+    const usersCollectionRef = collection(db, 'users');
+    const q = query(usersCollectionRef, limit(1));
+    const snapshot = await getDocs(q);
+    const isFirstUser = snapshot.empty;
+
     const profileData = {
         uid: data.userId,
         email: data.email,
         name: data.name,
         phone: data.phone,
-        role: 'driver', // Default to driver. Admin promotion is a manual, secure step.
-        profileStatus: 'incomplete', // All new users from this flow start as incomplete.
+        role: isFirstUser ? 'admin' : 'driver', // Assign 'admin' role if first user, otherwise 'driver'.
+        profileStatus: isFirstUser ? 'approved' : 'incomplete', // Admins are approved by default.
         createdAt: serverTimestamp(),
     };
 
