@@ -18,11 +18,10 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { auth } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
+import { useRouter, redirect } from "next/navigation";
 import React from "react";
 import { LoadingScreen } from "@/components/loading-screen";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 
 export default function DashboardLayout({
   children,
@@ -186,28 +185,7 @@ export default function DashboardLayout({
               }
               // Auth check is done, user is logged in, but no profile was found in DB
               if (!loading && user && !userProfile) {
-                return (
-                  <div className="flex h-full w-full items-center justify-center">
-                    <Card className="max-w-md text-center">
-                      <CardHeader>
-                        <CardTitle>Perfil não encontrado</CardTitle>
-                        <CardDescription>
-                          Não foi possível carregar os dados do seu perfil.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                          Isso pode acontecer se a sua conta foi criada manualmente e o perfil
-                          no banco de dados ainda não existe. Certifique-se de que um
-                          documento de usuário com a role correta existe no Firestore.
-                        </p>
-                      </CardContent>
-                      <CardFooter className="flex justify-center">
-                        <Button onClick={() => window.location.reload()}>Recarregar Página</Button>
-                      </CardFooter>
-                    </Card>
-                  </div>
-                );
+                redirect('/welcome');
               }
               // Otherwise, show the loading screen while auth is in progress
               return <LoadingScreen />;
