@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,24 +7,18 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuthProtection } from '@/hooks/use-auth';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building, Phone, Mail, Instagram, MessageSquare } from 'lucide-react';
+import { Loader2, Instagram, MessageSquare } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-
-const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-    </svg>
-);
+import { FacebookIcon } from '@/components/icons/facebook-icon';
 
 const providerProfileSchema = z.object({
   personType: z.enum(['pf', 'pj']),
@@ -51,7 +46,7 @@ const providerProfileSchema = z.object({
 type ProviderProfileValues = z.infer<typeof providerProfileSchema>;
 
 export default function ProviderProfilePage() {
-    const { user, userProfile, loading } = useAuth();
+    const { user, userProfile, loading } = useAuthProtection({ requiredRoles: ['provider', 'admin'] });
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
 

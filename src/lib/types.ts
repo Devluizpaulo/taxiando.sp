@@ -116,3 +116,14 @@ export interface Transaction {
     amount: string;
     type: 'debit' | 'credit_usage';
 }
+
+export interface ServiceListing {
+  id: string;
+  title: string;
+  provider: string;
+  category: string;
+  price: string;
+  status: 'Ativo' | 'Pausado' | 'Pendente';
+  imageUrl: string;
+  imageHint: string;
+}

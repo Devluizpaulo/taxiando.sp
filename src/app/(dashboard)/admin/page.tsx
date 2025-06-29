@@ -1,10 +1,8 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuthProtection } from '@/hooks/use-auth';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +14,7 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { mockUsers, mockOpportunities, mockServiceListings, mockCourses } from '@/lib/mock-data';
+import { useState } from 'react';
 
 const chartData = [
   { month: "Jan", users: 50 },
@@ -36,15 +35,10 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
 };
 
 export default function AdminPage() {
-    const { userProfile, loading } = useAuth();
-    const router = useRouter();
+    useAuthProtection({ requiredRoles: ['admin'] });
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-
-    useEffect(() => {
-        if (!loading && (!userProfile || userProfile.role !== 'admin')) {
-            router.push('/dashboard');
-        }
-    }, [userProfile, loading, router]);
+    
+    const { loading: authLoading } = useAuthProtection();
 
     const handleSelectAll = (checked: boolean | 'indeterminate') => {
         if (checked === true) {
@@ -64,10 +58,9 @@ export default function AdminPage() {
 
     const handleApproval = (action: 'approve' | 'reject', id: string, type: 'opportunity' | 'service') => {
         console.log(`${action} ${type} ${id}`);
-        // Aqui você implementaria a lógica para aprovar/rejeitar a oportunidade
     };
 
-    if (loading || !userProfile || userProfile.role !== 'admin') {
+    if (authLoading) {
       return (
         <div className="flex flex-col gap-8">
           <Skeleton className="h-10 w-1/2" />

@@ -1,9 +1,8 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
+import { useState } from 'react';
+import { useAuthProtection } from '@/hooks/use-auth';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
@@ -17,17 +16,10 @@ import { mockServiceListings } from '@/lib/mock-data';
 
 
 export default function ServicesPage() {
-    const { userProfile, loading } = useAuth();
-    const router = useRouter();
+    const { loading } = useAuthProtection({ requiredRoles: ['provider', 'admin'] });
     const [services, setServices] = useState(mockServiceListings);
 
-    useEffect(() => {
-        if (!loading && (!userProfile || !['provider', 'admin'].includes(userProfile.role))) {
-            router.push('/dashboard');
-        }
-    }, [userProfile, loading, router]);
-
-    if (loading || !userProfile || !['provider', 'admin'].includes(userProfile.role)) {
+    if (loading) {
         return (
           <div className="flex flex-col gap-8">
             <Skeleton className="h-10 w-1/2" />

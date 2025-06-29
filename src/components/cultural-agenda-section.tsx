@@ -1,6 +1,4 @@
-'use client';
 
-import { useEffect, useState } from 'react';
 import { collection, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { type Event } from '@/lib/types';
@@ -12,39 +10,32 @@ import { MapPin, Calendar, Lightbulb, TrafficCone, MoveRight } from 'lucide-reac
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-export function CulturalAgendaSection() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
+async function fetchEvents(): Promise<Event[]> {
+  try {
+    const today = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(today.getDate() + 7);
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const today = new Date();
-        const nextWeek = new Date();
-        nextWeek.setDate(today.getDate() + 7);
+    const eventsCollection = collection(db, 'events');
+    const q = query(
+      eventsCollection,
+      where('startDate', '>=', Timestamp.fromDate(today)),
+      where('startDate', '<=', Timestamp.fromDate(nextWeek)),
+      orderBy('startDate', 'asc')
+    );
 
-        const eventsCollection = collection(db, 'events');
-        const q = query(
-          eventsCollection,
-          where('startDate', '>=', Timestamp.fromDate(today)),
-          where('startDate', '<=', Timestamp.fromDate(nextWeek)),
-          orderBy('startDate', 'asc')
-        );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+  } catch (error) {
+    console.error("Error fetching events: ", error);
+    return [];
+  }
+}
 
-        const querySnapshot = await getDocs(q);
-        const eventsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
-        setEvents(eventsData);
-      } catch (error) {
-        console.error("Error fetching events: ", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+export async function CulturalAgendaSection() {
+  const events = await fetchEvents();
 
-    fetchEvents();
-  }, []);
-
-  if (loading || events.length === 0) {
+  if (events.length === 0) {
     return null;
   }
 

@@ -2,12 +2,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuthProtection } from '@/hooks/use-auth';
 import type { Vehicle, VehicleApplication } from '@/lib/types';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -67,8 +66,7 @@ type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
 
 
 export default function FleetPage() {
-    const { userProfile, loading } = useAuth();
-    const router = useRouter();
+    const { userProfile, loading } = useAuthProtection({ requiredRoles: ['fleet', 'admin'] });
     const { toast } = useToast();
     
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -85,13 +83,11 @@ export default function FleetPage() {
     });
     
     useEffect(() => {
-        if (!loading && (!userProfile || !['fleet', 'admin'].includes(userProfile.role))) {
-            router.push('/dashboard');
-        } else {
+        if (userProfile) {
              const vWithIds = mockVehicles.map((v, i) => ({ ...v, id: `v_${i+1}`, fleetId: 'mockFleetId', createdAt: new Date() }))
              setVehicles(vWithIds);
         }
-    }, [userProfile, loading, router]);
+    }, [userProfile]);
     
     useEffect(() => {
         if (isVehicleDialogOpen) {
@@ -184,7 +180,7 @@ export default function FleetPage() {
     };
 
 
-    if (loading || !userProfile || !['fleet', 'admin'].includes(userProfile.role)) {
+    if (loading) {
         return (
             <div className="flex flex-col gap-8">
                 <Skeleton className="h-10 w-1/2" />
