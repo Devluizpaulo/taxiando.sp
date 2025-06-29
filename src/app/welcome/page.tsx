@@ -52,8 +52,22 @@ export default function WelcomePage() {
 
   const onSubmit = async (values: SetupFormValues) => {
     setIsSubmitting(true);
+    if (!user) {
+        toast({
+            variant: 'destructive',
+            title: 'Erro de autenticação',
+            description: 'Sua sessão expirou. Por favor, faça login novamente.',
+        });
+        setIsSubmitting(false);
+        router.push('/login');
+        return;
+    }
     try {
-      await createUserProfile(values);
+      await createUserProfile({
+        ...values,
+        userId: user.uid,
+        email: user.email,
+      });
       toast({
         title: 'Perfil Criado!',
         description: 'Bem-vindo(a) à plataforma! Redirecionando para o painel...',
