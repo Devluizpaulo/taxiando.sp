@@ -1,7 +1,8 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { doc, updateDoc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, getDoc } from 'firebase-admin/firestore';
 import { adminDB } from '@/lib/firebase-admin';
 import { type UserProfile, type PaymentGatewaySettings, type AnalyticsData } from '@/lib/types';
 
@@ -62,6 +63,40 @@ export async function updatePaymentSettings(data: PaymentGatewaySettings) {
         return { success: true, message: 'Configurações salvas com sucesso!' };
     } catch (error) {
         console.error("Error updating payment settings:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function ensureInitialData() {
+    try {
+        const settingsRef = doc(adminDB, 'settings', 'payment');
+        const analyticsPageViewsRef = doc(adminDB, 'analytics', 'page_views');
+        const analyticsLoginsRef = doc(adminDB, 'analytics', 'logins');
+        const analyticsSalesRef = doc(adminDB, 'analytics', 'sales');
+
+        const settingsSnap = await getDoc(settingsRef);
+        if (!settingsSnap.exists()) {
+            await setDoc(settingsRef, { mercadoPago: { publicKey: '', accessToken: '' } });
+        }
+
+        const pageViewsSnap = await getDoc(analyticsPageViewsRef);
+        if (!pageViewsSnap.exists()) {
+            await setDoc(analyticsPageViewsRef, { home: 0 });
+        }
+        
+        const loginsSnap = await getDoc(analyticsLoginsRef);
+        if (!loginsSnap.exists()) {
+            await setDoc(analyticsLoginsRef, { total: 0 });
+        }
+
+        const salesSnap = await getDoc(analyticsSalesRef);
+        if (!salesSnap.exists()) {
+            await setDoc(analyticsSalesRef, { totalRevenue: 0, packagesSold: 0 });
+        }
+        
+        return { success: true };
+    } catch (error) {
+        console.error("Error ensuring initial data:", error);
         return { success: false, error: (error as Error).message };
     }
 }

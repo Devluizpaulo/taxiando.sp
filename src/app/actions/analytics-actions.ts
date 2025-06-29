@@ -1,5 +1,6 @@
+
 'use server';
-import { doc, increment, setDoc } from 'firebase/firestore';
+import { doc, increment, setDoc } from 'firebase-admin/firestore';
 import { adminDB } from '@/lib/firebase-admin';
 
 export async function trackPageView(page: string) {
