@@ -23,12 +23,21 @@ export default function AdminCoursesPage() {
 
      useEffect(() => {
         const fetchCourses = async () => {
+            const cacheKey = 'cached_admin_courses';
             try {
+                const cachedData = sessionStorage.getItem(cacheKey);
+                if (cachedData) {
+                    setCourses(JSON.parse(cachedData));
+                    setLoading(false);
+                    return;
+                }
+
                 const coursesCollection = collection(db, 'courses');
                 const q = query(coursesCollection, orderBy('createdAt', 'desc'));
                 const querySnapshot = await getDocs(q);
                 const coursesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
                 setCourses(coursesData);
+                sessionStorage.setItem(cacheKey, JSON.stringify(coursesData));
             } catch (error) {
                 console.error("Error fetching courses: ", error);
             } finally {

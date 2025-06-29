@@ -1,24 +1,77 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    function isAdmin() {
-      // Check if the user document exists and the role is 'admin'
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+
+    // Helper functions to make rules more readable.
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    match /users/{userId} {
-      // Allow users to create their own profile upon signup
-      allow create: if request.auth.uid == userId;
-      
-      // Allow users to read/update their own profile
-      // Allow admins to read/update any profile
-      allow read, update: if request.auth.uid == userId || isAdmin();
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
     
-    // Allow admins to list all users. This rule needs to be separate.
-    match /users/{document=**} {
-      allow list: if isAdmin();
+    function isAdmin() {
+      return isSignedIn() && getUserData(request.auth.uid).role == 'admin';
+    }
+
+    function isFleet() {
+        return isSignedIn() && getUserData(request.auth.uid).role == 'fleet';
+    }
+
+    function isProvider() {
+        return isSignedIn() && getUserData(request.auth.uid).role == 'provider';
+    }
+
+    // --- COLLECTION RULES ---
+
+    // Users Collection: Users can manage their own profile. Admins have full access.
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId) || isAdmin();
+      
+      // Sub-collections can only be accessed by the owner.
+      match /progress/{progressId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /transactions/{transactionId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Admin-only write access collections. Any signed-in user can read them.
+    match /courses/{courseId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+    
+    match /credit_packages/{packageId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isAdmin();
+    }
+    
+    match /events/{eventId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isAdmin();
+    }
+
+    // Listings: Can be read by anyone, but only created/updated by specific roles or admins.
+    match /opportunities/{opportunityId} {
+        allow read: if isSignedIn();
+        allow create: if isFleet() || isAdmin();
+        allow update, delete: if isAdmin(); // Only admins can moderate/delete for now.
+    }
+
+    match /services/{serviceId} {
+        allow read: if isSignedIn();
+        allow create: if isProvider() || isAdmin();
+        allow update, delete: if isAdmin(); // Only admins can moderate/delete for now.
     }
   }
 }

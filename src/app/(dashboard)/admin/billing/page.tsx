@@ -20,12 +20,21 @@ export default function AdminBillingPage() {
 
     useEffect(() => {
         const fetchPackages = async () => {
+            const cacheKey = 'cached_admin_billing_packages';
             try {
+                 const cachedData = sessionStorage.getItem(cacheKey);
+                if (cachedData) {
+                    setPackages(JSON.parse(cachedData));
+                    setLoading(false);
+                    return;
+                }
+
                 const packagesCollection = collection(db, 'credit_packages');
                 const q = query(packagesCollection, orderBy('price', 'asc'));
                 const querySnapshot = await getDocs(q);
                 const packagesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CreditPackage));
                 setPackages(packagesData);
+                sessionStorage.setItem(cacheKey, JSON.stringify(packagesData));
             } catch (error) {
                 console.error("Error fetching credit packages: ", error);
             } finally {
