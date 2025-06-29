@@ -18,7 +18,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { auth } from "@/lib/firebase";
-import { useRouter, redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import React from "react";
 import { LoadingScreen } from "@/components/loading-screen";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,6 +68,11 @@ export default function DashboardLayout({
                     <SidebarMenuButton asChild>
                         <Link href="/profile"><FilePen/> Completar Perfil</Link>
                     </SidebarMenuButton>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <Link href="/rentals"><KeyRound/> Alugar Veículo</Link>
+                      </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                     <SidebarMenuButton asChild>
