@@ -144,7 +144,7 @@ export default function CreateEventPage() {
             toast({
                 variant: 'destructive',
                 title: 'Erro ao Gerar Detalhes',
-                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manually.',
+                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manualmente.',
             });
         } finally {
             setIsGenerating(false);
@@ -158,16 +158,14 @@ export default function CreateEventPage() {
             const eventId = nanoid();
             let finalImageUrl = values.imageUrl;
 
-            // If the image is a data URI from our AI, compress it, upload it to Firebase Storage
-            // and replace the data URI with the public URL.
             if (values.imageUrl.startsWith('data:image')) {
                 toast({ title: "Processando imagem...", description: "Comprimindo e fazendo upload da imagem para o armazenamento." });
                 
                 const imageFile = await imageCompression.getFilefromDataUrl(values.imageUrl, `${eventId}.png`);
                 
                 const options = {
-                    maxSizeMB: 0.5, // Target 500KB
-                    maxWidthOrHeight: 1280, // Resize to a reasonable dimension
+                    maxSizeMB: 0.5,
+                    maxWidthOrHeight: 1280,
                     useWebWorker: true,
                 }
                 
@@ -177,13 +175,18 @@ export default function CreateEventPage() {
                 await uploadBytes(storageRef, compressedFile);
                 finalImageUrl = await getDownloadURL(storageRef);
             }
-
+            
             const eventData = {
                 id: eventId,
-                ...values,
-                imageUrl: finalImageUrl, // Overwrite with the storage URL if it was a data URI
+                title: values.title,
+                description: values.description,
+                location: values.location,
+                imageUrl: finalImageUrl,
                 startDate: Timestamp.fromDate(values.startDate),
                 endDate: Timestamp.fromDate(values.endDate),
+                bestTime: values.bestTime,
+                trafficTips: values.trafficTips,
+                mapUrl: values.mapUrl,
                 createdAt: serverTimestamp(),
             };
             
