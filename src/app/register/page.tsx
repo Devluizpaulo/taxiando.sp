@@ -22,11 +22,6 @@ import { auth } from '@/lib/firebase';
 
 const passwordSchema = z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' });
 
-const baseSchema = z.object({
-  email: z.string().email({ message: 'Por favor, insira um email válido.' }),
-  password: passwordSchema,
-});
-
 // This schema is a placeholder for the client-side form.
 // The real, strict validation happens on the server in user-actions.ts.
 const registerFormSchema = z.object({
@@ -71,16 +66,27 @@ export default function RegisterPage() {
       password: '',
       confirmPassword: '',
       personType: 'pf',
+      name: '',
+      cpf: '',
+      nomeFantasia: '',
+      cnpj: '',
     },
   });
 
   const handleRoleSelect = (role: Role) => {
     setSelectedRole(role);
-    form.reset(); // Reset form when changing role
-    form.setValue('role', role);
-    if (role === 'fleet' || role === 'provider') {
-      form.setValue('personType', 'pf'); // Default to PF
-    }
+    // Reset the form with all fields initialized to avoid uncontrolled-to-controlled errors
+    form.reset({
+      role: role,
+      email: '',
+      password: '',
+      confirmPassword: '',
+      personType: 'pf',
+      name: '',
+      cpf: '',
+      nomeFantasia: '',
+      cnpj: '',
+    });
     setStep('fill_form');
   }
 
