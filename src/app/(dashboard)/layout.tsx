@@ -40,7 +40,11 @@ export default function DashboardLayout({
     if (!loading && !user) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+    // Redirect admin to admin panel from generic dashboard
+    if (!loading && userProfile?.role === 'admin' && window.location.pathname === '/dashboard') {
+        router.push('/admin');
+    }
+  }, [user, userProfile, loading, router]);
   
   const handleSignOut = async () => {
     await auth.signOut();
