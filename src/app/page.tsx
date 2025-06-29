@@ -17,7 +17,7 @@ const blogPosts = [
     id: 1,
     title: "Nova regulamentação para apps de transporte em SP: O que muda?",
     excerpt: "A prefeitura de São Paulo anunciou novas regras que impactam diretamente a vida dos motoristas de aplicativo. Saiba tudo...",
-    image: "https://placehold.co/600x400.png",
+    image: "/ubertx.png",
     imageHint: "city traffic",
     slug: "/blog/nova-regulamentacao"
   },
@@ -25,7 +25,7 @@ const blogPosts = [
     id: 2,
     title: "5 dicas para aumentar seus ganhos como taxista",
     excerpt: "Descubra estratégias comprovadas para otimizar suas corridas e maximizar seus lucros no final do mês.",
-    image: "https://placehold.co/600x400.png",
+    image: "/tx5dicas.png",
     imageHint: "money coins",
     slug: "/blog/dicas-ganhos"
   },
@@ -33,7 +33,7 @@ const blogPosts = [
     id: 3,
     title: "Manutenção preventiva: evite surpresas e economize",
     excerpt: "Um guia completo sobre os cuidados essenciais que você deve ter com seu veículo para garantir segurança e economia.",
-    image: "https://placehold.co/600x400.png",
+    image: "/oficina.png",
     imageHint: "car maintenance",
     slug: "/blog/manutencao-preventiva"
   },
@@ -65,7 +65,7 @@ export default function Home() {
             </div>
             <div className="flex justify-center">
               <Image 
-                src="/txsp.png"
+                src="/hero.png"
                 alt="Taxi in São Paulo"
                 width={600}
                 height={400}
