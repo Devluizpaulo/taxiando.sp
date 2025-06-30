@@ -26,10 +26,21 @@ export const lessonSchema = z.object({
   title: z.string().min(3, "O título da aula é obrigatório."),
   type: z.enum(['video', 'text', 'quiz'], { required_error: "Selecione o tipo de aula."}),
   duration: z.coerce.number().min(1, "A duração deve ser de pelo menos 1 minuto."),
+  content: z.string().optional(),
   materials: z.array(supportingMaterialSchema).optional(),
   questions: z.array(quizQuestionSchema).optional(),
   passingScore: z.coerce.number().min(0).max(100).optional(),
 }).superRefine((data, ctx) => {
+    if (data.type === 'video') {
+        if (!data.content || !z.string().url({ message: "Por favor, insira uma URL válida."}).safeParse(data.content).success) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "A URL do vídeo é obrigatória e deve ser válida.", path: ['content'] });
+        }
+    }
+    if (data.type === 'text') {
+        if (!data.content || data.content.length < 50) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "O conteúdo do texto deve ter pelo menos 50 caracteres.", path: ['content'] });
+        }
+    }
     if (data.type === 'quiz') {
         if (!data.questions || data.questions.length < 1) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Um quiz precisa de pelo menos uma questão.", path: ['questions'] });

@@ -1,27 +1,27 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { db } from '@/lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
-import { useState } from 'react';
 
+import { type Course } from '@/lib/types';
+import { getCourseById, updateCourse } from '@/app/actions/course-actions';
 import { courseFormSchema, type CourseFormValues } from '@/lib/course-schemas';
+import { LoadingScreen } from '@/components/loading-screen';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-
+import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent } from 'lucide-react';
 
 // Icons
 const lessonTypeIcons = {
@@ -31,17 +31,27 @@ const lessonTypeIcons = {
 };
 
 // Main Component
-export default function CreateCoursePage() {
+export default function EditCoursePage({ params }: { params: { id: string }}) {
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoadingData, setIsLoadingData] = useState(true);
 
     const form = useForm<CourseFormValues>({
         resolver: zodResolver(courseFormSchema),
-        defaultValues: {
-            title: '', description: '', category: '', modules: [],
-        },
+        defaultValues: { title: '', description: '', category: '', modules: [] },
     });
+
+    useEffect(() => {
+        if (params.id) {
+            getCourseById(params.id).then(data => {
+                if (data) {
+                    form.reset(data);
+                }
+                setIsLoadingData(false);
+            });
+        }
+    }, [params.id, form]);
 
     const { fields: moduleFields, append: appendModule, remove: removeModule } = useFieldArray({
         control: form.control, name: 'modules',
@@ -50,55 +60,54 @@ export default function CreateCoursePage() {
     const onSubmit = async (values: CourseFormValues) => {
         setIsSubmitting(true);
         try {
-            const courseId = nanoid();
-            let totalLessons = 0;
-            let totalDuration = 0;
-
-            const modulesWithIds = values.modules.map(module => {
-                const lessonsWithIds = module.lessons.map(lesson => {
-                    totalLessons++;
-                    totalDuration += lesson.duration;
-
-                    const questionsWithIds = lesson.questions?.map(q => ({
-                        ...q,
-                        id: nanoid(),
-                        options: q.options.map(o => ({ ...o, id: nanoid() }))
-                    }));
-                    
-                    return { ...lesson, id: nanoid(), questions: questionsWithIds };
-                });
-                
-                const badgeData = (module.badge?.name && module.badge.name.trim() !== '') 
-                    ? { name: module.badge.name.trim(), iconUrl: '' } 
-                    : null;
-
-                return { ...module, id: nanoid(), lessons: lessonsWithIds, badge: badgeData };
-            });
-            
-            const courseData = {
-                id: courseId, title: values.title, description: values.description, category: values.category,
-                modules: modulesWithIds, totalLessons, totalDuration, createdAt: serverTimestamp(), status: 'Draft'
+             // Ensure all modules, lessons, questions, and options have IDs
+            const valuesWithIds = {
+                ...values,
+                modules: values.modules.map(module => ({
+                    ...module,
+                    id: module.id || nanoid(),
+                    lessons: module.lessons.map(lesson => ({
+                        ...lesson,
+                        id: lesson.id || nanoid(),
+                        questions: lesson.questions?.map(q => ({
+                            ...q,
+                            id: q.id || nanoid(),
+                            options: q.options.map(o => ({
+                                ...o,
+                                id: o.id || nanoid()
+                            }))
+                        }))
+                    }))
+                }))
             };
             
-            await setDoc(doc(db, 'courses', courseId), courseData);
+            const result = await updateCourse(params.id, valuesWithIds);
 
-            toast({ title: 'Curso Criado com Sucesso!', description: `O curso "${values.title}" foi salvo como rascunho.` });
-            router.push('/admin/courses');
+            if (result.success) {
+                toast({ title: 'Curso Atualizado com Sucesso!', description: `O curso "${values.title}" foi salvo.` });
+                router.push('/admin/courses');
+            } else {
+                throw new Error(result.error);
+            }
 
         } catch (error) {
-            console.error("Error creating course: ", error);
-            toast({ variant: 'destructive', title: 'Erro ao Criar Curso', description: 'Não foi possível salvar o curso. Tente novamente.' });
+            console.error("Error updating course: ", error);
+            toast({ variant: 'destructive', title: 'Erro ao Atualizar Curso', description: (error as Error).message });
         } finally {
             setIsSubmitting(false);
         }
     };
+    
+    if (isLoadingData) {
+        return <LoadingScreen />;
+    }
 
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-8">
                 <div>
-                    <h1 className="font-headline text-3xl font-bold tracking-tight">Construtor de Cursos</h1>
-                    <p className="text-muted-foreground">Crie uma experiência de aprendizado completa e interativa.</p>
+                    <h1 className="font-headline text-3xl font-bold tracking-tight">Editar Curso</h1>
+                    <p className="text-muted-foreground">Ajuste os detalhes e o conteúdo do curso.</p>
                 </div>
 
                 <Card>
@@ -112,10 +121,10 @@ export default function CreateCoursePage() {
 
                 <div>
                     <h2 className="text-2xl font-bold font-headline">Estrutura do Curso</h2>
-                    <p className="text-muted-foreground">Adicione módulos e aulas para montar o conteúdo.</p>
+                    <p className="text-muted-foreground">Adicione ou edite módulos e aulas para montar o conteúdo.</p>
                 </div>
                 
-                <Accordion type="multiple" className="w-full space-y-4">
+                <Accordion type="multiple" className="w-full space-y-4" defaultValue={moduleFields.map((_, i) => `module-${i}`)}>
                     {moduleFields.map((moduleItem, moduleIndex) => (
                         <ModuleField key={moduleItem.id} moduleIndex={moduleIndex} removeModule={removeModule} form={form} />
                     ))}
@@ -129,7 +138,7 @@ export default function CreateCoursePage() {
                     </Button>
                     <Button type="submit" disabled={isSubmitting} size="lg">
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Salvar Curso Completo
+                        Salvar Alterações
                     </Button>
                 </div>
             </form>
@@ -137,7 +146,7 @@ export default function CreateCoursePage() {
     );
 }
 
-// Module Component
+// Module Component (same as create page, but IDs are handled)
 function ModuleField({ moduleIndex, removeModule, form }: { moduleIndex: number, removeModule: (index: number) => void, form: any }) {
     const { fields: lessonFields, append: appendLesson, remove: removeLesson } = useFieldArray({
         control: form.control, name: `modules.${moduleIndex}.lessons`,
@@ -296,3 +305,4 @@ function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQu
         </Card>
     );
 }
+
