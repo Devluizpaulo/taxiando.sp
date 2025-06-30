@@ -12,6 +12,9 @@ import { QuizSection } from "@/components/quiz-section";
 import { CulturalAgendaSection } from "@/components/cultural-agenda-section";
 import { mockVehicles, mockServiceListings } from "@/lib/mock-data";
 import { PageViewTracker } from "@/components/page-view-tracker";
+import { getActivePartners } from "@/app/actions/marketing-actions";
+import { cn } from "@/lib/utils";
+
 
 const blogPosts = [
   {
@@ -41,7 +44,9 @@ const blogPosts = [
 ];
 
 
-export default function Home() {
+export default async function Home() {
+  const partners = await getActivePartners();
+
   return (
     <>
       <PageViewTracker page="home" />
@@ -247,27 +252,35 @@ export default function Home() {
              </div>
           </section>
 
-          <section id="partners" className="py-16 md:py-24 bg-muted">
-              <div className="container mx-auto px-4 md:px-6">
-                  <div className="mb-12 text-center">
-                      <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">Nossos Parceiros</h2>
-                      <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">Empresas que confiam e apoiam a nossa comunidade.</p>
-                  </div>
-                   <div className="mx-auto grid max-w-5xl grid-cols-2 items-center justify-items-center gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
-                      {[...Array(5)].map((_, i) => (
-                          <Image
-                            key={i}
-                            src="https://placehold.co/158x48.png"
-                            alt={`Logo Parceiro ${i + 1}`}
-                            width={158}
-                            height={48}
-                            className="col-span-1 max-h-12 w-full object-contain"
-                            data-ai-hint="company logo"
-                          />
-                      ))}
-                  </div>
-              </div>
-          </section>
+          {partners.length > 0 && (
+            <section id="partners" className="py-16 md:py-24 bg-muted">
+                <div className="container mx-auto px-4 md:px-6">
+                    <div className="mb-12 text-center">
+                        <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">Nossos Parceiros e Patrocinadores</h2>
+                        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">Empresas que confiam e apoiam a nossa comunidade.</p>
+                    </div>
+                     <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-10">
+                        {partners.map((partner) => (
+                          <Link key={partner.id} href={partner.linkUrl} target="_blank" rel="noopener noreferrer" title={partner.name} className={cn(
+                            "relative transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg",
+                            {
+                              'w-40 h-20': partner.size === 'small',
+                              'w-60 h-32': partner.size === 'medium',
+                              'w-80 h-40': partner.size === 'large',
+                            }
+                          )}>
+                            <Image
+                              src={partner.imageUrl}
+                              alt={partner.name}
+                              fill
+                              className="object-contain"
+                            />
+                          </Link>
+                        ))}
+                    </div>
+                </div>
+            </section>
+          )}
 
           <section className="bg-primary py-20">
             <div className="container mx-auto px-4 text-center md:px-6">
