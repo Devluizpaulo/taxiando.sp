@@ -47,15 +47,15 @@ const HowToBeDriverSection = () => (
     <section id="how-to-start" className="py-16 md:py-24 bg-muted">
       <div className="container mx-auto px-4 md:px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div>
+          <div className="text-center md:text-left">
             <Badge variant="secondary" className="mb-4">Guia do Iniciante</Badge>
             <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
               Quer se tornar um taxista profissional em SP?
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mt-4 text-lg text-muted-foreground text-justify">
               Preparamos um guia completo com o passo a passo, desde a documentação necessária até encontrar o veículo ideal para você começar com o pé direito.
             </p>
-            <p className="mt-4 text-muted-foreground">
+            <p className="mt-4 text-muted-foreground text-justify">
               Desmistificamos todo o processo para você focar no que realmente importa: dirigir com segurança e profissionalismo.
             </p>
             <Button asChild size="lg" className="mt-8">
@@ -121,7 +121,7 @@ export default function Home() {
                 <h1 className="font-headline text-4xl font-bold tracking-tighter text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
                   Sua carreira decola aqui.
                 </h1>
-                <p className="mx-auto max-w-xl text-lg text-muted-foreground md:mx-0 md:text-xl">
+                <p className="mx-auto max-w-xl text-lg text-muted-foreground text-justify md:mx-0 md:text-xl">
                   Cursos, notícias e as melhores oportunidades para taxistas e motoristas de app em São Paulo. Tudo em um só lugar.
                 </p>
                 <div className="flex flex-col gap-4 sm:flex-row sm:justify-center md:justify-start">
@@ -163,7 +163,7 @@ export default function Home() {
                 <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
                   Tudo que você precisa para decolar
                 </h2>
-                <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+                <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground text-justify">
                   Oferecemos as ferramentas e o conhecimento para você ir mais longe.
                 </p>
               </div>
@@ -223,7 +223,7 @@ export default function Home() {
                   <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
                     Últimas Notícias e Matérias
                   </h2>
-                  <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+                  <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground text-justify">
                     Informação de qualidade para o profissional do volante.
                   </p>
               </div>
@@ -254,7 +254,7 @@ export default function Home() {
                     <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
                       Oportunidades em Destaque
                     </h2>
-                    <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+                    <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground text-justify">
                       Encontre o veículo ideal e os melhores serviços para acelerar sua carreira.
                     </p>
                 </div>
