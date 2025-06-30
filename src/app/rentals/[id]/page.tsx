@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from '@/hooks/use-auth';
@@ -10,52 +10,44 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Instagram, MessageSquare, Car, MapPin, Building, Sparkles, User, ShieldCheck, Fuel, Calendar, Wrench, CreditCard } from "lucide-react";
-import { vehiclePerks, fleetAmenities } from '@/lib/data';
+import { Instagram, MessageSquare, Car, Building, Sparkles, User, ShieldCheck, Fuel, Calendar, Wrench, CreditCard, Loader2 } from "lucide-react";
+import { vehiclePerks as allVehiclePerks, fleetAmenities } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 import { ToastAction } from '@/components/ui/toast';
 import { FacebookIcon } from '@/components/icons/facebook-icon';
 import { LoadingScreen } from '@/components/loading-screen';
+import { getVehicleDetails, createApplication } from '@/app/actions/fleet-actions';
+import { type Vehicle, type UserProfile } from '@/lib/types';
 
-const vehicle = { 
-    id: 'v_1',
-    make: 'Chevrolet', 
-    model: 'Onix', 
-    year: 2022, 
-    status: 'Disponível', 
-    dailyRate: 120, 
-    imageUrl: 'https://placehold.co/800x600.png', 
-    condition: 'Novo', 
-    description: 'Carro novo, completo, com ar condicionado, direção elétrica e som bluetooth. Perfeito para o dia a dia na cidade, muito econômico e confortável para os passageiros. Todas as revisões estão em dia.', 
-    paymentInfo: { terms: 'Pagamento semanal, caução de R$800', methods: ['Cartão de Crédito', 'PIX', 'Boleto'] }, 
-    perks: [
-        { id: 'full_tank', label: 'Tanque Cheio' }, 
-        { id: 'car_wash', label: 'Lava-rápido incluso' }, 
-        { id: 'insurance', label: 'Seguro Passageiro' },
-        { id: 'gvn', label: 'Kit GNV 5ª Geração' },
-        { id: 'support', label: 'Suporte 24h' }
-    ]
-};
-
-const fleet = {
-    name: "Frota Rápida SP",
-    logoUrl: "https://placehold.co/80x80.png",
-    companyDescription: "Somos uma frota com mais de 10 anos de experiência no mercado de táxis de São Paulo. Nosso foco é oferecer veículos de qualidade com manutenção impecável para garantir a segurança e o conforto dos nossos motoristas parceiros. Oferecemos um ambiente amigável e suporte completo.",
-    address: "Rua das Laranjeiras, 123 - Vila Mariana, São Paulo - SP",
-    socialMedia: { instagram: '@frotarapidasp', facebook: '/frotarapidasp', whatsapp: '5511999998888'},
-    amenities: [
-        { id: 'coffee', label: 'Espaço para café' },
-        { id: 'wifi', label: 'Wi-Fi para motoristas' },
-        { id: 'tow_truck', label: 'Guincho 24 horas' }
-    ]
-}
 
 export default function RentalDetailsPage({ params }: { params: { id: string } }) {
-    const { user, userProfile, loading } = useAuth();
+    const { user, userProfile, loading: authLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
+    
+    const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+    const [fleet, setFleet] = useState<UserProfile | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [isApplying, setIsApplying] = useState(false);
 
-    const handleApply = () => {
+    useEffect(() => {
+        const fetchDetails = async () => {
+            setLoading(true);
+            const result = await getVehicleDetails(params.id);
+            if (result.success && result.vehicle && result.fleet) {
+                setVehicle(result.vehicle);
+                setFleet(result.fleet);
+            } else {
+                toast({ variant: "destructive", title: "Erro", description: result.error || "Não foi possível carregar os detalhes do veículo." });
+                router.push('/rentals');
+            }
+            setLoading(false);
+        };
+        fetchDetails();
+    }, [params.id, router, toast]);
+
+
+    const handleApply = async () => {
         if (!user || !userProfile) {
             toast({ variant: "destructive", title: "Acesso Negado", description: "Você precisa estar logado para se candidatar." });
             return;
@@ -75,12 +67,23 @@ export default function RentalDetailsPage({ params }: { params: { id: string } }
             });
             return;
         }
-
-        toast({ title: "Candidatura Enviada!", description: `Sua aplicação para o ${vehicle.make} ${vehicle.model} foi enviada para a ${fleet.name}.` });
+        
+        setIsApplying(true);
+        const result = await createApplication(params.id, user.uid);
+        if (result.success) {
+            toast({ title: "Candidatura Enviada!", description: `Sua aplicação para o ${vehicle?.make} ${vehicle?.model} foi enviada para a ${fleet?.nomeFantasia || fleet?.name}.` });
+        } else {
+            toast({ variant: "destructive", title: "Erro na Candidatura", description: result.error || "Não foi possível enviar sua candidatura." });
+        }
+        setIsApplying(false);
     }
 
-    if (loading) {
-        return <LoadingScreen className="h-full" />;
+    if (loading || authLoading) {
+        return <LoadingScreen />;
+    }
+    
+    if (!vehicle || !fleet) {
+         return <LoadingScreen />; // or an error component
     }
 
     return (
@@ -104,7 +107,7 @@ export default function RentalDetailsPage({ params }: { params: { id: string } }
                     <CardHeader><CardTitle>Vantagens e Benefícios Inclusos</CardTitle></CardHeader>
                     <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {vehicle.perks.map(perk => {
-                            const PerkIcon = vehiclePerks.find(p => p.id === perk.id)?.icon || Car;
+                            const PerkIcon = allVehiclePerks.find(p => p.id === perk.id)?.icon || Car;
                             return (
                                 <div key={perk.id} className="flex items-center gap-3">
                                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"><PerkIcon /></div>
@@ -141,43 +144,49 @@ export default function RentalDetailsPage({ params }: { params: { id: string } }
                             </p>
                         </CardHeader>
                         <CardContent>
-                            <Button size="lg" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleApply}>Quero Alugar este Carro</Button>
+                            <Button size="lg" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleApply} disabled={isApplying}>
+                                {isApplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Quero Alugar este Carro'}
+                            </Button>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center gap-4">
-                            <Image src={fleet.logoUrl} alt={fleet.name} width={64} height={64} className="rounded-lg" data-ai-hint="company logo"/>
+                            <Image src={fleet.photoUrl || "https://placehold.co/80x80.png"} alt={fleet.nomeFantasia || fleet.name || ''} width={64} height={64} className="rounded-lg bg-muted" data-ai-hint="company logo"/>
                             <div>
                                 <p className="text-sm text-muted-foreground">Oferecido por</p>
-                                <CardTitle className="text-xl">{fleet.name}</CardTitle>
+                                <CardTitle className="text-xl">{fleet.nomeFantasia || fleet.name}</CardTitle>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <p className="text-sm text-muted-foreground border-t pt-4">{fleet.companyDescription}</p>
                             
-                            <div>
-                                <h4 className="font-semibold mb-2">Comodidades da Frota</h4>
-                                <ul className="space-y-2">
-                                {fleet.amenities.map(amenity => {
-                                    const AmenityIcon = fleetAmenities.find(a => a.id === amenity.id)?.icon || Sparkles;
-                                    return (
-                                        <li key={amenity.id} className="flex items-center gap-2 text-sm">
-                                            <AmenityIcon className="h-4 w-4 text-green-600" />
-                                            <span className="text-muted-foreground">{amenity.label}</span>
-                                        </li>
-                                    )
-                                })}
-                                </ul>
-                            </div>
-
-                            <div className="border-t pt-4">
-                                <h4 className="font-semibold mb-2">Redes Sociais e Contato</h4>
-                                <div className="flex gap-3">
-                                    {fleet.socialMedia.instagram && <Button asChild variant="outline" size="icon"><Link href={`https://instagram.com/${fleet.socialMedia.instagram.replace('@','')}`} target="_blank"><Instagram /></Link></Button>}
-                                    {fleet.socialMedia.facebook && <Button asChild variant="outline" size="icon"><Link href={`https://facebook.com${fleet.socialMedia.facebook}`} target="_blank"><FacebookIcon /></Link></Button>}
-                                    {fleet.socialMedia.whatsapp && <Button asChild variant="outline" size="icon"><Link href={`https://wa.me/${fleet.socialMedia.whatsapp}`} target="_blank"><MessageSquare /></Link></Button>}
+                            {fleet.amenities && fleet.amenities.length > 0 && (
+                                <div>
+                                    <h4 className="font-semibold mb-2">Comodidades da Frota</h4>
+                                    <ul className="space-y-2">
+                                    {fleet.amenities.map(amenity => {
+                                        const AmenityIcon = fleetAmenities.find(a => a.id === amenity.id)?.icon || Sparkles;
+                                        return (
+                                            <li key={amenity.id} className="flex items-center gap-2 text-sm">
+                                                <AmenityIcon className="h-4 w-4 text-green-600" />
+                                                <span className="text-muted-foreground">{amenity.label}</span>
+                                            </li>
+                                        )
+                                    })}
+                                    </ul>
                                 </div>
-                            </div>
+                            )}
+
+                           {fleet.socialMedia && (
+                                <div className="border-t pt-4">
+                                    <h4 className="font-semibold mb-2">Redes Sociais e Contato</h4>
+                                    <div className="flex gap-3">
+                                        {fleet.socialMedia.instagram && <Button asChild variant="outline" size="icon"><Link href={`https://instagram.com/${fleet.socialMedia.instagram.replace('@','')}`} target="_blank"><Instagram /></Link></Button>}
+                                        {fleet.socialMedia.facebook && <Button asChild variant="outline" size="icon"><Link href={`https://facebook.com${fleet.socialMedia.facebook}`} target="_blank"><FacebookIcon /></Link></Button>}
+                                        {fleet.socialMedia.whatsapp && <Button asChild variant="outline" size="icon"><Link href={`https://wa.me/${fleet.socialMedia.whatsapp}`} target="_blank"><MessageSquare /></Link></Button>}
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

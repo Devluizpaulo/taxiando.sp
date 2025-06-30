@@ -3,11 +3,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { adminDB } from '@/lib/firebase-admin';
-import { type Vehicle, type VehicleApplication, type VehiclePerk } from '@/lib/types';
+import { type Vehicle, type VehicleApplication, type VehiclePerk, type UserProfile } from '@/lib/types';
 import { vehiclePerks } from '@/lib/data';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type VehicleFormValues } from '@/lib/fleet-schemas';
-import { mockVehicles, mockApplications } from '@/lib/mock-data';
 
 // Get all data for a fleet's dashboard
 export async function getFleetData(fleetId: string) {
@@ -16,44 +15,32 @@ export async function getFleetData(fleetId: string) {
     }
     try {
         const vehiclesQuery = adminDB.collection('vehicles').where('fleetId', '==', fleetId).orderBy('createdAt', 'desc');
-        // A real query for applications would be more complex, perhaps querying applications that point to the fleet's vehicles.
-        // For now, we will use a simplified query and mock data.
-        const applicationsQuery = adminDB.collection('applications').where('fleetId', '==', fleetId).orderBy('appliedAt', 'desc');
-
-        const [vehiclesSnapshot, applicationsSnapshot] = await Promise.all([
-            vehiclesQuery.get(),
-            applicationsQuery.get()
-        ]);
-
-        let vehicles = vehiclesSnapshot.docs.map(doc => {
+        // Now fetching real applications related to the vehicles of this fleet
+        const vehicleIds = (await vehiclesQuery.get()).docs.map(doc => doc.id);
+        
+        let applications: VehicleApplication[] = [];
+        if (vehicleIds.length > 0) {
+            const applicationsQuery = adminDB.collection('applications').where('vehicleId', 'in', vehicleIds).orderBy('appliedAt', 'desc');
+            const applicationsSnapshot = await applicationsQuery.get();
+            applications = applicationsSnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    ...data,
+                    id: doc.id,
+                    appliedAt: (data.appliedAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+                } as VehicleApplication;
+            });
+        }
+        
+        const vehiclesSnapshot = await vehiclesQuery.get();
+        const vehicles = vehiclesSnapshot.docs.map(doc => {
             const data = doc.data();
-            const createdAt = data.createdAt as Timestamp;
             return { 
                 ...data,
                 id: doc.id, 
-                createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : new Date().toISOString()
+                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString()
             } as Vehicle;
         });
-
-        // If no real vehicles, return mock vehicles for demonstration.
-        if (vehicles.length === 0) {
-            vehicles = mockVehicles.map((v, i) => ({ ...v, id: `v_${i+1}`, fleetId: fleetId, createdAt: new Date() })) as unknown as Vehicle[];
-        }
-        
-        let applications = applicationsSnapshot.docs.map(doc => {
-            const data = doc.data();
-            const appliedAt = data.appliedAt as Timestamp;
-            return { 
-                ...data,
-                id: doc.id,
-                appliedAt: appliedAt?.toDate ? appliedAt.toDate().toISOString() : new Date().toISOString()
-            } as VehicleApplication;
-        });
-
-        // If no real applications, return mock applications for demonstration.
-        if (applications.length === 0) {
-            applications = mockApplications;
-        }
 
         return { success: true, vehicles, applications };
 
@@ -74,7 +61,7 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, ve
             .filter(Boolean) as VehiclePerk[];
 
         const vehicleData = {
-            plate: data.plate,
+            plate: data.plate.toUpperCase(),
             make: data.make,
             model: data.model,
             year: data.year,
@@ -92,6 +79,8 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, ve
             updatedAt: Timestamp.now(),
         };
 
+        let finalVehicleId = vehicleId;
+
         if (vehicleId) {
             const vehicleRef = adminDB.collection('vehicles').doc(vehicleId);
             await vehicleRef.update(vehicleData);
@@ -102,11 +91,12 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, ve
                 id: newVehicleRef.id,
                 createdAt: Timestamp.now(),
             });
+            finalVehicleId = newVehicleRef.id;
         }
         
         revalidatePath('/fleet');
         revalidatePath(`/rentals`);
-        if (vehicleId) revalidatePath(`/rentals/${vehicleId}`);
+        if (finalVehicleId) revalidatePath(`/rentals/${finalVehicleId}`);
 
         return { success: true };
 
@@ -142,5 +132,141 @@ export async function updateApplicationStatus(applicationId: string, newStatus: 
     } catch (error) {
         console.error("Error updating application status:", error);
         return { success: false, error: (error as Error).message };
+    }
+}
+
+// --- Functions for Rentals Marketplace ---
+
+export async function getAvailableVehicles(): Promise<Vehicle[]> {
+    try {
+        const snapshot = await adminDB.collection('vehicles')
+            .where('status', '==', 'Disponível')
+            .orderBy('createdAt', 'desc')
+            .get();
+        
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                ...data,
+                id: doc.id,
+                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+            } as Vehicle;
+        });
+    } catch (error) {
+        console.error("Error fetching available vehicles:", error);
+        return [];
+    }
+}
+
+
+export async function getVehicleDetails(vehicleId: string) {
+    try {
+        const vehicleDoc = await adminDB.collection('vehicles').doc(vehicleId).get();
+        if (!vehicleDoc.exists) {
+            return { success: false, error: 'Veículo não encontrado.' };
+        }
+        
+        const vehicle = vehicleDoc.data() as Vehicle;
+        const fleetDoc = await adminDB.collection('users').doc(vehicle.fleetId).get();
+        if (!fleetDoc.exists) {
+            return { success: false, error: 'Frota associada não encontrada.' };
+        }
+
+        const fleet = fleetDoc.data() as UserProfile;
+        
+        return { 
+            success: true, 
+            vehicle: { ...vehicle, id: vehicleDoc.id }, 
+            fleet 
+        };
+    } catch (error) {
+        console.error("Error fetching vehicle details:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+
+export async function createApplication(vehicleId: string, userId: string) {
+    if (!userId) return { success: false, error: "Usuário não autenticado." };
+    if (!vehicleId) return { success: false, error: "ID do veículo não fornecido." };
+    
+    try {
+        const [vehicleSnap, userSnap] = await Promise.all([
+            adminDB.collection('vehicles').doc(vehicleId).get(),
+            adminDB.collection('users').doc(userId).get()
+        ]);
+
+        if (!vehicleSnap.exists) return { success: false, error: "Veículo não existe." };
+        if (!userSnap.exists) return { success: false, error: "Usuário não existe." };
+
+        const vehicle = vehicleSnap.data() as Vehicle;
+        const user = userSnap.data() as UserProfile;
+        
+        if (user.profileStatus !== 'approved') {
+            return { success: false, error: "Seu perfil precisa estar aprovado para se candidatar." };
+        }
+        
+        // Check for existing application
+        const existingAppQuery = await adminDB.collection('applications')
+            .where('driverId', '==', userId)
+            .where('vehicleId', '==', vehicleId)
+            .limit(1)
+            .get();
+
+        if (!existingAppQuery.empty) {
+            return { success: false, error: "Você já se candidatou para este veículo." };
+        }
+
+        const appRef = adminDB.collection('applications').doc();
+        const applicationData: Omit<VehicleApplication, 'id'> = {
+            driverId: userId,
+            driverName: user.name || 'Nome não preenchido',
+            driverPhotoUrl: user.photoUrl || '',
+            driverProfileStatus: user.profileStatus,
+            vehicleId: vehicleId,
+            vehicleName: `${vehicle.make} ${vehicle.model} (${vehicle.year})`,
+            fleetId: vehicle.fleetId,
+            company: 'Nome da Frota', // This should be fetched from the fleet's profile
+            appliedAt: Timestamp.now(),
+            status: 'Pendente',
+        };
+
+        const fleetSnap = await adminDB.collection('users').doc(vehicle.fleetId).get();
+        if (fleetSnap.exists) {
+            const fleetData = fleetSnap.data() as UserProfile;
+            applicationData.company = fleetData.nomeFantasia || fleetData.name || 'Frota Parceira';
+        }
+
+        await appRef.set(applicationData);
+
+        revalidatePath('/applications');
+        revalidatePath(`/fleet`);
+        return { success: true };
+
+    } catch (error) {
+        console.error("Error creating application:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function getDriverApplications(userId: string): Promise<VehicleApplication[]> {
+    if (!userId) return [];
+    try {
+        const snapshot = await adminDB.collection('applications')
+            .where('driverId', '==', userId)
+            .orderBy('appliedAt', 'desc')
+            .get();
+        
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                ...data,
+                id: doc.id,
+                appliedAt: (data.appliedAt as Timestamp).toDate().toISOString()
+            } as VehicleApplication;
+        });
+    } catch (error) {
+        console.error("Error fetching driver applications:", error);
+        return [];
     }
 }
