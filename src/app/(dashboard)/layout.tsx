@@ -14,7 +14,8 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
   SidebarInset,
-  SidebarTrigger
+  SidebarTrigger,
+  useSidebar
 } from "@/components/ui/sidebar";
 import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail } from "lucide-react";
 import Link from "next/link";
