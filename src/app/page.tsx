@@ -50,17 +50,17 @@ export default function Home() {
         <main className="flex-1">
            <section className="w-full py-20 md:py-32 bg-gradient-to-b from-background via-muted/50 to-background">
             <div className="container mx-auto grid grid-cols-1 items-center gap-12 px-4 md:grid-cols-2 md:px-6">
-              <div className="space-y-8">
+              <div className="space-y-8 text-center md:text-left">
                 <Badge variant="secondary" className="bg-primary/20 text-primary-foreground font-semibold py-1 px-3">
                   A plataforma Nº1 para o profissional do volante
                 </Badge>
                 <h1 className="font-headline text-4xl font-bold tracking-tighter text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
                   Sua carreira decola aqui.
                 </h1>
-                <p className="max-w-xl text-lg text-muted-foreground md:text-xl">
+                <p className="max-w-xl text-lg text-muted-foreground md:text-xl mx-auto md:mx-0">
                   Cursos, notícias e as melhores oportunidades para taxistas e motoristas de app em São Paulo. Tudo em um só lugar.
                 </p>
-                <div className="flex flex-col gap-4 sm:flex-row">
+                <div className="flex flex-col gap-4 sm:flex-row sm:justify-center md:justify-start">
                   <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20">
                     <Link href="/register">Crie sua conta gratuita</Link>
                   </Button>
@@ -68,7 +68,7 @@ export default function Home() {
                     <Link href="/rentals">Ver Oportunidades <MoveRight className="ml-2" /></Link>
                   </Button>
                 </div>
-                <div className="flex items-center gap-6 pt-4 text-sm text-muted-foreground">
+                <div className="flex items-center justify-center md:justify-start gap-6 pt-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-primary" />
                     <span>Frotas Verificadas</span>
@@ -80,13 +80,13 @@ export default function Home() {
                 </div>
               </div>
               <div className="relative flex justify-center items-center">
-                <div className="absolute -inset-4 bg-primary/30 rounded-full blur-3xl opacity-50"></div>
+                 <div className="absolute -inset-4 bg-primary/20 rounded-3xl blur-3xl opacity-60"></div>
                 <Image
                   src="/hero.png"
                   alt="Taxista em São Paulo"
                   width={600}
                   height={600}
-                  className="relative z-10 w-full max-w-md rounded-full object-cover shadow-2xl aspect-square"
+                  className="relative z-10 w-full max-w-xs rounded-2xl object-cover shadow-2xl aspect-[4/5] sm:max-w-sm md:aspect-square md:max-w-md"
                   priority
                 />
               </div>
@@ -104,7 +104,7 @@ export default function Home() {
                 </p>
               </div>
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-                <Card className="text-center">
+                <Card className="text-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   <CardHeader>
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-primary">
                       <BookOpen className="h-8 w-8" />
@@ -117,7 +117,7 @@ export default function Home() {
                     </p>
                   </CardContent>
                 </Card>
-                <Card className="text-center">
+                <Card className="text-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   <CardHeader>
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-primary">
                       <Newspaper className="h-8 w-8" />
@@ -130,7 +130,7 @@ export default function Home() {
                     </p>
                   </CardContent>
                 </Card>
-                 <Card className="text-center">
+                 <Card className="text-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   <CardHeader>
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-primary">
                       <Briefcase className="h-8 w-8" />
@@ -163,7 +163,7 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                 {blogPosts.map((post) => (
-                  <Card key={post.id} className="flex flex-col overflow-hidden">
+                  <Card key={post.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl">
                     <Image src={post.image} alt={post.title} width={600} height={400} className="w-full object-cover" data-ai-hint={post.imageHint}/>
                     <CardHeader>
                       <CardTitle className="font-headline text-xl">{post.title}</CardTitle>
@@ -200,7 +200,7 @@ export default function Home() {
                     <TabsContent value="rentals" className="pt-8">
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {mockVehicles.slice(0, 3).map((vehicle) => (
-                                <Card key={vehicle.plate}>
+                                <Card key={vehicle.plate} className="transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                                     <CardHeader className="p-0 relative">
                                       <Image src={vehicle.imageUrl} alt={`${vehicle.make} ${vehicle.model}`} width={600} height={400} className="w-full object-cover aspect-video" data-ai-hint="car front view"/>
                                        <Badge className="absolute top-3 right-3 text-lg py-1 px-3 bg-primary/90 text-primary-foreground font-bold border-2 border-primary-foreground/50">
@@ -224,7 +224,7 @@ export default function Home() {
                      <TabsContent value="services" className="pt-8">
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {mockServiceListings.slice(0, 3).map((srv) => (
-                                <Card key={srv.id} className="flex flex-col overflow-hidden">
+                                <Card key={srv.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                                     <CardHeader className="p-0">
                                         <Image src={srv.imageUrl} alt={srv.title} width={600} height={400} className="w-full object-cover aspect-video" data-ai-hint={srv.imageHint}/>
                                     </CardHeader>
@@ -253,11 +253,17 @@ export default function Home() {
                       <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">Nossos Parceiros</h2>
                       <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">Empresas que confiam e apoiam a nossa comunidade.</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-5">
+                   <div className="mx-auto grid max-w-5xl grid-cols-2 items-center justify-items-center gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
                       {[...Array(5)].map((_, i) => (
-                          <div key={i} className="flex items-center justify-center">
-                              <Building className="h-16 w-16 text-muted-foreground/60" />
-                          </div>
+                          <Image
+                            key={i}
+                            src="https://placehold.co/158x48.png"
+                            alt={`Logo Parceiro ${i + 1}`}
+                            width={158}
+                            height={48}
+                            className="col-span-1 max-h-12 w-full object-contain"
+                            data-ai-hint="company logo"
+                          />
                       ))}
                   </div>
               </div>
