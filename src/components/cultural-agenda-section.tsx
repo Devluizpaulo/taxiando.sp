@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -9,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-import { MoveRight, Loader2, Calendar } from 'lucide-react';
+import { MoveRight, Loader2, Calendar, MapPin } from 'lucide-react';
 import { format, isToday, isTomorrow, parseISO, startOfTomorrow, addDays, startOfToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -59,18 +58,22 @@ const EventCard = ({ event }: { event: Event }) => {
     const startTime = format(new Date(event.startDate as string), "HH:mm");
     return (
         <div className="w-80 flex-shrink-0 snap-start">
-            <Card className="flex flex-col h-full overflow-hidden bg-card shadow-md hover:shadow-lg transition-shadow">
-                <CardHeader className="p-0">
-                <div className="relative aspect-[16/9] w-full">
-                    <Image src={event.imageUrl} alt={event.title} fill className="object-cover" data-ai-hint="event concert festival" />
-                </div>
+            <Card className="flex flex-col h-full overflow-hidden bg-card shadow-lg hover:shadow-xl transition-shadow border-2 border-transparent hover:border-primary">
+                <CardHeader className="p-4 bg-accent text-accent-foreground flex flex-row items-center justify-between">
+                    <Image src="/logo.png" alt="Táxiando SP Logo" width={40} height={40} className="rounded-md" />
+                    <div className="text-right">
+                        <p className="text-sm font-semibold">Início às</p>
+                        <p className="text-2xl font-bold">{startTime}</p>
+                    </div>
                 </CardHeader>
-                <CardContent className="flex-1 p-4">
-                    <p className="text-sm font-bold text-primary">{startTime}</p>
-                    <CardTitle className="font-headline text-lg mt-1 line-clamp-2">{event.title}</CardTitle>
-                    <CardDescription className="text-xs mt-1 line-clamp-1">{event.location}</CardDescription>
+                <CardContent className="flex-1 p-4 space-y-2">
+                    <CardTitle className="font-headline text-lg line-clamp-2">{event.title}</CardTitle>
+                    <CardDescription className="text-sm mt-1 line-clamp-2 flex items-start gap-2">
+                        <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                        <span>{event.location}</span>
+                    </CardDescription>
                 </CardContent>
-                <CardFooter className="p-4 bg-muted/30">
+                <CardFooter className="p-4 bg-muted/50">
                     <Button asChild variant="outline" size="sm" className="w-full">
                         <Link href={event.mapUrl} target="_blank" rel="noopener noreferrer">
                         Ver no Mapa <MoveRight className="ml-2" />
@@ -154,4 +157,3 @@ export function CulturalAgendaSection() {
         </section>
     );
 }
-
