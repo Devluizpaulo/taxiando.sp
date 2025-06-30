@@ -1,4 +1,5 @@
 
+'use server';
 
 import Link from 'next/link';
 import { adminDB } from '@/lib/firebase-admin';
@@ -12,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, BookCopy, BarChart2 } from 'lucide-react';
 
+export const revalidate = 0; // Force dynamic rendering to prevent stale connections
 
 async function getCourses(): Promise<Course[]> {
     try {
