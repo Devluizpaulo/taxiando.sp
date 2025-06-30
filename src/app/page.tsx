@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock, Building, Wrench, Star, ShieldCheck } from "lucide-react";
+import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock, Building, Wrench, Star, ShieldCheck, FileText, Car } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { QuizSection } from "@/components/quiz-section";
@@ -43,6 +43,67 @@ const blogPosts = [
   },
 ];
 
+const HowToBeDriverSection = () => (
+    <section id="how-to-start" className="py-16 md:py-24 bg-muted">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div>
+            <Badge variant="secondary" className="mb-4">Guia do Iniciante</Badge>
+            <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
+              Como se Tornar um Taxista em SP
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Quer iniciar sua carreira como taxista mas não sabe por onde começar? Preparamos um guia completo com o passo a passo, desde a documentação necessária até encontrar o veículo ideal.
+            </p>
+            <p className="mt-4 text-muted-foreground">
+              Desmistificamos todo o processo para você focar no que realmente importa: dirigir com segurança e profissionalismo.
+            </p>
+            <Button asChild size="lg" className="mt-8">
+              <Link href="/how-to-become-a-taxi-driver">Ver o Guia Completo <MoveRight className="ml-2" /></Link>
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <FileText className="h-8 w-8 text-primary mb-2" />
+                <CardTitle>Documentação</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Saiba tudo sobre CNH com EAR e o Condutax.</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <BookOpen className="h-8 w-8 text-primary mb-2" />
+                <CardTitle>Cursos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Entenda a importância do curso de formação obrigatório.</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <Car className="h-8 w-8 text-primary mb-2" />
+                <CardTitle>Alvará e Veículo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Descubra como alugar um veículo regularizado.</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <Star className="h-8 w-8 text-primary mb-2" />
+                <CardTitle>Início da Carreira</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Dicas para começar com o pé direito na profissão.</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 
 export default async function Home() {
   const partners = await getActivePartners();
@@ -151,6 +212,8 @@ export default async function Home() {
               </div>
             </div>
           </section>
+
+          <HowToBeDriverSection />
 
           <QuizSection />
 

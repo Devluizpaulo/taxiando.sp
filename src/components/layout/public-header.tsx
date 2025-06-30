@@ -14,6 +14,7 @@ export function PublicHeader() {
 
   const navLinks = [
     { href: "/", label: "Início" },
+    { href: "/how-to-become-a-taxi-driver", label: "Seja um Taxista" },
     { href: "/events", label: "Agenda" },
     { href: "/rentals", label: "Alugar Veículo" },
     { href: "/#features", label: "Recursos" },

@@ -34,6 +34,7 @@ export function PublicFooter() {
             <div className="space-y-4">
                 <h4 className="font-headline font-semibold">Plataforma</h4>
                 <div className="grid gap-2">
+                    <Link href="/how-to-become-a-taxi-driver" className="text-sm text-muted-foreground transition-colors hover:text-primary">Seja um Taxista</Link>
                     <Link href="/rentals" className="text-sm text-muted-foreground transition-colors hover:text-primary">Alugar Veículo</Link>
                     <Link href="/events" className="text-sm text-muted-foreground transition-colors hover:text-primary">Agenda Cultural</Link>
                     <Link href="/#features" className="text-sm text-muted-foreground transition-colors hover:text-primary">Recursos</Link>
