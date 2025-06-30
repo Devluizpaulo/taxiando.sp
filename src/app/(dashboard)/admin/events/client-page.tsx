@@ -1,9 +1,11 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { type Event } from '@/lib/types';
 import { useAuthProtection } from '@/hooks/use-auth';
+import { getAdminEvents } from '@/app/actions/event-actions';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,11 +16,19 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { LoadingScreen } from '@/components/loading-screen';
 
-export default function EventsClientPage({ initialEvents }: { initialEvents: Event[] }) {
-    const { loading } = useAuthProtection({ requiredRoles: ['admin'] });
-    const [events] = useState<Event[]>(initialEvents);
+export default function EventsClientPage() {
+    const { loading: authLoading } = useAuthProtection({ requiredRoles: ['admin'] });
+    const [events, setEvents] = useState<Event[]>([]);
+    const [dataLoading, setDataLoading] = useState(true);
 
-    if (loading) {
+    useEffect(() => {
+        getAdminEvents().then(data => {
+            setEvents(data);
+            setDataLoading(false);
+        });
+    }, []);
+
+    if (authLoading || dataLoading) {
         return <LoadingScreen />;
     }
 
