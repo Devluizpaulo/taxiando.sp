@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock, Building, Wrench } from "lucide-react";
+import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock, Building, Wrench, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { QuizSection } from "@/components/quiz-section";
@@ -67,14 +67,32 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex justify-center">
-                <Image 
-                  src="/hero.png"
-                  alt="Taxi in São Paulo"
-                  width={600}
-                  height={400}
-                  className="rounded-xl shadow-2xl"
-                  data-ai-hint="taxi sao paulo"
-                />
+                <Card className="w-full max-w-sm overflow-hidden rounded-xl shadow-2xl">
+                    <CardHeader className="p-0">
+                        <Image
+                            src="https://placehold.co/600x400.png"
+                            alt="Motorista Destaque"
+                            width={600}
+                            height={400}
+                            className="w-full object-cover"
+                            data-ai-hint="driver smiling"
+                            priority
+                        />
+                    </CardHeader>
+                    <CardContent className="p-6 bg-card">
+                        <Badge variant="secondary" className="mb-2 bg-primary/20 text-primary-foreground font-semibold">Motorista do Mês</Badge>
+                        <CardTitle className="font-headline text-2xl">José Alencar</CardTitle>
+                        <CardDescription>+5 anos de experiência nas ruas de SP</CardDescription>
+                        <div className="flex items-center gap-1 mt-3 text-amber-500">
+                            <Star className="h-5 w-5 fill-current" />
+                            <Star className="h-5 w-5 fill-current" />
+                            <Star className="h-5 w-5 fill-current" />
+                            <Star className="h-5 w-5 fill-current" />
+                            <Star className="h-5 w-5 fill-current" />
+                            <span className="text-sm text-muted-foreground ml-2">(4.9/5.0)</span>
+                        </div>
+                    </CardContent>
+                </Card>
               </div>
             </div>
           </section>
