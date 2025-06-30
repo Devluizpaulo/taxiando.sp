@@ -260,3 +260,13 @@ export interface Notification {
     link?: string;
     createdAt: Timestamp | string;
 }
+
+export interface Partner {
+    id: string;
+    name: string;
+    imageUrl: string;
+    linkUrl: string;
+    size: 'small' | 'medium' | 'large';
+    isActive: boolean;
+    createdAt: Timestamp | string;
+}

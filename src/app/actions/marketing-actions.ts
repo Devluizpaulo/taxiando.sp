@@ -4,8 +4,9 @@
 import { revalidatePath } from 'next/cache';
 import { adminDB, Timestamp as AdminTimestamp } from '@/lib/firebase-admin';
 import admin from 'firebase-admin';
-import { type Coupon, type Notification, type UserProfile } from '@/lib/types';
+import { type Coupon, type Notification, type UserProfile, type Partner } from '@/lib/types';
 import { auth } from '@/lib/firebase';
+import { nanoid } from 'nanoid';
 
 
 export async function createCoupon(couponData: Omit<Coupon, 'id' | 'createdAt' | 'uses'>) {
@@ -108,5 +109,87 @@ export async function getAllCoupons(): Promise<Coupon[]> {
     } catch (error) {
         console.error("Error fetching coupons: ", error);
         return [];
+    }
+}
+
+// --- Partner Actions ---
+
+export async function createPartner(partnerData: Omit<Partner, 'id' | 'createdAt'>) {
+    try {
+        const partnerId = nanoid();
+        await adminDB.collection('partners').doc(partnerId).set({
+            ...partnerData,
+            id: partnerId,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        revalidatePath('/admin/marketing/partners');
+        revalidatePath('/');
+        return { success: true, message: 'Parceiro criado com sucesso!' };
+    } catch (error) {
+        console.error("Error creating partner:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function getAllPartners(): Promise<Partner[]> {
+    try {
+        const snapshot = await adminDB.collection('partners').orderBy('createdAt', 'desc').get();
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                createdAt: (data.createdAt as AdminTimestamp).toDate().toISOString(),
+            } as Partner;
+        });
+    } catch (error) {
+        console.error("Error fetching all partners: ", error);
+        return [];
+    }
+}
+
+export async function getActivePartners(): Promise<Partner[]> {
+    try {
+        const snapshot = await adminDB.collection('partners')
+            .where('isActive', '==', true)
+            .orderBy('createdAt', 'desc')
+            .get();
+            
+        return snapshot.docs.map(doc => {
+             const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                createdAt: (data.createdAt as AdminTimestamp).toDate().toISOString(),
+            } as Partner;
+        });
+    } catch (error) {
+        console.error("Error fetching active partners: ", error);
+        return [];
+    }
+}
+
+
+export async function updatePartnerStatus(partnerId: string, isActive: boolean) {
+    try {
+        await adminDB.collection('partners').doc(partnerId).update({ isActive });
+        revalidatePath('/admin/marketing/partners');
+        revalidatePath('/');
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating partner status:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function deletePartner(partnerId: string) {
+    try {
+        await adminDB.collection('partners').doc(partnerId).delete();
+        revalidatePath('/admin/marketing/partners');
+        revalidatePath('/');
+        return { success: true };
+    } catch (error) {
+        console.error("Error deleting partner:", error);
+        return { success: false, error: (error as Error).message };
     }
 }
