@@ -12,12 +12,21 @@ type AdminUser = Pick<UserProfile, 'uid' | 'name' | 'email' | 'role' | 'profileS
 
 async function getData() {
     try {
-        const [usersSnapshot, oppsSnapshot, servicesSnapshot, analyticsData] = await Promise.all([
+        // Fetch critical data first
+        const [usersSnapshot, oppsSnapshot, servicesSnapshot] = await Promise.all([
             adminDB.collection('users').orderBy('createdAt', 'desc').get(),
             adminDB.collection('opportunities').where('status', '==', 'Pendente').get(),
             adminDB.collection('services').where('status', '==', 'Pendente').get(),
-            getAdminDashboardAnalytics()
         ]);
+        
+        let analyticsData: AnalyticsData = {};
+        try {
+            // Fetch non-critical analytics data separately to avoid crashing the whole page
+            analyticsData = await getAdminDashboardAnalytics();
+        } catch (analyticsError) {
+            console.error("Failed to fetch admin analytics, continuing without it:", analyticsError);
+            // On failure, analytics will be an empty object, so the page doesn't crash.
+        }
 
         const usersData = usersSnapshot.docs.map(doc => {
             const data = doc.data();
@@ -39,7 +48,7 @@ async function getData() {
             analytics: analyticsData 
         };
     } catch (error) {
-        console.error("Failed to fetch admin data:", error);
+        console.error("Failed to fetch critical admin data:", error);
         return { users: [], opportunities: [], services: [], analytics: {} };
     }
 }
