@@ -23,11 +23,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DatePicker } from '@/components/ui/datepicker';
 import { LoadingScreen } from '@/components/loading-screen';
+import { uploadFile } from '@/app/actions/storage-actions';
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const profileFormSchema = z.object({
   // Perfil
   name: z.string().min(3, { message: 'O nome completo é obrigatório.' }),
   photoUrl: z.string().url("URL da foto inválida.").optional().or(z.literal('')),
+  photoFile: z.any()
+    .refine((file) => !file || file.size <= MAX_FILE_SIZE, `O tamanho máximo do arquivo é 5MB.`)
+    .refine((file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type), "Apenas os formatos .jpg, .jpeg, .png e .webp são aceitos.")
+    .optional(),
   bio: z.string().max(300, "O resumo deve ter no máximo 300 caracteres.").optional(),
 
   // Contato
@@ -72,6 +80,7 @@ export default function CompleteProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileFormSchema),
@@ -96,7 +105,7 @@ export default function CompleteProfilePage() {
             financialConsent: false,
         },
     });
-
+    
     useEffect(() => {
         if (!loading && userProfile) {
             // Helper to convert Firestore Timestamp to JS Date
@@ -126,6 +135,15 @@ export default function CompleteProfilePage() {
             });
         }
     }, [userProfile, loading, form]);
+    
+    useEffect(() => {
+        // Cleanup the preview URL when the component unmounts
+        return () => {
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl);
+            }
+        };
+    }, [previewUrl]);
 
     if (loading) {
         return <LoadingScreen />;
@@ -139,12 +157,30 @@ export default function CompleteProfilePage() {
     const onSubmit = async (values: ProfileFormValues) => {
         setIsSubmitting(true);
         try {
+            let finalPhotoUrl = values.photoUrl;
+
+            // Upload a new photo if one was selected
+            if (values.photoFile) {
+                const formData = new FormData();
+                formData.append('file', values.photoFile);
+
+                toast({ title: "Fazendo upload da imagem...", description: "Aguarde um momento." });
+                const uploadResult = await uploadFile(formData);
+
+                if (uploadResult.success && uploadResult.url) {
+                    finalPhotoUrl = uploadResult.url;
+                } else {
+                    throw new Error(uploadResult.error || 'Falha no upload da imagem.');
+                }
+            }
+            
             const userDocRef = doc(db, 'users', user.uid);
             
-            const { cnhPoints, ...restOfValues } = values;
+            const { cnhPoints, photoFile, ...restOfValues } = values;
 
             const dataToSave = {
                 ...restOfValues,
+                photoUrl: finalPhotoUrl,
                 cnhPoints: cnhPoints === null ? undefined : cnhPoints, // Store as undefined if null
                 profileStatus: 'pending_review',
                 cnhExpiration: values.cnhExpiration ? Timestamp.fromDate(values.cnhExpiration) : null,
@@ -190,18 +226,39 @@ export default function CompleteProfilePage() {
                             <CardDescription>Apresente-se à comunidade. Uma boa foto e um resumo aumentam suas chances.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="flex items-center gap-6">
-                                <Avatar className="h-24 w-24">
-                                    <AvatarImage src={form.watch('photoUrl') || undefined} alt={form.watch('name')} />
-                                    <AvatarFallback><Camera className="h-8 w-8 text-muted-foreground"/></AvatarFallback>
-                                </Avatar>
-                                <div className="grid flex-1 gap-2">
-                                     <FormField control={form.control} name="photoUrl" render={({ field }) => (
-                                        <FormItem><FormLabel>URL da Foto de Perfil</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                    <p className="text-xs text-muted-foreground">Cole a URL de uma foto sua. Use um serviço como <a href="https://imgbb.com/" target="_blank" rel="noopener noreferrer" className="underline">imgbb.com</a> para hospedar.</p>
-                                </div>
-                            </div>
+                            <FormField
+                                control={form.control}
+                                name="photoFile"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Foto de Perfil</FormLabel>
+                                    <div className="flex items-center gap-6">
+                                        <Avatar className="h-24 w-24">
+                                            <AvatarImage src={previewUrl || form.watch('photoUrl') || undefined} alt={form.watch('name')} />
+                                            <AvatarFallback><Camera className="h-8 w-8 text-muted-foreground"/></AvatarFallback>
+                                        </Avatar>
+                                        <FormControl>
+                                            <Input 
+                                                type="file" 
+                                                accept="image/*"
+                                                className="max-w-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    field.onChange(file);
+                                                    if (file) {
+                                                         if (previewUrl) URL.revokeObjectURL(previewUrl);
+                                                        setPreviewUrl(URL.createObjectURL(file));
+                                                    } else {
+                                                         setPreviewUrl(null);
+                                                    }
+                                                }}
+                                            />
+                                        </FormControl>
+                                    </div>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
                              <FormField control={form.control} name="bio" render={({ field }) => (
                                 <FormItem><FormLabel>Breve Resumo Sobre Você</FormLabel><FormControl><Textarea placeholder="Fale um pouco sobre sua experiência como motorista, seus objetivos e o que você busca." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
