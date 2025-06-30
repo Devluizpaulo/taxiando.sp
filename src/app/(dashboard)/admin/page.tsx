@@ -1,19 +1,21 @@
 
-import { collection, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { adminDB } from '@/lib/firebase-admin';
+import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDashboardAnalytics } from '@/app/actions/admin-actions';
 import type { UserProfile, Opportunity, ServiceListing, AnalyticsData } from '@/lib/types';
 import { AdminDashboardClient } from './admin-dashboard-client';
 
 
-type AdminUser = Pick<UserProfile, 'uid' | 'name' | 'email' | 'role' | 'profileStatus' | 'createdAt' | 'credits'>;
+type AdminUser = Pick<UserProfile, 'uid' | 'name' | 'email' | 'role' | 'profileStatus' | 'credits'> & {
+    createdAt: string;
+};
 
 async function getData() {
     try {
         const [usersSnapshot, oppsSnapshot, servicesSnapshot, analyticsData] = await Promise.all([
-            getDocs(query(collection(adminDB, 'users'), orderBy('createdAt', 'desc'))),
-            getDocs(query(collection(adminDB, 'opportunities'), where('status', '==', 'Pendente'))),
-            getDocs(query(collection(adminDB, 'services'), where('status', '==', 'Pendente'))),
+            adminDB.collection('users').orderBy('createdAt', 'desc').get(),
+            adminDB.collection('opportunities').where('status', '==', 'Pendente').get(),
+            adminDB.collection('services').where('status', '==', 'Pendente').get(),
             getAdminDashboardAnalytics()
         ]);
 
