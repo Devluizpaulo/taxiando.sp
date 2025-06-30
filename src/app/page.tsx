@@ -50,10 +50,10 @@ const HowToBeDriverSection = () => (
           <div>
             <Badge variant="secondary" className="mb-4">Guia do Iniciante</Badge>
             <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
-              Como se Tornar um Taxista em SP
+              Quer se tornar um taxista profissional em SP?
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Quer iniciar sua carreira como taxista mas não sabe por onde começar? Preparamos um guia completo com o passo a passo, desde a documentação necessária até encontrar o veículo ideal.
+              Preparamos um guia completo com o passo a passo, desde a documentação necessária até encontrar o veículo ideal para você começar com o pé direito.
             </p>
             <p className="mt-4 text-muted-foreground">
               Desmistificamos todo o processo para você focar no que realmente importa: dirigir com segurança e profissionalismo.
@@ -63,7 +63,7 @@ const HowToBeDriverSection = () => (
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <Card>
+            <Card className="transition-all hover:shadow-md hover:-translate-y-1">
               <CardHeader>
                 <FileText className="h-8 w-8 text-primary mb-2" />
                 <CardTitle>Documentação</CardTitle>
@@ -72,7 +72,7 @@ const HowToBeDriverSection = () => (
                 <p className="text-sm text-muted-foreground">Saiba tudo sobre CNH com EAR e o Condutax.</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="transition-all hover:shadow-md hover:-translate-y-1">
               <CardHeader>
                 <BookOpen className="h-8 w-8 text-primary mb-2" />
                 <CardTitle>Cursos</CardTitle>
@@ -81,7 +81,7 @@ const HowToBeDriverSection = () => (
                 <p className="text-sm text-muted-foreground">Entenda a importância do curso de formação obrigatório.</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="transition-all hover:shadow-md hover:-translate-y-1">
               <CardHeader>
                 <Car className="h-8 w-8 text-primary mb-2" />
                 <CardTitle>Alvará e Veículo</CardTitle>
@@ -90,7 +90,7 @@ const HowToBeDriverSection = () => (
                 <p className="text-sm text-muted-foreground">Descubra como alugar um veículo regularizado.</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="transition-all hover:shadow-md hover:-translate-y-1">
               <CardHeader>
                 <Star className="h-8 w-8 text-primary mb-2" />
                 <CardTitle>Início da Carreira</CardTitle>
@@ -121,7 +121,7 @@ export default function Home() {
                 <h1 className="font-headline text-4xl font-bold tracking-tighter text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
                   Sua carreira decola aqui.
                 </h1>
-                <p className="max-w-xl text-lg text-muted-foreground md:text-xl mx-auto md:mx-0">
+                <p className="mx-auto max-w-xl text-lg text-muted-foreground md:mx-0 md:text-xl">
                   Cursos, notícias e as melhores oportunidades para taxistas e motoristas de app em São Paulo. Tudo em um só lugar.
                 </p>
                 <div className="flex flex-col gap-4 sm:flex-row sm:justify-center md:justify-start">
@@ -132,7 +132,7 @@ export default function Home() {
                     <Link href="/rentals">Ver Oportunidades <MoveRight className="ml-2" /></Link>
                   </Button>
                 </div>
-                <div className="flex items-center justify-center md:justify-start gap-6 pt-4 text-sm text-muted-foreground">
+                <div className="flex items-center justify-center gap-6 pt-4 text-sm text-muted-foreground md:justify-start">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-primary" />
                     <span>Frotas Verificadas</span>
@@ -143,8 +143,8 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <div className="relative flex justify-center items-center">
-                 <div className="absolute -inset-4 bg-primary/20 rounded-3xl blur-3xl opacity-60"></div>
+              <div className="relative flex items-center justify-center">
+                 <div className="absolute -inset-4 rounded-3xl bg-primary/20 opacity-60 blur-3xl"></div>
                 <Image
                   src="/hero.png"
                   alt="Taxista em São Paulo"
@@ -168,7 +168,7 @@ export default function Home() {
                 </p>
               </div>
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-                <Card className="text-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <Card className="text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                   <CardHeader>
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-primary">
                       <BookOpen className="h-8 w-8" />
@@ -181,7 +181,7 @@ export default function Home() {
                     </p>
                   </CardContent>
                 </Card>
-                <Card className="text-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <Card className="text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                   <CardHeader>
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-primary">
                       <Newspaper className="h-8 w-8" />
@@ -194,7 +194,7 @@ export default function Home() {
                     </p>
                   </CardContent>
                 </Card>
-                 <Card className="text-center transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                 <Card className="text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                   <CardHeader>
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-primary">
                       <Briefcase className="h-8 w-8" />
@@ -266,15 +266,15 @@ export default function Home() {
                     <TabsContent value="rentals" className="pt-8">
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {mockVehicles.slice(0, 3).map((vehicle) => (
-                                <Card key={vehicle.plate} className="transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                                    <CardHeader className="p-0 relative">
-                                      <Image src={vehicle.imageUrl} alt={`${vehicle.make} ${vehicle.model}`} width={600} height={400} className="w-full object-cover aspect-video" data-ai-hint="car front view"/>
-                                       <Badge className="absolute top-3 right-3 text-lg py-1 px-3 bg-primary/90 text-primary-foreground font-bold border-2 border-primary-foreground/50">
+                                <Card key={vehicle.plate} className="flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                                    <CardHeader className="relative p-0">
+                                      <Image src={vehicle.imageUrl} alt={`${vehicle.make} ${vehicle.model}`} width={600} height={400} className="aspect-video w-full object-cover" data-ai-hint="car front view"/>
+                                       <Badge className="absolute right-3 top-3 border-2 border-primary-foreground/50 bg-primary/90 px-3 py-1 text-lg font-bold text-primary-foreground">
                                           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(vehicle.dailyRate)}
-                                          <span className="text-xs font-normal ml-1">/dia</span>
+                                          <span className="ml-1 text-xs font-normal">/dia</span>
                                       </Badge>
                                     </CardHeader>
-                                    <CardContent className="p-4 flex-1">
+                                    <CardContent className="flex-1 p-4">
                                         <CardTitle className="font-headline text-lg">{vehicle.make} {vehicle.model}</CardTitle>
                                         <CardDescription>{vehicle.year} &bull; {vehicle.condition}</CardDescription>
                                     </CardContent>
@@ -290,16 +290,16 @@ export default function Home() {
                      <TabsContent value="services" className="pt-8">
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {mockServiceListings.slice(0, 3).map((srv) => (
-                                <Card key={srv.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                                <Card key={srv.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                     <CardHeader className="p-0">
-                                        <Image src={srv.imageUrl} alt={srv.title} width={600} height={400} className="w-full object-cover aspect-video" data-ai-hint={srv.imageHint}/>
+                                        <Image src={srv.imageUrl} alt={srv.title} width={600} height={400} className="aspect-video w-full object-cover" data-ai-hint={srv.imageHint}/>
                                     </CardHeader>
-                                    <CardContent className="p-4 flex-1">
+                                    <CardContent className="flex-1 p-4">
                                         <Badge variant="secondary" className="mb-2">{srv.category}</Badge>
                                         <CardTitle className="font-headline text-lg">{srv.title}</CardTitle>
                                         <CardDescription>Oferecido por: {srv.provider}</CardDescription>
                                     </CardContent>
-                                    <CardFooter className="p-4 bg-muted/50 flex justify-between items-center">
+                                    <CardFooter className="flex items-center justify-between bg-muted/50 p-4">
                                       <p className="text-lg font-bold text-primary">{srv.price}</p>
                                       <Button asChild>
                                           <Link href="/services/marketplace">Ver detalhes</Link>

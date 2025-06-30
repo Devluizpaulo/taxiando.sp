@@ -21,22 +21,22 @@ const getDateLabel = (dateString: string) => {
 const EventCard = ({ event }: { event: Event }) => {
     const startTime = format(new Date(event.startDate as string), "HH:mm");
     return (
-        <Card className="flex flex-col h-full overflow-hidden bg-card shadow-lg hover:shadow-xl transition-shadow border-2 border-transparent hover:border-primary">
-            <CardHeader className="p-4 bg-accent text-accent-foreground flex flex-row items-center justify-between">
+        <Card className="flex h-full flex-col overflow-hidden border-2 border-transparent bg-card shadow-lg transition-shadow hover:border-primary hover:shadow-xl">
+            <CardHeader className="flex flex-row items-center justify-between bg-accent p-4 text-accent-foreground">
                 <Image src="/logo.png" alt="Táxiando SP Logo" width={40} height={40} className="rounded-md" />
                 <div className="text-right">
                     <p className="text-sm font-semibold">Início às</p>
                     <p className="text-2xl font-bold">{startTime}</p>
                 </div>
             </CardHeader>
-            <CardContent className="flex-1 p-4 space-y-2">
+            <CardContent className="flex-1 space-y-2 p-4">
                 <CardTitle className="font-headline text-lg line-clamp-2">{event.title}</CardTitle>
-                <CardDescription className="text-sm mt-1 line-clamp-2 flex items-start gap-2">
-                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                <CardDescription className="mt-1 flex items-start gap-2 pt-1 text-sm line-clamp-2">
+                    <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
                     <span>{event.location}</span>
                 </CardDescription>
             </CardContent>
-            <CardFooter className="p-4 bg-muted/50">
+            <CardFooter className="bg-muted/50 p-4">
                 <Button asChild variant="outline" size="sm" className="w-full">
                     <Link href={event.mapUrl} target="_blank" rel="noopener noreferrer">
                     Ver no Mapa <MoveRight className="ml-2" />
@@ -66,7 +66,7 @@ export default async function EventsPage() {
             <PublicHeader />
             <main className="flex-1">
                 <div className="container mx-auto px-4 py-12 md:px-6 md:py-16">
-                    <div className="text-center mb-12">
+                    <div className="mb-12 text-center">
                         <h1 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">Agenda Cultural de SP</h1>
                         <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
                             Os principais eventos da semana para você se programar e maximizar suas corridas.
@@ -77,7 +77,7 @@ export default async function EventsPage() {
                         <div className="space-y-12">
                             {sortedDates.map(date => (
                                 <div key={date}>
-                                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                                    <h2 className="mb-6 flex items-center gap-3 text-2xl font-bold">
                                         <Calendar className="text-primary"/> 
                                         <span className="capitalize">{getDateLabel(date)}</span>
                                     </h2>
@@ -90,9 +90,9 @@ export default async function EventsPage() {
                             ))}
                         </div>
                     ) : (
-                        <Card className="text-center py-16">
+                        <Card className="py-16 text-center">
                             <CardHeader>
-                                <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                <Calendar className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
                                 <CardTitle>Nenhum evento programado</CardTitle>
                                 <CardDescription>A agenda da semana ainda está sendo preparada. Volte em breve!</CardDescription>
                             </CardHeader>

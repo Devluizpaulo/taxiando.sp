@@ -54,7 +54,7 @@ const steps = [
 
 // New component for Advantages vs Challenges
 const RealityCheckSection = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <Card className="border-green-500/50 bg-green-500/5">
             <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-green-800"><ThumbsUp /> Vantagens da Profissão</CardTitle>
@@ -82,17 +82,17 @@ const RealityCheckSection = () => (
 
 // New component for Fleet vs Private
 const YourStartingPointSection = () => (
-     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+     <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <Card className="border-t-4 border-primary">
             <CardHeader>
                 <CardTitle className="flex items-center gap-3"><Building /> Alugar de uma Frota</CardTitle>
                 <CardDescription>Ideal para quem busca segurança e menos burocracia para começar.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-                 <p className="flex items-start gap-2"><Check className="h-4 w-4 mt-1 text-green-600 flex-shrink-0"/> <span>Menor risco inicial, sem necessidade de grande investimento.</span></p>
-                 <p className="flex items-start gap-2"><Check className="h-4 w-4 mt-1 text-green-600 flex-shrink-0"/> <span>Manutenção, seguro e documentação geralmente inclusos.</span></p>
-                 <p className="flex items-start gap-2"><Check className="h-4 w-4 mt-1 text-green-600 flex-shrink-0"/> <span>Suporte da empresa para questões operacionais.</span></p>
-                 <p className="flex items-start gap-2"><Check className="h-4 w-4 mt-1 text-green-600 flex-shrink-0"/> <span>Veículos mais novos e com revisões em dia.</span></p>
+                 <p className="flex items-start gap-2"><Check className="mt-1 h-4 w-4 flex-shrink-0 text-green-600"/> <span>Menor risco inicial, sem necessidade de grande investimento.</span></p>
+                 <p className="flex items-start gap-2"><Check className="mt-1 h-4 w-4 flex-shrink-0 text-green-600"/> <span>Manutenção, seguro e documentação geralmente inclusos.</span></p>
+                 <p className="flex items-start gap-2"><Check className="mt-1 h-4 w-4 flex-shrink-0 text-green-600"/> <span>Suporte da empresa para questões operacionais.</span></p>
+                 <p className="flex items-start gap-2"><Check className="mt-1 h-4 w-4 flex-shrink-0 text-green-600"/> <span>Veículos mais novos e com revisões em dia.</span></p>
             </CardContent>
         </Card>
         <Card>
@@ -101,8 +101,8 @@ const YourStartingPointSection = () => (
                  <CardDescription>Uma alternativa com mais flexibilidade na negociação direta.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-                 <p className="flex items-start gap-2"><Check className="h-4 w-4 mt-1 text-green-600 flex-shrink-0"/> <span>Possibilidade de negociar valores e condições diretamente.</span></p>
-                 <p className="flex items-start gap-2"><Check className="h-4 w-4 mt-1 text-green-600 flex-shrink-0"/> <span>Contratos que podem ser mais flexíveis.</span></p>
+                 <p className="flex items-start gap-2"><Check className="mt-1 h-4 w-4 flex-shrink-0 text-green-600"/> <span>Possibilidade de negociar valores e condições diretamente.</span></p>
+                 <p className="flex items-start gap-2"><Check className="mt-1 h-4 w-4 flex-shrink-0 text-green-600"/> <span>Contratos que podem ser mais flexíveis.</span></p>
                  <p className="pl-6 text-muted-foreground">Responsabilidade maior sobre manutenção e limpeza.</p>
                  <p className="pl-6 text-muted-foreground">Menos suporte em caso de imprevistos.</p>
             </CardContent>
@@ -116,37 +116,37 @@ export default function HowToBeTaxiDriverPage() {
         <div className="flex min-h-screen flex-col bg-muted/40">
             <PublicHeader />
             <main className="flex-1">
-                <div className="container mx-auto px-4 py-12 md:px-6 md:py-16 space-y-16">
+                <div className="container mx-auto space-y-16 px-4 py-12 md:px-6 md:py-24">
                     <div className="text-center">
                         <Badge variant="secondary" className="mb-4">Sua Nova Carreira Começa Aqui</Badge>
                         <h1 className="font-headline text-3xl font-bold tracking-tight sm:text-5xl">A Rota para sua Independência Profissional</h1>
                         <p className="mx-auto mt-6 max-w-3xl text-lg text-muted-foreground">
-                            Deixar um emprego tradicional ou sair dos aplicativos para se tornar taxista em São Paulo é uma grande decisão. É sobre ser seu próprio chefe, conhecer a cidade como ninguém e ter o controle da sua renda. Aqui, vamos te mostrar que, com a orientação certa, essa transição pode ser mais simples e lucrativa do que você imagina.
+                            Trocar de carreira ou sair dos aplicativos para se tornar taxista é uma grande decisão. Aqui, você é seu próprio chefe, conhece a cidade como ninguém e tem o controle da sua renda. Com a orientação certa, essa transição pode ser mais simples e lucrativa do que você imagina.
                         </p>
                     </div>
 
                     <div>
-                        <h2 className="text-center font-headline text-3xl font-bold mb-8">A Realidade do Volante: Vantagens e Desafios</h2>
+                        <h2 className="mb-8 text-center font-headline text-3xl font-bold">A Realidade do Volante: Vantagens e Desafios</h2>
                         <RealityCheckSection />
                     </div>
 
                      <div>
-                        <h2 className="text-center font-headline text-3xl font-bold mb-8">Seu Ponto de Partida: Frota ou Particular?</h2>
-                        <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-8">A primeira grande escolha é como você vai conseguir seu carro. Existem dois caminhos principais, cada um com suas particularidades.</p>
+                        <h2 className="mb-4 text-center font-headline text-3xl font-bold">Seu Ponto de Partida: Frota ou Particular?</h2>
+                        <p className="mx-auto mb-8 max-w-2xl text-center text-muted-foreground">A primeira grande escolha é como você vai conseguir seu carro. Existem dois caminhos principais, cada um com suas particularidades.</p>
                         <YourStartingPointSection />
                     </div>
 
                     <div>
-                         <h2 className="text-center font-headline text-3xl font-bold mb-8">O Caminho das Pedras: Seu Guia Passo a Passo</h2>
-                         <div className="relative max-w-3xl mx-auto">
-                            <div className="absolute left-6 top-0 h-full w-0.5 bg-border -translate-x-1/2 md:left-1/2"></div>
+                         <h2 className="mb-12 text-center font-headline text-3xl font-bold">O Caminho das Pedras: Seu Guia Passo a Passo</h2>
+                         <div className="relative mx-auto max-w-3xl">
+                            <div className="absolute left-6 top-0 h-full w-0.5 -translate-x-1/2 bg-border md:left-1/2"></div>
                             
                             {steps.map((step, index) => (
-                                <div key={index} className="relative flex items-start gap-6 md:gap-12 mb-12">
+                                <div key={index} className="relative mb-12 flex items-start gap-6 md:gap-12">
                                     <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
                                         <step.icon className="h-6 w-6" />
                                     </div>
-                                    <Card className="w-full md:flex-1">
+                                    <Card className="w-full flex-1 transition-all hover:shadow-md">
                                         <CardHeader>
                                             <CardTitle className="font-headline text-xl">{step.title}</CardTitle>
                                             <CardDescription>{step.description}</CardDescription>
@@ -155,7 +155,7 @@ export default function HowToBeTaxiDriverPage() {
                                             <ul className="space-y-2">
                                                 {step.details.map((detail, i) => (
                                                     <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                                        <Star className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-500" />
+                                                        <Star className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
                                                         <span>{detail}</span>
                                                     </li>
                                                 ))}
@@ -169,23 +169,23 @@ export default function HowToBeTaxiDriverPage() {
 
                     <Card className="bg-accent text-accent-foreground">
                         <CardHeader className="text-center">
-                            <Lightbulb className="mx-auto h-12 w-12 mb-4" />
+                            <Lightbulb className="mx-auto mb-4 h-12 w-12" />
                             <CardTitle className="font-headline text-3xl">A Táxiando SP é sua Copilota nessa Jornada</CardTitle>
-                            <CardDescription className="text-accent-foreground/80 max-w-3xl mx-auto text-lg">Entendemos que esse processo pode parecer complexo. É por isso que existimos. Não te deixamos na mão.</CardDescription>
+                            <CardDescription className="mx-auto max-w-3xl text-lg text-accent-foreground/80">Entendemos que esse processo pode parecer complexo. É por isso que existimos. Não te deixamos na mão.</CardDescription>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                            <div className="p-4 rounded-lg bg-accent/50">
-                                <Search className="mx-auto h-8 w-8 mb-2"/>
+                        <CardContent className="grid grid-cols-1 gap-6 text-center md:grid-cols-3">
+                            <div className="rounded-lg bg-accent/50 p-4">
+                                <Search className="mx-auto mb-2 h-8 w-8"/>
                                 <h3 className="font-bold">Oportunidades Verificadas</h3>
                                 <p className="text-sm text-accent-foreground/80">Conectamos você às melhores e mais confiáveis frotas de São Paulo.</p>
                             </div>
-                             <div className="p-4 rounded-lg bg-accent/50">
-                                <Book className="mx-auto h-8 w-8 mb-2"/>
+                             <div className="rounded-lg bg-accent/50 p-4">
+                                <Book className="mx-auto mb-2 h-8 w-8"/>
                                 <h3 className="font-bold">Qualificação na Prática</h3>
                                 <p className="text-sm text-accent-foreground/80">Oferecemos cursos que te preparam para os desafios reais da rua.</p>
                             </div>
-                             <div className="p-4 rounded-lg bg-accent/50">
-                                <Users className="mx-auto h-8 w-8 mb-2"/>
+                             <div className="rounded-lg bg-accent/50 p-4">
+                                <Users className="mx-auto mb-2 h-8 w-8"/>
                                 <h3 className="font-bold">Comunidade Forte</h3>
                                 <p className="text-sm text-accent-foreground/80">Faça parte de uma rede de profissionais que se ajuda e compartilha dicas valiosas.</p>
                             </div>
@@ -194,7 +194,7 @@ export default function HowToBeTaxiDriverPage() {
 
                     <div className="text-center">
                         <h2 className="font-headline text-3xl font-bold">Pronto para dar a partida?</h2>
-                        <p className="text-muted-foreground mt-2 max-w-xl mx-auto">O primeiro passo para sua nova carreira é encontrar o veículo certo. Explore as opções disponíveis em nossa plataforma.</p>
+                        <p className="mx-auto mt-2 max-w-xl text-muted-foreground">O primeiro passo para sua nova carreira é encontrar o veículo certo. Explore as opções disponíveis em nossa plataforma.</p>
                          <Button asChild size="lg" className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90">
                             <Link href="/rentals">Buscar Veículos para Alugar</Link>
                         </Button>
