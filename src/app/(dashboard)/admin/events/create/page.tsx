@@ -7,12 +7,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { db, storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db } from '@/lib/firebase';
 import { nanoid } from 'nanoid';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import imageCompression from 'browser-image-compression';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, MapPin, Calendar, Lightbulb, TrafficCone, MoveRight, Sparkles } from 'lucide-react';
 import { DatePicker } from '@/components/ui/datepicker';
 import { planEvent } from '@/ai/flows/event-planner-flow';
+import { uploadImageFromDataUrl } from '@/app/actions/storage-actions';
 
 
 const eventFormSchema = z.object({
@@ -150,7 +149,7 @@ export default function CreateEventPage() {
             toast({
                 variant: 'destructive',
                 title: 'Erro ao Gerar Detalhes',
-                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manualmente.',
+                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manually.',
             });
         } finally {
             setIsGenerating(false);
@@ -164,25 +163,25 @@ export default function CreateEventPage() {
             const eventId = nanoid();
             let finalImageUrl = values.imageUrl;
 
+            // If the imageUrl is a data URI, upload it via the server action to bypass CORS
             if (values.imageUrl.startsWith('data:image')) {
-                toast({ title: "Processando imagem...", description: "Comprimindo e fazendo upload da imagem para o armazenamento." });
-                
-                // Robustly convert data URI to a File object
-                const response = await fetch(values.imageUrl);
-                const blob = await response.blob();
-                const imageFile = new File([blob], `${eventId}.png`, { type: blob.type });
-                
-                const options = {
-                    maxSizeMB: 0.5,
-                    maxWidthOrHeight: 1280,
-                    useWebWorker: true,
-                }
-                
-                const compressedFile = await imageCompression(imageFile, options);
+                toast({ title: "Processando imagem...", description: "O upload da imagem está sendo feito no servidor." });
 
-                const storageRef = ref(storage, `events/${compressedFile.name}`);
-                await uploadBytes(storageRef, compressedFile);
-                finalImageUrl = await getDownloadURL(storageRef);
+                const uploadResult = await uploadImageFromDataUrl(values.imageUrl, 'events');
+                
+                if (uploadResult.success) {
+                    finalImageUrl = uploadResult.url;
+                } else {
+                    // If upload fails, show an error and stop submission
+                    toast({
+                        variant: 'destructive',
+                        title: 'Erro no Upload da Imagem',
+                        description: `Falha ao enviar a imagem: ${uploadResult.error}`,
+                        duration: 8000,
+                    });
+                    setIsSubmitting(false);
+                    return; // Stop execution
+                }
             }
             
             const eventData = {
