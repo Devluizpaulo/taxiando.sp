@@ -9,9 +9,9 @@ export const mockVehicles: Omit<Vehicle, 'id' | 'fleetId' | 'createdAt'>[] = [
 
 
 export const mockApplications: VehicleApplication[] = [
-    { id: 'app_1', driverId: 'd_1', driverName: 'Carlos Pereira', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Aprovado', vehicleId: 'v_1', vehicleName: 'Onix (BRA2E19)', company: 'Frota Rápida SP', appliedAt: new Date('2024-07-28T10:00:00Z'), status: 'Pendente' },
-    { id: 'app_2', driverId: 'd_2', driverName: 'Ana Costa', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Pendente', vehicleId: 'v_1', vehicleName: 'Onix (BRA2E19)', company: 'Frota Rápida SP', appliedAt: new Date('2024-07-27T15:30:00Z'), status: 'Pendente' },
-    { id: 'app_3', driverId: 'd_3', driverName: 'Ricardo Alves', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Aprovado', vehicleId: 'v_4', vehicleName: 'Kwid (JKL8M90)', company: 'Porta Branca', appliedAt: new Date('2024-07-26T09:00:00Z'), status: 'Aprovado' },
+    { id: 'app_1', driverId: 'd_1', fleetId: 'mockFleet', driverName: 'Carlos Pereira', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Aprovado', vehicleId: 'v_1', vehicleName: 'Onix (BRA2E19)', company: 'Frota Rápida SP', appliedAt: new Date('2024-07-28T10:00:00Z').toISOString(), status: 'Pendente' },
+    { id: 'app_2', driverId: 'd_2', fleetId: 'mockFleet', driverName: 'Ana Costa', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Pendente', vehicleId: 'v_1', vehicleName: 'Onix (BRA2E19)', company: 'Frota Rápida SP', appliedAt: new Date('2024-07-27T15:30:00Z').toISOString(), status: 'Pendente' },
+    { id: 'app_3', driverId: 'd_3', fleetId: 'mockFleet', driverName: 'Ricardo Alves', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Aprovado', vehicleId: 'v_4', vehicleName: 'Kwid (JKL8M90)', company: 'Porta Branca', appliedAt: new Date('2024-07-26T09:00:00Z').toISOString(), status: 'Aprovado' },
 ];
 
 
@@ -43,8 +43,93 @@ export const mockOpportunities = [
     { id: 'opp_3', vehicle: 'VW Virtus 2021', provider: 'Frota Central', type: 'Frota', status: 'Rejeitado' },
 ];
 
-export const mockCourses: Omit<Course, 'id'| 'description'| 'category'|'modules'|'totalLessons'|'totalDuration'| 'createdAt' | 'completion'>[] = [
-    { title: 'Legislação de Trânsito', students: 152, status: 'Published' },
-    { title: 'Inglês para Atendimento', students: 98, status: 'Published' },
-    { title: 'Direção Defensiva', students: 210, status: 'Published' },
-];
+export const mockCourse: Course = {
+  id: 'mock_course_1',
+  title: 'Exemplo: Legislação para Taxistas',
+  description: 'Um curso de exemplo demonstrando as funcionalidades da plataforma, como aulas em texto, vídeo e provas (quiz).',
+  category: 'Legislação',
+  status: 'Draft',
+  totalLessons: 3,
+  totalDuration: 40,
+  createdAt: new Date().toISOString(),
+  modules: [
+    {
+      id: 'mock_module_1',
+      title: 'Módulo 1: Introdução à Legislação',
+      badge: {
+        name: 'Iniciado em Leis',
+        iconUrl: '',
+      },
+      lessons: [
+        {
+          id: 'mock_lesson_1',
+          title: 'Aula em Vídeo: Entendendo o CTB',
+          type: 'video',
+          duration: 15,
+          content: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // A classic placeholder
+          materials: [
+            { name: 'Resumo do CTB.pdf', url: '#' }
+          ]
+        },
+        {
+          id: 'mock_lesson_2',
+          title: 'Aula em Texto: Principais Infrações',
+          type: 'text',
+          duration: 10,
+          content: `
+## As 5 Infrações Mais Comuns e Como Evitá-las
+
+Manter-se atualizado com o Código de Trânsito Brasileiro (CTB) é fundamental. Abaixo, listamos algumas das infrações mais comuns que podem ser facilmente evitadas com um pouco de atenção.
+
+### 1. Excesso de Velocidade
+É a infração mais comum no Brasil. Fique sempre atento aos limites de velocidade da via, indicados por placas. Use apps de GPS com alertas de velocidade.
+
+### 2. Estacionar em Local Proibido
+Parar em locais não permitidos, como em frente a garagens, em esquinas ou em vagas para idosos/deficientes sem a credencial, gera multas e pontos na carteira.
+
+### 3. Uso do Celular ao Volante
+Utilizar o celular, mesmo que seja para verificar o GPS, é uma infração gravíssima se o aparelho não estiver fixado em um suporte.
+
+**Dica:** Configure seu trajeto antes de iniciar a corrida.
+
+### 4. Avançar o Sinal Vermelho
+Além de perigosa, é uma infração gravíssima. A atenção deve ser redobrada, principalmente durante a noite.
+
+### 5. Não Usar o Cinto de Segurança
+Regra básica de segurança para o motorista e todos os passageiros. É uma infração grave e a responsabilidade é do condutor.
+
+Lembre-se: dirigir com segurança não só evita multas, mas também protege a sua vida e a de seus passageiros.
+          `
+        },
+        {
+          id: 'mock_lesson_3',
+          title: 'Prova: Teste seus Conhecimentos',
+          type: 'quiz',
+          duration: 15,
+          passingScore: 70,
+          questions: [
+            {
+              id: 'q1',
+              question: 'Qual a penalidade por usar o celular enquanto dirige, sem o uso de suporte?',
+              options: [
+                { id: 'q1o1', text: 'Leve', isCorrect: false },
+                { id: 'q1o2', text: 'Média', isCorrect: false },
+                { id: 'q1o3', text: 'Grave', isCorrect: false },
+                { id: 'q1o4', text: 'Gravíssima', isCorrect: true },
+              ]
+            },
+            {
+              id: 'q2',
+              question: 'Onde o certificado do curso de formação para taxistas deve ser obtido?',
+              options: [
+                { id: 'q2o1', text: 'Diretamente na prefeitura', isCorrect: false },
+                { id: 'q2o2', text: 'Em um Centro de Formação de Condutores (CFC) credenciado', isCorrect: true },
+                { id: 'q2o3', text: 'Online, em qualquer site de cursos', isCorrect: false },
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};

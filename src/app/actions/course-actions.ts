@@ -9,6 +9,7 @@ import { adminDB } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type CourseFormValues } from '@/lib/course-schemas';
 import { nanoid } from 'nanoid';
+import { mockCourse } from '@/lib/mock-data';
 
 interface MarkLessonAsCompleteParams {
     courseId: string;
@@ -88,6 +89,12 @@ export async function getAllCourses(): Promise<Course[]> {
         const coursesCollection = adminDB.collection('courses');
         const q = coursesCollection.orderBy('createdAt', 'desc');
         const querySnapshot = await q.get();
+
+        if (querySnapshot.empty) {
+            // If there are no courses, return the mock course as an example.
+            return [mockCourse as Course];
+        }
+
         const coursesData = querySnapshot.docs.map(doc => {
             const data = doc.data();
             const createdAtTimestamp = data.createdAt as Timestamp;
@@ -108,6 +115,11 @@ export async function getAllCourses(): Promise<Course[]> {
 
 export async function getCourseById(courseId: string): Promise<Course | null> {
     try {
+        // If the mock course is requested, return it directly.
+        if (courseId === 'mock_course_1') {
+            return mockCourse as Course;
+        }
+
         const courseDoc = await adminDB.collection('courses').doc(courseId).get();
         if (!courseDoc.exists) {
             return null;
