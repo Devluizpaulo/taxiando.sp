@@ -11,24 +11,14 @@ type AdminUser = Pick<UserProfile, 'uid' | 'name' | 'email' | 'role' | 'profileS
 };
 
 async function getData() {
-    try {
-        // Fetch critical data first
-        const [usersSnapshot, oppsSnapshot, servicesSnapshot] = await Promise.all([
-            adminDB.collection('users').orderBy('createdAt', 'desc').get(),
-            adminDB.collection('opportunities').where('status', '==', 'Pendente').get(),
-            adminDB.collection('services').where('status', '==', 'Pendente').get(),
-        ]);
-        
-        let analyticsData: AnalyticsData = {};
-        try {
-            // Fetch non-critical analytics data separately to avoid crashing the whole page
-            analyticsData = await getAdminDashboardAnalytics();
-        } catch (analyticsError) {
-            console.error("Failed to fetch admin analytics, continuing without it:", analyticsError);
-            // On failure, analytics will be an empty object, so the page doesn't crash.
-        }
+    let usersData: AdminUser[] = [];
+    let oppsData: Opportunity[] = [];
+    let servicesData: ServiceListing[] = [];
+    let analyticsData: AnalyticsData = {};
 
-        const usersData = usersSnapshot.docs.map(doc => {
+    try {
+        const usersSnapshot = await adminDB.collection('users').orderBy('createdAt', 'desc').get();
+        usersData = usersSnapshot.docs.map(doc => {
             const data = doc.data();
             const createdAt = data.createdAt as Timestamp;
             return {
@@ -37,20 +27,36 @@ async function getData() {
                 createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : new Date().toISOString(),
             } as AdminUser;
         });
-
-        const oppsData = oppsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Opportunity));
-        const servicesData = servicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceListing));
-        
-        return { 
-            users: usersData, 
-            opportunities: oppsData, 
-            services: servicesData, 
-            analytics: analyticsData 
-        };
     } catch (error) {
-        console.error("Failed to fetch critical admin data:", error);
-        return { users: [], opportunities: [], services: [], analytics: {} };
+        console.error("Failed to fetch admin users data:", error);
     }
+    
+    try {
+        const oppsSnapshot = await adminDB.collection('opportunities').where('status', '==', 'Pendente').get();
+        oppsData = oppsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Opportunity));
+    } catch (error) {
+        console.error("Failed to fetch admin opportunities data:", error);
+    }
+    
+    try {
+        const servicesSnapshot = await adminDB.collection('services').where('status', '==', 'Pendente').get();
+        servicesData = servicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceListing));
+    } catch (error) {
+        console.error("Failed to fetch admin services data:", error);
+    }
+
+    try {
+        analyticsData = await getAdminDashboardAnalytics();
+    } catch (analyticsError) {
+        console.error("Failed to fetch admin analytics, continuing without it:", analyticsError);
+    }
+
+    return { 
+        users: usersData, 
+        opportunities: oppsData, 
+        services: servicesData, 
+        analytics: analyticsData 
+    };
 }
 
 export default async function AdminPage() {
