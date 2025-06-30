@@ -6,10 +6,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
-import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase';
-import { nanoid } from 'nanoid';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -22,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, MapPin, Calendar, Lightbulb, TrafficCone, MoveRight, Sparkles } from 'lucide-react';
 import { DatePicker } from '@/components/ui/datepicker';
 import { planEvent } from '@/ai/flows/event-planner-flow';
+import { createEventWithImageUpload } from '@/app/actions/event-actions';
 
 
 const eventFormSchema = z.object({
@@ -149,7 +146,7 @@ export default function CreateEventPage() {
             toast({
                 variant: 'destructive',
                 title: 'Erro ao Gerar Detalhes',
-                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manually.',
+                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manualmente.',
             });
         } finally {
             setIsGenerating(false);
@@ -160,51 +157,25 @@ export default function CreateEventPage() {
     const onSubmit = async (values: EventFormValues) => {
         setIsSubmitting(true);
         try {
-            const eventId = nanoid();
-            let finalImageUrl = values.imageUrl;
+            toast({ title: "Salvando evento...", description: "Aguarde enquanto processamos as informações e a imagem." });
+            
+            const result = await createEventWithImageUpload(values);
 
-            // Check if imageUrl is a new Base64 image from AI and upload it to Storage
-            if (values.imageUrl.startsWith('data:image')) {
-                toast({ title: "Processando imagem...", description: "Enviando imagem para o armazenamento." });
-                const storageRef = ref(storage, `events/${eventId}.png`);
-                
-                // Upload the Base64 string directly
-                const uploadResult = await uploadString(storageRef, values.imageUrl, 'data_url');
-                
-                // Get the public URL of the uploaded image
-                finalImageUrl = await getDownloadURL(uploadResult.ref);
+            if (result.success) {
+                 toast({
+                    title: 'Evento Criado com Sucesso!',
+                    description: `O evento "${values.title}" foi salvo e já está visível.`,
+                });
+                router.push('/admin/events');
+            } else {
+                throw new Error(result.error);
             }
-            
-            const eventData = {
-                id: eventId,
-                title: values.title,
-                description: values.description,
-                location: values.location,
-                imageUrl: finalImageUrl, // Use the public URL from Storage
-                startDate: Timestamp.fromDate(values.startDate),
-                endDate: Timestamp.fromDate(values.endDate),
-                driverSummary: values.driverSummary,
-                peakTimes: values.peakTimes,
-                trafficTips: values.trafficTips,
-                pickupPoints: values.pickupPoints,
-                mapUrl: values.mapUrl,
-                createdAt: serverTimestamp(),
-            };
-            
-            await setDoc(doc(db, 'events', eventId), eventData);
-
-            toast({
-                title: 'Evento Criado com Sucesso!',
-                description: `O evento "${values.title}" foi salvo e já está visível.`,
-            });
-            router.push('/admin/events');
-
         } catch (error) {
             console.error("Error creating event: ", error);
             toast({
                 variant: 'destructive',
                 title: 'Erro ao Criar Evento',
-                description: 'Não foi possível salvar o evento. Verifique o console para mais detalhes.',
+                description: (error as Error).message || 'Não foi possível salvar o evento. Verifique o console para mais detalhes.',
             });
         } finally {
             setIsSubmitting(false);
@@ -320,7 +291,7 @@ export default function CreateEventPage() {
                     </div>
 
                     <div className="flex justify-end items-center mt-4">
-                        <Button type="submit" disabled={isSubmitting} size="lg">
+                        <Button type="submit" disabled={isSubmitting || isGenerating} size="lg">
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Salvar Evento
                         </Button>
