@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock, Building, Wrench, Star } from "lucide-react";
+import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock, Building, Wrench, Star, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { QuizSection } from "@/components/quiz-section";
@@ -48,51 +48,48 @@ export default function Home() {
       <div className="flex min-h-screen flex-col">
         <PublicHeader />
         <main className="flex-1">
-          <section className="bg-background py-20 md:py-32">
+           <section className="w-full py-20 md:py-32 bg-gradient-to-b from-background via-muted/50 to-background">
             <div className="container mx-auto grid grid-cols-1 items-center gap-12 px-4 md:grid-cols-2 md:px-6">
-              <div className="space-y-6">
-                <h1 className="font-headline text-4xl font-bold tracking-tighter text-foreground sm:text-5xl md:text-6xl">
-                  A plataforma completa para o profissional do volante em SP
+              <div className="space-y-8">
+                <Badge variant="secondary" className="bg-primary/20 text-primary-foreground font-semibold py-1 px-3">
+                  A plataforma Nº1 para o profissional do volante
+                </Badge>
+                <h1 className="font-headline text-4xl font-bold tracking-tighter text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
+                  Sua carreira decola aqui.
                 </h1>
-                <p className="text-lg text-muted-foreground md:text-xl">
-                  Qualificação, notícias e as melhores oportunidades para taxistas e motoristas de app. Tudo em um só lugar.
+                <p className="max-w-xl text-lg text-muted-foreground md:text-xl">
+                  Cursos, notícias e as melhores oportunidades para taxistas e motoristas de app em São Paulo. Tudo em um só lugar.
                 </p>
                 <div className="flex flex-col gap-4 sm:flex-row">
-                  <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
-                    <Link href="/register">Comece Agora</Link>
+                  <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20">
+                    <Link href="/register">Crie sua conta gratuita</Link>
                   </Button>
                   <Button asChild size="lg" variant="outline">
-                    <Link href="/rentals">Alugar Veículo <MoveRight className="ml-2" /></Link>
+                    <Link href="/rentals">Ver Oportunidades <MoveRight className="ml-2" /></Link>
                   </Button>
                 </div>
+                <div className="flex items-center gap-6 pt-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5 text-primary" />
+                    <span>Frotas Verificadas</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-primary" />
+                    <span>Cursos Especializados</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-center">
-                <Card className="w-full max-w-sm overflow-hidden rounded-xl shadow-2xl">
-                    <CardHeader className="p-0">
-                        <Image
-                            src="https://placehold.co/600x400.png"
-                            alt="Motorista Destaque"
-                            width={600}
-                            height={400}
-                            className="w-full object-cover"
-                            data-ai-hint="driver smiling"
-                            priority
-                        />
-                    </CardHeader>
-                    <CardContent className="p-6 bg-card">
-                        <Badge variant="secondary" className="mb-2 bg-primary/20 text-primary-foreground font-semibold">Motorista do Mês</Badge>
-                        <CardTitle className="font-headline text-2xl">José Alencar</CardTitle>
-                        <CardDescription>+5 anos de experiência nas ruas de SP</CardDescription>
-                        <div className="flex items-center gap-1 mt-3 text-amber-500">
-                            <Star className="h-5 w-5 fill-current" />
-                            <Star className="h-5 w-5 fill-current" />
-                            <Star className="h-5 w-5 fill-current" />
-                            <Star className="h-5 w-5 fill-current" />
-                            <Star className="h-5 w-5 fill-current" />
-                            <span className="text-sm text-muted-foreground ml-2">(4.9/5.0)</span>
-                        </div>
-                    </CardContent>
-                </Card>
+              <div className="relative flex justify-center items-center">
+                <div className="absolute -inset-4 bg-primary/30 rounded-full blur-3xl opacity-50"></div>
+                <Image
+                  src="https://placehold.co/600x600.png"
+                  alt="Taxista em São Paulo"
+                  width={600}
+                  height={600}
+                  className="relative z-10 w-full max-w-md rounded-full object-cover shadow-2xl aspect-square"
+                  data-ai-hint="taxi driver sao paulo"
+                  priority
+                />
               </div>
             </div>
           </section>
