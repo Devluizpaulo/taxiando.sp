@@ -122,7 +122,7 @@ export async function getAdminDashboardAnalytics(): Promise<AnalyticsData> {
         return analytics;
 
     } catch (error) {
-        console.error("Error fetching admin analytics:", error);
-        return {}; // Return empty object on error
+        // Fail silently and return an empty object. The dashboard will show 0 for these values.
+        return {};
     }
 }
