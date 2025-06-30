@@ -121,6 +121,13 @@ export function CulturalAgendaSection() {
                         </div>
                     ))}
                 </div>
+                 <div className="mt-12 text-center">
+                    <Button asChild size="lg" variant="outline">
+                        <Link href="/events">
+                            Ver Agenda Completa <MoveRight className="ml-2" />
+                        </Link>
+                    </Button>
+                </div>
             </div>
         </section>
     );
