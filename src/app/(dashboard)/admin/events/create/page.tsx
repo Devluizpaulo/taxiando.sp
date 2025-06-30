@@ -12,7 +12,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { nanoid } from 'nanoid';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import imageCompression from 'browser-image-compression';
+import imageCompression, { dataURLtoFile } from 'browser-image-compression';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -167,7 +167,7 @@ export default function CreateEventPage() {
             if (values.imageUrl.startsWith('data:image')) {
                 toast({ title: "Processando imagem...", description: "Comprimindo e fazendo upload da imagem para o armazenamento." });
                 
-                const imageFile = await imageCompression.dataURLtoFile(values.imageUrl, `${eventId}.png`);
+                const imageFile = dataURLtoFile(values.imageUrl, `${eventId}.png`);
                 
                 const options = {
                     maxSizeMB: 0.5,
