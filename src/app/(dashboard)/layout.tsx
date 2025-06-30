@@ -16,7 +16,7 @@ import {
   SidebarInset,
   SidebarTrigger
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -162,6 +162,11 @@ export default function DashboardLayout({
                                  <SidebarMenuItem onClick={handleMenuClick}>
                                     <SidebarMenuButton asChild>
                                         <Link href="/admin/marketing/coupons"><Tag className="text-teal-500" /> Cupons</Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}>
+                                    <SidebarMenuButton asChild>
+                                        <Link href="/admin/marketing/newsletter"><Mail className="text-orange-500" /> Newsletter</Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                  <SidebarMenuItem onClick={handleMenuClick}>
