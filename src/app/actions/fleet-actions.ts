@@ -7,6 +7,7 @@ import { type Vehicle, type VehicleApplication, type VehiclePerk } from '@/lib/t
 import { vehiclePerks } from '@/lib/data';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type VehicleFormValues } from '@/lib/fleet-schemas';
+import { mockVehicles, mockApplications } from '@/lib/mock-data';
 
 // Get all data for a fleet's dashboard
 export async function getFleetData(fleetId: string) {
@@ -15,16 +16,16 @@ export async function getFleetData(fleetId: string) {
     }
     try {
         const vehiclesQuery = adminDB.collection('vehicles').where('fleetId', '==', fleetId).orderBy('createdAt', 'desc');
-        // TODO: Implement application fetching once application creation is complete.
-        // For now, returning an empty array.
-        // const applicationsQuery = adminDB.collection('applications').where('fleetId', '==', fleetId).orderBy('createdAt', 'desc');
+        // A real query for applications would be more complex, perhaps querying applications that point to the fleet's vehicles.
+        // For now, we will use a simplified query and mock data.
+        const applicationsQuery = adminDB.collection('applications').where('fleetId', '==', fleetId).orderBy('appliedAt', 'desc');
 
-        const [vehiclesSnapshot] = await Promise.all([
+        const [vehiclesSnapshot, applicationsSnapshot] = await Promise.all([
             vehiclesQuery.get(),
-            // applicationsQuery.get()
+            applicationsQuery.get()
         ]);
 
-        const vehicles = vehiclesSnapshot.docs.map(doc => {
+        let vehicles = vehiclesSnapshot.docs.map(doc => {
             const data = doc.data();
             const createdAt = data.createdAt as Timestamp;
             return { 
@@ -33,9 +34,26 @@ export async function getFleetData(fleetId: string) {
                 createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : new Date().toISOString()
             } as Vehicle;
         });
+
+        // If no real vehicles, return mock vehicles for demonstration.
+        if (vehicles.length === 0) {
+            vehicles = mockVehicles.map((v, i) => ({ ...v, id: `v_${i+1}`, fleetId: fleetId, createdAt: new Date() })) as unknown as Vehicle[];
+        }
         
-        // Mock applications for now
-        const applications: VehicleApplication[] = [];
+        let applications = applicationsSnapshot.docs.map(doc => {
+            const data = doc.data();
+            const appliedAt = data.appliedAt as Timestamp;
+            return { 
+                ...data,
+                id: doc.id,
+                appliedAt: appliedAt?.toDate ? appliedAt.toDate().toISOString() : new Date().toISOString()
+            } as VehicleApplication;
+        });
+
+        // If no real applications, return mock applications for demonstration.
+        if (applications.length === 0) {
+            applications = mockApplications;
+        }
 
         return { success: true, vehicles, applications };
 
