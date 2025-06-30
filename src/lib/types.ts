@@ -160,7 +160,7 @@ export interface Vehicle {
   imageUrl: string;
   paymentInfo: PaymentInfo;
   perks: VehiclePerk[];
-  createdAt: Timestamp | Date;
+  createdAt: Timestamp | string;
 }
 
 export interface FleetAmenity {
@@ -175,9 +175,10 @@ export interface VehicleApplication {
   driverPhotoUrl: string;
   driverProfileStatus: string;
   vehicleId: string;
+  fleetId: string;
   vehicleName: string;
   company: string;
-  appliedAt: Date;
+  appliedAt: Timestamp | string;
   status: 'Pendente' | 'Aprovado' | 'Rejeitado';
 }
 
