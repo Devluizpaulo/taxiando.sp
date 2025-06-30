@@ -16,9 +16,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, MapPin, Calendar, Lightbulb, TrafficCone, MoveRight } from 'lucide-react';
+import { Loader2, MapPin, Calendar, Lightbulb, TrafficCone, MoveRight, Sparkles } from 'lucide-react';
 import { DatePicker } from '@/components/ui/datepicker';
 import { createEvent } from '@/app/actions/event-actions';
+import { planEvent, type EventPlannerOutput } from '@/ai/flows/event-planner-flow';
 
 
 const eventFormSchema = z.object({
@@ -45,6 +46,12 @@ const EventPreviewCard = ({ title, location, description, startDate, peakTimes, 
         <Card className="flex flex-col overflow-hidden bg-card shadow-lg border-2 border-transparent">
             <CardHeader className="p-4 bg-accent text-accent-foreground flex flex-row items-center justify-between">
                 <Image src="/logo.png" alt="Táxiando SP Logo" width={50} height={50} className="rounded" />
+                 {startDate && (
+                    <div className="text-right">
+                        <p className="text-sm font-semibold">Início às</p>
+                        <p className="text-2xl font-bold">{format(startDate, "HH:mm")}</p>
+                    </div>
+                 )}
             </CardHeader>
             <CardContent className="p-4 flex-1 space-y-3">
                 <CardTitle className="font-headline text-lg truncate">{title || "Título do Seu Evento"}</CardTitle>
@@ -53,13 +60,7 @@ const EventPreviewCard = ({ title, location, description, startDate, peakTimes, 
                     <span className="truncate">{location || "Localização do evento"}</span>
                 </CardDescription>
                 <p className="text-muted-foreground text-xs line-clamp-2">{description || "A descrição completa do seu evento aparecerá aqui."}</p>
-                <div className="space-y-2 text-xs border-t pt-3">
-                    <div className="flex items-start gap-2">
-                        <Calendar className="h-3 w-3 flex-shrink-0 mt-0.5 text-primary" />
-                        <div>
-                            <span className="font-semibold">Data:</span> {startDate ? format(startDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : "dd/mm/aaaa"}
-                        </div>
-                    </div>
+                 <div className="space-y-2 text-xs border-t pt-3">
                     <div className="flex items-start gap-2">
                         <Lightbulb className="h-3 w-3 flex-shrink-0 mt-0.5 text-primary" />
                         <div className="truncate">
@@ -83,10 +84,55 @@ const EventPreviewCard = ({ title, location, description, startDate, peakTimes, 
     );
 };
 
+const AiAssistantCard = ({ onDetailsGenerated, isGenerating }: { onDetailsGenerated: (details: EventPlannerOutput) => void, isGenerating: boolean }) => {
+    const [eventQuery, setEventQuery] = useState('');
+    const { toast } = useToast();
+
+    const handleGenerate = async () => {
+        if (eventQuery.trim().length < 10) {
+            toast({ variant: 'destructive', title: 'Consulta muito curta', description: 'Por favor, forneça mais detalhes sobre o evento.' });
+            return;
+        }
+
+        try {
+            const result = await planEvent({ eventQuery });
+            onDetailsGenerated(result);
+            toast({ title: "Detalhes Gerados!", description: "O formulário foi preenchido com as informações da IA." });
+        } catch (error) {
+            console.error("AI generation error:", error);
+            toast({ variant: 'destructive', title: 'Erro da IA', description: 'Não foi possível gerar os detalhes do evento.' });
+        }
+    };
+
+    return (
+        <Card className="bg-primary/10 border-primary/20">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> Assistente de IA</CardTitle>
+                <CardDescription>Não quer preencher tudo manualmente? Descreva o evento e deixe a IA fazer o trabalho pesado.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4">
+                    <Textarea
+                        placeholder="Ex: Show da Ivete Sangalo no Anhembi, 20 mil pessoas, começa 22h, dia 15/12"
+                        value={eventQuery}
+                        onChange={(e) => setEventQuery(e.target.value)}
+                        rows={3}
+                    />
+                    <Button onClick={handleGenerate} disabled={isGenerating} className="w-full">
+                        {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                        Gerar Detalhes com IA
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function CreateEventPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const form = useForm<EventFormValues>({
         resolver: zodResolver(eventFormSchema),
@@ -104,11 +150,21 @@ export default function CreateEventPage() {
 
     const watchedValues = form.watch();
 
+    const handleDetailsGenerated = (details: EventPlannerOutput) => {
+        form.setValue('title', details.title);
+        form.setValue('description', details.description);
+        form.setValue('location', details.location);
+        form.setValue('driverSummary', details.driverSummary);
+        form.setValue('peakTimes', details.peakTimes);
+        form.setValue('trafficTips', details.trafficTips);
+        form.setValue('pickupPoints', details.pickupPoints);
+        form.setValue('mapUrl', details.mapUrl);
+        setIsGenerating(false);
+    }
+
     const onSubmit = async (values: EventFormValues) => {
         setIsSubmitting(true);
         try {
-            toast({ title: "Salvando evento...", description: "Aguarde enquanto processamos as informações." });
-
             const result = await createEvent(values);
 
             if (result.success) {
@@ -138,11 +194,13 @@ export default function CreateEventPage() {
                 <div className="flex flex-col gap-8">
                     <div>
                         <h1 className="font-headline text-3xl font-bold tracking-tight">Criador de Eventos</h1>
-                        <p className="text-muted-foreground">Preencha os campos manualmente para criar um novo evento.</p>
+                        <p className="text-muted-foreground">Preencha os campos para criar um novo evento na agenda.</p>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                         <div className="lg:col-span-2 flex flex-col gap-8">
+                            <AiAssistantCard onDetailsGenerated={handleDetailsGenerated} isGenerating={isGenerating} />
+                            
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Informações do Evento</CardTitle>
@@ -208,8 +266,8 @@ export default function CreateEventPage() {
                     </div>
 
                     <div className="flex justify-end items-center mt-4">
-                        <Button type="submit" disabled={isSubmitting} size="lg">
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Button type="submit" disabled={isSubmitting || isGenerating} size="lg">
+                            {(isSubmitting || isGenerating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Salvar Evento
                         </Button>
                     </div>
@@ -218,4 +276,3 @@ export default function CreateEventPage() {
         </Form>
     );
 }
-
