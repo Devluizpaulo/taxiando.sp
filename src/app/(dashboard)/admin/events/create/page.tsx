@@ -7,8 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { db, storage } from '@/lib/firebase';
-import { ref, uploadString, getDownloadURL } from "firebase/storage";
+import { db } from '@/lib/firebase';
 import { nanoid } from 'nanoid';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -161,21 +160,13 @@ export default function CreateEventPage() {
         setIsSubmitting(true);
         try {
             const eventId = nanoid();
-            let finalImageUrl = values.imageUrl;
-
-            if (values.imageUrl.startsWith('data:image')) {
-                toast({ title: "Processando imagem...", description: "Fazendo upload da imagem para o armazenamento." });
-                const storageRef = ref(storage, `events/${eventId}.png`);
-                const uploadTask = await uploadString(storageRef, values.imageUrl, 'data_url');
-                finalImageUrl = await getDownloadURL(uploadTask.ref);
-            }
             
             const eventData = {
                 id: eventId,
                 title: values.title,
                 description: values.description,
                 location: values.location,
-                imageUrl: finalImageUrl,
+                imageUrl: values.imageUrl, // Save Base64 directly
                 startDate: Timestamp.fromDate(values.startDate),
                 endDate: Timestamp.fromDate(values.endDate),
                 driverSummary: values.driverSummary,
@@ -291,7 +282,7 @@ export default function CreateEventPage() {
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                                        <FormItem><FormLabel>URL da Imagem de Capa</FormLabel><FormControl><Input {...field} placeholder="https://exemplo.com/imagem.png" /></FormControl><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>URL da Imagem de Capa (ou dados Base64)</FormLabel><FormControl><Textarea {...field} placeholder="data:image/png;base64,..." rows={5} /></FormControl><FormMessage /></FormItem>
                                     )}/>
                                     <FormField control={form.control} name="mapUrl" render={({ field }) => (
                                         <FormItem><FormLabel>URL do Google Maps para o Local</FormLabel><FormControl><Input {...field} placeholder="https://maps.app.goo.gl/..." /></FormControl><FormMessage /></FormItem>
@@ -325,5 +316,3 @@ export default function CreateEventPage() {
         </Form>
     );
 }
-
-    
