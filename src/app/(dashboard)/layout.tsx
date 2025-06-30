@@ -55,11 +55,18 @@ export default function DashboardLayout({
     return <LoadingScreen className="fixed inset-0 z-50" />;
   }
 
+  const handleMenuClick = () => {
+    const { isMobile, setOpenMobile } = useSidebar();
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
   return (
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader className="border-b border-sidebar-border p-4">
-            <Link href="/dashboard">
+            <Link href="/dashboard" onClick={handleMenuClick}>
               <Image src="/logo.png" alt="Táxiando SP Logo" width={150} height={142} className="h-12 w-auto rounded-lg shadow-md" />
             </Link>
         </SidebarHeader>
@@ -68,27 +75,27 @@ export default function DashboardLayout({
               <SidebarMenu>
                 {userProfile?.role === 'driver' && (
                 <>
-                    <SidebarMenuItem>
+                    <SidebarMenuItem onClick={handleMenuClick}>
                     <SidebarMenuButton asChild>
                         <Link href="/dashboard"><LayoutDashboard/> Meu Painel</Link>
                     </SidebarMenuButton>
                     </SidebarMenuItem>
-                    <SidebarMenuItem>
+                    <SidebarMenuItem onClick={handleMenuClick}>
                     <SidebarMenuButton asChild>
                         <Link href="/profile"><FilePen/> Completar Perfil</Link>
                     </SidebarMenuButton>
                     </SidebarMenuItem>
-                     <SidebarMenuItem>
+                     <SidebarMenuItem onClick={handleMenuClick}>
                       <SidebarMenuButton asChild>
                         <Link href="/rentals"><KeyRound/> Alugar Veículo</Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
-                    <SidebarMenuItem>
+                    <SidebarMenuItem onClick={handleMenuClick}>
                     <SidebarMenuButton asChild>
                         <Link href="/courses"><BookOpen/> Cursos</Link>
                     </SidebarMenuButton>
                     </SidebarMenuItem>
-                    <SidebarMenuItem>
+                    <SidebarMenuItem onClick={handleMenuClick}>
                     <SidebarMenuButton asChild>
                         <Link href="/applications"><CheckSquare/> Minhas Candidaturas</Link>
                     </SidebarMenuButton>
@@ -96,32 +103,32 @@ export default function DashboardLayout({
                 </>
                 )}
                 {(userProfile?.role === 'fleet' || userProfile?.role === 'admin') && (
-                <SidebarMenuItem>
+                <SidebarMenuItem onClick={handleMenuClick}>
                     <SidebarMenuButton asChild>
                     <Link href="/fleet"><Building/> Minha Frota</Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 )}
                 {userProfile?.role === 'provider' && (
-                <SidebarMenuItem>
+                <SidebarMenuItem onClick={handleMenuClick}>
                     <SidebarMenuButton asChild>
                     <Link href="/services"><Wrench/> Meus Serviços</Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 )}
-                <SidebarMenuItem>
+                <SidebarMenuItem onClick={handleMenuClick}>
                 <SidebarMenuButton asChild>
                     <Link href="/billing"><CreditCard/> Faturamento e Créditos</Link>
                 </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
+                <SidebarMenuItem onClick={handleMenuClick}>
                 <SidebarMenuButton asChild>
                     <Link href="/summarize"><FileText/> Sumarizador</Link>
                 </SidebarMenuButton>
                 </SidebarMenuItem>
                 {userProfile?.role === 'admin' && (
                 <>
-                    <SidebarMenuItem>
+                    <SidebarMenuItem onClick={handleMenuClick}>
                         <SidebarMenuButton asChild>
                             <Link href="/admin"><Shield className="text-red-500" /> Painel Admin</Link>
                         </SidebarMenuButton>
@@ -130,17 +137,17 @@ export default function DashboardLayout({
                         <SidebarGroupLabel>Gestão</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
-                                <SidebarMenuItem>
+                                <SidebarMenuItem onClick={handleMenuClick}>
                                     <SidebarMenuButton asChild>
                                         <Link href="/admin/courses"><BookOpen className="text-blue-500" /> Cursos</Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-                                <SidebarMenuItem>
+                                <SidebarMenuItem onClick={handleMenuClick}>
                                     <SidebarMenuButton asChild>
                                         <Link href="/admin/events"><Calendar className="text-orange-500" /> Eventos</Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-                                <SidebarMenuItem>
+                                <SidebarMenuItem onClick={handleMenuClick}>
                                     <SidebarMenuButton asChild>
                                         <Link href="/admin/billing"><ShoppingCart className="text-green-500" /> Pacotes de Crédito</Link>
                                     </SidebarMenuButton>
@@ -152,17 +159,17 @@ export default function DashboardLayout({
                         <SidebarGroupLabel>Marketing</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
-                                 <SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}>
                                     <SidebarMenuButton asChild>
                                         <Link href="/admin/marketing/coupons"><Tag className="text-teal-500" /> Cupons</Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-                                 <SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}>
                                     <SidebarMenuButton asChild>
                                         <Link href="/admin/marketing/notifications"><Megaphone className="text-pink-500" /> Notificações</Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-                                 <SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}>
                                     <SidebarMenuButton asChild>
                                         <Link href="/admin/marketing/partners"><Handshake className="text-cyan-500" /> Parceiros</Link>
                                     </SidebarMenuButton>
@@ -174,7 +181,7 @@ export default function DashboardLayout({
                         <SidebarGroupLabel>Configurações</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
-                                 <SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}>
                                     <SidebarMenuButton asChild>
                                         <Link href="/admin/settings/payments"><CreditCard className="text-indigo-500" /> Pagamentos</Link>
                                     </SidebarMenuButton>
