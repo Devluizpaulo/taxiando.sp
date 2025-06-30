@@ -1,8 +1,10 @@
 
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from "next/link";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
@@ -13,10 +15,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock, ClipboardCheck, AlertTriangle, RefreshCw } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock, ClipboardCheck, AlertTriangle, RefreshCw, XCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { type Course, type Lesson, type QuizQuestion } from "@/lib/types";
+import { type Course, type Lesson } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LoadingScreen } from '@/components/loading-screen';
@@ -30,6 +33,17 @@ const getLessonIcon = (type: Lesson['type']) => {
         case 'quiz': return <ClipboardCheck className="h-5 w-5 text-muted-foreground" />;
     }
 }
+
+const getYoutubeEmbedUrl = (url: string): string | null => {
+    let videoId;
+    if (url.includes('youtube.com/watch?v=')) {
+        videoId = url.split('v=')[1]?.split('&')[0];
+    } else if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1]?.split('?')[0];
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : url; // fallback to original URL
+}
+
 
 export default function CourseDetailsPage({ params }: { params: { id: string } }) {
     const { user } = useAuth();
@@ -66,6 +80,12 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
             setCompletedLessons(prev => [...prev, lessonId]);
         }
     };
+    
+    const allLessonsFlat = useMemo(() => course?.modules.flatMap(m => m.lessons.map(l => l.id)) || [], [course]);
+    const lastCompletedIndex = useMemo(() => {
+        return allLessonsFlat.findLastIndex(lessonId => completedLessons.includes(lessonId))
+    }, [allLessonsFlat, completedLessons]);
+
 
     if (loading) return <LoadingScreen />;
 
@@ -102,9 +122,13 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                                     </AccordionTrigger>
                                     <AccordionContent>
                                         <ul className="space-y-1 pt-2">
-                                            {module.lessons.map(lesson => (
-                                                <LessonItem key={lesson.id} lesson={lesson} moduleId={module.id} courseId={course.id} isCompleted={completedLessons.includes(lesson.id)} onLessonCompleted={handleLessonCompleted} />
-                                            ))}
+                                            {module.lessons.map(lesson => {
+                                                const lessonIndex = allLessonsFlat.indexOf(lesson.id);
+                                                const isLocked = lessonIndex > lastCompletedIndex + 1;
+                                                return (
+                                                    <LessonItem key={lesson.id} lesson={lesson} moduleId={module.id} courseId={course.id} isCompleted={completedLessons.includes(lesson.id)} onLessonCompleted={handleLessonCompleted} isLocked={isLocked}/>
+                                                );
+                                            })}
                                         </ul>
                                     </AccordionContent>
                                 </AccordionItem>
@@ -128,38 +152,114 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
     );
 }
 
-// Lesson Item Component
-function LessonItem({ lesson, moduleId, courseId, isCompleted, onLessonCompleted }: { lesson: Lesson, moduleId: string, courseId: string, isCompleted: boolean, onLessonCompleted: (lessonId: string) => void }) {
-    const [completingLessonId, setCompletingLessonId] = useState<string | null>(null);
+function LessonItem({ lesson, moduleId, courseId, isCompleted, onLessonCompleted, isLocked }: { lesson: Lesson; moduleId: string; courseId: string; isCompleted: boolean; onLessonCompleted: (lessonId: string) => void; isLocked: boolean }) {
     const { toast } = useToast();
+    const [completingLessonId, setCompletingLessonId] = useState<string | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
     const handleCompleteLesson = async () => {
         setCompletingLessonId(lesson.id);
         try {
             await markLessonAsComplete({ courseId, moduleId, lessonId: lesson.id });
             onLessonCompleted(lesson.id);
             toast({ title: "Aula Concluída!", description: "Seu progresso foi salvo." });
+            setIsDialogOpen(false);
         } catch (error) { toast({ variant: "destructive", title: "Erro", description: "Não foi possível salvar seu progresso." }); } finally { setCompletingLessonId(null); }
     };
 
-    return (
-        <li className="flex flex-col rounded-md p-3 hover:bg-muted/50">
-            <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-4">
-                    {isCompleted ? <CheckCircle2 className="h-6 w-6 text-green-500" /> : <Circle className="h-6 w-6 text-muted-foreground/50" />}
-                    <div className="flex items-center gap-2">{getLessonIcon(lesson.type)}<span className={cn(isCompleted && "line-through text-muted-foreground")}>{lesson.title}</span></div>
-                </div>
-                <div className="flex items-center gap-4">
-                    <span className="text-sm text-muted-foreground flex items-center gap-1"><Clock className="h-4 w-4"/> {lesson.duration} min</span>
-                    {lesson.type !== 'quiz' && <Button variant="outline" size="sm" onClick={handleCompleteLesson} disabled={isCompleted || !!completingLessonId}>{completingLessonId === lesson.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isCompleted ? "Revisar" : "Concluir")}</Button>}
+    const lessonTriggerContent = (
+        <div className={cn("flex items-center justify-between w-full p-3 rounded-md", isLocked ? "cursor-not-allowed" : "cursor-pointer hover:bg-muted/50")}>
+            <div className="flex items-center gap-4">
+                {isLocked ? <Lock className="h-6 w-6 text-muted-foreground/30" /> : (isCompleted ? <CheckCircle2 className="h-6 w-6 text-green-500" /> : <Circle className="h-6 w-6 text-muted-foreground/50" />)}
+                <div className="flex items-center gap-2">
+                    {getLessonIcon(lesson.type)}
+                    <span className={cn(isCompleted && "line-through text-muted-foreground", isLocked && "text-muted-foreground/50")}>{lesson.title}</span>
                 </div>
             </div>
-            {lesson.type === 'quiz' ? (<QuizPlayer lesson={lesson} courseId={courseId} moduleId={moduleId} isCompleted={isCompleted} onLessonCompleted={onLessonCompleted} />) : (lesson.supportingMaterials && lesson.supportingMaterials.length > 0 && (<div className="mt-4 pt-3 border-t border-dashed ml-10"><h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Material de Apoio</h4><ul className="space-y-1">{lesson.supportingMaterials.map(material => (<li key={material.name}><Button asChild variant="link" className="p-0 h-auto font-normal text-primary"><a href={material.url} target="_blank" rel="noopener noreferrer"><Paperclip className="h-4 w-4 mr-2" />{material.name}</a></Button></li>))}</ul></div>))}
+            <div className="flex items-center gap-4">
+                <span className="text-sm text-muted-foreground flex items-center gap-1"><Clock className="h-4 w-4"/> {lesson.duration} min</span>
+            </div>
+        </div>
+    );
+
+    if (isLocked) {
+        return (
+             <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                    <TooltipTrigger asChild><div className="w-full">{lessonTriggerContent}</div></TooltipTrigger>
+                    <TooltipContent><p className="flex items-center gap-2"><Lock className="h-4 w-4" /> Complete as aulas anteriores para desbloquear.</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        );
+    }
+    
+    if (lesson.type === 'quiz') {
+        return <li className="flex flex-col rounded-md p-3 hover:bg-muted/50"><QuizPlayer lesson={lesson} courseId={courseId} moduleId={moduleId} isCompleted={isCompleted} onLessonCompleted={onLessonCompleted} /></li>;
+    }
+    
+    return (
+        <li>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                    {lessonTriggerContent}
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+                    <DialogHeader className="p-6 pb-4 border-b">
+                        <DialogTitle className="font-headline text-2xl">{lesson.title}</DialogTitle>
+                        <DialogDescription>Duração estimada: {lesson.duration} minutos</DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 overflow-y-auto p-6">
+                        {lesson.type === 'video' && lesson.content && (
+                            <div className="aspect-video w-full">
+                                <iframe
+                                    className="w-full h-full rounded-lg"
+                                    src={getYoutubeEmbedUrl(lesson.content) || ''}
+                                    title={lesson.title}
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                ></iframe>
+                            </div>
+                        )}
+                         {lesson.type === 'text' && lesson.content && (
+                           <div className="prose prose-sm lg:prose-base max-w-none dark:prose-invert">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {lesson.content}
+                                </ReactMarkdown>
+                            </div>
+                        )}
+
+                        {lesson.materials && lesson.materials.length > 0 && (
+                            <div className="mt-8 pt-6 border-t">
+                                <h4 className="font-headline text-lg font-semibold mb-4">Material de Apoio</h4>
+                                <ul className="space-y-2">
+                                    {lesson.materials.map(material => (
+                                        <li key={material.name}>
+                                            <Button asChild variant="outline" className="justify-start gap-2">
+                                                <a href={material.url} target="_blank" rel="noopener noreferrer">
+                                                    <Paperclip className="h-4 w-4" />
+                                                    {material.name}
+                                                </a>
+                                            </Button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter className="p-6 pt-4 border-t bg-muted/50">
+                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Fechar</Button>
+                        <Button onClick={handleCompleteLesson} disabled={isCompleted || !!completingLessonId}>
+                             {completingLessonId === lesson.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isCompleted ? <> <CheckCircle2 className="mr-2"/> Concluída</> : "Marcar como Concluída")}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </li>
     );
 }
 
 // Quiz Player Component
-function QuizPlayer({ lesson, courseId, moduleId, isCompleted, onLessonCompleted }: { lesson: Lesson, courseId: string, moduleId: string, isCompleted: boolean, onLessonCompleted: (lessonId: string) => void }) {
+function QuizPlayer({ lesson, courseId, moduleId, isCompleted, onLessonCompleted }: { lesson: Lesson; courseId: string; moduleId: string; isCompleted: boolean; onLessonCompleted: (lessonId: string) => void }) {
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [result, setResult] = useState<{ score: number, total: number, passed: boolean, correctAnswers: Record<string, string> } | null>(null);
     const { toast } = useToast();
@@ -175,7 +275,7 @@ function QuizPlayer({ lesson, courseId, moduleId, isCompleted, onLessonCompleted
         let score = 0;
         lesson.questions?.forEach(q => {
             const correctOption = q.options.find(o => o.isCorrect);
-            if (correctOption) {
+            if (correctOption?.id) {
                 correctAnswers[q.id] = correctOption.id;
                 if (answers[q.id] === correctOption.id) {
                     score++;
@@ -202,65 +302,74 @@ function QuizPlayer({ lesson, courseId, moduleId, isCompleted, onLessonCompleted
         setResult(null);
     };
 
-    if (isCompleted && !result) {
-        return <div className="mt-4 ml-10 p-4 rounded-md bg-green-50 border border-green-200 text-green-800 text-sm">Prova já concluída com sucesso.</div>;
-    }
-
     return (
-        <div className="mt-4 pt-3 border-t border-dashed ml-10 space-y-6">
-            {!result ? (
-                <>
-                    {lesson.questions.map((q, index) => (
-                        <div key={q.id} className="space-y-3">
-                            <p className="font-semibold">({index + 1}) {q.question}</p>
-                            <RadioGroup value={answers[q.id]} onValueChange={(value) => handleAnswerChange(q.id, value)}>
-                                {q.options.map(o => (
-                                    <Label key={o.id} htmlFor={o.id} className="flex items-center gap-3 p-3 rounded-md border border-input has-[:checked]:border-primary has-[:checked]:bg-primary/5 cursor-pointer">
-                                        <RadioGroupItem value={o.id} id={o.id} />
-                                        <span>{o.text}</span>
-                                    </Label>
-                                ))}
-                            </RadioGroup>
-                        </div>
-                    ))}
-                    <Button onClick={handleSubmit} disabled={Object.keys(answers).length !== lesson.questions.length}>Finalizar Prova</Button>
-                </>
-            ) : (
-                <div className="space-y-6">
-                    <Card className={cn("p-6", result.passed ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200")}>
-                        <CardHeader className="p-0 text-center">
-                            <CardTitle className="text-2xl">{result.passed ? "Aprovado!" : "Tente Novamente"}</CardTitle>
-                            <CardDescription>Você acertou {result.score} de {result.total} questões ({Math.round((result.score / result.total) * 100)}%).</CardDescription>
-                        </CardHeader>
-                    </Card>
-
-                    <div className="space-y-3">
-                        <h3 className="font-bold">Revisão da Prova</h3>
+        <div className="space-y-6">
+             <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-4">
+                    {isCompleted ? <CheckCircle2 className="h-6 w-6 text-green-500" /> : <Circle className="h-6 w-6 text-muted-foreground/50" />}
+                    <div className="flex items-center gap-2">{getLessonIcon(lesson.type)}<span className={cn(isCompleted && "line-through text-muted-foreground")}>{lesson.title}</span></div>
+                </div>
+                <div className="flex items-center gap-4">
+                    <span className="text-sm text-muted-foreground flex items-center gap-1"><Clock className="h-4 w-4"/> {lesson.duration} min</span>
+                </div>
+            </div>
+            <div className="ml-10 space-y-6 border-t border-dashed pt-4">
+                {isCompleted && !result ? (
+                    <div className="p-4 rounded-md bg-green-50 border border-green-200 text-green-800 text-sm">Prova já concluída com sucesso.</div>
+                ) : !result ? (
+                    <>
                         {lesson.questions.map((q, index) => (
-                            <div key={q.id} className="p-4 rounded-md border">
+                            <div key={q.id} className="space-y-3">
                                 <p className="font-semibold">({index + 1}) {q.question}</p>
-                                <div className="mt-2 space-y-2 text-sm">
-                                    {q.options.map(o => {
-                                        const isUserAnswer = answers[q.id] === o.id;
-                                        const isCorrectAnswer = result.correctAnswers[q.id] === o.id;
-                                        return (
-                                            <div key={o.id} className={cn(
-                                                "flex items-center gap-2 p-2 rounded",
-                                                isCorrectAnswer && "bg-green-100/80 text-green-900",
-                                                isUserAnswer && !isCorrectAnswer && "bg-red-100/80 text-red-900"
-                                            )}>
-                                                {isCorrectAnswer ? <CheckCircle2 className="h-4 w-4" /> : (isUserAnswer ? <XCircle className="h-4 w-4" /> : <Circle className="h-4 w-4 text-muted" />)}
-                                                <span>{o.text}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                <RadioGroup value={answers[q.id]} onValueChange={(value) => handleAnswerChange(q.id, value)}>
+                                    {q.options.map(o => (
+                                        <Label key={o.id} htmlFor={o.id} className="flex items-center gap-3 p-3 rounded-md border border-input has-[:checked]:border-primary has-[:checked]:bg-primary/5 cursor-pointer">
+                                            <RadioGroupItem value={o.id} id={o.id} />
+                                            <span>{o.text}</span>
+                                        </Label>
+                                    ))}
+                                </RadioGroup>
                             </div>
                         ))}
+                        <Button onClick={handleSubmit} disabled={Object.keys(answers).length !== lesson.questions.length}>Finalizar Prova</Button>
+                    </>
+                ) : (
+                    <div className="space-y-6">
+                        <Card className={cn("p-6", result.passed ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200")}>
+                            <CardHeader className="p-0 text-center">
+                                <CardTitle className="text-2xl">{result.passed ? "Aprovado!" : "Tente Novamente"}</CardTitle>
+                                <CardDescription>Você acertou {result.score} de {result.total} questões ({Math.round((result.score / result.total) * 100)}%).</CardDescription>
+                            </CardHeader>
+                        </Card>
+
+                        <div className="space-y-3">
+                            <h3 className="font-bold">Revisão da Prova</h3>
+                            {lesson.questions.map((q, index) => (
+                                <div key={q.id} className="p-4 rounded-md border">
+                                    <p className="font-semibold">({index + 1}) {q.question}</p>
+                                    <div className="mt-2 space-y-2 text-sm">
+                                        {q.options.map(o => {
+                                            const isUserAnswer = answers[q.id] === o.id;
+                                            const isCorrectAnswer = result.correctAnswers[q.id] === o.id;
+                                            return (
+                                                <div key={o.id} className={cn(
+                                                    "flex items-center gap-2 p-2 rounded",
+                                                    isCorrectAnswer && "bg-green-100/80 text-green-900 font-medium",
+                                                    isUserAnswer && !isCorrectAnswer && "bg-red-100/80 text-red-900 line-through"
+                                                )}>
+                                                    {isCorrectAnswer ? <CheckCircle2 className="h-4 w-4" /> : (isUserAnswer ? <XCircle className="h-4 w-4" /> : <Circle className="h-4 w-4 text-muted" />)}
+                                                    <span>{o.text}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        {!result.passed && <Button onClick={handleRetry} variant="outline"><RefreshCw className="mr-2"/> Tentar Novamente</Button>}
                     </div>
-                    {!result.passed && <Button onClick={handleRetry} variant="outline"><RefreshCw className="mr-2"/> Tentar Novamente</Button>}
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }

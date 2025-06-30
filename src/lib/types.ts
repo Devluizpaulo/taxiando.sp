@@ -93,6 +93,7 @@ export interface Lesson {
   title: string;
   type: 'video' | 'text' | 'quiz';
   duration: number; // in minutes
+  content?: string;
   supportingMaterials?: SupportingMaterial[];
   questions?: QuizQuestion[];
   passingScore?: number; // As a percentage, e.g., 70

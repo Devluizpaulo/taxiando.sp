@@ -80,4 +80,27 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+
+  .prose {
+    @apply text-foreground max-w-none;
+  }
+  .prose h1, .prose h2, .prose h3, .prose h4 {
+    @apply font-headline font-bold mb-4 mt-6;
+  }
+  .prose h1 { @apply text-3xl; }
+  .prose h2 { @apply text-2xl; }
+  .prose h3 { @apply text-xl; }
+  .prose p { @apply mb-4 leading-relaxed; }
+  .prose a { @apply text-primary underline; }
+  .prose blockquote { @apply border-l-4 border-primary pl-4 italic text-muted-foreground my-4; }
+  .prose ul, .prose ol { @apply list-inside list-disc pl-4 mb-4; }
+  .prose ol { @apply list-decimal; }
+  .prose li > ul, .prose li > ol { @apply ml-4; }
+  .prose code { @apply bg-muted text-muted-foreground rounded px-1 py-0.5 font-code; }
+  .prose pre { @apply bg-muted p-4 rounded-md overflow-x-auto; }
+  .prose pre code { @apply bg-transparent p-0; }
+  .prose table { @apply w-full my-4; }
+  .prose thead { @apply border-b border-border; }
+  .prose th { @apply p-2 text-left font-semibold; }
+  .prose td { @apply p-2 border-t border-border; }
 }
