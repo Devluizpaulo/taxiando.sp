@@ -1,7 +1,8 @@
+
 import Link from 'next/link';
-import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
 import { adminDB } from '@/lib/firebase-admin';
 import { type Course } from '@/lib/types';
+import { Timestamp } from 'firebase-admin/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,8 +15,8 @@ import { MoreHorizontal, PlusCircle, BookCopy, BarChart2 } from 'lucide-react';
 async function getCourses(): Promise<Course[]> {
     try {
         const coursesCollection = adminDB.collection('courses');
-        const q = query(coursesCollection, orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
+        const q = coursesCollection.orderBy('createdAt', 'desc');
+        const querySnapshot = await q.get();
         const coursesData = querySnapshot.docs.map(doc => {
             const data = doc.data();
             return {
