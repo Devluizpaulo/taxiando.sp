@@ -28,27 +28,27 @@ async function getData() {
             } as AdminUser;
         });
     } catch (error) {
-        console.error("Failed to fetch admin users data:", error);
+        console.error("Failed to fetch admin users data:", (error as Error).message || error);
     }
     
     try {
         const oppsSnapshot = await adminDB.collection('opportunities').where('status', '==', 'Pendente').get();
         oppsData = oppsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Opportunity));
     } catch (error) {
-        console.error("Failed to fetch admin opportunities data:", error);
+        console.error("Failed to fetch admin opportunities data:", (error as Error).message || error);
     }
     
     try {
         const servicesSnapshot = await adminDB.collection('services').where('status', '==', 'Pendente').get();
         servicesData = servicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceListing));
     } catch (error) {
-        console.error("Failed to fetch admin services data:", error);
+        console.error("Failed to fetch admin services data:", (error as Error).message || error);
     }
 
     try {
         analyticsData = await getAdminDashboardAnalytics();
     } catch (analyticsError) {
-        console.error("Failed to fetch admin analytics, continuing without it:", analyticsError);
+        console.error("Failed to fetch admin analytics, continuing without it:", (analyticsError as Error).message || analyticsError);
     }
 
     return { 
