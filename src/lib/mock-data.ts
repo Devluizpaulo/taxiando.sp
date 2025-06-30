@@ -1,11 +1,11 @@
 
 import { type Vehicle, type VehicleApplication, type Transaction, type Course, type ServiceListing } from './types';
 
-export const mockVehicles: Omit<Vehicle, 'id' | 'fleetId' | 'createdAt'>[] = [
-  { plate: 'BRA2E19', make: 'Chevrolet', model: 'Onix', year: 2022, status: 'Disponível', dailyRate: 120, imageUrl: 'https://placehold.co/600x400.png', condition: 'Novo', description: 'Carro novo, completo, com ar, direção e som bluetooth.', paymentInfo: { terms: 'Diária (Seg-Sáb)', methods: ['Cartão de Crédito', 'PIX'] }, perks: [{ id: 'full_tank', label: 'Tanque Cheio' }, { id: 'car_wash', label: 'Lava-rápido' }] },
-  { plate: 'XYZ1A23', make: 'Hyundai', model: 'HB20', year: 2023, status: 'Disponível', dailyRate: 135, imageUrl: 'https://placehold.co/600x400.png', condition: 'Semi-novo', description: 'Modelo mais recente, super econômico. Ideal para o dia a dia.', paymentInfo: { terms: 'Semanal', methods: ['PIX', 'Boleto'] }, perks: [{ id: 'insurance', label: 'Seguro Passageiro' }] },
-  { plate: 'FGH5I67', make: 'Fiat', model: 'Cronos', year: 2021, status: 'Disponível', dailyRate: 110, imageUrl: 'https://placehold.co/600x400.png', condition: 'Usado', description: 'Porta-malas gigante, perfeito para viagens e aeroporto.', paymentInfo: { terms: 'Diária (Seg-Seg)', methods: ['Dinheiro'] }, perks: [] },
-  { plate: 'JKL8M90', make: 'Renault', model: 'Kwid', year: 2023, status: 'Disponível', dailyRate: 95, imageUrl: 'https://placehold.co/600x400.png', condition: 'Novo', description: 'O mais econômico da categoria, ideal para quem roda muito.', paymentInfo: { terms: 'Semanal', methods: ['PIX'] }, perks: [{ id: 'gvn', label: 'Kit GNV' }, {id: 'support', label: 'Suporte 24h'}] },
+export const mockVehicles: (Omit<Vehicle, 'fleetId' | 'createdAt'>)[] = [
+  { id: 'v_mock_1', plate: 'BRA2E19', make: 'Chevrolet', model: 'Onix', year: 2022, status: 'Disponível', dailyRate: 120, imageUrl: 'https://placehold.co/600x400.png', condition: 'Novo', description: 'Carro novo, completo, com ar, direção e som bluetooth.', paymentInfo: { terms: 'Diária (Seg-Sáb)', methods: ['Cartão de Crédito', 'PIX'] }, perks: [{ id: 'full_tank', label: 'Tanque Cheio' }, { id: 'car_wash', label: 'Lava-rápido' }] },
+  { id: 'v_mock_2', plate: 'XYZ1A23', make: 'Hyundai', model: 'HB20', year: 2023, status: 'Disponível', dailyRate: 135, imageUrl: 'https://placehold.co/600x400.png', condition: 'Semi-novo', description: 'Modelo mais recente, super econômico. Ideal para o dia a dia.', paymentInfo: { terms: 'Semanal', methods: ['PIX', 'Boleto'] }, perks: [{ id: 'insurance', label: 'Seguro Passageiro' }] },
+  { id: 'v_mock_3', plate: 'FGH5I67', make: 'Fiat', model: 'Cronos', year: 2021, status: 'Disponível', dailyRate: 110, imageUrl: 'https://placehold.co/600x400.png', condition: 'Usado', description: 'Porta-malas gigante, perfeito para viagens e aeroporto.', paymentInfo: { terms: 'Diária (Seg-Seg)', methods: ['Dinheiro'] }, perks: [] },
+  { id: 'v_mock_4', plate: 'JKL8M90', make: 'Renault', model: 'Kwid', year: 2023, status: 'Disponível', dailyRate: 95, imageUrl: 'https://placehold.co/600x400.png', condition: 'Novo', description: 'O mais econômico da categoria, ideal para quem roda muito.', paymentInfo: { terms: 'Semanal', methods: ['PIX'] }, perks: [{ id: 'gvn', label: 'Kit GNV' }, {id: 'support', label: 'Suporte 24h'}] },
 ];
 
 
@@ -22,11 +22,13 @@ export const mockTransactions: Transaction[] = [
   { id: 't_3', date: '28/07/2024', description: 'Uso de 1 crédito - Download de Certificado', amount: '- 1 crédito', type: 'credit_usage' },
 ];
 
-export const mockServiceListings: Omit<ServiceListing, 'id' | 'providerId' | 'createdAt'>[] = [
-    { title: 'Despachante Veicular Completo', provider: 'Despachante Legal', category: 'Despachante', price: 'R$ 550,00', status: 'Ativo', imageUrl: 'https://placehold.co/600x400.png' },
-    { title: 'Curso de Reciclagem para Taxistas', provider: 'Autoescola Futuro', category: 'Autoescola', price: 'R$ 300,00', status: 'Ativo', imageUrl: 'https://placehold.co/600x400.png' },
-    { title: 'Instalação de GNV 5ª Geração', provider: 'GNV Master', category: 'Instaladora GNV', price: 'Sob Consulta', status: 'Ativo', imageUrl: 'https://placehold.co/600x400.png' },
-    { title: 'Troca de Óleo e Filtro', provider: 'Oficina do Zé', status: 'Pausado', category: 'Oficina Mecânica', price: 'R$ 180,00', imageUrl: 'https://placehold.co/600x400.png' },
+type HomePageServiceListing = Pick<ServiceListing, 'id' | 'title' | 'provider' | 'category' | 'price' | 'status' | 'imageUrl'> & { imageHint: string };
+
+export const mockServiceListings: HomePageServiceListing[] = [
+    { id: 'serv_mock_1', title: 'Despachante Veicular Completo', provider: 'Despachante Legal', category: 'Despachante', price: 'R$ 550,00', status: 'Ativo', imageUrl: 'https://placehold.co/600x400.png', imageHint: 'documents stamps' },
+    { id: 'serv_mock_2', title: 'Curso de Reciclagem para Taxistas', provider: 'Autoescola Futuro', category: 'Autoescola', price: 'R$ 300,00', status: 'Ativo', imageUrl: 'https://placehold.co/600x400.png', imageHint: 'classroom students' },
+    { id: 'serv_mock_3', title: 'Instalação de GNV 5ª Geração', provider: 'GNV Master', category: 'Instaladora GNV', price: 'Sob Consulta', status: 'Ativo', imageUrl: 'https://placehold.co/600x400.png', imageHint: 'car engine' },
+    { id: 'serv_mock_4', title: 'Troca de Óleo e Filtro', provider: 'Oficina do Zé', status: 'Pausado', category: 'Oficina Mecânica', price: 'R$ 180,00', imageUrl: 'https://placehold.co/600x400.png', imageHint: 'car oil change' },
 ];
 
 export const mockUsers = [
@@ -134,3 +136,5 @@ Lembre-se: dirigir com segurança não só evita multas, mas também protege a s
     }
   ]
 };
+
+    
