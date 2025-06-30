@@ -1,4 +1,5 @@
-import { type Vehicle, type VehicleApplication, type Transaction, type Course } from './types';
+
+import { type Vehicle, type VehicleApplication, type Transaction, type Course, type ServiceListing } from './types';
 
 export const mockVehicles: Omit<Vehicle, 'id' | 'fleetId' | 'createdAt'>[] = [
   { plate: 'BRA2E19', make: 'Chevrolet', model: 'Onix', year: 2022, status: 'Disponível', dailyRate: 120, imageUrl: 'https://placehold.co/600x400.png', condition: 'Novo', description: 'Carro novo, completo, com ar, direção e som bluetooth.', paymentInfo: { terms: 'Diária (Seg-Sáb)', methods: ['Cartão de Crédito', 'PIX'] }, perks: [{ id: 'full_tank', label: 'Tanque Cheio' }, { id: 'car_wash', label: 'Lava-rápido' }] },
@@ -21,11 +22,11 @@ export const mockTransactions: Transaction[] = [
   { id: 't_3', date: '28/07/2024', description: 'Uso de 1 crédito - Download de Certificado', amount: '- 1 crédito', type: 'credit_usage' },
 ];
 
-export const mockServiceListings = [
-    { id: 'srv_1', title: 'Despachante Veicular Completo', provider: 'Despachante Legal', category: 'Despachante', price: 'R$ 550,00', status: 'Ativo', imageUrl: 'https://placehold.co/600x400.png', imageHint: 'documents stamp' },
-    { id: 'srv_2', title: 'Curso de Reciclagem para Taxistas', provider: 'Autoescola Futuro', category: 'Autoescola', price: 'R$ 300,00', status: 'Ativo', imageUrl: 'https://placehold.co/600x400.png', imageHint: 'classroom training' },
-    { id: 'srv_3', title: 'Instalação de GNV 5ª Geração', provider: 'GNV Master', category: 'Instaladora GNV', price: 'Sob Consulta', status: 'Ativo', imageUrl: 'https://placehold.co/600x400.png', imageHint: 'car engine' },
-    { id: 'srv_4', title: 'Troca de Óleo e Filtro', provider: 'Oficina do Zé', status: 'Pausado', category: 'Oficina Mecânica', price: 'R$ 180,00', imageUrl: 'https://placehold.co/600x400.png', imageHint: 'car engine' },
+export const mockServiceListings: Omit<ServiceListing, 'id' | 'providerId' | 'createdAt'>[] = [
+    { title: 'Despachante Veicular Completo', provider: 'Despachante Legal', category: 'Despachante', price: 'R$ 550,00', status: 'Ativo', imageUrl: 'https://placehold.co/600x400.png' },
+    { title: 'Curso de Reciclagem para Taxistas', provider: 'Autoescola Futuro', category: 'Autoescola', price: 'R$ 300,00', status: 'Ativo', imageUrl: 'https://placehold.co/600x400.png' },
+    { title: 'Instalação de GNV 5ª Geração', provider: 'GNV Master', category: 'Instaladora GNV', price: 'Sob Consulta', status: 'Ativo', imageUrl: 'https://placehold.co/600x400.png' },
+    { title: 'Troca de Óleo e Filtro', provider: 'Oficina do Zé', status: 'Pausado', category: 'Oficina Mecânica', price: 'R$ 180,00', imageUrl: 'https://placehold.co/600x400.png' },
 ];
 
 export const mockUsers = [

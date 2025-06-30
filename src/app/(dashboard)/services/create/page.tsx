@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -5,11 +6,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
-// import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-// import { db } from '@/lib/firebase';
-// import { useAuth } from '@/hooks/use-auth';
-// import { nanoid } from 'nanoid';
 
+import { useAuth } from '@/hooks/use-auth';
+import { createService, type ServiceFormValues } from '@/app/actions/service-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -26,13 +25,12 @@ const serviceFormSchema = z.object({
   imageUrl: z.string().url("URL da imagem inválida.").optional().or(z.literal('')),
 });
 
-type ServiceFormValues = z.infer<typeof serviceFormSchema>;
 
 export default function CreateServicePage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    // const { user } = useAuth();
+    const { user, userProfile } = useAuth();
 
     const form = useForm<ServiceFormValues>({
         resolver: zodResolver(serviceFormSchema),
@@ -47,35 +45,32 @@ export default function CreateServicePage() {
 
     const onSubmit = async (values: ServiceFormValues) => {
         setIsSubmitting(true);
-        // if (!user) {
-        //     toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado.' });
-        //     setIsSubmitting(false);
-        //     return;
-        // }
-        try {
-            // const serviceId = nanoid();
-            // const serviceData = {
-            //     id: serviceId,
-            //     providerId: user.uid,
-            //     ...values,
-            //     status: 'pending_review',
-            //     createdAt: serverTimestamp(),
-            // };
-            
-            // await setDoc(doc(db, 'services', serviceId), serviceData);
+        if (!user || !userProfile) {
+            toast({ variant: 'destructive', title: 'Erro', description: 'Você precisa estar logado.' });
+            setIsSubmitting(false);
+            return;
+        }
 
-            toast({
-                title: 'Anúncio Enviado para Análise!',
-                description: 'Seu anúncio foi criado e será revisado pela nossa equipe em breve.',
-            });
-            router.push('/services');
+        try {
+            const providerName = userProfile.nomeFantasia || userProfile.name || 'Prestador Anônimo';
+            const result = await createService(values, user.uid, providerName);
+            
+            if (result.success) {
+                toast({
+                    title: 'Anúncio Enviado para Análise!',
+                    description: 'Seu anúncio foi criado e será revisado pela nossa equipe em breve.',
+                });
+                router.push('/services');
+            } else {
+                throw new Error(result.error);
+            }
 
         } catch (error) {
             console.error("Error creating service: ", error);
             toast({
                 variant: 'destructive',
                 title: 'Erro ao Criar Anúncio',
-                description: 'Não foi possível salvar seu anúncio. Tente novamente.',
+                description: (error as Error).message || 'Não foi possível salvar seu anúncio. Tente novamente.',
             });
         } finally {
             setIsSubmitting(false);
@@ -109,7 +104,7 @@ export default function CreateServicePage() {
                                 <FormItem><FormLabel>Preço</FormLabel><FormControl><Input {...field} placeholder="R$ 150,00 ou 'Sob Consulta'" /></FormControl><FormMessage /></FormItem>
                             )}/>
                             <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                                <FormItem><FormLabel>URL da Imagem de Capa</FormLabel><FormControl><Input {...field} placeholder="https://exemplo.com/imagem.png" /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>URL da Imagem de Capa (Opcional)</FormLabel><FormControl><Input {...field} placeholder="https://exemplo.com/imagem.png" /></FormControl><FormMessage /></FormItem>
                             )}/>
                         </div>
                     </CardContent>
