@@ -4,11 +4,15 @@
 import { adminStorage } from '@/lib/firebase-admin';
 import { nanoid } from 'nanoid';
 
-export async function uploadFile(formData: FormData): Promise<{success: boolean; url?: string; error?: string}> {
+export async function uploadFile(formData: FormData, userId: string): Promise<{success: boolean; url?: string; error?: string}> {
     const file = formData.get('file') as File | null;
 
     if (!file) {
         return { success: false, error: 'Nenhum arquivo fornecido.' };
+    }
+
+    if (!userId) {
+        return { success: false, error: 'Usuário não autenticado para o upload.' };
     }
     
     // Basic validation for file size and type
@@ -25,8 +29,9 @@ export async function uploadFile(formData: FormData): Promise<{success: boolean;
     const fileExtension = file.name.split('.').pop();
     const fileName = `${nanoid()}.${fileExtension}`;
     
-    // We'll store public user uploads in a specific folder
-    const fileUpload = bucket.file(`user-uploads/${fileName}`);
+    // Organize uploads into a specific folder for each user
+    const filePath = `user-uploads/${userId}/${fileName}`;
+    const fileUpload = bucket.file(filePath);
 
     try {
         await fileUpload.save(fileBuffer, {
