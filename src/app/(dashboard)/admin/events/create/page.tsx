@@ -7,7 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '@/lib/firebase';
 import { nanoid } from 'nanoid';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -160,13 +161,26 @@ export default function CreateEventPage() {
         setIsSubmitting(true);
         try {
             const eventId = nanoid();
+            let finalImageUrl = values.imageUrl;
+
+            // Check if imageUrl is a new Base64 image from AI and upload it to Storage
+            if (values.imageUrl.startsWith('data:image')) {
+                toast({ title: "Processando imagem...", description: "Enviando imagem para o armazenamento." });
+                const storageRef = ref(storage, `events/${eventId}.png`);
+                
+                // Upload the Base64 string directly
+                const uploadResult = await uploadString(storageRef, values.imageUrl, 'data_url');
+                
+                // Get the public URL of the uploaded image
+                finalImageUrl = await getDownloadURL(uploadResult.ref);
+            }
             
             const eventData = {
                 id: eventId,
                 title: values.title,
                 description: values.description,
                 location: values.location,
-                imageUrl: values.imageUrl, // Save Base64 directly
+                imageUrl: finalImageUrl, // Use the public URL from Storage
                 startDate: Timestamp.fromDate(values.startDate),
                 endDate: Timestamp.fromDate(values.endDate),
                 driverSummary: values.driverSummary,
@@ -190,7 +204,7 @@ export default function CreateEventPage() {
             toast({
                 variant: 'destructive',
                 title: 'Erro ao Criar Evento',
-                description: 'Não foi possível salvar o evento no banco de dados. Tente novamente.',
+                description: 'Não foi possível salvar o evento. Verifique o console para mais detalhes.',
             });
         } finally {
             setIsSubmitting(false);
