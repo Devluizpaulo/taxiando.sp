@@ -165,7 +165,7 @@ export default function CompleteProfilePage() {
                 formData.append('file', values.photoFile);
 
                 toast({ title: "Fazendo upload da imagem...", description: "Aguarde um momento." });
-                const uploadResult = await uploadFile(formData);
+                const uploadResult = await uploadFile(formData, user.uid);
 
                 if (uploadResult.success && uploadResult.url) {
                     finalPhotoUrl = uploadResult.url;
