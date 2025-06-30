@@ -68,15 +68,14 @@ export async function getUpcomingEvents(): Promise<Event[]> {
   }
 }
 
-// Omitting id, createdAt as they will be generated on the server.
 // Using native Date for startDate/endDate as they come from the client form.
-type CreateEventInput = Omit<Event, 'id' | 'createdAt' | 'startDate' | 'endDate'> & {
+type EventFormInput = Omit<Event, 'id' | 'createdAt' | 'startDate' | 'endDate'> & {
     startDate: Date;
     endDate: Date;
 };
 
 
-export async function createEvent(eventData: CreateEventInput) {
+export async function createEvent(eventData: EventFormInput) {
     try {
         const eventId = nanoid();
 
@@ -96,6 +95,65 @@ export async function createEvent(eventData: CreateEventInput) {
 
     } catch (error) {
         console.error("Error creating event:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function getEventById(eventId: string): Promise<Event | null> {
+    try {
+        const eventDoc = await adminDB.collection('events').doc(eventId).get();
+        if (!eventDoc.exists) {
+            return null;
+        }
+        const data = eventDoc.data()!;
+        
+        return {
+            ...data,
+            id: eventDoc.id,
+            startDate: (data.startDate as Timestamp).toDate().toISOString(),
+            endDate: (data.endDate as Timestamp).toDate().toISOString(),
+            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+        } as Event;
+
+    } catch (error) {
+        console.error("Error fetching event by ID:", error);
+        return null;
+    }
+}
+
+export async function updateEvent(eventId: string, eventData: EventFormInput) {
+    try {
+        const dataToSave = {
+            ...eventData,
+            startDate: Timestamp.fromDate(new Date(eventData.startDate)),
+            endDate: Timestamp.fromDate(new Date(eventData.endDate)),
+        };
+
+        await adminDB.collection('events').doc(eventId).update(dataToSave);
+        
+        revalidatePath('/admin/events');
+        revalidatePath(`/admin/events/${eventId}/edit`);
+        revalidatePath('/'); // Revalidate home page
+        revalidatePath('/events'); // Revalidate events page
+        return { success: true };
+
+    } catch (error) {
+        console.error("Error updating event:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function deleteEvent(eventId: string) {
+     try {
+        await adminDB.collection('events').doc(eventId).delete();
+        
+        revalidatePath('/admin/events');
+        revalidatePath('/'); // Revalidate home page
+        revalidatePath('/events'); // Revalidate events page
+        return { success: true };
+
+    } catch (error) {
+        console.error("Error deleting event:", error);
         return { success: false, error: (error as Error).message };
     }
 }
