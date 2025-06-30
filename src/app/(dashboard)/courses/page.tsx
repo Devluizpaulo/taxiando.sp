@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { type Course } from '@/lib/types';
 
@@ -23,7 +24,8 @@ export default function CoursesPage() {
         const fetchCourses = async () => {
             try {
                 const coursesCollection = collection(db, 'courses');
-                const q = query(coursesCollection, orderBy('createdAt', 'desc'));
+                // Apenas cursos com status 'Published' são visíveis para os alunos.
+                const q = query(coursesCollection, where('status', '==', 'Published'), orderBy('createdAt', 'desc'));
                 const querySnapshot = await getDocs(q);
                 const coursesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
                 setAllCourses(coursesData);

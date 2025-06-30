@@ -1,11 +1,14 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, deleteDoc } from 'firebase/firestore';
 import { type Course, type Module } from '@/lib/types';
 import { adminDB } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
+import { type CourseFormValues } from '@/lib/course-schemas';
+import { nanoid } from 'nanoid';
 
 interface MarkLessonAsCompleteParams {
     courseId: string;
@@ -100,5 +103,97 @@ export async function getAllCourses(): Promise<Course[]> {
     } catch (error) {
         console.error("Error fetching courses from action: ", error);
         return [];
+    }
+}
+
+export async function getCourseById(courseId: string): Promise<Course | null> {
+    try {
+        const courseDoc = await adminDB.collection('courses').doc(courseId).get();
+        if (!courseDoc.exists) {
+            return null;
+        }
+        const data = courseDoc.data() as any;
+        
+        // Convert Timestamps to ISO strings for client-side serialization
+        const serializedData = {
+            ...data,
+            id: courseDoc.id,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+        };
+
+        // We don't need to serialize nested dates as the course form doesn't have them
+        return serializedData as Course;
+    } catch (error) {
+        console.error("Error fetching course by ID:", error);
+        return null;
+    }
+}
+
+export async function updateCourse(courseId: string, values: CourseFormValues) {
+    if (!courseId || !values) {
+        return { success: false, error: 'Dados inválidos.' };
+    }
+    try {
+        let totalLessons = 0;
+        let totalDuration = 0;
+
+        values.modules.forEach(module => {
+            module.lessons.forEach(lesson => {
+                totalLessons++;
+                totalDuration += Number(lesson.duration) || 0;
+            });
+        });
+
+        const courseData = {
+            ...values,
+            totalLessons,
+            totalDuration,
+        };
+
+        const courseRef = adminDB.collection('courses').doc(courseId);
+        await courseRef.update(courseData);
+
+        revalidatePath('/admin/courses');
+        revalidatePath(`/admin/courses/${courseId}/edit`);
+        revalidatePath(`/courses/${courseId}`);
+        return { success: true, message: 'Curso atualizado com sucesso!' };
+    } catch (error) {
+        console.error("Error updating course: ", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+
+export async function updateCourseStatus(courseId: string, newStatus: 'Published' | 'Draft') {
+    if (!courseId || !newStatus) {
+        return { success: false, error: 'Dados inválidos.' };
+    }
+    try {
+        const courseRef = adminDB.collection('courses').doc(courseId);
+        await courseRef.update({ status: newStatus });
+
+        revalidatePath('/admin/courses');
+        revalidatePath('/courses'); // Revalidate public catalog
+        return { success: true };
+    } catch (error) {
+        console.error('Erro ao atualizar status do curso:', error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function deleteCourse(courseId: string) {
+    if (!courseId) {
+        return { success: false, error: 'ID do curso não fornecido.' };
+    }
+    try {
+        const courseRef = adminDB.collection('courses').doc(courseId);
+        await courseRef.delete();
+        
+        revalidatePath('/admin/courses');
+        revalidatePath('/courses');
+        return { success: true };
+    } catch (error) {
+        console.error('Erro ao remover curso:', error);
+        return { success: false, error: (error as Error).message };
     }
 }
