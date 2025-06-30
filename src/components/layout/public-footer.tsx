@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "../ui/button";
@@ -34,6 +35,7 @@ export function PublicFooter() {
                 <h4 className="font-headline font-semibold">Plataforma</h4>
                 <div className="grid gap-2">
                     <Link href="/rentals" className="text-sm text-muted-foreground transition-colors hover:text-primary">Alugar Veículo</Link>
+                    <Link href="/events" className="text-sm text-muted-foreground transition-colors hover:text-primary">Agenda Cultural</Link>
                     <Link href="/#features" className="text-sm text-muted-foreground transition-colors hover:text-primary">Recursos</Link>
                     <Link href="/#blog" className="text-sm text-muted-foreground transition-colors hover:text-primary">Notícias</Link>
                     <Link href="/#quiz" className="text-sm text-muted-foreground transition-colors hover:text-primary">Quiz</Link>
