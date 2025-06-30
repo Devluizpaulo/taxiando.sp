@@ -167,7 +167,9 @@ export default function CreateEventPage() {
             if (values.imageUrl.startsWith('data:image')) {
                 toast({ title: "Processando imagem...", description: "Comprimindo e fazendo upload da imagem para o armazenamento." });
                 
-                const imageFile = imageCompression.dataURLtoFile(values.imageUrl, `${eventId}.png`);
+                const response = await fetch(values.imageUrl);
+                const blob = await response.blob();
+                const imageFile = new File([blob], `${eventId}.png`, { type: blob.type });
                 
                 const options = {
                     maxSizeMB: 0.5,
