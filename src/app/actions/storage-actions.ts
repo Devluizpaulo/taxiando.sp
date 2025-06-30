@@ -1,46 +1,68 @@
-'use server';
-
-import { getStorage } from 'firebase-admin/storage';
-import { nanoid } from 'nanoid';
-
-// This action handles uploading a data URL to Firebase Storage using the Admin SDK.
-// This bypasses client-side CORS issues.
-export async function uploadImageFromDataUrl(dataUrl: string, path: string): Promise<{ success: true; url: string } | { success: false; error: string }> {
-    try {
-        // Use the default bucket associated with the project.
-        // Ensure your service account has "Storage Object Admin" role.
-        const bucket = getStorage().bucket('taxiandosp-519b1.appspot.com');
-
-        // Extract content type and base64 data from dataUrl
-        const match = dataUrl.match(/^data:(image\/[a-z]+);base64,(.*)$/);
-        if (!match) {
-            return { success: false, error: 'Invalid data URL format.' };
-        }
-
-        const contentType = match[1];
-        const base64Data = match[2];
-        const buffer = Buffer.from(base64Data, 'base64');
-        
-        // Generate a unique file name to prevent collisions
-        const fileName = `${nanoid()}.png`;
-        const filePath = `${path}/${fileName}`;
-        const file = bucket.file(filePath);
-
-        // Save the buffer to the bucket and make it public
-        await file.save(buffer, {
-            metadata: {
-                contentType: contentType,
-            },
-            public: true, // This makes the file public immediately on upload
-        });
-        
-        // Construct the public URL
-        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
-
-        return { success: true, url: publicUrl };
-
-    } catch (error) {
-        console.error('Error uploading image from data URL:', error);
-        return { success: false, error: (error as Error).message };
-    }
+{
+  "name": "nextn",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack -p 9002",
+    "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
+    "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@genkit-ai/googleai": "^1.13.0",
+    "@genkit-ai/next": "^1.13.0",
+    "@hookform/resolvers": "^4.1.3",
+    "@mercadopago/sdk-react": "^0.0.19",
+    "@radix-ui/react-accordion": "^1.2.3",
+    "@radix-ui/react-alert-dialog": "^1.1.6",
+    "@radix-ui/react-avatar": "^1.1.3",
+    "@radix-ui/react-checkbox": "^1.1.4",
+    "@radix-ui/react-collapsible": "^1.1.11",
+    "@radix-ui/react-dialog": "^1.1.6",
+    "@radix-ui/react-dropdown-menu": "^2.1.6",
+    "@radix-ui/react-label": "^2.1.2",
+    "@radix-ui/react-popover": "^1.1.6",
+    "@radix-ui/react-progress": "^1.1.2",
+    "@radix-ui/react-radio-group": "^1.2.3",
+    "@radix-ui/react-select": "^2.1.6",
+    "@radix-ui/react-separator": "^1.1.2",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.1.3",
+    "@radix-ui/react-tabs": "^1.1.3",
+    "@radix-ui/react-toast": "^1.2.6",
+    "@radix-ui/react-tooltip": "^1.1.8",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "dotenv": "^16.5.0",
+    "firebase": "^10.12.2",
+    "firebase-admin": "^12.2.0",
+    "genkit": "^1.13.0",
+    "lucide-react": "^0.475.0",
+    "mercadopago": "^2.0.10",
+    "nanoid": "^5.0.7",
+    "next": "15.3.3",
+    "patch-package": "^8.0.0",
+    "react": "^18.3.1",
+    "react-day-picker": "^8.10.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.54.2",
+    "recharts": "^2.15.1",
+    "tailwind-merge": "^3.0.1",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/mercadopago": "^1.5.11",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "genkit-cli": "^1.13.0",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
 }
