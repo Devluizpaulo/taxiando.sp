@@ -5,9 +5,10 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { useAuthProtection } from '@/hooks/use-auth';
 import type { Vehicle, VehicleApplication } from '@/lib/types';
+import { vehicleFormSchema, type VehicleFormValues } from '@/lib/fleet-schemas';
+import { getFleetData, upsertVehicle, deleteVehicle, updateApplicationStatus } from '@/app/actions/fleet-actions';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { vehiclePerks } from '@/lib/data';
-import { mockVehicles, mockApplications } from '@/lib/mock-data';
 import { LoadingScreen } from '@/components/loading-screen';
 
 
@@ -47,30 +47,14 @@ const getProfileStatusVariant = (status: string): "default" | "secondary" | "des
     }
 };
 
-const vehicleFormSchema = z.object({
-  plate: z.string().min(7, "A placa deve ter 7 caracteres.").max(8, "Formato de placa inválido."),
-  make: z.string().min(2, "A marca é obrigatória."),
-  model: z.string().min(2, "O modelo é obrigatório."),
-  year: z.coerce.number().min(2000, "O ano deve ser superior a 2000.").max(new Date().getFullYear() + 1, "Ano inválido."),
-  status: z.enum(['Disponível', 'Alugado', 'Em Manutenção'], { required_error: "O status é obrigatório."}),
-  dailyRate: z.coerce.number().min(1, "O valor da diária é obrigatório."),
-  imageUrl: z.string().url("URL da imagem inválida.").optional().or(z.literal('')),
-  condition: z.string().min(1, "A condição é obrigatória."),
-  description: z.string().min(20, "A descrição deve ter pelo menos 20 caracteres.").max(500, "Limite de 500 caracteres."),
-  paymentTerms: z.string().min(3, "As condições são obrigatórias."),
-  paymentMethods: z.array(z.string()).optional(),
-  perks: z.array(z.string()).optional(),
-});
-
-type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
-
 
 export default function FleetPage() {
-    const { userProfile, loading } = useAuthProtection({ requiredRoles: ['fleet', 'admin'] });
+    const { user, userProfile, loading: authLoading } = useAuthProtection({ requiredRoles: ['fleet', 'admin'] });
     const { toast } = useToast();
     
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-    const [applications, setApplications] = useState<VehicleApplication[]>(mockApplications);
+    const [applications, setApplications] = useState<VehicleApplication[]>([]);
+    const [pageLoading, setPageLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -83,11 +67,22 @@ export default function FleetPage() {
     });
     
     useEffect(() => {
-        if (userProfile) {
-             const vWithIds = mockVehicles.map((v, i) => ({ ...v, id: `v_${i+1}`, fleetId: 'mockFleetId', createdAt: new Date() }))
-             setVehicles(vWithIds);
+        if (user) {
+            const loadData = async () => {
+                setPageLoading(true);
+                const result = await getFleetData(user.uid);
+                if (result.success) {
+                    setVehicles(result.vehicles);
+                    // Filter mock applications for now, until application logic is fully implemented
+                    // setApplications(result.applications);
+                } else {
+                    toast({ variant: 'destructive', title: 'Erro ao Carregar Dados', description: result.error });
+                }
+                setPageLoading(false);
+            };
+            loadData();
         }
-    }, [userProfile]);
+    }, [user, toast]);
     
     useEffect(() => {
         if (isVehicleDialogOpen) {
@@ -129,58 +124,58 @@ export default function FleetPage() {
         setIsDeleteDialogOpen(true);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (!vehicleToDelete) return;
-        setVehicles(vehicles.filter(v => v.id !== vehicleToDelete.id));
-        toast({ title: "Veículo Removido", description: `O veículo ${vehicleToDelete.plate} foi removido da sua frota.`});
+        
+        const result = await deleteVehicle(vehicleToDelete.id);
+        if (result.success) {
+            setVehicles(vehicles.filter(v => v.id !== vehicleToDelete.id));
+            toast({ title: "Veículo Removido", description: `O veículo ${vehicleToDelete.plate} foi removido da sua frota.`});
+        } else {
+            toast({ variant: 'destructive', title: "Erro ao Remover", description: result.error});
+        }
+        
         setIsDeleteDialogOpen(false);
         setVehicleToDelete(null);
     };
 
-    const handleApplicationStatusChange = (appId: string, newStatus: 'Aprovado' | 'Rejeitado') => {
-        setApplications(prev => prev.map(app => 
-            app.id === appId ? { ...app, status: newStatus } : app
-        ));
-        toast({
-            title: `Candidatura ${newStatus === 'Aprovado' ? 'Aprovada' : 'Rejeitada'}`,
-            description: "O status da candidatura foi atualizado.",
-        });
+    const handleApplicationStatusChange = async (appId: string, newStatus: 'Aprovado' | 'Rejeitado') => {
+        const result = await updateApplicationStatus(appId, newStatus);
+        if (result.success) {
+            setApplications(prev => prev.map(app => 
+                app.id === appId ? { ...app, status: newStatus } : app
+            ));
+            toast({
+                title: `Candidatura ${newStatus === 'Aprovado' ? 'Aprovada' : 'Rejeitada'}`,
+                description: "O status da candidatura foi atualizado.",
+            });
+        } else {
+            toast({ variant: 'destructive', title: "Erro ao Atualizar", description: result.error});
+        }
     };
     
     const onSubmit = async (values: VehicleFormValues) => {
+        if (!user) return;
         setIsSubmitting(true);
         
-        const vehicleData = {
-            ...values,
-            paymentInfo: {
-                terms: values.paymentTerms,
-                methods: values.paymentMethods || [],
-            },
-            perks: values.perks?.map(perkId => vehiclePerks.find(p => p.id === perkId)!) || []
-        };
-        
-        setTimeout(() => {
-            if (selectedVehicle) {
-                setVehicles(vehicles.map(v => v.id === selectedVehicle.id ? { ...v, ...vehicleData, id: v.id, fleetId: v.fleetId, createdAt: v.createdAt } : v));
-                toast({ title: "Veículo Atualizado!", description: "Os dados do veículo foram salvos." });
-            } else { 
-                const newVehicle: Vehicle = { 
-                    id: `v_${Date.now()}`, 
-                    ...vehicleData,
-                    fleetId: userProfile!.uid, 
-                    createdAt: new Date(),
-                };
-                setVehicles([newVehicle, ...vehicles]);
-                toast({ title: "Veículo Adicionado!", description: `O veículo ${values.plate} foi cadastrado.` });
+        const result = await upsertVehicle(values, user.uid, selectedVehicle?.id);
+
+        if (result.success) {
+            toast({ title: selectedVehicle ? "Veículo Atualizado!" : "Veículo Adicionado!", description: "Os dados do veículo foram salvos." });
+            const updatedData = await getFleetData(user.uid);
+            if (updatedData.success) {
+                setVehicles(updatedData.vehicles);
             }
+        } else {
+             toast({ variant: 'destructive', title: "Erro ao Salvar", description: result.error});
+        }
             
-            setIsSubmitting(false);
-            setIsVehicleDialogOpen(false);
-        }, 1000);
+        setIsSubmitting(false);
+        setIsVehicleDialogOpen(false);
     };
 
 
-    if (loading) {
+    if (authLoading || pageLoading) {
         return <LoadingScreen />;
     }
 
@@ -224,27 +219,33 @@ export default function FleetPage() {
                     <Table>
                         <TableHeader><TableRow><TableHead>Veículo</TableHead><TableHead>Status</TableHead><TableHead>Diária</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {vehicles.map(vehicle => (
-                                <TableRow key={vehicle.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-4">
-                                            <Image src={vehicle.imageUrl || 'https://placehold.co/120x80.png'} alt={vehicle.model} width={80} height={50} className="rounded-md object-cover aspect-video" data-ai-hint="car side view"/>
-                                            <div>
-                                                <div className="font-medium">{vehicle.plate}</div>
-                                                <div className="text-sm text-muted-foreground">{vehicle.make} {vehicle.model} ({vehicle.year})</div>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell><Badge variant={getVehicleStatusVariant(vehicle.status)}>{vehicle.status}</Badge></TableCell>
-                                    <TableCell className="font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vehicle.dailyRate)}</TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex gap-2 justify-end">
-                                            <Button variant="ghost" size="icon" title="Editar" onClick={() => handleEditVehicle(vehicle)}><FilePen className="h-4 w-4" /></Button>
-                                            <Button variant="ghost" size="icon" title="Remover" className="text-destructive hover:text-destructive-foreground focus:text-destructive-foreground" onClick={() => handleDeleteVehicle(vehicle)}><Trash2 className="h-4 w-4" /></Button>
-                                        </div>
-                                    </TableCell>
+                            {vehicles.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="h-24 text-center">Nenhum veículo cadastrado. Que tal adicionar o primeiro?</TableCell>
                                 </TableRow>
-                            ))}
+                            ) : (
+                                vehicles.map(vehicle => (
+                                    <TableRow key={vehicle.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-4">
+                                                <Image src={vehicle.imageUrl || 'https://placehold.co/120x80.png'} alt={vehicle.model} width={80} height={50} className="rounded-md object-cover aspect-video" data-ai-hint="car side view"/>
+                                                <div>
+                                                    <div className="font-medium">{vehicle.plate}</div>
+                                                    <div className="text-sm text-muted-foreground">{vehicle.make} {vehicle.model} ({vehicle.year})</div>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell><Badge variant={getVehicleStatusVariant(vehicle.status)}>{vehicle.status}</Badge></TableCell>
+                                        <TableCell className="font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vehicle.dailyRate)}</TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex gap-2 justify-end">
+                                                <Button variant="ghost" size="icon" title="Editar" onClick={() => handleEditVehicle(vehicle)}><FilePen className="h-4 w-4" /></Button>
+                                                <Button variant="ghost" size="icon" title="Remover" className="text-destructive hover:text-destructive-foreground focus:text-destructive-foreground" onClick={() => handleDeleteVehicle(vehicle)}><Trash2 className="h-4 w-4" /></Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
@@ -259,39 +260,43 @@ export default function FleetPage() {
                      <Table>
                         <TableHeader><TableRow><TableHead>Motorista</TableHead><TableHead>Veículo Aplicado</TableHead><TableHead>Status do Perfil</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {applications.map(app => (
-                                <TableRow key={app.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar>
-                                                <AvatarImage src={app.driverPhotoUrl} alt={app.driverName} data-ai-hint="driver portrait"/>
-                                                <AvatarFallback>{app.driverName.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <span className="font-medium">{app.driverName}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{app.vehicleName}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={getProfileStatusVariant(app.driverProfileStatus)}>
-                                            {app.driverProfileStatus === 'Aprovado' && <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
-                                            {app.driverProfileStatus}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex gap-2 justify-end">
-                                            <Button variant="outline" size="sm">Ver Perfil</Button>
-                                            {app.status === 'Pendente' ? (
-                                                <>
-                                                    <Button variant="outline" size="sm" onClick={() => handleApplicationStatusChange(app.id, 'Aprovado')}>Aprovar</Button>
-                                                    <Button variant="destructive" size="sm" onClick={() => handleApplicationStatusChange(app.id, 'Rejeitado')}>Rejeitar</Button>
-                                                </>
-                                            ) : (
-                                                <Badge variant={app.status === 'Aprovado' ? 'default' : 'destructive'}>{app.status}</Badge>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                            {applications.length === 0 ? (
+                                <TableRow><TableCell colSpan={4} className="h-24 text-center">Nenhuma candidatura recebida ainda.</TableCell></TableRow>
+                            ) : (
+                                applications.map(app => (
+                                    <TableRow key={app.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar>
+                                                    <AvatarImage src={app.driverPhotoUrl} alt={app.driverName} data-ai-hint="driver portrait"/>
+                                                    <AvatarFallback>{app.driverName.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <span className="font-medium">{app.driverName}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>{app.vehicleName}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={getProfileStatusVariant(app.driverProfileStatus)}>
+                                                {app.driverProfileStatus === 'Aprovado' && <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
+                                                {app.driverProfileStatus}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex gap-2 justify-end">
+                                                <Button variant="outline" size="sm">Ver Perfil</Button>
+                                                {app.status === 'Pendente' ? (
+                                                    <>
+                                                        <Button variant="outline" size="sm" onClick={() => handleApplicationStatusChange(app.id, 'Aprovado')}>Aprovar</Button>
+                                                        <Button variant="destructive" size="sm" onClick={() => handleApplicationStatusChange(app.id, 'Rejeitado')}>Rejeitar</Button>
+                                                    </>
+                                                ) : (
+                                                    <Badge variant={app.status === 'Aprovado' ? 'default' : 'destructive'}>{app.status}</Badge>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
@@ -378,7 +383,7 @@ export default function FleetPage() {
                                                                     checked={field.value?.includes(item.id)}
                                                                     onCheckedChange={(checked) => {
                                                                     return checked
-                                                                        ? field.onChange([...field.value || [], item.id])
+                                                                        ? field.onChange([...(field.value || []), item.id])
                                                                         : field.onChange(
                                                                             field.value?.filter(
                                                                             (value) => value !== item.id
