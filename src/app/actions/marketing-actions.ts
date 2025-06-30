@@ -188,3 +188,44 @@ export async function deletePartner(partnerId: string) {
         return { success: false, error: (error as Error).message };
     }
 }
+
+export interface SendNewsletterParams {
+    subject: string;
+    content: string;
+    targetAudience: 'all' | 'drivers' | 'fleets' | 'providers';
+}
+
+export async function sendNewsletter({ subject, content, targetAudience }: SendNewsletterParams) {
+    try {
+        // In a real application, you would fetch user emails based on the target audience
+        // and use an email service provider (like SendGrid, Mailgun, AWS SES) to send the emails.
+        // For this demo, we'll just log the action.
+
+        const userQuery = targetAudience === 'all' 
+            ? adminDB.collection('users') 
+            : adminDB.collection('users').where('role', '==', targetAudience);
+
+        const usersSnapshot = await userQuery.get();
+        const userCount = usersSnapshot.size;
+
+        if (userCount === 0) {
+            return { success: false, error: 'Nenhum usuário encontrado para este público-alvo.' };
+        }
+
+        console.log(`Simulating sending newsletter:`);
+        console.log(`- Subject: ${subject}`);
+        console.log(`- Audience: ${targetAudience} (${userCount} users)`);
+        
+        // This is where you would loop through users and send emails.
+        // For example:
+        // for (const userDoc of usersSnapshot.docs) {
+        //     const user = userDoc.data();
+        //     await emailService.send({ to: user.email, subject, html: content });
+        // }
+
+        return { success: true, message: `Newsletter enviada com sucesso para ${userCount} destinatários.` };
+    } catch (error) {
+        console.error("Error sending newsletter:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
