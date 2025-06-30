@@ -1,11 +1,12 @@
 
 'use server';
 
-import { adminDB, adminStorage } from '@/lib/firebase-admin';
+import { adminDB } from '@/lib/firebase-admin';
 import { type Event } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import { nanoid } from 'nanoid';
+import { startOfToday, addDays } from 'date-fns';
 
 
 export async function getAdminEvents(): Promise<Event[]> {
@@ -35,9 +36,41 @@ export async function getAdminEvents(): Promise<Event[]> {
     }
 }
 
-// Omitting id, createdAt, imageUrl as they will be generated on the server or not used.
+export async function getUpcomingEvents(): Promise<Event[]> {
+  try {
+    const today = startOfToday();
+    const nextSevenDays = addDays(today, 7);
+
+    const eventsCollection = adminDB.collection('events');
+    const q = eventsCollection
+      .where('startDate', '>=', Timestamp.fromDate(today))
+      .where('startDate', '<', Timestamp.fromDate(nextSevenDays))
+      .orderBy('startDate', 'asc')
+      .limit(20);
+
+    const querySnapshot = await q.get();
+    
+    return querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        const startDate = (data.startDate as Timestamp)?.toDate();
+        const endDate = (data.endDate as Timestamp)?.toDate();
+        return { 
+            id: doc.id,
+            ...data,
+            startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
+            endDate: endDate ? endDate.toISOString() : new Date().toISOString(),
+        } as Event;
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error fetching upcoming events: ", errorMessage);
+    return [];
+  }
+}
+
+// Omitting id, createdAt as they will be generated on the server.
 // Using native Date for startDate/endDate as they come from the client form.
-type CreateEventInput = Omit<Event, 'id' | 'createdAt' | 'startDate' | 'endDate' | 'imageUrl'> & {
+type CreateEventInput = Omit<Event, 'id' | 'createdAt' | 'startDate' | 'endDate'> & {
     startDate: Date;
     endDate: Date;
 };
@@ -58,6 +91,7 @@ export async function createEvent(eventData: CreateEventInput) {
         await adminDB.collection('events').doc(eventId).set(dataToSave);
 
         revalidatePath('/admin/events');
+        revalidatePath('/'); // Revalidate home page to show new event
         return { success: true, eventId: eventId };
 
     } catch (error) {

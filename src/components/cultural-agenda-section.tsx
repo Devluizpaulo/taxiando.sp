@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -11,40 +12,7 @@ import Link from 'next/link';
 import { MoveRight, Loader2, Calendar, MapPin } from 'lucide-react';
 import { format, isToday, isTomorrow, parseISO, startOfTomorrow, addDays, startOfToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-async function fetchUpcomingEvents(): Promise<Event[]> {
-  try {
-    const today = startOfToday();
-    const nextSevenDays = addDays(today, 7);
-
-    const eventsCollection = collection(db, 'events');
-    const q = query(
-      eventsCollection,
-      where('startDate', '>=', today),
-      where('startDate', '<', nextSevenDays),
-      orderBy('startDate', 'asc'),
-      limit(20) // Limit to a reasonable number of events
-    );
-
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        const startDate = (data.startDate as Timestamp)?.toDate();
-        const endDate = (data.endDate as Timestamp)?.toDate();
-        return { 
-            id: doc.id,
-            ...data,
-            startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
-            endDate: endDate ? endDate.toISOString() : new Date().toISOString(),
-        } as Event;
-    });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("Error fetching upcoming events: ", errorMessage);
-    return [];
-  }
-}
+import { getUpcomingEvents } from '@/app/actions/event-actions';
 
 const getDateLabel = (dateString: string) => {
     const date = parseISO(dateString);
@@ -91,7 +59,7 @@ export function CulturalAgendaSection() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchUpcomingEvents().then(data => {
+        getUpcomingEvents().then(data => {
             setEvents(data);
             setLoading(false);
         });
