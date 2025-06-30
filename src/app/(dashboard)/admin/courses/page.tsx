@@ -1,4 +1,5 @@
 
+
 import Link from 'next/link';
 import { adminDB } from '@/lib/firebase-admin';
 import { type Course } from '@/lib/types';
@@ -19,10 +20,14 @@ async function getCourses(): Promise<Course[]> {
         const querySnapshot = await q.get();
         const coursesData = querySnapshot.docs.map(doc => {
             const data = doc.data();
+            // Robust handling of createdAt field
+            const createdAtTimestamp = data.createdAt as Timestamp;
+            const isoDate = createdAtTimestamp?.toDate ? createdAtTimestamp.toDate().toISOString() : new Date().toISOString();
+
             return {
                 ...data,
                 id: doc.id,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+                createdAt: isoDate,
             } as Course;
         });
         return coursesData;
