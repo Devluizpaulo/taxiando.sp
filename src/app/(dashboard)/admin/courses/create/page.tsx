@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
@@ -7,7 +6,7 @@ import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { db } from '@/lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firestore/lite';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 
 import { Button } from '@/components/ui/button';

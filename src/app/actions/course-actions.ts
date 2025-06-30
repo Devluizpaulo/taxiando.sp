@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { type Course, type Module } from '@/lib/types';
+import { adminDB } from '@/lib/firebase-admin';
+import { Timestamp } from 'firebase-admin/firestore';
 
 interface MarkLessonAsCompleteParams {
     courseId: string;
@@ -75,5 +77,28 @@ export async function markLessonAsComplete({ courseId, moduleId, lessonId }: Mar
     } catch (error) {
         console.error('Erro ao marcar aula como completa:', error);
         throw new Error('Falha ao atualizar o progresso.');
+    }
+}
+
+export async function getAllCourses(): Promise<Course[]> {
+    try {
+        const coursesCollection = adminDB.collection('courses');
+        const q = coursesCollection.orderBy('createdAt', 'desc');
+        const querySnapshot = await q.get();
+        const coursesData = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            const createdAtTimestamp = data.createdAt as Timestamp;
+            const isoDate = createdAtTimestamp?.toDate ? createdAtTimestamp.toDate().toISOString() : new Date().toISOString();
+
+            return {
+                ...data,
+                id: doc.id,
+                createdAt: isoDate,
+            } as Course;
+        });
+        return coursesData;
+    } catch (error) {
+        console.error("Error fetching courses from action: ", error);
+        return [];
     }
 }

@@ -1,10 +1,9 @@
-
-'use server';
+'use client';
 
 import Link from 'next/link';
-import { adminDB } from '@/lib/firebase-admin';
+import { useState, useEffect } from 'react';
 import { type Course } from '@/lib/types';
-import { Timestamp } from 'firebase-admin/firestore';
+import { getAllCourses } from '@/app/actions/course-actions';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,37 +11,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, BookCopy, BarChart2 } from 'lucide-react';
+import { LoadingScreen } from '@/components/loading-screen';
 
-export const revalidate = 0; // Force dynamic rendering to prevent stale connections
 
-async function getCourses(): Promise<Course[]> {
-    try {
-        const coursesCollection = adminDB.collection('courses');
-        const q = coursesCollection.orderBy('createdAt', 'desc');
-        const querySnapshot = await q.get();
-        const coursesData = querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            // Robust handling of createdAt field
-            const createdAtTimestamp = data.createdAt as Timestamp;
-            const isoDate = createdAtTimestamp?.toDate ? createdAtTimestamp.toDate().toISOString() : new Date().toISOString();
+export default function AdminCoursesPage() {
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [loading, setLoading] = useState(true);
 
-            return {
-                ...data,
-                id: doc.id,
-                createdAt: isoDate,
-            } as Course;
+    useEffect(() => {
+        getAllCourses().then(data => {
+            setCourses(data);
+            setLoading(false);
         });
-        return coursesData;
-    } catch (error) {
-        console.error("Error fetching courses: ", error);
-        return [];
-    }
-}
+    }, []);
 
-
-export default async function AdminCoursesPage() {
-    const courses = await getCourses();
     const totalStudents = courses.reduce((acc, c) => acc + (c.students || 0), 0);
+
+    if (loading) {
+        return <LoadingScreen />;
+    }
 
     return (
         <div className="flex flex-col gap-8">
