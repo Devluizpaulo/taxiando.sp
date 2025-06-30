@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,14 +19,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, MapPin, Calendar, Lightbulb, TrafficCone, MoveRight, Sparkles } from 'lucide-react';
 import { DatePicker } from '@/components/ui/datepicker';
 import { planEvent } from '@/ai/flows/event-planner-flow';
-import { createEventWithImageUpload } from '@/app/actions/event-actions';
+import { createEvent } from '@/app/actions/event-actions';
 
 
 const eventFormSchema = z.object({
   title: z.string().min(5, { message: "O título deve ter pelo menos 5 caracteres." }),
   description: z.string().min(20, { message: "A descrição deve ter pelo menos 20 caracteres." }),
   location: z.string().min(3, { message: "O local é obrigatório." }),
-  imageUrl: z.string().min(1, "A URL ou os dados da imagem são obrigatórios."),
   startDate: z.date({ required_error: "A data de início é obrigatória." }),
   endDate: z.date({ required_error: "A data de término é obrigatória." }),
   driverSummary: z.string().min(5, { message: "O resumo tático é obrigatório." }),
@@ -41,33 +41,28 @@ const eventFormSchema = z.object({
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
-const EventPreviewCard = ({ title, location, imageUrl, description, startDate, peakTimes, trafficTips }: Partial<EventFormValues>) => {
+const EventPreviewCard = ({ title, location, description, startDate, peakTimes, trafficTips }: Partial<EventFormValues>) => {
     return (
-        <Card className="flex flex-col overflow-hidden bg-card shadow-lg">
-            <CardHeader className="p-0">
-                <div className="relative aspect-[16/9] w-full bg-muted">
-                    <img 
-                        src={imageUrl || 'https://placehold.co/800x450.png'}
-                        alt={title || "Preview do Evento"} 
-                        className="object-cover w-full h-full"
-                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/800x450.png'; }}
-                    />
-                </div>
-                <div className="p-4">
-                    <CardTitle className="font-headline text-lg truncate">{title || "Título do Seu Evento"}</CardTitle>
-                    <CardDescription className="flex items-center gap-2 pt-1 truncate">
-                        <MapPin className="h-4 w-4 flex-shrink-0" /> 
-                        {location || "Localização do evento"}
-                    </CardDescription>
+        <Card className="flex flex-col overflow-hidden bg-card shadow-lg border-2 border-transparent">
+             <CardHeader className="p-4 bg-accent text-accent-foreground flex flex-row items-center justify-between">
+                <Image src="/logo.png" alt="Táxiando SP Logo" width={40} height={40} className="rounded-md" />
+                <div className="text-right">
+                    <p className="text-sm font-semibold">Início</p>
+                    <p className="text-2xl font-bold">{startDate ? format(startDate, "HH:mm", { locale: ptBR }) : '00:00'}</p>
                 </div>
             </CardHeader>
-            <CardContent className="flex-1 space-y-3 px-4 pt-0 text-xs">
-                <p className="text-muted-foreground line-clamp-2">{description || "A descrição completa do seu evento aparecerá aqui."}</p>
-                <div className="space-y-2 text-xs border-t pt-3">
+            <CardContent className="p-4 flex-1 space-y-3">
+                <CardTitle className="font-headline text-lg truncate">{title || "Título do Seu Evento"}</CardTitle>
+                <CardDescription className="flex items-start gap-2 pt-1">
+                    <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" /> 
+                    <span className="truncate">{location || "Localização do evento"}</span>
+                </CardDescription>
+                 <p className="text-muted-foreground text-xs line-clamp-2">{description || "A descrição completa do seu evento aparecerá aqui."}</p>
+                 <div className="space-y-2 text-xs border-t pt-3">
                     <div className="flex items-start gap-2">
                         <Calendar className="h-3 w-3 flex-shrink-0 mt-0.5 text-primary" />
                         <div>
-                            <span className="font-semibold">Data:</span> {startDate ? format(startDate, "dd/MM/yyyy", { locale: ptBR }) : "dd/mm/aaaa"}
+                            <span className="font-semibold">Data:</span> {startDate ? format(startDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : "dd/mm/aaaa"}
                         </div>
                     </div>
                     <div className="flex items-start gap-2">
@@ -84,7 +79,7 @@ const EventPreviewCard = ({ title, location, imageUrl, description, startDate, p
                     </div>
                 </div>
             </CardContent>
-            <CardFooter className="px-4 pb-4">
+            <CardFooter className="p-4 bg-muted/50">
                 <Button variant="outline" className="w-full" disabled size="sm">
                     Ver no Mapa <MoveRight className="ml-2"/>
                 </Button>
@@ -106,7 +101,6 @@ export default function CreateEventPage() {
             title: '',
             description: '',
             location: '',
-            imageUrl: '',
             driverSummary: '',
             peakTimes: '',
             trafficTips: '',
@@ -129,7 +123,6 @@ export default function CreateEventPage() {
             form.setValue('title', result.title, { shouldValidate: true });
             form.setValue('location', result.location, { shouldValidate: true });
             form.setValue('description', result.description, { shouldValidate: true });
-            form.setValue('imageUrl', result.imageUrl, { shouldValidate: true });
             form.setValue('mapUrl', result.mapUrl, { shouldValidate: true });
             form.setValue('driverSummary', result.driverSummary, { shouldValidate: true });
             form.setValue('peakTimes', result.peakTimes, { shouldValidate: true });
@@ -146,7 +139,7 @@ export default function CreateEventPage() {
             toast({
                 variant: 'destructive',
                 title: 'Erro ao Gerar Detalhes',
-                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manualmente.',
+                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manually.',
             });
         } finally {
             setIsGenerating(false);
@@ -157,9 +150,9 @@ export default function CreateEventPage() {
     const onSubmit = async (values: EventFormValues) => {
         setIsSubmitting(true);
         try {
-            toast({ title: "Salvando evento...", description: "Aguarde enquanto processamos as informações e a imagem." });
+            toast({ title: "Salvando evento...", description: "Aguarde enquanto processamos as informações." });
             
-            const result = await createEventWithImageUpload(values);
+            const result = await createEvent(values);
 
             if (result.success) {
                  toast({
@@ -237,6 +230,9 @@ export default function CreateEventPage() {
                                             <FormItem><FormLabel>Fim do Evento</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
                                         )}/>
                                     </div>
+                                    <FormField control={form.control} name="mapUrl" render={({ field }) => (
+                                        <FormItem><FormLabel>URL do Google Maps para o Local</FormLabel><FormControl><Input {...field} placeholder="https://maps.app.goo.gl/..." /></FormControl><FormMessage /></FormItem>
+                                    )}/>
                                 </CardContent>
                             </Card>
 
@@ -257,20 +253,6 @@ export default function CreateEventPage() {
                                     )}/>
                                      <FormField control={form.control} name="pickupPoints" render={({ field }) => (
                                         <FormItem><FormLabel>Sugestão de Pontos de Embarque</FormLabel><FormControl><Textarea {...field} placeholder="Ex: Embarque sugerido na Rua ABC, esquina com a Rua 123, para fugir do fluxo." /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                </CardContent>
-                            </Card>
-                            
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Links e Mídia</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                                        <FormItem><FormLabel>URL da Imagem de Capa (ou dados Base64)</FormLabel><FormControl><Textarea {...field} placeholder="data:image/png;base64,..." rows={5} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                    <FormField control={form.control} name="mapUrl" render={({ field }) => (
-                                        <FormItem><FormLabel>URL do Google Maps para o Local</FormLabel><FormControl><Input {...field} placeholder="https://maps.app.goo.gl/..." /></FormControl><FormMessage /></FormItem>
                                     )}/>
                                 </CardContent>
                             </Card>

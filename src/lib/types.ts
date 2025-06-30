@@ -129,7 +129,7 @@ export interface Event {
   trafficTips: string;
   pickupPoints: string;
   mapUrl: string;
-  imageUrl: string;
+  imageUrl?: string;
   startDate: Timestamp | string;
   endDate: Timestamp | string;
   createdAt: Timestamp | string;

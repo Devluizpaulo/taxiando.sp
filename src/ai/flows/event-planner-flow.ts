@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to help plan events by gathering location details and generating an image.
@@ -24,7 +25,6 @@ const EventPlannerOutputSchema = z.object({
   trafficTips: z.string().describe("A useful tip about traffic, street closures, or access routes for drivers."),
   pickupPoints: z.string().describe("Suggested pickup and drop-off points to avoid traffic and facilitate meeting passengers."),
   mapUrl: z.string().describe("A valid Google Maps search URL for the location, like 'https://www.google.com/maps/search/?api=1&query=...'"),
-  imageUrl: z.string().describe("A generated image of the location, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
 });
 export type EventPlannerOutput = z.infer<typeof EventPlannerOutputSchema>;
 
@@ -35,7 +35,7 @@ export async function planEvent(input: EventPlannerInput): Promise<EventPlannerO
 const textDetailsPrompt = ai.definePrompt({
   name: 'eventDetailsPrompt',
   input: {schema: EventPlannerInputSchema},
-  output: {schema: EventPlannerOutputSchema.omit({imageUrl: true})},
+  output: {schema: EventPlannerOutputSchema},
   prompt: `You are an expert event analyst and logistics assistant for taxi drivers in the city of São Paulo, Brazil. Your goal is to transform a simple event description into a tactical briefing for a driver, helping them maximize their earnings.
 
 Given the user's query about an event, you must extract and structure the information. Your entire output must be in Brazilian Portuguese.
@@ -60,29 +60,12 @@ const eventPlannerFlow = ai.defineFlow(
     outputSchema: EventPlannerOutputSchema,
   },
   async (input) => {
-    // Generate text details and image in parallel for better performance.
-    const [textDetailsPromise, imagePromise] = await Promise.allSettled([
-        textDetailsPrompt(input),
-        ai.generate({
-            model: 'googleai/gemini-2.0-flash-preview-image-generation',
-            prompt: `Generate a vibrant, high-quality, photorealistic image of the following location, suitable for an event promotion: ${input.eventQuery}. The image should be in a 16:9 aspect ratio and look like a real photo.`,
-            config: {
-                responseModalities: ['TEXT', 'IMAGE'],
-            },
-        })
-    ]);
-
-    if (textDetailsPromise.status === 'rejected' || !textDetailsPromise.value.output) {
-      throw new Error(`Failed to get text details: ${textDetailsPromise.reason || 'No output'}`);
+    const { output } = await textDetailsPrompt(input);
+    
+    if (!output) {
+      throw new Error(`Failed to get text details`);
     }
 
-    if (imagePromise.status === 'rejected' || !imagePromise.value.media?.url) {
-      throw new Error(`Failed to generate image: ${imagePromise.reason || 'No media URL'}`);
-    }
-
-    return {
-      ...textDetailsPromise.value.output,
-      imageUrl: imagePromise.value.media.url,
-    };
+    return output;
   }
 );
