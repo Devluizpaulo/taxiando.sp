@@ -16,9 +16,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, MapPin, Calendar, Lightbulb, TrafficCone, MoveRight, Sparkles } from 'lucide-react';
+import { Loader2, MapPin, Calendar, Lightbulb, TrafficCone, MoveRight } from 'lucide-react';
 import { DatePicker } from '@/components/ui/datepicker';
-import { planEvent } from '@/ai/flows/event-planner-flow';
 import { createEvent } from '@/app/actions/event-actions';
 
 
@@ -92,8 +91,6 @@ export default function CreateEventPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
 
     const form = useForm<EventFormValues>({
         resolver: zodResolver(eventFormSchema),
@@ -110,42 +107,6 @@ export default function CreateEventPage() {
     });
 
     const watchedValues = form.watch();
-
-    const handleGenerateDetails = async () => {
-        setIsGenerating(true);
-        toast({
-            title: "Buscando informações...",
-            description: "A IA está gerando os detalhes do evento. Isso pode levar alguns segundos.",
-        });
-        try {
-            const result = await planEvent({ eventQuery: searchQuery });
-            
-            form.setValue('title', result.title, { shouldValidate: true });
-            form.setValue('location', result.location, { shouldValidate: true });
-            form.setValue('description', result.description, { shouldValidate: true });
-            form.setValue('mapUrl', result.mapUrl, { shouldValidate: true });
-            form.setValue('driverSummary', result.driverSummary, { shouldValidate: true });
-            form.setValue('peakTimes', result.peakTimes, { shouldValidate: true });
-            form.setValue('trafficTips', result.trafficTips, { shouldValidate: true });
-            form.setValue('pickupPoints', result.pickupPoints, { shouldValidate: true });
-
-            toast({
-                title: "Detalhes Preenchidos!",
-                description: "O formulário foi preenchido com as informações geradas pela IA.",
-            });
-
-        } catch (error) {
-            console.error("Error generating event details: ", error);
-            toast({
-                variant: 'destructive',
-                title: 'Erro ao Gerar Detalhes',
-                description: 'Não foi possível buscar as informações. Por favor, tente novamente ou preencha manually.',
-            });
-        } finally {
-            setIsGenerating(false);
-        }
-    };
-
 
     const onSubmit = async (values: EventFormValues) => {
         setIsSubmitting(true);
@@ -181,30 +142,8 @@ export default function CreateEventPage() {
                 <div className="flex flex-col gap-8">
                      <div>
                         <h1 className="font-headline text-3xl font-bold tracking-tight">Criador de Eventos</h1>
-                        <p className="text-muted-foreground">Use o assistente de IA ou preencha os campos manualmente.</p>
+                        <p className="text-muted-foreground">Preencha os campos manualmente para criar um novo evento.</p>
                     </div>
-
-                     <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> Assistente de IA para Eventos</CardTitle>
-                            <CardDescription>Digite a descrição de um evento (ex: "Show da Taylor Swift no Allianz Parque, 45 mil pessoas...") e deixe a IA preencher os detalhes para você.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex flex-col gap-2">
-                                <Textarea 
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Descreva o evento aqui..."
-                                disabled={isGenerating}
-                                rows={3}
-                                />
-                                <Button type="button" onClick={handleGenerateDetails} disabled={isGenerating || !searchQuery} className="self-end">
-                                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                                {isGenerating ? 'Gerando...' : 'Gerar Detalhes'}
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                         <div className="lg:col-span-2 flex flex-col gap-8">
@@ -239,7 +178,7 @@ export default function CreateEventPage() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Dicas Táticas para Motoristas</CardTitle>
-                                    <CardDescription>Informações geradas pela IA para ajudar os profissionais.</CardDescription>
+                                    <CardDescription>Informações para ajudar os profissionais.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <FormField control={form.control} name="driverSummary" render={({ field }) => (
@@ -273,7 +212,7 @@ export default function CreateEventPage() {
                     </div>
 
                     <div className="flex justify-end items-center mt-4">
-                        <Button type="submit" disabled={isSubmitting || isGenerating} size="lg">
+                        <Button type="submit" disabled={isSubmitting} size="lg">
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Salvar Evento
                         </Button>
@@ -283,3 +222,5 @@ export default function CreateEventPage() {
         </Form>
     );
 }
+
+    
