@@ -120,7 +120,7 @@ export default function HowToBeTaxiDriverPage() {
                     <div className="text-center">
                         <Badge variant="secondary" className="mb-4">Sua Nova Carreira Começa Aqui</Badge>
                         <h1 className="font-headline text-3xl font-bold tracking-tight sm:text-5xl">A Rota para sua Independência Profissional</h1>
-                        <p className="mx-auto mt-6 max-w-3xl text-lg text-muted-foreground">
+                        <p className="mx-auto mt-6 max-w-3xl text-lg text-muted-foreground text-justify">
                             Trocar de carreira ou sair dos aplicativos para se tornar taxista é uma grande decisão. Aqui, você é seu próprio chefe, conhece a cidade como ninguém e tem o controle da sua renda. Com a orientação certa, essa transição pode ser mais simples e lucrativa do que você imagina.
                         </p>
                     </div>
@@ -132,7 +132,7 @@ export default function HowToBeTaxiDriverPage() {
 
                      <div>
                         <h2 className="mb-4 text-center font-headline text-3xl font-bold">Seu Ponto de Partida: Frota ou Particular?</h2>
-                        <p className="mx-auto mb-8 max-w-2xl text-center text-muted-foreground">A primeira grande escolha é como você vai conseguir seu carro. Existem dois caminhos principais, cada um com suas particularidades.</p>
+                        <p className="mx-auto mb-8 max-w-2xl text-center text-muted-foreground text-justify">A primeira grande escolha é como você vai conseguir seu carro. Existem dois caminhos principais, cada um com suas particularidades.</p>
                         <YourStartingPointSection />
                     </div>
 
@@ -194,7 +194,7 @@ export default function HowToBeTaxiDriverPage() {
 
                     <div className="text-center">
                         <h2 className="font-headline text-3xl font-bold">Pronto para dar a partida?</h2>
-                        <p className="mx-auto mt-2 max-w-xl text-muted-foreground">O primeiro passo para sua nova carreira é encontrar o veículo certo. Explore as opções disponíveis em nossa plataforma.</p>
+                        <p className="mx-auto mt-2 max-w-xl text-muted-foreground text-justify">O primeiro passo para sua nova carreira é encontrar o veículo certo. Explore as opções disponíveis em nossa plataforma.</p>
                          <Button asChild size="lg" className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90">
                             <Link href="/rentals">Buscar Veículos para Alugar</Link>
                         </Button>
