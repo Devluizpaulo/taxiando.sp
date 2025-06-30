@@ -82,12 +82,11 @@ export default function Home() {
               <div className="relative flex justify-center items-center">
                 <div className="absolute -inset-4 bg-primary/30 rounded-full blur-3xl opacity-50"></div>
                 <Image
-                  src="https://placehold.co/600x600.png"
+                  src="/hero.png"
                   alt="Taxista em São Paulo"
                   width={600}
                   height={600}
                   className="relative z-10 w-full max-w-md rounded-full object-cover shadow-2xl aspect-square"
-                  data-ai-hint="taxi driver sao paulo"
                   priority
                 />
               </div>
@@ -273,7 +272,7 @@ export default function Home() {
                 Junte-se a milhares de profissionais que estão transformando suas carreiras com a Táxiando SP.
               </p>
               <Button asChild size="lg" variant="secondary" className="mt-8 bg-accent text-accent-foreground hover:bg-accent/90">
-                <Link href="/register">Crie sua conta gratuitamente</Link>
+                <Link href="/register">Crie sua conta gratuita</Link>
               </Button>
             </div>
           </section>
