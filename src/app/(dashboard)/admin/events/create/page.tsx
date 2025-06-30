@@ -167,6 +167,7 @@ export default function CreateEventPage() {
             if (values.imageUrl.startsWith('data:image')) {
                 toast({ title: "Processando imagem...", description: "Comprimindo e fazendo upload da imagem para o armazenamento." });
                 
+                // Robustly convert data URI to a File object
                 const response = await fetch(values.imageUrl);
                 const blob = await response.blob();
                 const imageFile = new File([blob], `${eventId}.png`, { type: blob.type });
