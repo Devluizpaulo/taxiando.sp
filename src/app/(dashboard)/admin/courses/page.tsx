@@ -1,22 +1,43 @@
+
 'use client';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { type Course } from '@/lib/types';
-import { getAllCourses } from '@/app/actions/course-actions';
+import { getAllCourses, updateCourseStatus, deleteCourse } from '@/app/actions/course-actions';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, BookCopy, BarChart2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { MoreHorizontal, PlusCircle, BookCopy, BarChart2, Loader2, Trash2 } from 'lucide-react';
 import { LoadingScreen } from '@/components/loading-screen';
-
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminCoursesPage() {
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
+    const [updatingId, setUpdatingId] = useState<string | null>(null);
 
     useEffect(() => {
         getAllCourses().then(data => {
@@ -26,6 +47,33 @@ export default function AdminCoursesPage() {
     }, []);
 
     const totalStudents = courses.reduce((acc, c) => acc + (c.students || 0), 0);
+
+    const handleStatusToggle = async (course: Course) => {
+        setUpdatingId(course.id);
+        const newStatus = course.status === 'Published' ? 'Draft' : 'Published';
+        const result = await updateCourseStatus(course.id, newStatus);
+        if (result.success) {
+            toast({
+                title: 'Status do Curso Atualizado!',
+                description: `O curso "${course.title}" agora está como ${newStatus === 'Published' ? 'Publicado' : 'Rascunho'}.`,
+            });
+            setCourses(courses.map(c => c.id === course.id ? { ...c, status: newStatus } : c));
+        } else {
+            toast({ variant: 'destructive', title: 'Erro', description: result.error });
+        }
+        setUpdatingId(null);
+    };
+
+    const handleDeleteCourse = async (courseId: string, courseTitle: string) => {
+        const result = await deleteCourse(courseId);
+        if (result.success) {
+            toast({ title: 'Curso Removido!', description: `O curso "${courseTitle}" foi removido com sucesso.` });
+            setCourses(courses.filter(c => c.id !== courseId));
+        } else {
+            toast({ variant: 'destructive', title: 'Erro ao Remover', description: result.error });
+        }
+    };
+
 
     if (loading) {
         return <LoadingScreen />;
@@ -44,7 +92,7 @@ export default function AdminCoursesPage() {
                         <CardTitle className="text-sm font-medium">Cursos Publicados</CardTitle>
                         <BookCopy className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{courses.length}</div></CardContent>
+                    <CardContent><div className="text-2xl font-bold">{courses.filter(c => c.status === 'Published').length}</div></CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -97,18 +145,36 @@ export default function AdminCoursesPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                         <DropdownMenu>
-                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                <DropdownMenuItem>Editar Conteúdo</DropdownMenuItem>
-                                                <DropdownMenuItem>Ver Alunos</DropdownMenuItem>
-                                                <DropdownMenuItem>
-                                                    {course.status === 'Published' ? 'Despublicar' : 'Publicar'}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-destructive focus:text-destructive-foreground">Remover</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                         <AlertDialog>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                                    <DropdownMenuItem asChild><Link href={`/admin/courses/${course.id}/edit`}>Editar Conteúdo</Link></DropdownMenuItem>
+                                                    <DropdownMenuItem disabled={updatingId === course.id} onClick={() => handleStatusToggle(course)}>
+                                                        {updatingId === course.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (course.status === 'Published' ? 'Despublicar' : 'Publicar')}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <AlertDialogTrigger asChild>
+                                                        <DropdownMenuItem className="text-destructive focus:text-destructive-foreground" onSelect={(e) => e.preventDefault()}>
+                                                          <Trash2 className="mr-2 h-4 w-4"/> Remover
+                                                        </DropdownMenuItem>
+                                                    </AlertDialogTrigger>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Essa ação não pode ser desfeita. Isso irá remover permanentemente o curso "{course.title}" e todos os dados associados.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteCourse(course.id, course.title)}>Sim, remover curso</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                         </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             )))}
