@@ -1,4 +1,5 @@
 
+
 import { PublicHeader } from "@/components/layout/public-header";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { QuizSection } from "@/components/quiz-section";
 import { CulturalAgendaSection } from "@/components/cultural-agenda-section";
-import { mockVehicles, mockServiceListings } from "@/lib/mock-data";
+import { mockVehicles, mockServiceListings as mockStaticServices } from "@/lib/mock-data";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { PartnersSection } from "@/components/partners-section";
 import { cn } from "@/lib/utils";
@@ -289,7 +290,7 @@ export default function Home() {
                     </TabsContent>
                      <TabsContent value="services" className="pt-8">
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {mockServiceListings.slice(0, 3).map((srv) => (
+                            {mockStaticServices.slice(0, 3).map((srv) => (
                                 <Card key={srv.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                     <CardHeader className="p-0">
                                         <Image src={srv.imageUrl} alt={srv.title} width={600} height={400} className="aspect-video w-full object-cover" data-ai-hint={srv.imageHint}/>

@@ -1,0 +1,79 @@
+
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { adminDB, Timestamp } from '@/lib/firebase-admin';
+import type { ServiceListing } from '@/lib/types';
+import { nanoid } from 'nanoid';
+
+export type ServiceFormValues = Omit<ServiceListing, 'id' | 'providerId' | 'provider' | 'createdAt' | 'status'>;
+
+export async function createService(data: ServiceFormValues, providerId: string, providerName: string) {
+    if (!providerId) return { success: false, error: "ID do prestador não fornecido." };
+    
+    try {
+        const serviceId = nanoid();
+        const serviceData: Omit<ServiceListing, 'id' | 'createdAt'> = {
+            ...data,
+            providerId,
+            provider: providerName,
+            status: 'Pendente',
+        };
+        
+        await adminDB.collection('services').doc(serviceId).set({
+            ...serviceData,
+            id: serviceId,
+            createdAt: Timestamp.now(),
+        });
+        
+        revalidatePath('/services');
+        revalidatePath('/admin');
+        
+        return { success: true };
+    } catch (error) {
+        console.error("Error creating service:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function getServicesByProvider(providerId: string): Promise<ServiceListing[]> {
+    if (!providerId) return [];
+    try {
+        const snapshot = await adminDB.collection('services').where('providerId', '==', providerId).orderBy('createdAt', 'desc').get();
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                ...data,
+                id: doc.id,
+                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+            } as ServiceListing;
+        });
+    } catch (error) {
+        console.error("Error fetching services by provider:", error);
+        return [];
+    }
+}
+
+export async function updateServiceStatus(serviceId: string, newStatus: 'Ativo' | 'Pausado') {
+    if (!serviceId) return { success: false, error: "ID do serviço não fornecido." };
+    try {
+        await adminDB.collection('services').doc(serviceId).update({ status: newStatus });
+        revalidatePath('/services');
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating service status:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function deleteService(serviceId: string) {
+    if (!serviceId) return { success: false, error: "ID do serviço não fornecido." };
+    try {
+        await adminDB.collection('services').doc(serviceId).delete();
+        revalidatePath('/services');
+        return { success: true };
+    } catch (error) {
+        console.error("Error deleting service:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}

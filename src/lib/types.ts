@@ -203,13 +203,15 @@ export interface Transaction {
 
 export interface ServiceListing {
   id: string;
+  providerId: string;
+  provider: string; // nomeFantasia or name
   title: string;
-  provider: string;
   category: string;
+  description: string;
   price: string;
-  status: 'Ativo' | 'Pausado' | 'Pendente' | 'Aprovado' | 'Rejeitado';
-  imageUrl: string;
-  imageHint: string;
+  status: 'Ativo' | 'Pausado' | 'Pendente';
+  imageUrl?: string;
+  createdAt: Timestamp | string;
 }
 
 export interface Opportunity {

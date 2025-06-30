@@ -1,25 +1,79 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useAuthProtection } from '@/hooks/use-auth';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Eye, Star, Wrench, Tag, DollarSign, FilePen, ChevronRight } from 'lucide-react';
-import { mockServiceListings } from '@/lib/mock-data';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, PlusCircle, Eye, Star, Wrench, Tag, DollarSign, FilePen, ChevronRight, Loader2, Trash2, Power, PowerOff } from 'lucide-react';
 import { LoadingScreen } from '@/components/loading-screen';
+import { useToast } from '@/hooks/use-toast';
+import { getServicesByProvider, updateServiceStatus, deleteService } from '@/app/actions/service-actions';
+import { type ServiceListing } from '@/lib/types';
 
 
 export default function ServicesPage() {
-    const { loading } = useAuthProtection({ requiredRoles: ['provider', 'admin'] });
-    const [services, setServices] = useState(mockServiceListings);
+    const { user, loading: authLoading } = useAuth();
+    const { toast } = useToast();
+    const [services, setServices] = useState<ServiceListing[]>([]);
+    const [pageLoading, setPageLoading] = useState(true);
+    const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-    if (loading) {
+    useEffect(() => {
+        if (user) {
+            const fetchServices = async () => {
+                setPageLoading(true);
+                const userServices = await getServicesByProvider(user.uid);
+                setServices(userServices);
+                setPageLoading(false);
+            };
+            fetchServices();
+        }
+    }, [user]);
+
+    const handleStatusToggle = async (service: ServiceListing) => {
+        setUpdatingId(service.id);
+        const newStatus = service.status === 'Ativo' ? 'Pausado' : 'Ativo';
+        const result = await updateServiceStatus(service.id, newStatus);
+        if (result.success) {
+            toast({
+                title: 'Status do Anúncio Atualizado!',
+                description: `O anúncio "${service.title}" agora está ${newStatus}.`,
+            });
+            setServices(prev => prev.map(s => s.id === service.id ? { ...s, status: newStatus } : s));
+        } else {
+            toast({ variant: 'destructive', title: 'Erro', description: result.error });
+        }
+        setUpdatingId(null);
+    };
+
+    const handleDeleteService = async (serviceId: string, serviceTitle: string) => {
+        const result = await deleteService(serviceId);
+        if (result.success) {
+            toast({ title: 'Anúncio Removido!', description: `O anúncio "${serviceTitle}" foi removido com sucesso.` });
+            setServices(prev => prev.filter(s => s.id !== serviceId));
+        } else {
+            toast({ variant: 'destructive', title: 'Erro ao Remover', description: result.error });
+        }
+    };
+
+
+    if (authLoading || pageLoading) {
         return <LoadingScreen />;
     }
     
@@ -88,30 +142,51 @@ export default function ServicesPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {services.map(service => (
+                            {services.length === 0 ? (
+                                <TableRow><TableCell colSpan={5} className="h-24 text-center">Nenhum anúncio criado.</TableCell></TableRow>
+                            ) : (
+                                services.map(service => (
                                 <TableRow key={service.id}>
                                     <TableCell className="font-medium">{service.title}</TableCell>
                                     <TableCell>{service.category}</TableCell>
                                     <TableCell>{service.price}</TableCell>
                                     <TableCell>
-                                        <Badge variant={service.status === 'Ativo' ? 'default' : 'secondary'}>
+                                        <Badge variant={service.status === 'Ativo' ? 'default' : (service.status === 'Pausado' ? 'secondary' : 'destructive')}>
                                             {service.status}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                         <DropdownMenu>
-                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem><FilePen /> Editar</DropdownMenuItem>
-                                                <DropdownMenuItem className={service.status === 'Ativo' ? '' : 'text-green-600'}>
-                                                    {service.status === 'Ativo' ? 'Pausar Anúncio' : 'Reativar'}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground">Remover</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                         <AlertDialog>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem disabled><FilePen /> Editar</DropdownMenuItem>
+                                                    
+                                                     <DropdownMenuItem disabled={updatingId === service.id || service.status === 'Pendente'} onClick={() => handleStatusToggle(service)}>
+                                                        {updatingId === service.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (service.status === 'Ativo' ? <><PowerOff/>Pausar</> : <><Power/>Ativar</>)}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <AlertDialogTrigger asChild>
+                                                        <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onSelect={(e) => e.preventDefault()}>
+                                                            <Trash2 /> Remover
+                                                        </DropdownMenuItem>
+                                                    </AlertDialogTrigger>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                             <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                                                    <AlertDialogDescription>Essa ação não pode ser desfeita. Isso irá remover permanentemente o anúncio "{service.title}".</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteService(service.id, service.title)}>Sim, remover</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )))}
                         </TableBody>
                     </Table>
                 </CardContent>
