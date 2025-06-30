@@ -7,7 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { nanoid } from 'nanoid';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -21,7 +22,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, MapPin, Calendar, Lightbulb, TrafficCone, MoveRight, Sparkles } from 'lucide-react';
 import { DatePicker } from '@/components/ui/datepicker';
 import { planEvent } from '@/ai/flows/event-planner-flow';
-import { uploadImageFromDataUrl } from '@/app/actions/storage-actions';
 
 
 const eventFormSchema = z.object({
@@ -163,25 +163,11 @@ export default function CreateEventPage() {
             const eventId = nanoid();
             let finalImageUrl = values.imageUrl;
 
-            // If the imageUrl is a data URI, upload it via the server action to bypass CORS
             if (values.imageUrl.startsWith('data:image')) {
-                toast({ title: "Processando imagem...", description: "O upload da imagem está sendo feito no servidor." });
-
-                const uploadResult = await uploadImageFromDataUrl(values.imageUrl, 'events');
-                
-                if (uploadResult.success) {
-                    finalImageUrl = uploadResult.url;
-                } else {
-                    // If upload fails, show an error and stop submission
-                    toast({
-                        variant: 'destructive',
-                        title: 'Erro no Upload da Imagem',
-                        description: `Falha ao enviar a imagem: ${uploadResult.error}`,
-                        duration: 8000,
-                    });
-                    setIsSubmitting(false);
-                    return; // Stop execution
-                }
+                toast({ title: "Processando imagem...", description: "Fazendo upload da imagem para o armazenamento." });
+                const storageRef = ref(storage, `events/${eventId}.png`);
+                const uploadTask = await uploadString(storageRef, values.imageUrl, 'data_url');
+                finalImageUrl = await getDownloadURL(uploadTask.ref);
             }
             
             const eventData = {
@@ -339,3 +325,5 @@ export default function CreateEventPage() {
         </Form>
     );
 }
+
+    
