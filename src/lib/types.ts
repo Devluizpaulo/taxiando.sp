@@ -287,6 +287,7 @@ export interface BlogPost {
   status: 'Published' | 'Draft';
   createdAt: Timestamp | string;
   updatedAt?: Timestamp | string;
+  imageFile?: File; // For upload
 }
 
 export type AdminUser = Pick<UserProfile, 'uid' | 'name' | 'email' | 'role' | 'profileStatus' | 'credits'> & {
