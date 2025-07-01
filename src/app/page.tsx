@@ -14,35 +14,9 @@ import { CulturalAgendaSection } from "@/components/cultural-agenda-section";
 import { mockVehicles, mockServiceListings as mockStaticServices } from "@/lib/mock-data";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { PartnersSection } from "@/components/partners-section";
-import { cn } from "@/lib/utils";
+import { getPublishedBlogPosts } from "@/app/actions/blog-actions";
+import { BlogPost } from "@/lib/types";
 
-
-const blogPosts = [
-  {
-    id: 1,
-    title: "Nova regulamentação para apps de transporte em SP: O que muda?",
-    excerpt: "A prefeitura de São Paulo anunciou novas regras que impactam diretamente a vida dos motoristas de aplicativo. Saiba tudo...",
-    image: "/ubertx.png",
-    imageHint: "city traffic",
-    slug: "/blog/nova-regulamentacao"
-  },
-  {
-    id: 2,
-    title: "5 dicas para aumentar seus ganhos como taxista",
-    excerpt: "Descubra estratégias comprovadas para otimizar suas corridas e maximizar seus lucros no final do mês.",
-    image: "/tx5dicas.png",
-    imageHint: "money coins",
-    slug: "/blog/dicas-ganhos"
-  },
-  {
-    id: 3,
-    title: "Manutenção preventiva: evite surpresas e economize",
-    excerpt: "Um guia completo sobre os cuidados essenciais que você deve ter com seu veículo para garantir segurança e economia.",
-    image: "/oficina.png",
-    imageHint: "car maintenance",
-    slug: "/blog/manutencao-preventiva"
-  },
-];
 
 const HowToBeDriverSection = () => (
     <section id="how-to-start" className="py-16 md:py-24 bg-muted">
@@ -105,6 +79,45 @@ const HowToBeDriverSection = () => (
       </div>
     </section>
   );
+
+  const BlogSection = async () => {
+    const blogPosts = await getPublishedBlogPosts(3);
+    
+    if (!blogPosts || blogPosts.length === 0) return null;
+
+    return (
+        <section id="blog" className="bg-muted py-16 md:py-24">
+            <div className="container mx-auto px-4 md:px-6">
+                <div className="mb-12 text-center">
+                    <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
+                        Últimas Notícias e Matérias
+                    </h2>
+                    <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground text-justify">
+                        Informação de qualidade para o profissional do volante.
+                    </p>
+                </div>
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+                    {blogPosts.map((post) => (
+                        <Card key={post.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl">
+                            <Image src={post.imageUrl} alt={post.title} width={600} height={400} className="w-full object-cover aspect-video" data-ai-hint="city traffic"/>
+                            <CardHeader>
+                                <CardTitle className="font-headline text-xl">{post.title}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-1">
+                                <p className="text-muted-foreground">{post.excerpt}</p>
+                            </CardContent>
+                            <CardFooter>
+                                <Button asChild variant="outline" className="w-full">
+                                    <Link href={`/blog/${post.slug}`}>Ler mais <MoveRight className="ml-2"/></Link>
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
+            </div>
+        </section>
+    )
+  }
 
 export default function Home() {
   return (
@@ -218,36 +231,7 @@ export default function Home() {
 
           <CulturalAgendaSection />
 
-          <section id="blog" className="bg-muted py-16 md:py-24">
-            <div className="container mx-auto px-4 md:px-6">
-              <div className="mb-12 text-center">
-                  <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
-                    Últimas Notícias e Matérias
-                  </h2>
-                  <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground text-justify">
-                    Informação de qualidade para o profissional do volante.
-                  </p>
-              </div>
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-                {blogPosts.map((post) => (
-                  <Card key={post.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl">
-                    <Image src={post.image} alt={post.title} width={600} height={400} className="w-full object-cover" data-ai-hint={post.imageHint}/>
-                    <CardHeader>
-                      <CardTitle className="font-headline text-xl">{post.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex-1">
-                      <p className="text-muted-foreground">{post.excerpt}</p>
-                    </CardContent>
-                    <CardFooter>
-                      <Button asChild variant="outline" className="w-full">
-                        <Link href={post.slug}>Ler mais <MoveRight className="ml-2"/></Link>
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </section>
+          <BlogSection />
 
           <section id="classifieds" className="py-16 md:py-24">
              <div className="container mx-auto px-4 md:px-6">
@@ -267,7 +251,7 @@ export default function Home() {
                     <TabsContent value="rentals" className="pt-8">
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {mockVehicles.slice(0, 3).map((vehicle) => (
-                                <Card key={vehicle.plate} className="flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                                <Card key={vehicle.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                                     <CardHeader className="relative p-0">
                                       <Image src={vehicle.imageUrl} alt={`${vehicle.make} ${vehicle.model}`} width={600} height={400} className="aspect-video w-full object-cover" data-ai-hint="car front view"/>
                                        <Badge className="absolute right-3 top-3 border-2 border-primary-foreground/50 bg-primary/90 px-3 py-1 text-lg font-bold text-primary-foreground">

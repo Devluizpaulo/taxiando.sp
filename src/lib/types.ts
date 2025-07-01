@@ -274,3 +274,17 @@ export interface Partner {
     isActive: boolean;
     createdAt: Timestamp | string;
 }
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string; // Markdown content
+  imageUrl: string;
+  authorId: string;
+  authorName: string;
+  status: 'Published' | 'Draft';
+  createdAt: Timestamp | string;
+  updatedAt?: Timestamp | string;
+}
