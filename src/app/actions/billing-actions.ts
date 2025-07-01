@@ -8,6 +8,7 @@ import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { type CreditPackage, type Coupon } from '@/lib/types';
 import { getPaymentSettings } from './admin-actions';
 import { headers } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 
 interface PurchaseCreditsParams {
     userId: string;
@@ -168,5 +169,20 @@ export async function createPaymentPreference({ packageId, userId, couponCode }:
     } catch (error) {
         const errorMessage = (error as any)?.cause?.message || (error as Error).message;
         return { success: false, error: `Falha ao iniciar pagamento: ${errorMessage}` };
+    }
+}
+
+
+export async function deleteCreditPackage(packageId: string) {
+    if (!packageId) {
+        return { success: false, error: 'ID do pacote não fornecido.' };
+    }
+    
+    try {
+        await adminDB.collection('credit_packages').doc(packageId).delete();
+        revalidatePath('/admin/billing');
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
     }
 }
