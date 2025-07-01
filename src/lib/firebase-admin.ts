@@ -1,3 +1,4 @@
+
 'use server';
 
 import admin from 'firebase-admin';
@@ -16,42 +17,28 @@ if (admin.apps.length === 0) {
         try {
             serviceAccount = JSON.parse(serviceAccountJson);
         } catch (e) {
-            throw new Error('Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON. Please ensure it is a valid JSON string.');
+            console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON:", e);
+            throw new Error(`
+CRITICAL: Failed to parse the 'FIREBASE_SERVICE_ACCOUNT_JSON' environment variable.
+Please ensure it is a valid, unescaped JSON string copied directly from your service account file.
+This is a configuration error, not a bug in the code.
+            `);
         }
     } else {
-        const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-        const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-        const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-
-        if (!projectId || !clientEmail || !privateKey) {
-            throw new Error(`
+         throw new Error(`
 CRITICAL: Firebase Admin SDK credentials are not set. This is the final configuration step.
 
-There are two ways to provide credentials:
+To fix this:
+1. Go to your Firebase Project Settings > Service Accounts tab.
+2. Click "Generate new private key" to download a JSON file.
+3. Create an environment variable named 'FIREBASE_SERVICE_ACCOUNT_JSON'.
+4. Copy the ENTIRE content of the downloaded JSON file and paste it as the value for the variable.
 
-METHOD 1 (Recommended for Vercel):
-1. Create a single environment variable named 'FIREBASE_SERVICE_ACCOUNT_JSON'.
-2. Copy the ENTIRE content of your Firebase service account JSON file and paste it as the value for this variable.
-
-METHOD 2 (Alternative):
-Set three separate environment variables:
- - FIREBASE_PROJECT_ID: from "project_id" in your JSON file.
- - FIREBASE_CLIENT_EMAIL: from "client_email" in your JSON file.
- - FIREBASE_PRIVATE_KEY: the "private_key" value from your JSON file.
-
-If you don't have a service account file:
-1. Go to your Firebase Project Settings > Service Accounts.
-2. Click "Generate new private key" to download the JSON file.
+For local development, add this to a .env.local file.
+For production (e.g., Vercel), add this in your project's "Environment Variables" settings.
 
 This is a configuration error, not a bug in the code. The application cannot run without these credentials.
         `);
-        }
-        
-        serviceAccount = {
-            projectId: projectId,
-            clientEmail: clientEmail,
-            privateKey: privateKey.replace(/\\n/g, '\n'),
-        };
     }
 
     app = admin.initializeApp({
