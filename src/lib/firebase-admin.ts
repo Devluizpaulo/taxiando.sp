@@ -5,12 +5,18 @@ import { getStorage } from 'firebase-admin/storage';
 
 let app: admin.app.App;
 
+// This logic prevents re-initializing the app in hot-reload environments
 if (admin.apps.length === 0) {
-    // This is the recommended way to initialize for environments like App Hosting
-    // It automatically uses the service account credentials from the environment.
+    const serviceAccount = {
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        // The private key must have newlines escaped
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    };
+
     app = admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-        storageBucket: 'taxiandosp-519b1.appspot.com'
+        credential: admin.credential.cert(serviceAccount),
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
     });
 } else {
     app = admin.app();
