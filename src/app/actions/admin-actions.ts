@@ -3,7 +3,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { adminDB } from '@/lib/firebase-admin';
-import { type UserProfile, type PaymentGatewaySettings, type AnalyticsData } from '@/lib/types';
+import { type UserProfile, type PaymentGatewaySettings, type AnalyticsData, type AdminUser, type Opportunity, type ServiceListing } from '@/lib/types';
+import { Timestamp } from 'firebase-admin/firestore';
+
 
 export async function updateUserProfileStatus(userId: string, newStatus: 'Aprovado' | 'Rejeitado' | 'Pendente') {
     try {
@@ -125,4 +127,54 @@ export async function getAdminDashboardAnalytics(): Promise<AnalyticsData> {
         // Fail silently and return an empty object. The dashboard will show 0 for these values.
         return {};
     }
+}
+
+
+export async function getAdminDashboardData() {
+    let usersData: AdminUser[] = [];
+    let oppsData: Opportunity[] = [];
+    let servicesData: ServiceListing[] = [];
+    let analyticsData: AnalyticsData = {};
+
+    try {
+        const usersSnapshot = await adminDB.collection('users').orderBy('createdAt', 'desc').get();
+        usersData = usersSnapshot.docs.map(doc => {
+            const data = doc.data();
+            const createdAt = data.createdAt as Timestamp;
+            return {
+                ...data,
+                uid: doc.id,
+                createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : new Date().toISOString(),
+            } as AdminUser;
+        });
+    } catch (error) {
+        // Fail silently
+    }
+    
+    try {
+        const oppsSnapshot = await adminDB.collection('opportunities').where('status', '==', 'Pendente').get();
+        oppsData = oppsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Opportunity));
+    } catch (error) {
+        // Fail silently
+    }
+    
+    try {
+        const servicesSnapshot = await adminDB.collection('services').where('status', '==', 'Pendente').get();
+        servicesData = servicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceListing));
+    } catch (error) {
+       // Fail silently
+    }
+
+    try {
+        analyticsData = await getAdminDashboardAnalytics();
+    } catch (analyticsError) {
+        // Fail silently
+    }
+
+    return { 
+        users: usersData, 
+        opportunities: oppsData, 
+        services: servicesData, 
+        analytics: analyticsData 
+    };
 }
