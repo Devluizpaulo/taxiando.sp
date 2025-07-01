@@ -53,7 +53,6 @@ export async function purchaseCredits(params: PurchaseCreditsParams) {
             }, { merge: true });
         });
     } catch (error) {
-        console.error('Erro na transação de compra de créditos:', error);
         throw new Error('Falha ao processar a compra.');
     }
 }
@@ -167,7 +166,6 @@ export async function createPaymentPreference({ packageId, userId, couponCode }:
 
         return { success: true, preferenceId: result.id, discountApplied };
     } catch (error) {
-        console.error('Erro ao criar preferência de pagamento:', error);
         const errorMessage = (error as any)?.cause?.message || (error as Error).message;
         return { success: false, error: `Falha ao iniciar pagamento: ${errorMessage}` };
     }

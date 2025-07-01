@@ -18,7 +18,6 @@ export async function createCoupon(couponData: Omit<Coupon, 'id' | 'createdAt' |
         revalidatePath('/admin/marketing/coupons');
         return { success: true, message: 'Cupom criado com sucesso!' };
     } catch (error) {
-        console.error("Error creating coupon:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -32,7 +31,6 @@ export async function sendNotification(notificationData: Omit<Notification, 'id'
         });
         return { success: true, message: 'Notificação enviada com sucesso!' };
     } catch (error) {
-        console.error("Error sending notification:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -67,7 +65,6 @@ export async function getNotificationsForUser(): Promise<{notifications: Notific
         
         return { notifications, newNotificationCount };
     } catch (error) {
-        console.error("Error fetching notifications:", error);
         return { notifications: [], newNotificationCount: 0 };
     }
 }
@@ -84,7 +81,6 @@ export async function markNotificationsAsRead() {
         }, { merge: true });
         return { success: true };
     } catch (error) {
-         console.error("Error marking notifications as read:", error);
          return { success: false, error: (error as Error).message };
     }
 }
@@ -106,7 +102,6 @@ export async function getAllCoupons(): Promise<Coupon[]> {
             } as Coupon;
         });
     } catch (error) {
-        console.error("Error fetching coupons: ", error);
         return [];
     }
 }
@@ -122,7 +117,6 @@ export async function createPartner(partnerData: Omit<Partner, 'id' | 'createdAt
         revalidatePath('/'); // Revalidate home to show new partner
         return { success: true };
     } catch (error) {
-        console.error("Error creating partner:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -140,7 +134,6 @@ export async function getAllPartners(): Promise<Partner[]> {
             } as Partner;
         });
     } catch (error) {
-        console.error("Error fetching all partners:", error);
         return [];
     }
 }
@@ -160,7 +153,6 @@ export async function getActivePartners(): Promise<Partner[]> {
             } as Partner;
         });
     } catch (error) {
-        console.error("Error fetching active partners:", error);
         return [];
     }
 }
@@ -172,7 +164,6 @@ export async function updatePartnerStatus(partnerId: string, newStatus: boolean)
         revalidatePath('/');
         return { success: true };
     } catch (error) {
-        console.error("Error updating partner status:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -184,7 +175,6 @@ export async function deletePartner(partnerId: string) {
         revalidatePath('/');
         return { success: true };
     } catch (error) {
-        console.error("Error deleting partner:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -211,10 +201,6 @@ export async function sendNewsletter({ subject, content, targetAudience }: SendN
         if (userCount === 0) {
             return { success: false, error: 'Nenhum usuário encontrado para este público-alvo.' };
         }
-
-        console.log(`Simulating sending newsletter:`);
-        console.log(`- Subject: ${subject}`);
-        console.log(`- Audience: ${targetAudience} (${userCount} users)`);
         
         // This is where you would loop through users and send emails.
         // For example:
@@ -225,7 +211,6 @@ export async function sendNewsletter({ subject, content, targetAudience }: SendN
 
         return { success: true, message: `Newsletter enviada com sucesso para ${userCount} destinatários.` };
     } catch (error) {
-        console.error("Error sending newsletter:", error);
         return { success: false, error: (error as Error).message };
     }
 }

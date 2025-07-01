@@ -31,7 +31,6 @@ export async function createService(data: ServiceFormValues, providerId: string,
         
         return { success: true };
     } catch (error) {
-        console.error("Error creating service:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -49,7 +48,6 @@ export async function getServicesByProvider(providerId: string): Promise<Service
             } as ServiceListing;
         });
     } catch (error) {
-        console.error("Error fetching services by provider:", error);
         return [];
     }
 }
@@ -61,7 +59,6 @@ export async function updateServiceStatus(serviceId: string, newStatus: 'Ativo' 
         revalidatePath('/services');
         return { success: true };
     } catch (error) {
-        console.error("Error updating service status:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -73,7 +70,6 @@ export async function deleteService(serviceId: string) {
         revalidatePath('/services');
         return { success: true };
     } catch (error) {
-        console.error("Error deleting service:", error);
         return { success: false, error: (error as Error).message };
     }
 }

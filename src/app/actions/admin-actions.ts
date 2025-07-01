@@ -20,7 +20,6 @@ export async function updateUserProfileStatus(userId: string, newStatus: 'Aprova
         revalidatePath('/admin');
         return { success: true };
     } catch (error) {
-        console.error("Error updating user profile status:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -39,7 +38,6 @@ export async function updateListingStatus(
         revalidatePath('/admin');
         return { success: true };
     } catch (error) {
-        console.error(`Error updating ${collectionName} status:`, error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -63,7 +61,6 @@ export async function updatePaymentSettings(data: PaymentGatewaySettings) {
         revalidatePath('/admin/settings/payments');
         return { success: true, message: 'Configurações salvas com sucesso!' };
     } catch (error) {
-        console.error("Error updating payment settings:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -97,7 +94,6 @@ export async function ensureInitialData() {
         
         return { success: true };
     } catch (error) {
-        console.error("Error ensuring initial data:", error);
         return { success: false, error: (error as Error).message };
     }
 }
