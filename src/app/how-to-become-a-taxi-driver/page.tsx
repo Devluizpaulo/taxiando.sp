@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { Check, Book, FileText, Car, Star, ThumbsUp, ThumbsDown, Building, User, Users, Search, Lightbulb } from "lucide-react";
+import { Check, Book, FileText, Car, Star, ThumbsUp, ThumbsDown, Building, User, Users, Search, Lightbulb, School } from "lucide-react";
 
 // The core step-by-step guide
 const steps = [
@@ -160,6 +160,24 @@ export default function HowToBeTaxiDriverPage() {
                                                     </li>
                                                 ))}
                                             </ul>
+                                            {step.title.includes("Curso de Formação") && (
+                                                <div className="mt-6 rounded-lg border border-primary/50 bg-primary/10 p-4">
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                                            <School className="h-6 w-6" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-bold text-foreground">Parceria Táxiando SP</h4>
+                                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                                Nossos parceiros oferecem descontos exclusivos para você. Inicie seu curso de formação com as melhores escolas e condições.
+                                                            </p>
+                                                            <Button asChild className="mt-3" size="sm">
+                                                                <Link href="/courses">Ver Escolas Parceiras</Link>
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 </div>
