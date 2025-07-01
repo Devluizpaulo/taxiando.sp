@@ -214,3 +214,24 @@ export async function sendNewsletter({ subject, content, targetAudience }: SendN
         return { success: false, error: (error as Error).message };
     }
 }
+
+
+export async function updateCouponStatus(couponId: string, newStatus: boolean) {
+    try {
+        await adminDB.collection('coupons').doc(couponId).update({ isActive: newStatus });
+        revalidatePath('/admin/marketing/coupons');
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function deleteCoupon(couponId: string) {
+    try {
+        await adminDB.collection('coupons').doc(couponId).delete();
+        revalidatePath('/admin/marketing/coupons');
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
