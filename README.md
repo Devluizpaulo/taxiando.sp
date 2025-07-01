@@ -62,7 +62,10 @@ Táxiando SP é um ecossistema digital completo projetado para conectar, qualifi
     ```bash
     npm install
     ```
-4.  Configure suas variáveis de ambiente do Firebase em um arquivo `.env.local`.
+4.  Configure suas variáveis de ambiente. Copie o arquivo `.env.example` para `.env.local` e preencha com suas credenciais, seguindo as instruções detalhadas no arquivo.
+    ```bash
+    cp .env.example .env.local
+    ```
 
 ### Rodando o Projeto
 Para iniciar o servidor de desenvolvimento:
@@ -70,6 +73,30 @@ Para iniciar o servidor de desenvolvimento:
 npm run dev
 ```
 Abra [http://localhost:9002](http://localhost:9002) no seu navegador para ver o resultado.
+
+## ⚠️ Solução de Problemas: Erro de "Credenciais não definidas"
+
+Se você encontrar um erro dizendo `CRITICAL: Firebase Admin SDK credentials are not set`, não se preocupe! Isso não é um bug no código, mas sim a etapa final e mais importante da configuração. Significa que a aplicação não encontrou as "chaves secretas" para se conectar ao seu banco de dados.
+
+**Como Resolver:**
+
+1.  **Encontre seu arquivo de Chave de Serviço:**
+    *   Vá para as **Configurações do Projeto** no seu console do Firebase.
+    *   Acesse a aba **Contas de serviço**.
+    *   Clique em **"Gerar nova chave privada"**. Isso fará o download de um arquivo JSON. Guarde-o com segurança.
+
+2.  **Configure a Variável de Ambiente (Método Recomendado):**
+    *   **No seu computador (local):**
+        *   No seu arquivo `.env.local`, encontre a linha `FIREBASE_SERVICE_ACCOUNT_JSON=''`.
+        *   Copie o **conteúdo completo** do seu arquivo JSON e cole dentro das aspas simples.
+    *   **Na Vercel (produção):**
+        *   Vá para as configurações do seu projeto na Vercel.
+        *   Na seção "Environment Variables", crie uma nova variável chamada `FIREBASE_SERVICE_ACCOUNT_JSON`.
+        *   No campo de valor, cole o **conteúdo completo** do seu arquivo JSON.
+
+3.  **Preencha o restante das variáveis** no seu `.env.local` (ou na Vercel) usando o arquivo `.env.example` como guia para as chaves públicas do Firebase e a chave do Gemini.
+
+Depois de configurar `FIREBASE_SERVICE_ACCOUNT_JSON` e as outras chaves, o erro desaparecerá.
 
 ---
 
