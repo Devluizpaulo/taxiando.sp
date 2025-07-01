@@ -29,13 +29,11 @@ import { LoadingScreen } from "@/components/loading-screen";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NotificationBell } from "@/components/notification-bell";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+
+function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   React.useEffect(() => {
     if (!loading && !user) {
@@ -52,19 +50,18 @@ export default function DashboardLayout({
     router.push('/login');
   };
 
-  if (loading || !user) {
-    return <LoadingScreen className="fixed inset-0 z-50" />;
-  }
-
   const handleMenuClick = () => {
-    const { isMobile, setOpenMobile } = useSidebar();
     if (isMobile) {
       setOpenMobile(false);
     }
   };
+  
+  if (loading || !user) {
+    return <LoadingScreen className="fixed inset-0 z-50" />;
+  }
 
   return (
-    <SidebarProvider>
+    <>
       <Sidebar>
         <SidebarHeader className="border-b border-sidebar-border p-4">
             <Link href="/dashboard" onClick={handleMenuClick}>
@@ -254,6 +251,19 @@ export default function DashboardLayout({
             {userProfile ? children : <LoadingScreen />}
         </main>
       </SidebarInset>
+    </>
+  );
+}
+
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <SidebarProvider>
+      <DashboardLayoutClient>{children}</DashboardLayoutClient>
     </SidebarProvider>
   );
 }
