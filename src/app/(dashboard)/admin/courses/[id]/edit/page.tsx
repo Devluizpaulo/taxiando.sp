@@ -14,28 +14,28 @@ import { LoadingScreen } from '@/components/loading-screen';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle } from 'lucide-react';
 
-// Icons
 const lessonTypeIcons = {
     video: <Video className="h-4 w-4" />,
     text: <FileText className="h-4 w-4" />,
     quiz: <ClipboardCheck className="h-4 w-4" />,
 };
 
-// Main Component
 export default function EditCoursePage({ params }: { params: { id: string }}) {
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingData, setIsLoadingData] = useState(true);
+    const [isPublished, setIsPublished] = useState(false);
+    const [initialModuleCount, setInitialModuleCount] = useState(0);
 
     const form = useForm<CourseFormValues>({
         resolver: zodResolver(courseFormSchema),
@@ -47,6 +47,8 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
             getCourseById(params.id).then(data => {
                 if (data) {
                     form.reset(data);
+                    setIsPublished(data.status === 'Published');
+                    setInitialModuleCount(data.modules?.length || 0);
                 }
                 setIsLoadingData(false);
             });
@@ -60,7 +62,6 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
     const onSubmit = async (values: CourseFormValues) => {
         setIsSubmitting(true);
         try {
-             // Ensure all modules, lessons, questions, and options have IDs
             const valuesWithIds = {
                 ...values,
                 modules: values.modules.map(module => ({
@@ -72,10 +73,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                         questions: lesson.questions?.map(q => ({
                             ...q,
                             id: q.id || nanoid(),
-                            options: q.options.map(o => ({
-                                ...o,
-                                id: o.id || nanoid()
-                            }))
+                            options: q.options.map(o => ({ ...o, id: o.id || nanoid() }))
                         }))
                     }))
                 }))
@@ -86,9 +84,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
             if (result.success) {
                 toast({ title: 'Curso Atualizado com Sucesso!', description: `O curso "${values.title}" foi salvo.` });
                 router.push('/admin/courses');
-            } else {
-                throw new Error(result.error);
-            }
+            } else { throw new Error(result.error); }
 
         } catch (error) {
             console.error("Error updating course: ", error);
@@ -98,9 +94,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
         }
     };
     
-    if (isLoadingData) {
-        return <LoadingScreen />;
-    }
+    if (isLoadingData) { return <LoadingScreen />; }
 
     return (
         <Form {...form}>
@@ -110,12 +104,24 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                     <p className="text-muted-foreground">Ajuste os detalhes e o conteúdo do curso.</p>
                 </div>
 
+                {isPublished && (
+                    <Card className="border-amber-500/50 bg-amber-500/5">
+                        <CardHeader className="flex flex-row items-center gap-4">
+                             <AlertTriangle className="h-8 w-8 text-amber-600" />
+                            <div>
+                                <CardTitle className="text-amber-900">Modo de Edição Limitada</CardTitle>
+                                <CardDescription className="text-amber-800">Este curso já foi publicado. Para proteger a experiência dos alunos, você só pode adicionar novos módulos ou aulas. As edições e remoções de conteúdo existente estão desativadas.</CardDescription>
+                            </div>
+                        </CardHeader>
+                    </Card>
+                )}
+
                 <Card>
                     <CardHeader><CardTitle>Informações Gerais do Curso</CardTitle></CardHeader>
                     <CardContent className="space-y-6">
-                        <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Título do Curso</FormLabel><FormControl><Input {...field} placeholder="Ex: Direção Defensiva Avançada" /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Categoria</FormLabel><FormControl><Input {...field} placeholder="Ex: Segurança, Atendimento" /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Descrição Curta</FormLabel><FormControl><Textarea {...field} placeholder="Descreva o objetivo principal do curso." /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Título do Curso</FormLabel><FormControl><Input {...field} placeholder="Ex: Direção Defensiva Avançada" disabled={isPublished} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Categoria</FormLabel><FormControl><Input {...field} placeholder="Ex: Segurança, Atendimento" disabled={isPublished} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Descrição Curta</FormLabel><FormControl><Textarea {...field} placeholder="Descreva o objetivo principal do curso." disabled={isPublished} /></FormControl><FormMessage /></FormItem>)}/>
                     </CardContent>
                 </Card>
 
@@ -125,9 +131,11 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                 </div>
                 
                 <Accordion type="multiple" className="w-full space-y-4" defaultValue={moduleFields.map((_, i) => `module-${i}`)}>
-                    {moduleFields.map((moduleItem, moduleIndex) => (
-                        <ModuleField key={moduleItem.id} moduleIndex={moduleIndex} removeModule={removeModule} form={form} />
-                    ))}
+                    {moduleFields.map((moduleItem, moduleIndex) => {
+                        const isExistingModule = moduleIndex < initialModuleCount;
+                        const isEditingDisabled = isPublished && isExistingModule;
+                        return (<ModuleField key={moduleItem.id} moduleIndex={moduleIndex} removeModule={removeModule} form={form} isEditingDisabled={isEditingDisabled} isPublished={isPublished} />);
+                    })}
                 </Accordion>
                 
                 {form.formState.errors.modules?.root && (<p className="text-sm font-medium text-destructive">{form.formState.errors.modules.root.message}</p>)}
@@ -146,11 +154,13 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
     );
 }
 
-// Module Component (same as create page, but IDs are handled)
-function ModuleField({ moduleIndex, removeModule, form }: { moduleIndex: number, removeModule: (index: number) => void, form: any }) {
+function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPublished }: { moduleIndex: number, removeModule: (index: number) => void, form: any, isEditingDisabled: boolean, isPublished: boolean }) {
     const { fields: lessonFields, append: appendLesson, remove: removeLesson } = useFieldArray({
         control: form.control, name: `modules.${moduleIndex}.lessons`,
     });
+    
+    // Store initial lesson count to differentiate existing from new lessons
+    const [initialLessonCount] = useState(form.getValues(`modules.${moduleIndex}.lessons`)?.length || 0);
 
     return (
         <AccordionItem value={`module-${moduleIndex}`} className="bg-card border rounded-lg overflow-hidden">
@@ -158,26 +168,27 @@ function ModuleField({ moduleIndex, removeModule, form }: { moduleIndex: number,
                 <AccordionTrigger className="flex items-center gap-2 p-4 hover:no-underline">
                      <div className="flex-1 flex items-center gap-4">
                         <GripVertical className="h-5 w-5 text-muted-foreground" />
-                        <FormField control={form.control} name={`modules.${moduleIndex}.title`} render={({ field }) => (<FormItem className="w-full"><FormControl><Input {...field} placeholder={`Título do Módulo ${moduleIndex + 1}`} className="text-lg font-bold border-none shadow-none p-0 h-auto focus-visible:ring-0" /></FormControl><FormMessage className="ml-2" /></FormItem>)}/>
+                        <FormField control={form.control} name={`modules.${moduleIndex}.title`} render={({ field }) => (<FormItem className="w-full"><FormControl><Input {...field} placeholder={`Título do Módulo ${moduleIndex + 1}`} disabled={isEditingDisabled} className="text-lg font-bold border-none shadow-none p-0 h-auto focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70" /></FormControl><FormMessage className="ml-2" /></FormItem>)}/>
                      </div>
                 </AccordionTrigger>
             </CardHeader>
             <AccordionContent>
                 <div className="p-4 pt-0 space-y-4">
                     <h4 className="font-semibold text-muted-foreground">Aulas do Módulo</h4>
-                    {lessonFields.map((lessonItem, lessonIndex) => (
-                       <LessonField key={lessonItem.id} form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} removeLesson={removeLesson} />
-                    ))}
+                    {lessonFields.map((lessonItem, lessonIndex) => {
+                        const isExistingLesson = lessonIndex < initialLessonCount;
+                        return (<LessonField key={lessonItem.id} form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} removeLesson={removeLesson} isEditingDisabled={isEditingDisabled || (isPublished && isExistingLesson)} />);
+                    })}
                     <div className="space-y-2 pt-4 border-t">
                         <h4 className="font-semibold text-muted-foreground">Recompensa do Módulo (Opcional)</h4>
                         <div className="flex items-center gap-2 p-3 rounded-md bg-amber-50 border border-amber-200">
                              <Sparkles className="h-5 w-5 text-amber-500"/>
-                             <FormField control={form.control} name={`modules.${moduleIndex}.badge.name`} render={({ field }) => (<FormItem className="w-full"><FormControl><Input {...field} placeholder="Nome da Medalha (Ex: Mestre da Legislação)" className="border-amber-300 focus-visible:ring-amber-500"/></FormControl><FormMessage /></FormItem>)}/>
+                             <FormField control={form.control} name={`modules.${moduleIndex}.badge.name`} render={({ field }) => (<FormItem className="w-full"><FormControl><Input {...field} disabled={isEditingDisabled} placeholder="Nome da Medalha (Ex: Mestre da Legislação)" className="border-amber-300 focus-visible:ring-amber-500"/></FormControl><FormMessage /></FormItem>)}/>
                         </div>
                     </div>
                 </div>
                  <CardFooter className="bg-muted/30 p-4 flex justify-between items-center">
-                    <Button type="button" variant="destructive" onClick={() => removeModule(moduleIndex)}><Trash2 /> Remover Módulo</Button>
+                    <Button type="button" variant="destructive" onClick={() => removeModule(moduleIndex)} disabled={isEditingDisabled}><Trash2 /> Remover Módulo</Button>
                     <Button type="button" variant="secondary" onClick={() => appendLesson({ title: '', type: 'video', duration: 10, content: '', materials: [] })}><PlusCircle /> Adicionar Aula</Button>
                 </CardFooter>
             </AccordionContent>
@@ -185,45 +196,29 @@ function ModuleField({ moduleIndex, removeModule, form }: { moduleIndex: number,
     );
 }
 
-// Lesson Component
-function LessonField({ form, moduleIndex, lessonIndex, removeLesson }: { form: any, moduleIndex: number, lessonIndex: number, removeLesson: (index: number) => void }) {
+function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDisabled }: { form: any, moduleIndex: number, lessonIndex: number, removeLesson: (index: number) => void, isEditingDisabled: boolean }) {
     const lessonType = useWatch({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.type` });
 
     return (
         <Card className="p-4 bg-muted/50">
             <div className="flex items-start gap-4">
                 <div className="flex-1 space-y-4">
-                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.title`} render={({ field }) => (<FormItem><FormLabel>Título da Aula</FormLabel><FormControl><Input {...field} placeholder="Ex: Introdução ao CTB" /></FormControl><FormMessage /></FormItem>)}/>
+                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.title`} render={({ field }) => (<FormItem><FormLabel>Título da Aula</FormLabel><FormControl><Input {...field} placeholder="Ex: Introdução ao CTB" disabled={isEditingDisabled}/></FormControl><FormMessage /></FormItem>)}/>
                     <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.type`} render={({ field }) => (<FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger>{field.value ? <div className="flex items-center gap-2">{lessonTypeIcons[field.value]} {field.value.charAt(0).toUpperCase() + field.value.slice(1)}</div> : "Selecione..."}</SelectTrigger></FormControl><SelectContent><SelectItem value="video"><div className="flex items-center gap-2"><Video /> Vídeo</div></SelectItem><SelectItem value="text"><div className="flex items-center gap-2"><FileText /> Texto</div></SelectItem><SelectItem value="quiz"><div className="flex items-center gap-2"><ClipboardCheck /> Prova (Quiz)</div></SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.duration`} render={({ field }) => (<FormItem><FormLabel>Duração (min)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.type`} render={({ field }) => (<FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isEditingDisabled}><FormControl><SelectTrigger>{field.value ? <div className="flex items-center gap-2">{lessonTypeIcons[field.value]} {field.value.charAt(0).toUpperCase() + field.value.slice(1)}</div> : "Selecione..."}</SelectTrigger></FormControl><SelectContent><SelectItem value="video"><div className="flex items-center gap-2"><Video /> Vídeo</div></SelectItem><SelectItem value="text"><div className="flex items-center gap-2"><FileText /> Texto</div></SelectItem><SelectItem value="quiz"><div className="flex items-center gap-2"><ClipboardCheck /> Prova (Quiz)</div></SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.duration`} render={({ field }) => (<FormItem><FormLabel>Duração (min)</FormLabel><FormControl><Input type="number" {...field} disabled={isEditingDisabled} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
-
-                     {lessonType === 'video' && (
-                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (
-                            <FormItem><FormLabel>URL do Vídeo (YouTube/Vimeo)</FormLabel><FormControl><Input {...field} placeholder="https://www.youtube.com/watch?v=..." /></FormControl><FormMessage /></FormItem>
-                        )}/>
-                    )}
-                    {lessonType === 'text' && (
-                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (
-                            <FormItem><FormLabel>Conteúdo da Aula</FormLabel><FormControl><Textarea {...field} placeholder="Escreva o conteúdo da aula aqui. Você pode usar Markdown para formatação." rows={8} /></FormControl><FormDescription>Dica: Use Markdown para adicionar **negrito**, *itálico*, listas e mais.</FormDescription><FormMessage /></FormItem>
-                        )}/>
-                    )}
-
-                    {lessonType === 'quiz' ? (
-                        <QuizBuilder form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} />
-                    ) : (
-                        <MaterialField form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} />
-                    )}
+                     {lessonType === 'video' && (<FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (<FormItem><FormLabel>URL do Vídeo (YouTube/Vimeo)</FormLabel><FormControl><Input {...field} placeholder="https://www.youtube.com/watch?v=..." disabled={isEditingDisabled} /></FormControl><FormMessage /></FormItem>)}/>)}
+                    {lessonType === 'text' && (<FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (<FormItem><FormLabel>Conteúdo da Aula</FormLabel><FormControl><Textarea {...field} placeholder="Escreva o conteúdo da aula aqui." rows={8} disabled={isEditingDisabled} /></FormControl><FormDescription>Dica: Use Markdown para adicionar **negrito**, *itálico*, listas e mais.</FormDescription><FormMessage /></FormItem>)}/>)}
+                    {lessonType === 'quiz' ? (<QuizBuilder form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />) : (<MaterialField form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />)}
                 </div>
-                <Button type="button" variant="ghost" size="icon" onClick={() => removeLesson(lessonIndex)} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                <Button type="button" variant="ghost" size="icon" onClick={() => removeLesson(lessonIndex)} disabled={isEditingDisabled} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
             </div>
         </Card>
     );
 }
 
-// Material Component
-function MaterialField({ form, moduleIndex, lessonIndex }: { form: any, moduleIndex: number, lessonIndex: number }) {
+function MaterialField({ form, moduleIndex, lessonIndex, isEditingDisabled }: { form: any, moduleIndex: number, lessonIndex: number, isEditingDisabled: boolean }) {
     const { fields: materialFields, append: appendMaterial, remove: removeMaterial } = useFieldArray({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.materials` });
     return (
         <div className="space-y-3 pt-3 border-t border-dashed">
@@ -232,38 +227,35 @@ function MaterialField({ form, moduleIndex, lessonIndex }: { form: any, moduleIn
                 <div key={materialItem.id} className="flex items-end gap-2 p-3 rounded-md bg-background/50 border">
                     <Paperclip className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     <div className="flex-1 grid grid-cols-2 gap-2">
-                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.materials.${materialIndex}.name`} render={({ field }) => (<FormItem><FormLabel className="text-xs">Nome do Arquivo</FormLabel><FormControl><Input {...field} placeholder="Ex: Resumo.pdf" /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.materials.${materialIndex}.url`} render={({ field }) => (<FormItem><FormLabel className="text-xs">URL</FormLabel><FormControl><Input {...field} placeholder="https://..." /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.materials.${materialIndex}.name`} render={({ field }) => (<FormItem><FormLabel className="text-xs">Nome do Arquivo</FormLabel><FormControl><Input {...field} placeholder="Ex: Resumo.pdf" disabled={isEditingDisabled} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.materials.${materialIndex}.url`} render={({ field }) => (<FormItem><FormLabel className="text-xs">URL</FormLabel><FormControl><Input {...field} placeholder="https://..." disabled={isEditingDisabled} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeMaterial(materialIndex)} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-9 w-9"><Trash2 className="h-4 w-4"/></Button>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeMaterial(materialIndex)} disabled={isEditingDisabled} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-9 w-9"><Trash2 className="h-4 w-4"/></Button>
                 </div>
             ))}
-            <Button type="button" variant="outline" size="sm" onClick={() => appendMaterial({ name: '', url: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Material</Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => appendMaterial({ name: '', url: '' })} disabled={isEditingDisabled}><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Material</Button>
         </div>
     );
 }
 
-// Quiz Components
-function QuizBuilder({ form, moduleIndex, lessonIndex }: { form: any, moduleIndex: number, lessonIndex: number }) {
+function QuizBuilder({ form, moduleIndex, lessonIndex, isEditingDisabled }: { form: any, moduleIndex: number, lessonIndex: number, isEditingDisabled: boolean }) {
     const { fields: questionFields, append: appendQuestion, remove: removeQuestion } = useFieldArray({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.questions` });
     return (
         <div className="space-y-4 pt-3 border-t border-dashed">
             <Label className="text-base font-semibold">Construtor de Prova (Quiz)</Label>
-            <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.passingScore`} render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2"><Percent/> Nota para Aprovação (%)</FormLabel><FormControl><Input type="number" {...field} placeholder="Ex: 70" /></FormControl><FormMessage /></FormItem>)}/>
-            
+            <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.passingScore`} render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2"><Percent/> Nota para Aprovação (%)</FormLabel><FormControl><Input type="number" {...field} placeholder="Ex: 70" disabled={isEditingDisabled} /></FormControl><FormMessage /></FormItem>)}/>
             <div className="space-y-4">
                 {questionFields.map((questionItem, questionIndex) => (
-                    <QuestionField key={questionItem.id} {...{ form, moduleIndex, lessonIndex, questionIndex, removeQuestion }} />
+                    <QuestionField key={questionItem.id} {...{ form, moduleIndex, lessonIndex, questionIndex, removeQuestion, isEditingDisabled }} />
                 ))}
             </div>
             {form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.questions?.root && (<p className="text-sm font-medium text-destructive">{form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.questions?.root.message}</p>)}
-
-            <Button type="button" variant="outline" size="sm" onClick={() => appendQuestion({ question: '', options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] })}><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Questão</Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => appendQuestion({ question: '', options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] })} disabled={isEditingDisabled}><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Questão</Button>
         </div>
     );
 }
 
-function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQuestion }: { form: any, moduleIndex: number, lessonIndex: number, questionIndex: number, removeQuestion: (index: number) => void }) {
+function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQuestion, isEditingDisabled }: { form: any, moduleIndex: number, lessonIndex: number, questionIndex: number, removeQuestion: (index: number) => void, isEditingDisabled: boolean }) {
     const { fields: optionFields, append: appendOption, remove: removeOption } = useFieldArray({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.options` });
     const optionsPath = `modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.options`;
 
@@ -271,24 +263,21 @@ function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQu
         <Card className="p-4 bg-background/60">
             <div className="flex items-start gap-4">
                 <div className="flex-1 space-y-4">
-                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.question`} render={({ field }) => (<FormItem><FormLabel>Questão {questionIndex + 1}</FormLabel><FormControl><Textarea {...field} placeholder="Digite o enunciado da questão aqui..." /></FormControl><FormMessage /></FormItem>)}/>
-                    
+                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.question`} render={({ field }) => (<FormItem><FormLabel>Questão {questionIndex + 1}</FormLabel><FormControl><Textarea {...field} placeholder="Digite o enunciado da questão aqui..." disabled={isEditingDisabled} /></FormControl><FormMessage /></FormItem>)}/>
                     <FormItem>
                         <FormLabel>Opções de Resposta (marque a correta)</FormLabel>
                         <FormControl>
                             <RadioGroup 
-                                onValueChange={(value) => {
-                                    const newOptions = form.getValues(optionsPath).map((opt: any, idx: number) => ({ ...opt, isCorrect: idx === parseInt(value) }));
-                                    form.setValue(optionsPath, newOptions, { shouldValidate: true });
-                                }}
+                                onValueChange={(value) => { const newOptions = form.getValues(optionsPath).map((opt: any, idx: number) => ({ ...opt, isCorrect: idx === parseInt(value) })); form.setValue(optionsPath, newOptions, { shouldValidate: true }); }}
                                 value={optionFields.findIndex(opt => opt.isCorrect).toString()}
+                                disabled={isEditingDisabled}
                             >
                                 <div className="space-y-3">
                                 {optionFields.map((optionItem, optionIndex) => (
                                     <div key={optionItem.id} className="flex items-center gap-2">
                                         <RadioGroupItem value={optionIndex.toString()} id={`${optionItem.id}-radio`} />
-                                        <FormField control={form.control} name={`${optionsPath}.${optionIndex}.text`} render={({ field }) => (<FormItem className="flex-1"><FormControl><Input {...field} placeholder={`Opção ${optionIndex + 1}`} /></FormControl><FormMessage /></FormItem>)}/>
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(optionIndex)} className="text-muted-foreground hover:text-destructive h-8 w-8" disabled={optionFields.length <= 2}><Trash2 className="h-4 w-4"/></Button>
+                                        <FormField control={form.control} name={`${optionsPath}.${optionIndex}.text`} render={({ field }) => (<FormItem className="flex-1"><FormControl><Input {...field} placeholder={`Opção ${optionIndex + 1}`} disabled={isEditingDisabled} /></FormControl><FormMessage /></FormItem>)}/>
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(optionIndex)} className="text-muted-foreground hover:text-destructive h-8 w-8" disabled={optionFields.length <= 2 || isEditingDisabled}><Trash2 className="h-4 w-4"/></Button>
                                     </div>
                                 ))}
                                 </div>
@@ -297,10 +286,9 @@ function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQu
                         <FormMessage />
                          {form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.questions?.[questionIndex]?.options?.root && (<p className="text-sm font-medium text-destructive pt-2">{form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.questions?.[questionIndex]?.options?.root.message}</p>)}
                     </FormItem>
-
-                    <Button type="button" variant="outline" size="sm" onClick={() => appendOption({ text: '', isCorrect: false })}><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Opção</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => appendOption({ text: '', isCorrect: false })} disabled={isEditingDisabled}><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Opção</Button>
                 </div>
-                <Button type="button" variant="ghost" size="icon" onClick={() => removeQuestion(questionIndex)} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                <Button type="button" variant="ghost" size="icon" onClick={() => removeQuestion(questionIndex)} disabled={isEditingDisabled} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
             </div>
         </Card>
     );

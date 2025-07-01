@@ -8,12 +8,43 @@ import { type Course, type Module } from '@/lib/types';
 import { adminDB } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type CourseFormValues } from '@/lib/course-schemas';
+import { nanoid } from 'nanoid';
 
 interface MarkLessonAsCompleteParams {
     courseId: string;
     moduleId: string;
     lessonId: string;
 }
+
+export async function createCourse(values: { title: string; description: string; category: string }) {
+    if (!values.title || !values.description || !values.category) {
+        return { success: false, error: 'Todos os campos são obrigatórios.' };
+    }
+    
+    try {
+        const courseId = nanoid();
+        const courseData = {
+            id: courseId,
+            title: values.title,
+            description: values.description,
+            category: values.category,
+            modules: [],
+            totalLessons: 0,
+            totalDuration: 0,
+            createdAt: Timestamp.now(),
+            status: 'Draft',
+            students: 0,
+        };
+
+        await adminDB.collection('courses').doc(courseId).set(courseData);
+
+        revalidatePath('/admin/courses');
+        return { success: true, courseId: courseId };
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
+
 
 export async function markLessonAsComplete({ courseId, moduleId, lessonId }: MarkLessonAsCompleteParams) {
     const { currentUser } = auth;
