@@ -13,6 +13,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2, Eye, LogIn } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
 
 import { updateUserProfileStatus, updateListingStatus, getAdminDashboardData } from '@/app/actions/admin-actions';
 import type { UserProfile, Opportunity, ServiceListing, AnalyticsData, AdminUser } from '@/lib/types';
@@ -143,12 +151,36 @@ export function AdminDashboardClient() {
                 <Card className="lg:col-span-3">
                      <CardHeader>
                         <CardTitle>Crescimento de Usuários</CardTitle>
-                        <CardDescription>Esta área pode exibir um gráfico de crescimento futuro.</CardDescription>
+                        <CardDescription>Novos usuários cadastrados nos últimos 12 meses.</CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
-                        <div className="h-[300px] w-full flex items-center justify-center bg-muted rounded-md">
-                            <p className="text-muted-foreground">Gráfico em breve</p>
-                        </div>
+                         <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={analytics.userGrowth}>
+                                <XAxis
+                                    dataKey="month"
+                                    stroke="#888888"
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <YAxis
+                                    stroke="#888888"
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={(value) => `${value}`}
+                                    allowDecimals={false}
+                                />
+                                <Tooltip
+                                    cursor={{ fill: 'hsl(var(--muted))' }}
+                                    contentStyle={{ 
+                                        backgroundColor: 'hsl(var(--background))',
+                                        border: '1px solid hsl(var(--border))'
+                                    }}
+                                />
+                                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </CardContent>
                 </Card>
                 <Card className="lg:col-span-2">
