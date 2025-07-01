@@ -49,7 +49,6 @@ export async function uploadFile(formData: FormData, userId: string): Promise<{s
         return { success: true, url: publicUrl };
 
     } catch (error) {
-        console.error('Error uploading file to Firebase Storage:', error);
         return { success: false, error: 'Não foi possível fazer o upload do arquivo.' };
     }
 }

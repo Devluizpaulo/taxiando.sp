@@ -11,7 +11,6 @@ export async function trackPageView(page: string) {
         }, { merge: true });
     } catch (error) {
         // Fail silently so it doesn't break the page load
-        console.error(`Failed to track page view for ${page}:`, error);
     }
 }
 
@@ -27,6 +26,6 @@ export async function trackLogin(userId: string) {
         ]);
 
     } catch (error) {
-        console.error(`Failed to track login for ${userId}:`, error);
+        // Fail silently
     }
 }

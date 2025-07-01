@@ -45,7 +45,6 @@ export async function getFleetData(fleetId: string) {
         return { success: true, vehicles, applications };
 
     } catch (error) {
-        console.error("Error fetching fleet data:", error);
         return { success: false, error: (error as Error).message, vehicles: [], applications: [] };
     }
 }
@@ -101,7 +100,6 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, ve
         return { success: true };
 
     } catch (error) {
-        console.error("Error upserting vehicle:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -116,7 +114,6 @@ export async function deleteVehicle(vehicleId: string) {
         revalidatePath(`/rentals`);
         return { success: true };
     } catch (error) {
-        console.error("Error deleting vehicle:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -130,7 +127,6 @@ export async function updateApplicationStatus(applicationId: string, newStatus: 
         revalidatePath('/fleet');
         return { success: true };
     } catch (error) {
-        console.error("Error updating application status:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -153,7 +149,6 @@ export async function getAvailableVehicles(): Promise<Vehicle[]> {
             } as Vehicle;
         });
     } catch (error) {
-        console.error("Error fetching available vehicles:", error);
         return [];
     }
 }
@@ -180,7 +175,6 @@ export async function getVehicleDetails(vehicleId: string) {
             fleet 
         };
     } catch (error) {
-        console.error("Error fetching vehicle details:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -244,7 +238,6 @@ export async function createApplication(vehicleId: string, userId: string) {
         return { success: true };
 
     } catch (error) {
-        console.error("Error creating application:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -266,7 +259,6 @@ export async function getDriverApplications(userId: string): Promise<VehicleAppl
             } as VehicleApplication;
         });
     } catch (error) {
-        console.error("Error fetching driver applications:", error);
         return [];
     }
 }

@@ -38,7 +38,6 @@ export async function createBlogPost(values: BlogPostFormValues) {
         revalidatePath(`/blog/${values.slug}`);
         return { success: true };
     } catch (error) {
-        console.error("Error creating blog post:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -60,7 +59,6 @@ export async function updateBlogPost(postId: string, values: BlogPostFormValues)
         revalidatePath(`/blog/${values.slug}`);
         return { success: true };
     } catch (error) {
-        console.error("Error updating blog post:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -75,7 +73,6 @@ export async function deleteBlogPost(postId: string) {
         revalidatePath('/blog');
         return { success: true };
     } catch (error) {
-        console.error("Error deleting blog post:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -93,7 +90,6 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
             } as BlogPost;
         });
     } catch (error) {
-        console.error("Error fetching all blog posts:", error);
         return [];
     }
 }
@@ -119,7 +115,6 @@ export async function getPublishedBlogPosts(postLimit?: number): Promise<BlogPos
             } as BlogPost;
         });
     } catch (error) {
-        console.error("Error fetching published blog posts:", error);
         return [];
     }
 }
@@ -137,7 +132,6 @@ export async function getBlogPostById(postId: string): Promise<BlogPost | null> 
             updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
         } as BlogPost;
     } catch (error) {
-        console.error("Error fetching post by ID:", error);
         return null;
     }
 }
@@ -162,7 +156,6 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
             updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
         } as BlogPost;
     } catch (error) {
-        console.error("Error fetching post by slug:", error);
         return null;
     }
 }

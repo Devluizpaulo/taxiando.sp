@@ -31,7 +31,6 @@ export async function getAdminEvents(): Promise<Event[]> {
         });
         return eventsData;
     } catch (error) {
-        console.error("Error fetching events from action: ", error);
         return [];
     }
 }
@@ -62,8 +61,6 @@ export async function getUpcomingEvents(): Promise<Event[]> {
         } as Event;
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("Error fetching upcoming events: ", errorMessage);
     return [];
   }
 }
@@ -94,7 +91,6 @@ export async function createEvent(eventData: EventFormInput) {
         return { success: true, eventId: eventId };
 
     } catch (error) {
-        console.error("Error creating event:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -116,7 +112,6 @@ export async function getEventById(eventId: string): Promise<Event | null> {
         } as Event;
 
     } catch (error) {
-        console.error("Error fetching event by ID:", error);
         return null;
     }
 }
@@ -138,7 +133,6 @@ export async function updateEvent(eventId: string, eventData: EventFormInput) {
         return { success: true };
 
     } catch (error) {
-        console.error("Error updating event:", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -153,7 +147,6 @@ export async function deleteEvent(eventId: string) {
         return { success: true };
 
     } catch (error) {
-        console.error("Error deleting event:", error);
         return { success: false, error: (error as Error).message };
     }
 }

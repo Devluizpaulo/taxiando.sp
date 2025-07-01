@@ -48,7 +48,6 @@ export async function markLessonAsComplete({ courseId, moduleId, lessonId }: Mar
         const targetModule = courseData.modules.find(m => m.id === moduleId);
 
         if (!targetModule) {
-            console.warn(`Módulo ${moduleId} não encontrado no curso ${courseId}.`);
             revalidatePath(`/courses/${courseId}`);
             return;
         }
@@ -79,7 +78,6 @@ export async function markLessonAsComplete({ courseId, moduleId, lessonId }: Mar
         revalidatePath(`/courses/${courseId}`);
 
     } catch (error) {
-        console.error('Erro ao marcar aula como completa:', error);
         throw new Error('Falha ao atualizar o progresso.');
     }
 }
@@ -108,7 +106,6 @@ export async function getAllCourses(): Promise<Course[]> {
         });
         return coursesData;
     } catch (error) {
-        console.error("Error fetching courses from action: ", error);
         return [];
     }
 }
@@ -136,7 +133,6 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
         // We don't need to serialize nested dates as the course form doesn't have them
         return serializedData as Course;
     } catch (error) {
-        console.error("Error fetching course by ID:", error);
         return null;
     }
 }
@@ -170,7 +166,6 @@ export async function updateCourse(courseId: string, values: CourseFormValues) {
         revalidatePath(`/courses/${courseId}`);
         return { success: true, message: 'Curso atualizado com sucesso!' };
     } catch (error) {
-        console.error("Error updating course: ", error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -188,7 +183,6 @@ export async function updateCourseStatus(courseId: string, newStatus: 'Published
         revalidatePath('/courses'); // Revalidate public catalog
         return { success: true };
     } catch (error) {
-        console.error('Erro ao atualizar status do curso:', error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -205,7 +199,6 @@ export async function deleteCourse(courseId: string) {
         revalidatePath('/courses');
         return { success: true };
     } catch (error) {
-        console.error('Erro ao remover curso:', error);
         return { success: false, error: (error as Error).message };
     }
 }
