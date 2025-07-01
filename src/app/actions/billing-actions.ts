@@ -9,6 +9,105 @@ import { type CreditPackage, type Coupon } from '@/lib/types';
 import { getPaymentSettings } from './admin-actions';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import { nanoid } from 'nanoid';
+import * as z from 'zod';
+
+
+// Schema for package creation and update
+const packageFormSchema = z.object({
+  name: z.string().min(3, "O nome do pacote é obrigatório."),
+  description: z.string().min(10, "A descrição é obrigatória."),
+  credits: z.coerce.number().min(1, "O pacote deve dar pelo menos 1 crédito."),
+  price: z.coerce.number().min(0.5, "O preço é obrigatório."),
+  priceId: z.string().min(3, "O ID do Preço do Mercado Pago é obrigatório."),
+  popular: z.boolean().default(false),
+});
+export type PackageFormValues = z.infer<typeof packageFormSchema>;
+
+
+// CREATE
+export async function createCreditPackage(values: PackageFormValues) {
+    try {
+        const validation = packageFormSchema.safeParse(values);
+        if (!validation.success) {
+            return { success: false, error: "Dados do formulário inválidos." };
+        }
+        
+        const packageId = nanoid();
+        await adminDB.collection('credit_packages').doc(packageId).set({
+            id: packageId,
+            ...values,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        revalidatePath('/admin/billing');
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+// READ
+export async function getCreditPackageById(packageId: string): Promise<CreditPackage | null> {
+    if (!packageId) return null;
+    try {
+        const docRef = await adminDB.collection('credit_packages').doc(packageId).get();
+        if (!docRef.exists) return null;
+
+        const data = docRef.data()!;
+        return {
+            id: docRef.id,
+            ...data,
+            createdAt: (data.createdAt as AdminTimestamp).toDate().toISOString(),
+            updatedAt: data.updatedAt ? (data.updatedAt as AdminTimestamp).toDate().toISOString() : undefined,
+        } as CreditPackage;
+    } catch (error) {
+        console.error("Error fetching package by ID:", error);
+        return null;
+    }
+}
+
+// UPDATE
+export async function updateCreditPackage(packageId: string, values: PackageFormValues) {
+    if (!packageId) return { success: false, error: 'ID do pacote não fornecido.' };
+
+    try {
+        const validation = packageFormSchema.safeParse(values);
+        if (!validation.success) {
+            return { success: false, error: "Dados do formulário inválidos." };
+        }
+        
+        const packageRef = adminDB.collection('credit_packages').doc(packageId);
+        await packageRef.update({
+            ...values,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        revalidatePath('/admin/billing');
+        revalidatePath(`/admin/billing/${packageId}/edit`);
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+// DELETE
+export async function deleteCreditPackage(packageId: string) {
+    if (!packageId) {
+        return { success: false, error: 'ID do pacote não fornecido.' };
+    }
+    
+    try {
+        await adminDB.collection('credit_packages').doc(packageId).delete();
+        revalidatePath('/admin/billing');
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+
+// --- Client-facing actions ---
 
 interface PurchaseCreditsParams {
     userId: string;
@@ -169,20 +268,5 @@ export async function createPaymentPreference({ packageId, userId, couponCode }:
     } catch (error) {
         const errorMessage = (error as any)?.cause?.message || (error as Error).message;
         return { success: false, error: `Falha ao iniciar pagamento: ${errorMessage}` };
-    }
-}
-
-
-export async function deleteCreditPackage(packageId: string) {
-    if (!packageId) {
-        return { success: false, error: 'ID do pacote não fornecido.' };
-    }
-    
-    try {
-        await adminDB.collection('credit_packages').doc(packageId).delete();
-        revalidatePath('/admin/billing');
-        return { success: true };
-    } catch (error) {
-        return { success: false, error: (error as Error).message };
     }
 }

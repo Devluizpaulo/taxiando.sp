@@ -190,7 +190,8 @@ export interface CreditPackage {
   price: number;
   priceId: string; // For Mercado Pago
   popular?: boolean;
-  createdAt: Timestamp;
+  createdAt: Timestamp | string;
+  updatedAt?: Timestamp | string;
 }
 
 export interface Transaction {
@@ -257,6 +258,7 @@ export interface Coupon {
     isActive: boolean;
     expiresAt?: Timestamp | string;
     createdAt: Timestamp | string;
+    updatedAt?: Timestamp | string;
 }
 
 export interface Notification {
@@ -277,6 +279,7 @@ export interface Partner {
     size: 'small' | 'medium' | 'large';
     isActive: boolean;
     createdAt: Timestamp | string;
+    updatedAt?: Timestamp | string;
 }
 
 export interface BlogPost {

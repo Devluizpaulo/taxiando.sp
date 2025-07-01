@@ -93,8 +93,10 @@ export function AdminBillingClientPage({ initialPackages }: { initialPackages: C
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem disabled>
-                                                          <Edit className="mr-2 h-4 w-4"/> Editar
+                                                        <DropdownMenuItem asChild>
+                                                          <Link href={`/admin/billing/${pkg.id}/edit`}>
+                                                            <Edit className="mr-2 h-4 w-4"/> Editar
+                                                          </Link>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <AlertDialogTrigger asChild>

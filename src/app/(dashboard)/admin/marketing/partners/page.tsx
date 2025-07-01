@@ -138,11 +138,13 @@ export default function AdminPartnersPage() {
                                                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                    <DropdownMenuItem disabled>
-                                                        <Edit /> Editar
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href={`/admin/marketing/partners/${partner.id}/edit`}>
+                                                            <Edit className="mr-2 h-4 w-4"/> Editar
+                                                        </Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem disabled={updatingId === partner.id} onClick={() => handleStatusToggle(partner)}>
-                                                        {updatingId === partner.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (partner.isActive ? <><ToggleLeft/>Desativar</> : <><ToggleRight/>Ativar</>)}
+                                                        {updatingId === partner.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (partner.isActive ? <><ToggleLeft className="mr-2 h-4 w-4"/>Desativar</> : <><ToggleRight className="mr-2 h-4 w-4"/>Ativar</>)}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <AlertDialogTrigger asChild>
