@@ -2,17 +2,14 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { collection, getDocs, query, where, orderBy, Timestamp, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { type Event } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Image from 'next/image';
 import Link from 'next/link';
-import { MoveRight, Loader2, Calendar, MapPin } from 'lucide-react';
-import { format, isToday, isTomorrow, parseISO, startOfTomorrow, addDays, startOfToday } from 'date-fns';
+import { MoveRight, Loader2, Calendar } from 'lucide-react';
+import { parseISO, isToday, isTomorrow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getUpcomingEvents } from '@/app/actions/event-actions';
+import { EventCard } from './event-card';
 
 const getDateLabel = (dateString: string) => {
     const date = parseISO(dateString);
@@ -20,39 +17,6 @@ const getDateLabel = (dateString: string) => {
     if (isTomorrow(date)) return 'Amanhã';
     return format(date, "EEEE, dd/MM", { locale: ptBR });
 };
-
-
-const EventCard = ({ event }: { event: Event }) => {
-    const startTime = format(new Date(event.startDate as string), "HH:mm");
-    return (
-        <div className="w-80 flex-shrink-0 snap-start">
-            <Card className="flex flex-col h-full overflow-hidden bg-card shadow-lg hover:shadow-xl transition-shadow border-2 border-transparent hover:border-primary">
-                <CardHeader className="p-4 bg-accent text-accent-foreground flex flex-row items-center justify-between">
-                    <Image src="/logo.png" alt="Táxiando SP Logo" width={40} height={40} className="rounded-md" />
-                    <div className="text-right">
-                        <p className="text-sm font-semibold">Início às</p>
-                        <p className="text-2xl font-bold">{startTime}</p>
-                    </div>
-                </CardHeader>
-                <CardContent className="flex-1 p-4 space-y-2">
-                    <CardTitle className="font-headline text-lg line-clamp-2">{event.title}</CardTitle>
-                    <CardDescription className="text-sm mt-1 line-clamp-2 flex items-start gap-2">
-                        <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
-                        <span>{event.location}</span>
-                    </CardDescription>
-                </CardContent>
-                <CardFooter className="p-4 bg-muted/50">
-                    <Button asChild variant="outline" size="sm" className="w-full">
-                        <Link href={event.mapUrl} target="_blank" rel="noopener noreferrer">
-                        Ver no Mapa <MoveRight className="ml-2" />
-                        </Link>
-                    </Button>
-                </CardFooter>
-            </Card>
-        </div>
-    );
-}
-
 
 export function CulturalAgendaSection() {
     const [events, setEvents] = useState<Event[]>([]);
@@ -115,7 +79,9 @@ export function CulturalAgendaSection() {
                             </h3>
                             <div className="flex overflow-x-auto space-x-6 pb-4 -mx-4 px-4 snap-x snap-mandatory">
                                 {groupedEvents[date].map((event) => (
-                                    <EventCard key={event.id} event={event} />
+                                    <div key={event.id} className="w-80 flex-shrink-0 snap-start">
+                                      <EventCard event={event} />
+                                    </div>
                                 ))}
                             </div>
                         </div>
