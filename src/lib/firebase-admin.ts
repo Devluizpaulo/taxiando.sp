@@ -7,11 +7,17 @@ let app: admin.app.App;
 
 // This logic prevents re-initializing the app in hot-reload environments
 if (admin.apps.length === 0) {
+    const { FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY } = process.env;
+
+    if (!FIREBASE_PROJECT_ID || !FIREBASE_CLIENT_EMAIL || !FIREBASE_PRIVATE_KEY) {
+        throw new Error('Firebase Admin SDK credentials are not set. Please ensure FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY are defined in your environment variables.');
+    }
+
     const serviceAccount = {
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        projectId: FIREBASE_PROJECT_ID,
+        clientEmail: FIREBASE_CLIENT_EMAIL,
         // The private key must have newlines escaped
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
     };
 
     app = admin.initializeApp({
