@@ -1,3 +1,4 @@
+
 # Táxiando SP
 
 **A plataforma completa para o profissional do volante em São Paulo.**
@@ -76,7 +77,7 @@ Abra [http://localhost:9002](http://localhost:9002) no seu navegador para ver o 
 
 ## ⚠️ Solução de Problemas: Erro de "Credenciais não definidas"
 
-Se você encontrar um erro dizendo `CRITICAL: Firebase Admin SDK credentials are not set`, não se preocupe! Isso não é um bug no código, mas sim a etapa final e mais importante da configuração. Significa que a aplicação não encontrou as "chaves secretas" para se conectar ao seu banco de dados.
+Se você encontrar um erro dizendo `CRITICAL: Firebase Admin SDK credentials are not set`, não se preocupe! Isso não é um bug no código, mas sim a etapa final e mais importante da configuração. Significa que a aplicação, ao rodar no servidor (seja na sua máquina ou na Vercel), não encontrou as "chaves secretas" para se conectar ao seu banco de dados.
 
 **Como Resolver:**
 
