@@ -23,8 +23,10 @@ Táxiando SP é um ecossistema digital completo projetado para conectar, qualifi
 ### Para Administradores (Admin)
 -   **Dashboard Central:** Tenha uma visão geral da plataforma com estatísticas de usuários, vendas e atividades.
 -   **Moderação de Conteúdo:** Aprove ou rejeite cadastros de usuários, anúncios de veículos e serviços para garantir a qualidade da plataforma.
--   **Construtor de Cursos:** Uma ferramenta poderosa para criar e gerenciar todo o conteúdo educacional da plataforma, com suporte para aulas em vídeo, texto e quizzes interativos.
--   **Gerenciamento de Marketing:** Crie cupons de desconto, envie notificações para públicos segmentados e gerencie banners de parceiros/patrocinadores.
+-   **Construtor de Cursos:** Uma ferramenta poderosa para criar e gerenciar todo o conteúdo educacional, com suporte para aulas em vídeo, texto e quizzes interativos, além de controle de publicação.
+-   **Gerenciamento de Blog e Notícias:** Crie, edite e publique artigos e notícias com um editor Markdown e um assistente de IA para geração de conteúdo, mantendo a comunidade informada.
+-   **Gerenciador de Eventos:** Cadastre e administre eventos da agenda cultural, com auxílio de IA para preenchimento de detalhes e logística para motoristas.
+-   **Gerenciamento de Marketing:** Crie cupons de desconto, envie notificações para públicos segmentados e gerencie banners de parceiros/patrocinadores com controle de ativação.
 -   **Configurações de Pagamento:** Integre e gerencie as credenciais do gateway de pagamento (Mercado Pago) para a venda de pacotes de crédito.
 
 ---
@@ -80,15 +82,22 @@ Uma visão geral da organização das pastas e arquivos principais:
 ├── src
 │   ├── app                 # Rotas principais (App Router)
 │   │   ├── (auth)          # Rotas públicas (login, register)
-│   │   ├── (dashboard)     # Rotas protegidas por autenticação
-│   │   ├── actions         # Server Actions para interagir com o backend
+│   │   ├── (dashboard)     # Rotas protegidas (autenticação)
+│   │   │   ├── admin       #   - Painel de Administração
+│   │   │   │   ├── blog
+│   │   │   │   ├── billing
+│   │   │   │   ├── courses
+│   │   │   │   ├── events
+│   │   │   │   └── marketing
+│   │   │   └── ...         #   - Painéis de usuário (motorista, frota)
+│   │   ├── actions         # Server Actions
 │   │   └── api             # Rotas de API (ex: webhooks)
-│   ├── components          # Componentes reutilizáveis
+│   ├── components          # Componentes React reutilizáveis
 │   │   ├── ui              # Componentes de UI (ShadCN)
-│   │   └── layout          # Componentes de layout (Header, Footer, Sidebar)
+│   │   └── layout          # Componentes de layout (Header, Footer, etc)
 │   ├── hooks               # Hooks customizados (ex: useAuth)
-│   ├── lib                 # Funções utilitárias, schemas e configuração do Firebase
-│   └── ai                  # Lógica relacionada à IA com Genkit
-│       └── flows           # Fluxos de IA
+│   ├── lib                 # Funções utilitárias, schemas, config
+│   └── ai                  # Lógica de IA com Genkit
+│       └── flows           #   - Fluxos de IA
 └── ...
 ```

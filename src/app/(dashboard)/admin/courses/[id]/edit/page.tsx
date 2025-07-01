@@ -133,7 +133,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                 {form.formState.errors.modules?.root && (<p className="text-sm font-medium text-destructive">{form.formState.errors.modules.root.message}</p>)}
 
                 <div className="flex justify-between items-center mt-4">
-                    <Button type="button" variant="outline" onClick={() => appendModule({ title: '', lessons: [{ title: '', type: 'video', duration: 10 }] })}>
+                    <Button type="button" variant="outline" onClick={() => appendModule({ title: '', lessons: [{ title: '', type: 'video', duration: 10, content: '' }] })}>
                         <PlusCircle /> Adicionar Módulo
                     </Button>
                     <Button type="submit" disabled={isSubmitting} size="lg">
@@ -178,7 +178,7 @@ function ModuleField({ moduleIndex, removeModule, form }: { moduleIndex: number,
                 </div>
                  <CardFooter className="bg-muted/30 p-4 flex justify-between items-center">
                     <Button type="button" variant="destructive" onClick={() => removeModule(moduleIndex)}><Trash2 /> Remover Módulo</Button>
-                    <Button type="button" variant="secondary" onClick={() => appendLesson({ title: '', type: 'video', duration: 10, materials: [] })}><PlusCircle /> Adicionar Aula</Button>
+                    <Button type="button" variant="secondary" onClick={() => appendLesson({ title: '', type: 'video', duration: 10, content: '', materials: [] })}><PlusCircle /> Adicionar Aula</Button>
                 </CardFooter>
             </AccordionContent>
         </AccordionItem>
@@ -198,6 +198,17 @@ function LessonField({ form, moduleIndex, lessonIndex, removeLesson }: { form: a
                         <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.type`} render={({ field }) => (<FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger>{field.value ? <div className="flex items-center gap-2">{lessonTypeIcons[field.value]} {field.value.charAt(0).toUpperCase() + field.value.slice(1)}</div> : "Selecione..."}</SelectTrigger></FormControl><SelectContent><SelectItem value="video"><div className="flex items-center gap-2"><Video /> Vídeo</div></SelectItem><SelectItem value="text"><div className="flex items-center gap-2"><FileText /> Texto</div></SelectItem><SelectItem value="quiz"><div className="flex items-center gap-2"><ClipboardCheck /> Prova (Quiz)</div></SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
                         <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.duration`} render={({ field }) => (<FormItem><FormLabel>Duração (min)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
+
+                     {lessonType === 'video' && (
+                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (
+                            <FormItem><FormLabel>URL do Vídeo (YouTube/Vimeo)</FormLabel><FormControl><Input {...field} placeholder="https://www.youtube.com/watch?v=..." /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                    )}
+                    {lessonType === 'text' && (
+                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (
+                            <FormItem><FormLabel>Conteúdo da Aula</FormLabel><FormControl><Textarea {...field} placeholder="Escreva o conteúdo da aula aqui. Você pode usar Markdown para formatação." rows={8} /></FormControl><FormDescription>Dica: Use Markdown para adicionar **negrito**, *itálico*, listas e mais.</FormDescription><FormMessage /></FormItem>
+                        )}/>
+                    )}
 
                     {lessonType === 'quiz' ? (
                         <QuizBuilder form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} />
@@ -294,4 +305,3 @@ function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQu
         </Card>
     );
 }
-

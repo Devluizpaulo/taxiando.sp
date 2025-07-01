@@ -73,8 +73,7 @@ export default function FleetPage() {
                 const result = await getFleetData(user.uid);
                 if (result.success) {
                     setVehicles(result.vehicles);
-                    // Filter mock applications for now, until application logic is fully implemented
-                    // setApplications(result.applications);
+                    setApplications(result.applications);
                 } else {
                     toast({ variant: 'destructive', title: 'Erro ao Carregar Dados', description: result.error });
                 }
