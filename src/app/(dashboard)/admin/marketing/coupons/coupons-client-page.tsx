@@ -115,8 +115,10 @@ export function AdminCouponsClientPage({ initialCoupons }: { initialCoupons: Cou
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem disabled>
+                                                        <DropdownMenuItem asChild>
+                                                          <Link href={`/admin/marketing/coupons/${coupon.id}/edit`}>
                                                             <Edit className="mr-2 h-4 w-4"/> Editar
+                                                          </Link>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem disabled={updatingId === coupon.id} onClick={() => handleStatusToggle(coupon)}>
                                                             {updatingId === coupon.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (coupon.isActive ? <><ToggleLeft className="mr-2 h-4 w-4"/>Desativar</> : <><ToggleRight className="mr-2 h-4 w-4"/>Ativar</>)}
