@@ -149,6 +149,7 @@ export async function getAvailableVehicles(): Promise<Vehicle[]> {
             } as Vehicle;
         });
     } catch (error) {
+        console.error("Error fetching available vehicles: ", (error as Error).message);
         return [];
     }
 }
@@ -259,6 +260,28 @@ export async function getDriverApplications(userId: string): Promise<VehicleAppl
             } as VehicleApplication;
         });
     } catch (error) {
+        return [];
+    }
+}
+
+export async function getFeaturedVehicles(limit: number = 3): Promise<Vehicle[]> {
+    try {
+        const snapshot = await adminDB.collection('vehicles')
+            .where('status', '==', 'Disponível')
+            .orderBy('createdAt', 'desc')
+            .limit(limit)
+            .get();
+        
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                ...data,
+                id: doc.id,
+                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+            } as Vehicle;
+        });
+    } catch (error) {
+        console.error("Error fetching featured vehicles: ", (error as Error).message);
         return [];
     }
 }

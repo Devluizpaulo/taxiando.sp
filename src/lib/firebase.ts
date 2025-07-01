@@ -1,16 +1,15 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps, getApp, FirebaseOptions } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBKMxH78yJxByNbGTQUPKzRkPpcBYFIqNI",
-  authDomain: "taxiandosp-519b1.firebaseapp.com",
-  projectId: "taxiandosp-519b1",
-  storageBucket: "taxiandosp-519b1.appspot.com",
-  messagingSenderId: "9065042116",
-  appId: "1:9065042116:web:903a4bf2f9eb00571d7991",
-  measurementId: "G-3XS1FZ61V7"
+const firebaseConfig: FirebaseOptions = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase

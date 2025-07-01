@@ -48,6 +48,7 @@ export async function getServicesByProvider(providerId: string): Promise<Service
             } as ServiceListing;
         });
     } catch (error) {
+        console.error("Error fetching services by provider: ", (error as Error).message);
         return [];
     }
 }
@@ -71,5 +72,27 @@ export async function deleteService(serviceId: string) {
         return { success: true };
     } catch (error) {
         return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function getFeaturedServices(limit: number = 3): Promise<ServiceListing[]> {
+     try {
+        const snapshot = await adminDB.collection('services')
+            .where('status', '==', 'Ativo')
+            .orderBy('createdAt', 'desc')
+            .limit(limit)
+            .get();
+        
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                ...data,
+                id: doc.id,
+                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+            } as ServiceListing;
+        });
+    } catch (error) {
+        console.error("Error fetching featured services: ", (error as Error).message);
+        return [];
     }
 }

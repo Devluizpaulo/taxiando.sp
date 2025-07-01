@@ -3,13 +3,11 @@
 
 import { revalidatePath } from 'next/cache';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, deleteDoc, collection, query, orderBy } from 'firebase/firestore';
 import { type Course, type Module } from '@/lib/types';
 import { adminDB } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type CourseFormValues } from '@/lib/course-schemas';
-import { nanoid } from 'nanoid';
-import { mockCourse } from '@/lib/mock-data';
 
 interface MarkLessonAsCompleteParams {
     courseId: string;
@@ -84,16 +82,12 @@ export async function markLessonAsComplete({ courseId, moduleId, lessonId }: Mar
 
 export async function getAllCourses(): Promise<Course[]> {
     try {
-        const coursesCollection = adminDB.collection('courses');
-        const q = coursesCollection.orderBy('createdAt', 'desc');
-        const querySnapshot = await q.get();
-
-        if (querySnapshot.empty) {
-            // If there are no courses, return the mock course as an example.
-            return [mockCourse as Course];
+        const coursesSnapshot = await adminDB.collection('courses').orderBy('createdAt', 'desc').get();
+        if (coursesSnapshot.empty) {
+            return [];
         }
 
-        const coursesData = querySnapshot.docs.map(doc => {
+        const coursesData = coursesSnapshot.docs.map(doc => {
             const data = doc.data();
             const createdAtTimestamp = data.createdAt as Timestamp;
             const isoDate = createdAtTimestamp?.toDate ? createdAtTimestamp.toDate().toISOString() : new Date().toISOString();
@@ -106,17 +100,13 @@ export async function getAllCourses(): Promise<Course[]> {
         });
         return coursesData;
     } catch (error) {
+        console.error("Error fetching courses: ", (error as Error).message);
         return [];
     }
 }
 
 export async function getCourseById(courseId: string): Promise<Course | null> {
     try {
-        // If the mock course is requested, return it directly.
-        if (courseId === 'mock_course_1') {
-            return mockCourse as Course;
-        }
-
         const courseDoc = await adminDB.collection('courses').doc(courseId).get();
         if (!courseDoc.exists) {
             return null;
@@ -130,9 +120,9 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
         };
 
-        // We don't need to serialize nested dates as the course form doesn't have them
         return serializedData as Course;
     } catch (error) {
+        console.error("Error fetching course by ID: ", (error as Error).message);
         return null;
     }
 }
