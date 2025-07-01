@@ -81,7 +81,12 @@ const HowToBeDriverSection = () => (
   );
 
   const BlogSection = async () => {
-    const blogPosts = await getPublishedBlogPosts(3);
+    let blogPosts: BlogPost[] = [];
+    try {
+      blogPosts = await getPublishedBlogPosts(3);
+    } catch (error) {
+      console.error("Failed to fetch blog posts for homepage, hiding section.", error);
+    }
     
     if (!blogPosts || blogPosts.length === 0) return null;
 
