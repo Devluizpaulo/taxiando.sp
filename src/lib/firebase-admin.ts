@@ -1,57 +1,72 @@
 
-'use server';
-
 import admin from 'firebase-admin';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
-import { getStorage } from 'firebase-admin/storage';
+import { getFirestore, Timestamp, Firestore } from 'firebase-admin/firestore';
+import { getAuth, Auth } from 'firebase-admin/auth';
+import { getStorage, Storage } from 'firebase-admin/storage';
 
-let app: admin.app.App;
+let adminDB: Firestore;
+let adminAuth: Auth;
+let adminStorage: Storage;
+let isInitialized = false;
 
-// This logic prevents re-initializing the app in hot-reload environments
-if (admin.apps.length === 0) {
-    let serviceAccount;
-    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-
-    if (serviceAccountJson) {
-        try {
-            serviceAccount = JSON.parse(serviceAccountJson);
-        } catch (e) {
-            console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON:", e);
-            throw new Error(`
-CRITICAL: Failed to parse the 'FIREBASE_SERVICE_ACCOUNT_JSON' environment variable.
-Please ensure it is a valid, unescaped JSON string copied directly from your service account file.
-This is a configuration error, not a bug in the code.
-            `);
-        }
-    } else {
-         throw new Error(`
-CRITICAL: Firebase Admin SDK credentials are not set. This is the final configuration step.
-
-To fix this:
-1. Go to your Firebase Project Settings > Service Accounts tab.
-2. Click "Generate new private key" to download a JSON file.
-3. Create an environment variable named 'FIREBASE_SERVICE_ACCOUNT_JSON'.
-4. Copy the ENTIRE content of the downloaded JSON file and paste it as the value for the variable.
-
-For local development, add this to a .env.local file.
-For production (e.g., Vercel), add this in your project's "Environment Variables" settings.
-
-This is a configuration error, not a bug in the code. The application cannot run without these credentials.
-        `);
-    }
-
-    app = admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    });
-
+if (admin.apps.length > 0) {
+    const defaultApp = admin.app();
+    adminDB = getFirestore(defaultApp);
+    adminAuth = getAuth(defaultApp);
+    adminStorage = getStorage(defaultApp);
+    isInitialized = true;
 } else {
-    app = admin.app();
+    try {
+        const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+        
+        if (serviceAccountJson) {
+            const serviceAccount = JSON.parse(serviceAccountJson);
+            const app = admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+                storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+            });
+
+            adminDB = getFirestore(app);
+            adminAuth = getAuth(app);
+            adminStorage = getStorage(app);
+            isInitialized = true;
+        }
+    } catch (e) {
+        console.error("CRITICAL: Failed to parse 'FIREBASE_SERVICE_ACCOUNT_JSON'. Ensure it is a valid, unescaped JSON string. Error: ", (e as Error).message);
+    }
 }
 
-const adminDB = getFirestore(app);
-const adminAuth = getAuth(app);
-const adminStorage = getStorage(app);
+if (!isInitialized) {
+    console.warn(`
+****************************************************************************************************
+*                                                                                                  *
+*    WARNING: FIREBASE ADMIN SDK CREDENTIALS NOT FOUND OR INVALID.                                 *
+*                                                                                                  *
+*    The application will build, but any server-side features that require database access         *
+*    (like logging in, fetching data for dashboards, etc.) WILL FAIL AT RUNTIME.                   *
+*                                                                                                  *
+*    This is a CONFIGURATION issue, not a code bug.                                                *
+*                                                                                                  *
+*    TO FIX THIS:                                                                                  *
+*    - Set the 'FIREBASE_SERVICE_ACCOUNT_JSON' environment variable.                               *
+*    - Refer to the README.md for detailed instructions.                                           *
+*                                                                                                  *
+****************************************************************************************************
+    `);
+    
+    // Create a dummy proxy that will throw a more helpful error when accessed.
+    const createDummyProxy = (name: string) => {
+        return new Proxy({}, {
+            get: function(target, prop, receiver) {
+                // This error will be thrown only when a database/auth/storage function is actually called.
+                throw new Error(`Firebase Admin SDK not initialized. Cannot access '${name}.${String(prop)}'. Please check your server environment variables as described in the README.`);
+            }
+        });
+    };
+    
+    adminDB = createDummyProxy('adminDB') as Firestore;
+    adminAuth = createDummyProxy('adminAuth') as Auth;
+    adminStorage = createDummyProxy('adminStorage') as Storage;
+}
 
 export { adminAuth, adminDB, adminStorage, Timestamp };
