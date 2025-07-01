@@ -15,9 +15,19 @@ export async function getFleetData(fleetId: string) {
     }
     try {
         const vehiclesQuery = adminDB.collection('vehicles').where('fleetId', '==', fleetId).orderBy('createdAt', 'desc');
-        // Now fetching real applications related to the vehicles of this fleet
-        const vehicleIds = (await vehiclesQuery.get()).docs.map(doc => doc.id);
+        const vehiclesSnapshot = await vehiclesQuery.get();
+        const vehicleDocs = vehiclesSnapshot.docs;
         
+        const vehicleIds = vehicleDocs.map(doc => doc.id);
+        const vehicles = vehicleDocs.map(doc => {
+            const data = doc.data();
+            return { 
+                ...data,
+                id: doc.id, 
+                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString()
+            } as Vehicle;
+        });
+
         let applications: VehicleApplication[] = [];
         if (vehicleIds.length > 0) {
             const applicationsQuery = adminDB.collection('applications').where('vehicleId', 'in', vehicleIds).orderBy('appliedAt', 'desc');
@@ -32,16 +42,6 @@ export async function getFleetData(fleetId: string) {
             });
         }
         
-        const vehiclesSnapshot = await vehiclesQuery.get();
-        const vehicles = vehiclesSnapshot.docs.map(doc => {
-            const data = doc.data();
-            return { 
-                ...data,
-                id: doc.id, 
-                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString()
-            } as Vehicle;
-        });
-
         return { success: true, vehicles, applications };
 
     } catch (error) {
