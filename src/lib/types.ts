@@ -288,3 +288,7 @@ export interface BlogPost {
   createdAt: Timestamp | string;
   updatedAt?: Timestamp | string;
 }
+
+export type AdminUser = Pick<UserProfile, 'uid' | 'name' | 'email' | 'role' | 'profileStatus' | 'credits'> & {
+    createdAt: string;
+};

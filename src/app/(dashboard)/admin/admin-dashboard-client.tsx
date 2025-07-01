@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuthProtection } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -14,20 +14,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2, Eye, LogIn } from "lucide-react";
 
-import { updateUserProfileStatus, updateListingStatus } from '@/app/actions/admin-actions';
-import type { UserProfile, Opportunity, ServiceListing, AnalyticsData } from '@/lib/types';
+import { updateUserProfileStatus, updateListingStatus, getAdminDashboardData } from '@/app/actions/admin-actions';
+import type { UserProfile, Opportunity, ServiceListing, AnalyticsData, AdminUser } from '@/lib/types';
+import { LoadingScreen } from '@/components/loading-screen';
 
-
-type AdminUser = Pick<UserProfile, 'uid' | 'name' | 'email' | 'role' | 'profileStatus' | 'credits'> & {
-    createdAt: string; 
-};
-
-interface AdminDashboardClientProps {
-    initialUsers: AdminUser[];
-    initialOpportunities: Opportunity[];
-    initialServices: ServiceListing[];
-    initialAnalytics: AnalyticsData;
-}
 
 const getStatusVariant = (status?: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
@@ -45,22 +35,40 @@ const getStatusVariant = (status?: string): "default" | "secondary" | "destructi
     }
 };
 
-export function AdminDashboardClient({ 
-    initialUsers, 
-    initialOpportunities, 
-    initialServices, 
-    initialAnalytics 
-}: AdminDashboardClientProps) {
-    useAuthProtection({ requiredRoles: ['admin'] });
+export function AdminDashboardClient() {
+    const { loading: authLoading } = useAuthProtection({ requiredRoles: ['admin'] });
     const { toast } = useToast();
 
-    const [users, setUsers] = useState<AdminUser[]>(initialUsers);
-    const [opportunities, setOpportunities] = useState<Opportunity[]>(initialOpportunities);
-    const [services, setServices] = useState<ServiceListing[]>(initialServices);
+    const [users, setUsers] = useState<AdminUser[]>([]);
+    const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+    const [services, setServices] = useState<ServiceListing[]>([]);
+    const [analytics, setAnalytics] = useState<AnalyticsData>({});
+    const [pageLoading, setPageLoading] = useState(true);
     
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [updatingUserStatus, setUpdatingUserStatus] = useState<string | null>(null);
     const [updatingListingStatus, setUpdatingListingStatus] = useState<string | null>(null);
+
+     useEffect(() => {
+        if (!authLoading) {
+            const fetchData = async () => {
+                setPageLoading(true);
+                try {
+                    const data = await getAdminDashboardData();
+                    setUsers(data.users);
+                    setOpportunities(data.opportunities);
+                    setServices(data.services);
+                    setAnalytics(data.analytics);
+                } catch (error) {
+                    toast({ variant: 'destructive', title: 'Erro ao Carregar Painel', description: 'Não foi possível carregar os dados do painel. Tente recarregar a página.' });
+                } finally {
+                    setPageLoading(false);
+                }
+            };
+            fetchData();
+        }
+    }, [authLoading, toast]);
+
 
     const handleSelectAll = (checked: boolean | 'indeterminate') => {
         if (checked === true) {
@@ -111,6 +119,10 @@ export function AdminDashboardClient({
             setUpdatingListingStatus(null);
         }
     };
+
+    if (authLoading || pageLoading) {
+        return <LoadingScreen />;
+    }
     
     return (
         <div className="flex flex-col gap-8">
@@ -121,10 +133,10 @@ export function AdminDashboardClient({
             
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Usuários Totais</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{users.length}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Visitas na Home</CardTitle><Eye className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{initialAnalytics.pageViews?.home ?? 0}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Logins Totais</CardTitle><LogIn className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{initialAnalytics.logins?.total ?? 0}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Pacotes Vendidos</CardTitle><ShoppingCart className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{initialAnalytics.sales?.packagesSold ?? 0}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Receita (Simulada)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(initialAnalytics.sales?.totalRevenue ?? 0)}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Visitas na Home</CardTitle><Eye className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{analytics.pageViews?.home ?? 0}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Logins Totais</CardTitle><LogIn className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{analytics.logins?.total ?? 0}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Pacotes Vendidos</CardTitle><ShoppingCart className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{analytics.sales?.packagesSold ?? 0}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Receita (Simulada)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(analytics.sales?.totalRevenue ?? 0)}</div></CardContent></Card>
             </div>
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
