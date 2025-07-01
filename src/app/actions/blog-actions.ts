@@ -3,30 +3,22 @@
 
 import { revalidatePath } from 'next/cache';
 import { adminDB } from '@/lib/firebase-admin';
-import { auth } from '@/lib/firebase';
 import { type BlogPost } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type BlogPostFormValues } from '@/lib/blog-schemas';
 
 
-export async function createBlogPost(values: BlogPostFormValues) {
-    const { currentUser } = auth;
-    if (!currentUser) {
+export async function createBlogPost(values: BlogPostFormValues, authorId: string, authorName: string) {
+    if (!authorId) {
         return { success: false, error: 'Usuário não autenticado.' };
     }
     
     try {
-        const userDoc = await adminDB.collection('users').doc(currentUser.uid).get();
-        if (!userDoc.exists) {
-            return { success: false, error: 'Perfil do autor não encontrado.' };
-        }
-        const authorName = userDoc.data()?.name || 'Admin';
-
         const postRef = adminDB.collection('blog_posts').doc();
-        const postData: Omit<BlogPost, 'id'> = {
+        const postData: Omit<BlogPost, 'id' | 'imageFile'> = {
             ...values,
-            authorId: currentUser.uid,
-            authorName,
+            authorId: authorId,
+            authorName: authorName,
             createdAt: Timestamp.now(),
             updatedAt: Timestamp.now(),
         };
@@ -90,6 +82,7 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
             } as BlogPost;
         });
     } catch (error) {
+        
         return [];
     }
 }
@@ -115,6 +108,7 @@ export async function getPublishedBlogPosts(postLimit?: number): Promise<BlogPos
             } as BlogPost;
         });
     } catch (error) {
+        
         return [];
     }
 }
