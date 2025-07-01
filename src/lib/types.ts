@@ -240,7 +240,11 @@ export interface AnalyticsData {
     sales?: {
         totalRevenue?: number;
         packagesSold?: number;
-    }
+    },
+    userGrowth?: {
+        month: string;
+        total: number;
+    }[];
 }
 
 export interface Coupon {

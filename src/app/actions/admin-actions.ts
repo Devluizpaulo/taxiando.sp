@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { adminDB } from '@/lib/firebase-admin';
 import { type UserProfile, type PaymentGatewaySettings, type AnalyticsData, type AdminUser, type Opportunity, type ServiceListing } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore';
+import { format, subMonths } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 
 export async function updateUserProfileStatus(userId: string, newStatus: 'Aprovado' | 'Rejeitado' | 'Pendente') {
@@ -166,6 +168,26 @@ export async function getAdminDashboardData() {
     } catch (analyticsError) {
         // Fail silently
     }
+
+    const userGrowthData: { month: string; total: number; }[] = [];
+    const months = Array.from({ length: 12 }, (_, i) => subMonths(new Date(), i)).reverse();
+    
+    months.forEach(month => {
+        userGrowthData.push({
+            month: format(month, 'MMM/yy', { locale: ptBR }),
+            total: 0,
+        });
+    });
+
+    usersData.forEach(user => {
+        const registrationMonth = format(new Date(user.createdAt), 'MMM/yy', { locale: ptBR });
+        const monthData = userGrowthData.find(m => m.month === registrationMonth);
+        if (monthData) {
+            monthData.total += 1;
+        }
+    });
+    
+    analyticsData.userGrowth = userGrowthData;
 
     return { 
         users: usersData, 
