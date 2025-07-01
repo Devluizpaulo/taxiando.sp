@@ -2,7 +2,6 @@
 import { getBlogPostBySlug } from "@/app/actions/blog-actions";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
-import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from 'date-fns/locale';
 import Image from "next/image";
@@ -10,6 +9,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { headers } from 'next/headers';
+import { ShareButtons } from "@/components/share-buttons";
 
 
 export default async function BlogPostPage({ params }: { params: { slug: string }}) {
@@ -18,6 +19,11 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
     if (!post) {
         notFound();
     }
+    
+    const headersList = headers();
+    const domain = headersList.get('x-forwarded-host') || headersList.get('host') || "localhost:9002";
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const postUrl = `${protocol}://${domain}/blog/${post.slug}`;
     
     return (
         <div className="flex min-h-screen flex-col bg-background">
@@ -43,6 +49,10 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
                     <div className="prose dark:prose-invert max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
+                    </div>
+
+                    <div className="mt-12 border-t pt-8">
+                        <ShareButtons title={post.title} url={postUrl} />
                     </div>
                 </article>
             </main>
