@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock, Building, Wrench, Star, ShieldCheck, FileText, Car } from "lucide-react";
+import { BookOpen, Briefcase, Newspaper, MoveRight, MapPin, Clock, Building, Wrench, Star, ShieldCheck, FileText, Car, Quote } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { QuizSection } from "@/components/quiz-section";
@@ -16,7 +16,9 @@ import { PartnersSection } from "@/components/partners-section";
 import { getPublishedBlogPosts } from "@/app/actions/blog-actions";
 import { getFeaturedVehicles } from "@/app/actions/fleet-actions";
 import { getFeaturedServices } from "@/app/actions/service-actions";
-import { BlogPost, ServiceListing, Vehicle } from "@/lib/types";
+import { BlogPost, ServiceListing, Testimonial, Vehicle } from "@/lib/types";
+import { mockTestimonials } from "@/lib/mock-data";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 
 const HowToBeDriverSection = () => (
@@ -80,6 +82,42 @@ const HowToBeDriverSection = () => (
       </div>
     </section>
   );
+
+  const TestimonialsSection = ({ testimonials }: { testimonials: Testimonial[] }) => (
+    <section id="testimonials" className="py-16 md:py-24 bg-background">
+        <div className="container mx-auto px-4 md:px-6">
+            <div className="mb-12 text-center">
+                <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
+                    Aprovado por quem está na rua
+                </h2>
+                <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+                    Veja o que profissionais como você estão dizendo sobre a Táxiando SP.
+                </p>
+            </div>
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {testimonials.map((testimonial) => (
+                    <Card key={testimonial.id} className="flex flex-col justify-between">
+                        <CardContent className="pt-6">
+                            <Quote className="h-8 w-8 text-primary/30 mb-4" />
+                            <p className="text-muted-foreground italic">"{testimonial.quote}"</p>
+                        </CardContent>
+                        <CardFooter className="flex items-center gap-4">
+                            <Avatar>
+                                <AvatarImage src={testimonial.imageUrl} alt={testimonial.name} data-ai-hint="driver portrait business owner" />
+                                <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-semibold">{testimonial.name}</p>
+                                <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                            </div>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    </section>
+);
+
 
   const BlogSection = async () => {
     let blogPosts: BlogPost[] = [];
@@ -349,6 +387,8 @@ export default function Home() {
           <RentVehiclePrompt />
           
           <HowToBeDriverSection />
+
+          <TestimonialsSection testimonials={mockTestimonials} />
 
           <QuizSection />
 

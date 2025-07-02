@@ -1,4 +1,5 @@
 
+
 import { type Timestamp } from "firebase/firestore";
 
 // Note: When passing Timestamps from server components to client components,
@@ -300,6 +301,14 @@ export interface BlogPost {
   createdAt: Timestamp | string;
   updatedAt?: Timestamp | string;
   imageFile?: File; // For upload
+}
+
+export interface Testimonial {
+    id: string;
+    name: string;
+    role: string;
+    quote: string;
+    imageUrl: string;
 }
 
 // Represents a user object with Timestamps converted to ISO strings for client-side use
