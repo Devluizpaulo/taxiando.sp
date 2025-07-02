@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { adminDB } from '@/lib/firebase-admin';
-import { type Vehicle, type VehicleApplication, type VehiclePerk, type UserProfile } from '@/lib/types';
+import { type Vehicle, type VehicleApplication, type VehiclePerk, type UserProfile, AdminUser } from '@/lib/types';
 import { vehiclePerks } from '@/lib/data';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type VehicleFormValues } from '@/lib/fleet-schemas';
@@ -131,6 +131,33 @@ export async function updateApplicationStatus(applicationId: string, newStatus: 
     }
 }
 
+// Get a driver's full profile for a fleet to review
+export async function getDriverProfile(driverId: string): Promise<AdminUser | null> {
+    if (!driverId) return null;
+    try {
+        const userDoc = await adminDB.collection('users').doc(driverId).get();
+        if (!userDoc.exists) return null;
+
+        const data = userDoc.data() as UserProfile;
+        
+        const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
+
+        return {
+            ...data,
+            uid: userDoc.id,
+            createdAt: toISO(data.createdAt) || new Date().toISOString(),
+            cnhExpiration: toISO(data.cnhExpiration),
+            condutaxExpiration: toISO(data.condutaxExpiration),
+            alvaraExpiration: toISO(data.alvaraExpiration),
+            lastNotificationCheck: toISO(data.lastNotificationCheck),
+        } as AdminUser;
+
+    } catch (error) {
+        console.error("Error fetching driver profile:", error);
+        return null;
+    }
+}
+
 // --- Functions for Rentals Marketplace ---
 
 export async function getAvailableVehicles(): Promise<Vehicle[]> {
@@ -217,7 +244,7 @@ export async function createApplication(vehicleId: string, userId: string) {
             driverId: userId,
             driverName: user.name || 'Nome não preenchido',
             driverPhotoUrl: user.photoUrl || '',
-            driverProfileStatus: user.profileStatus,
+            driverProfileStatus: 'approved',
             vehicleId: vehicleId,
             vehicleName: `${vehicle.make} ${vehicle.model} (${vehicle.year})`,
             fleetId: vehicle.fleetId,
