@@ -1,4 +1,5 @@
 
+
 import { PublicHeader } from "@/components/layout/public-header";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -121,7 +122,7 @@ export default function HowToBeTaxiDriverPage() {
                         <Badge variant="secondary" className="mb-4">Sua Nova Carreira Começa Aqui</Badge>
                         <h1 className="font-headline text-3xl font-bold tracking-tight sm:text-5xl">A Rota para sua Independência Profissional</h1>
                         <p className="mx-auto mt-6 max-w-3xl text-lg text-muted-foreground text-justify">
-                            Trocar de carreira ou sair dos aplicativos para se tornar taxista é uma grande decisão. Aqui, você é seu próprio chefe, conhece a cidade como ninguém e tem o controle da sua renda. Com a orientação certa, essa transição pode ser mais simples e lucrativa do que você imagina.
+                            Tornar-se um taxista profissional é uma grande decisão. Aqui, você é seu próprio chefe, conhece a cidade como ninguém e tem o controle da sua renda. Com a orientação certa, essa jornada pode ser mais simples e lucrativa do que você imagina.
                         </p>
                     </div>
 

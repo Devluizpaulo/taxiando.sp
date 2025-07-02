@@ -213,13 +213,13 @@ export default function Home() {
             <div className="container mx-auto grid grid-cols-1 items-center gap-12 px-4 md:grid-cols-2 md:px-6">
               <div className="space-y-8 text-center md:text-left">
                 <Badge variant="secondary" className="bg-primary/20 text-primary-foreground font-semibold py-1 px-3">
-                  A plataforma Nº1 para o profissional do volante
+                  A plataforma completa para o taxista de São Paulo
                 </Badge>
                 <h1 className="font-headline text-4xl font-bold tracking-tighter text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
-                  Sua carreira decola aqui.
+                  Sua Carreira no Ponto Certo.
                 </h1>
                 <p className="mx-auto max-w-xl text-lg text-muted-foreground text-justify md:mx-0 md:text-xl">
-                  Cursos, notícias e as melhores oportunidades para taxistas e motoristas de app em São Paulo. Tudo em um só lugar.
+                  Encontre os melhores veículos, cursos de qualificação e uma comunidade de profissionais para você acelerar seus resultados.
                 </p>
                 <div className="flex flex-col gap-4 sm:flex-row sm:justify-center md:justify-start">
                   <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20">
@@ -249,6 +249,7 @@ export default function Home() {
                   height={600}
                   className="relative z-10 w-full max-w-xs rounded-2xl object-cover shadow-2xl aspect-[4/5] sm:max-w-sm md:aspect-square md:max-w-md"
                   priority
+                  data-ai-hint="professional taxi driver"
                 />
               </div>
             </div>
