@@ -10,7 +10,11 @@ export async function trackPageView(page: string) {
             [page]: admin.firestore.FieldValue.increment(1)
         }, { merge: true });
     } catch (error) {
-        // Fail silently so it doesn't break the page load
+        if ((error as Error).message.includes('Firebase Admin SDK not initialized')) {
+            return; // Gracefully fail during initial setup
+        }
+        // Fail silently so it doesn't break the page load, but log for debugging
+        console.error(`Error tracking page view for '${page}':`, (error as Error).message);
     }
 }
 

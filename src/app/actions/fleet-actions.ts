@@ -281,6 +281,9 @@ export async function getFeaturedVehicles(limit: number = 3): Promise<Vehicle[]>
             } as Vehicle;
         });
     } catch (error) {
+        if ((error as Error).message.includes('Firebase Admin SDK not initialized')) {
+            return []; // Gracefully fail during initial setup
+        }
         console.error("Error fetching featured vehicles: ", (error as Error).message);
         return [];
     }
