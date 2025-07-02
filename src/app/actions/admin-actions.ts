@@ -114,9 +114,9 @@ export async function getAdminDashboardAnalytics(): Promise<AnalyticsData> {
         ]);
 
         const analytics: AnalyticsData = {
-            pageViews: pageViewsSnap.exists ? pageViewsSnap.data() : { home: 0 },
-            logins: loginsSnap.exists ? loginsSnap.data() : { total: 0 },
-            sales: salesSnap.exists ? salesSnap.data() : { totalRevenue: 0, packagesSold: 0 },
+            pageViews: pageViewsSnap.exists() ? pageViewsSnap.data() : { home: 0 },
+            logins: loginsSnap.exists() ? loginsSnap.data() : { total: 0 },
+            sales: salesSnap.exists() ? salesSnap.data() : { totalRevenue: 0, packagesSold: 0 },
         };
 
         return analytics;
