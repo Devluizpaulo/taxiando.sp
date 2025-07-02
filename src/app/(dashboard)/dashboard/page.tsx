@@ -54,7 +54,7 @@ const getVehicleStatus = (profile: UserProfile | null): { text: string; icon: Re
         return { text: 'Alvará Pendente', icon: HelpCircle, className: 'text-muted-foreground', isRegistered: true };
     }
     
-    const alvaraDate = alvaraTimestamp.toDate();
+    const alvaraDate = (alvaraTimestamp as unknown as Timestamp).toDate();
     if (isPast(alvaraDate)) {
         return { text: 'Alvará Vencido', icon: AlertTriangle, className: 'text-destructive', isRegistered: true };
     }
