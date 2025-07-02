@@ -242,4 +242,36 @@ export async function getServiceAndProviderDetails(serviceId: string) {
     }
 }
 
+export async function getProviderPublicProfile(providerId: string) {
+    if (!providerId) {
+        return { success: false, error: "ID do prestador não fornecido." };
+    }
+    try {
+        const providerDoc = await adminDB.collection('users').doc(providerId).get();
+        if (!providerDoc.exists || providerDoc.data()?.role !== 'provider') {
+            return { success: false, error: "Prestador não encontrado." };
+        }
+        
+        const servicesQuery = await adminDB.collection('services')
+            .where('providerId', '==', providerId)
+            .where('status', '==', 'Ativo')
+            .orderBy('createdAt', 'desc')
+            .get();
+            
+        const providerProfile = { uid: providerDoc.id, ...providerDoc.data() } as UserProfile;
+        const activeServices = servicesQuery.docs.map(doc => {
+             const data = doc.data();
+             return {
+                ...data,
+                id: doc.id,
+                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString(),
+            } as ServiceListing;
+        });
+
+        return { success: true, provider: providerProfile, services: activeServices };
+
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
     
