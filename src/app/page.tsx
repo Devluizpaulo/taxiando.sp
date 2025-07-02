@@ -189,7 +189,7 @@ const ClassifiedsSection = async () => {
                                     <CardFooter className="flex items-center justify-between bg-muted/50 p-4">
                                       <p className="text-lg font-bold text-primary">{srv.price}</p>
                                       <Button asChild>
-                                          <Link href="/services/marketplace">Ver detalhes</Link>
+                                          <Link href="/services/marketplace">Ver todos os serviços</Link>
                                       </Button>
                                     </CardFooter>
                                 </Card>
