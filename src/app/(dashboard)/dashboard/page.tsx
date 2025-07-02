@@ -12,7 +12,7 @@ import { differenceInDays, isPast } from 'date-fns';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Briefcase, FileCheck, Search, Award, AlertTriangle, ShieldCheck, HelpCircle, UserPlus, Car } from 'lucide-react';
+import { BookOpen, Briefcase, FileCheck, Search, Award, AlertTriangle, ShieldCheck, HelpCircle, UserPlus, Car, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LoadingScreen } from '@/components/loading-screen';
 import { getDriverApplications } from '@/app/actions/fleet-actions';
@@ -43,26 +43,32 @@ const calculateProfileCompleteness = (profile: UserProfile | null): number => {
     return Math.round((filledFields / totalFields) * 100);
 };
 
-// Helper to determine vehicle status
-const getVehicleStatus = (profile: UserProfile | null): { text: string; icon: React.ElementType; className: string, isRegistered: boolean } => {
-    if (!profile || !profile.vehicleLicensePlate) {
-        return { text: 'Cadastre seu Veículo', icon: Car, className: 'text-muted-foreground', isRegistered: false };
+// Helper to determine vehicle status based on work mode
+const getVehicleStatus = (profile: UserProfile | null): { text: string; icon: React.ElementType; className: string, href: string } => {
+    if (!profile) {
+        return { text: 'Carregando...', icon: Loader2, className: 'animate-spin', href: '/profile' };
     }
-    
-    const alvaraTimestamp = profile.alvaraExpiration;
-    if (!alvaraTimestamp) {
-        return { text: 'Alvará Pendente', icon: HelpCircle, className: 'text-muted-foreground', isRegistered: true };
+
+    if (profile.workMode === 'owner') {
+        if (!profile.vehicleLicensePlate) {
+             return { text: 'Cadastre seu Veículo', icon: Car, className: 'text-muted-foreground', href: '/profile' };
+        }
+        const alvaraTimestamp = profile.alvaraExpiration;
+        if (!alvaraTimestamp) {
+            return { text: 'Alvará Pendente', icon: HelpCircle, className: 'text-muted-foreground', href: '/profile' };
+        }
+        const alvaraDate = (alvaraTimestamp as unknown as Timestamp).toDate();
+        if (isPast(alvaraDate)) {
+            return { text: 'Alvará Vencido', icon: AlertTriangle, className: 'text-destructive', href: '/profile' };
+        }
+        const daysRemaining = differenceInDays(alvaraDate, new Date());
+        if (daysRemaining <= 30) {
+            return { text: `Vence em ${daysRemaining}d`, icon: AlertTriangle, className: 'text-amber-600', href: '/profile' };
+        }
+        return { text: 'Regular', icon: ShieldCheck, className: 'text-primary', href: '/profile' };
+    } else { // 'rental' or undefined
+        return { text: 'Buscar Vagas', icon: Briefcase, className: 'text-primary', href: '/rentals' };
     }
-    
-    const alvaraDate = (alvaraTimestamp as unknown as Timestamp).toDate();
-    if (isPast(alvaraDate)) {
-        return { text: 'Alvará Vencido', icon: AlertTriangle, className: 'text-destructive', isRegistered: true };
-    }
-    const daysRemaining = differenceInDays(alvaraDate, new Date());
-    if (daysRemaining <= 30) {
-        return { text: `Vence em ${daysRemaining}d`, icon: AlertTriangle, className: 'text-amber-600', isRegistered: true };
-    }
-    return { text: 'Regular', icon: ShieldCheck, className: 'text-primary', isRegistered: true };
 };
 
 
@@ -145,16 +151,20 @@ export default function DashboardPage() {
                 <Card><Link href="/courses"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Cursos Concluídos</CardTitle><FileCheck className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{completedCoursesCount}</div></CardContent></Link></Card>
                 <Card><Link href="/applications"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Candidaturas</CardTitle><Briefcase className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{applicationsCount}</div></CardContent></Link></Card>
                 <Card>
-                    <Link href="/profile">
+                    <Link href={vehicleStatus.href}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Meu Veículo</CardTitle>
+                            <CardTitle className="text-sm font-medium">
+                                {userProfile?.workMode === 'owner' ? 'Meu Veículo' : 'Oportunidades'}
+                            </CardTitle>
                             <vehicleStatus.icon className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className={cn("text-2xl font-bold", vehicleStatus.className)}>
                                 {vehicleStatus.text}
                             </div>
-                             {!vehicleStatus.isRegistered && <p className="text-xs text-muted-foreground">Monitore documentos e mais.</p>}
+                             <p className="text-xs text-muted-foreground">
+                              {userProfile?.workMode === 'owner' ? 'Monitore documentos e mais.' : 'Encontre seu próximo carro.'}
+                            </p>
                         </CardContent>
                     </Link>
                 </Card>
