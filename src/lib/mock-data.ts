@@ -1,5 +1,6 @@
 
-import { type Vehicle, type VehicleApplication, type Course, type ServiceListing } from './types';
+
+import { type Vehicle, type VehicleApplication, type Course, type ServiceListing, type Testimonial } from './types';
 
 export const mockVehicles: (Omit<Vehicle, 'fleetId' | 'createdAt'>)[] = [
   { id: 'v_mock_1', plate: 'BRA2E19', make: 'Chevrolet', model: 'Onix', year: 2022, status: 'Disponível', dailyRate: 120, imageUrl: 'https://placehold.co/600x400.png', condition: 'Novo', description: 'Carro novo, completo, com ar, direção e som bluetooth.', paymentInfo: { terms: 'Diária (Seg-Sáb)', methods: ['Cartão de Crédito', 'PIX'] }, perks: [{ id: 'full_tank', label: 'Tanque Cheio' }, { id: 'car_wash', label: 'Lava-rápido' }] },
@@ -37,6 +38,30 @@ export const mockOpportunities = [
     { id: 'opp_1', vehicle: 'Chevrolet Onix 2023', provider: 'Frota Rápida SP', type: 'Frota', status: 'Pendente' },
     { id: 'opp_2', vehicle: 'Fiat Cronos 2022', provider: 'Sérgio L. (Porta Branca)', type: 'Porta Branca', status: 'Aprovado' },
     { id: 'opp_3', vehicle: 'VW Virtus 2021', provider: 'Frota Central', type: 'Frota', status: 'Rejeitado' },
+];
+
+export const mockTestimonials: Testimonial[] = [
+    {
+        id: 'test_1',
+        name: 'Carlos Alberto',
+        role: 'Motorista',
+        quote: 'Desde que comecei a usar a plataforma, consegui um carro muito melhor e minhas corridas aumentaram. Os cursos também fizeram toda a diferença no meu atendimento.',
+        imageUrl: 'https://placehold.co/100x100.png'
+    },
+    {
+        id: 'test_2',
+        name: 'Mariana Costa',
+        role: 'Dona de Frota',
+        quote: 'A Táxiando SP simplificou a gestão dos meus veículos. Encontro motoristas qualificados e com o perfil certo para minha frota em tempo recorde. Recomendo!',
+        imageUrl: 'https://placehold.co/100x100.png'
+    },
+    {
+        id: 'test_3',
+        name: 'Sérgio Lima',
+        role: 'Prestador de Serviço',
+        quote: 'Minha oficina ganhou muita visibilidade com o marketplace. O número de clientes taxistas aumentou e o retorno foi imediato. É uma parceria de sucesso.',
+        imageUrl: 'https://placehold.co/100x100.png'
+    }
 ];
 
 export const mockCourse: Course = {
