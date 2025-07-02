@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CreditCard, Loader2, ShoppingCart, AlertCircle, Tag, Ticket } from "lucide-react";
+import { CreditCard, Loader2, ShoppingCart, AlertCircle, Ticket } from "lucide-react";
 import { LoadingScreen } from '@/components/loading-screen';
 import { Input } from '@/components/ui/input';
 
