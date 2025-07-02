@@ -6,9 +6,11 @@ import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuthProtection } from '@/hooks/use-auth';
-import type { Vehicle, VehicleApplication } from '@/lib/types';
+import type { Vehicle, VehicleApplication, UserProfile, AdminUser } from '@/lib/types';
 import { vehicleFormSchema, type VehicleFormValues } from '@/lib/fleet-schemas';
-import { getFleetData, upsertVehicle, deleteVehicle, updateApplicationStatus } from '@/app/actions/fleet-actions';
+import { getFleetData, upsertVehicle, deleteVehicle, updateApplicationStatus, getDriverProfile } from '@/app/actions/fleet-actions';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +23,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight } from "lucide-react";
+import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle } from "lucide-react";
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -40,9 +42,16 @@ const getVehicleStatusVariant = (status: Vehicle['status']): "default" | "second
 
 const getProfileStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
-        case 'Aprovado': return 'default';
-        case 'Pendente': return 'secondary';
-        case 'Rejeitado': return 'destructive';
+        case 'Aprovado':
+        case 'approved':
+             return 'default';
+        case 'Pendente': 
+        case 'pending_review':
+        case 'incomplete':
+            return 'secondary';
+        case 'Rejeitado':
+        case 'rejected':
+            return 'destructive';
         default: return 'outline';
     }
 };
@@ -60,6 +69,11 @@ export default function FleetPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
     const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
+
+    // State for driver profile modal
+    const [isProfileModalOpen, setProfileModalOpen] = useState(false);
+    const [isFetchingProfile, setIsFetchingProfile] = useState(false);
+    const [selectedDriver, setSelectedDriver] = useState<AdminUser | null>(null);
 
     const form = useForm<VehicleFormValues>({
       resolver: zodResolver(vehicleFormSchema),
@@ -151,6 +165,18 @@ export default function FleetPage() {
         } else {
             toast({ variant: 'destructive', title: "Erro ao Atualizar", description: result.error});
         }
+    };
+
+    const handleViewProfile = async (driverId: string) => {
+        setIsFetchingProfile(true);
+        const driverProfile = await getDriverProfile(driverId);
+        if (driverProfile) {
+            setSelectedDriver(driverProfile);
+            setProfileModalOpen(true);
+        } else {
+            toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar o perfil do motorista.' });
+        }
+        setIsFetchingProfile(false);
     };
     
     const onSubmit = async (values: VehicleFormValues) => {
@@ -257,7 +283,7 @@ export default function FleetPage() {
                 </CardHeader>
                 <CardContent>
                      <Table>
-                        <TableHeader><TableRow><TableHead>Motorista</TableHead><TableHead>Veículo Aplicado</TableHead><TableHead>Status do Perfil</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow><TableHead>Motorista</TableHead><TableHead>Veículo Aplicado</TableHead><TableHead>Status da Candidatura</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
                         <TableBody>
                             {applications.length === 0 ? (
                                 <TableRow><TableCell colSpan={4} className="h-24 text-center">Nenhuma candidatura recebida ainda.</TableCell></TableRow>
@@ -270,27 +296,31 @@ export default function FleetPage() {
                                                     <AvatarImage src={app.driverPhotoUrl} alt={app.driverName} data-ai-hint="driver portrait"/>
                                                     <AvatarFallback>{app.driverName.charAt(0)}</AvatarFallback>
                                                 </Avatar>
-                                                <span className="font-medium">{app.driverName}</span>
+                                                <div>
+                                                    <span className="font-medium">{app.driverName}</span>
+                                                    <Badge variant={getProfileStatusVariant(app.driverProfileStatus)} className="ml-2">
+                                                        {app.driverProfileStatus === 'approved' && <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
+                                                        Perfil {app.driverProfileStatus === 'approved' ? 'Aprovado' : 'Pendente'}
+                                                    </Badge>
+                                                </div>
                                             </div>
                                         </TableCell>
                                         <TableCell>{app.vehicleName}</TableCell>
                                         <TableCell>
-                                            <Badge variant={getProfileStatusVariant(app.driverProfileStatus)}>
-                                                {app.driverProfileStatus === 'Aprovado' && <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
-                                                {app.driverProfileStatus}
-                                            </Badge>
+                                             <Badge variant={getProfileStatusVariant(app.status)}>{app.status}</Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex gap-2 justify-end">
-                                                <Button variant="outline" size="sm">Ver Perfil</Button>
+                                                <Button variant="outline" size="sm" onClick={() => handleViewProfile(app.driverId)} disabled={isFetchingProfile}>
+                                                    {isFetchingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Eye className="mr-2 h-4 w-4"/>}
+                                                    Ver Perfil
+                                                </Button>
                                                 {app.status === 'Pendente' ? (
                                                     <>
                                                         <Button variant="outline" size="sm" onClick={() => handleApplicationStatusChange(app.id, 'Aprovado')}>Aprovar</Button>
                                                         <Button variant="destructive" size="sm" onClick={() => handleApplicationStatusChange(app.id, 'Rejeitado')}>Rejeitar</Button>
                                                     </>
-                                                ) : (
-                                                    <Badge variant={app.status === 'Aprovado' ? 'default' : 'destructive'}>{app.status}</Badge>
-                                                )}
+                                                ) : null}
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -431,6 +461,78 @@ export default function FleetPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            <DriverProfileModal user={selectedDriver} isOpen={isProfileModalOpen} onOpenChange={setProfileModalOpen}/>
         </div>
+    );
+}
+
+// Modal Component to Display Driver Profile
+function DriverProfileModal({ user, isOpen, onOpenChange }: { user: AdminUser | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+    if (!user) return null;
+    
+    const formatDate = (dateString?: string) => {
+        if (!dateString) return 'Não informado';
+        return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
+    }
+
+    return (
+         <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle>Perfil do Candidato</DialogTitle>
+                </DialogHeader>
+                <div className="py-4 grid grid-cols-1 md:grid-cols-3 gap-6 max-h-[70vh] overflow-y-auto pr-4">
+                    <div className="md:col-span-1 flex flex-col items-center text-center gap-4">
+                        <Avatar className="h-32 w-32 border-4 border-primary">
+                            <AvatarImage src={user.photoUrl} alt={user.name}/>
+                            <AvatarFallback className="text-4xl">{user.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="w-full">
+                            <h2 className="text-2xl font-bold font-headline">{user.name}</h2>
+                            <p className="text-muted-foreground">{user.email}</p>
+                        </div>
+                         <Card className="w-full text-left">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-base flex items-center gap-2"><Smartphone/> Contato</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm">{user.phone}</p>
+                                {user.hasWhatsApp && <Badge variant="secondary" className="mt-2">Tem WhatsApp</Badge>}
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <div className="md:col-span-2 space-y-4">
+                        {user.bio && (
+                            <Card>
+                                <CardHeader className="pb-2"><CardTitle className="text-base">Resumo Profissional</CardTitle></CardHeader>
+                                <CardContent><p className="text-sm text-muted-foreground">{user.bio}</p></CardContent>
+                            </Card>
+                        )}
+                        <Card>
+                            <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Briefcase/> Documentação</CardTitle></CardHeader>
+                            <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                                <div><p className="font-semibold">Nº CNH</p><p className="text-muted-foreground">{user.cnhNumber || 'Não informado'}</p></div>
+                                <div><p className="font-semibold">Cat. CNH</p><p className="text-muted-foreground">{user.cnhCategory || 'Não informado'}</p></div>
+                                <div><p className="font-semibold">Validade CNH</p><p className="text-muted-foreground">{formatDate(user.cnhExpiration)}</p></div>
+                                <div><p className="font-semibold">Pontos CNH</p><p className="text-muted-foreground">{user.cnhPoints ?? 'Não informado'}</p></div>
+                                <div><p className="font-semibold">Nº Condutax</p><p className="text-muted-foreground">{user.condutaxNumber || 'Não informado'}</p></div>
+                                <div><p className="font-semibold">Validade Condutax</p><p className="text-muted-foreground">{formatDate(user.condutaxExpiration)}</p></div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><MessageCircle/> Referência Pessoal</CardTitle></CardHeader>
+                             <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                                <div><p className="font-semibold">Nome</p><p className="text-muted-foreground">{user.reference?.name || 'Não informado'}</p></div>
+                                <div><p className="font-semibold">Relação</p><p className="text-muted-foreground">{user.reference?.relationship || 'Não informado'}</p></div>
+                                <div className="col-span-2"><p className="font-semibold">Telefone</p><p className="text-muted-foreground">{user.reference?.phone || 'Não informado'}</p></div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+                 <DialogFooter>
+                    <DialogClose asChild><Button type="button" variant="outline">Fechar</Button></DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
