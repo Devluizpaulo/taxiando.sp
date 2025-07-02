@@ -164,7 +164,7 @@ export default function ServicesPage() {
                                                         <Link href={`/services/${service.id}/edit`}><FilePen /> Editar</Link>
                                                     </DropdownMenuItem>
                                                     
-                                                     <DropdownMenuItem disabled={updatingId === service.id || service.status === 'Pendente'} onClick={() => handleStatusToggle(service)}>
+                                                     <DropdownMenuItem disabled={updatingId === service.id || service.status === 'Pendente' || service.status === 'Rejeitado'} onClick={() => handleStatusToggle(service)}>
                                                         {updatingId === service.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (service.status === 'Ativo' ? <><PowerOff/>Pausar</> : <><Power/>Ativar</>)}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
