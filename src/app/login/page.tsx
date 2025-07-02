@@ -7,10 +7,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
 import Image from 'next/image';
 
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -22,8 +21,6 @@ import Link from 'next/link';
 import { PublicHeader } from '@/components/layout/public-header';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { trackLogin } from '../actions/analytics-actions';
-import { ensureInitialData } from '../actions/admin-actions';
-import { type UserProfile } from '@/lib/types';
 
 
 const loginFormSchema = z.object({
@@ -54,25 +51,14 @@ export default function LoginPage() {
       await setPersistence(auth, persistence);
       
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      await trackLogin(userCredential.user.uid);
+      
+      // Fire-and-forget analytics. Don't block the UI for this.
+      trackLogin(userCredential.user.uid);
 
-      // Fetch user role from Firestore to redirect correctly
-      const userDocRef = doc(db, 'users', userCredential.user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (userDoc.exists()) {
-        const userProfile = userDoc.data() as UserProfile;
-        if (userProfile.role === 'admin') {
-          toast({ title: "Verificando dados iniciais...", description: "Garantindo que a plataforma esteja pronta." });
-          await ensureInitialData();
-          router.push('/admin');
-        } else {
-          router.push('/dashboard');
-        }
-      } else {
-        // Fallback to dashboard if profile doesn't exist for some reason
-        router.push('/dashboard');
-      }
+      // The AuthProvider will handle fetching the profile and the 
+      // DashboardLayout will handle the role-based redirect.
+      // Just push to a generic authenticated route to make the login feel faster.
+      router.push('/dashboard');
 
     } catch (error: any) {
       console.error('Login failed:', error);
