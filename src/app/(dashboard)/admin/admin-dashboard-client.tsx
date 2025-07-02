@@ -5,6 +5,9 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuthProtection } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -12,12 +15,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2, Eye, LogIn, UserCheck, Search } from "lucide-react";
+import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2, Eye, LogIn, UserCheck, Search, Trash2, FilePen } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -27,7 +32,7 @@ import {
   Tooltip,
 } from "recharts";
 
-import { updateUserProfileStatus, updateListingStatus, getAdminDashboardData } from '@/app/actions/admin-actions';
+import { updateUserProfileStatus, updateListingStatus, getAdminDashboardData, updateUserByAdmin, deleteUserByAdmin } from '@/app/actions/admin-actions';
 import type { UserProfile, Opportunity, ServiceListing, AnalyticsData, AdminUser } from '@/lib/types';
 import { LoadingScreen } from '@/components/loading-screen';
 
@@ -68,6 +73,8 @@ export function AdminDashboardClient() {
     const [statusFilter, setStatusFilter] = useState('all');
     const [isProfileModalOpen, setProfileModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
 
      useEffect(() => {
         if (!authLoading) {
@@ -92,7 +99,7 @@ export function AdminDashboardClient() {
     const filteredUsers = useMemo(() => {
         return users.filter(user => {
             const searchLower = searchTerm.toLowerCase();
-            const nameMatch = user.name?.toLowerCase().includes(searchLower);
+            const nameMatch = user.name?.toLowerCase().includes(searchLower) || user.nomeFantasia?.toLowerCase().includes(searchLower);
             const emailMatch = user.email.toLowerCase().includes(searchLower);
             
             let roleMatch = roleFilter === 'all' || user.role === roleFilter;
@@ -140,6 +147,22 @@ export function AdminDashboardClient() {
             setUpdatingListingStatus(null);
         }
     };
+
+    const confirmUserDelete = async () => {
+        if (!userToDelete) return;
+
+        setIsDeleting(true);
+        const result = await deleteUserByAdmin(userToDelete.uid);
+        if (result.success) {
+            toast({ title: 'Usuário Removido', description: `O usuário ${userToDelete.name || userToDelete.email} foi removido.` });
+            setUsers(prev => prev.filter(u => u.uid !== userToDelete.uid));
+        } else {
+            toast({ variant: 'destructive', title: 'Erro ao Remover', description: result.error });
+        }
+        setIsDeleting(false);
+        setUserToDelete(null);
+    };
+
 
     if (authLoading || pageLoading) {
         return <LoadingScreen />;
@@ -304,7 +327,7 @@ export function AdminDashboardClient() {
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                        <DropdownMenuItem onClick={() => { setSelectedUser(user); setProfileModalOpen(true); }}>Ver Perfil Completo</DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => { setSelectedUser(user); setProfileModalOpen(true); }}><FilePen className="mr-2"/> Editar Perfil</DropdownMenuItem>
                                                         {(user.profileStatus === 'Pendente' || user.profileStatus === 'pending_review') && (
                                                             updatingUserStatus === user.uid ? (
                                                                 <DropdownMenuItem disabled>
@@ -314,10 +337,14 @@ export function AdminDashboardClient() {
                                                             ) : (
                                                                 <>
                                                                     <DropdownMenuItem onClick={() => handleUserStatusUpdate(user.uid, 'Aprovado')}><UserCheck className="mr-2 h-4 w-4"/> Aprovar Cadastro</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => handleUserStatusUpdate(user.uid, 'Rejeitado')}>Rejeitar Cadastro</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-destructive focus:bg-destructive/90 focus:text-destructive-foreground" onClick={() => handleUserStatusUpdate(user.uid, 'Rejeitado')}>Rejeitar Cadastro</DropdownMenuItem>
                                                                 </>
                                                             )
                                                         )}
+                                                        <DropdownMenuSeparator />
+                                                         <DropdownMenuItem onSelect={() => setUserToDelete(user)} className="text-destructive focus:bg-destructive/90 focus:text-destructive-foreground">
+                                                            <Trash2 className="mr-2" /> Remover Usuário
+                                                        </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </TableCell>
@@ -439,74 +466,188 @@ export function AdminDashboardClient() {
                     </Card>
                 </TabsContent>
             </Tabs>
-             <UserProfileModal user={selectedUser} isOpen={isProfileModalOpen} onOpenChange={setProfileModalOpen} />
+             <UserEditModal 
+                user={selectedUser} 
+                isOpen={isProfileModalOpen} 
+                onOpenChange={setProfileModalOpen} 
+                onUserUpdate={(updatedUser) => {
+                    setUsers(prev => prev.map(u => u.uid === updatedUser.uid ? updatedUser : u));
+                }}
+             />
+
+             <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Essa ação não pode ser desfeita. Isso irá remover permanentemente o usuário <span className="font-bold">{userToDelete?.name || userToDelete?.email}</span> e todos os seus dados.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmUserDelete} disabled={isDeleting}>
+                            {isDeleting && <Loader2 className="mr-2 animate-spin"/>}
+                            Sim, remover usuário
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
 
 
-function UserProfileModal({ user, isOpen, onOpenChange }: { user: AdminUser | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+const adminEditUserSchema = z.object({
+  name: z.string().min(3, "O nome é obrigatório.").optional().or(z.literal('')),
+  phone: z.string().min(10, "O telefone deve ter pelo menos 10 dígitos.").optional().or(z.literal('')),
+  role: z.enum(['driver', 'fleet', 'provider', 'admin']),
+  profileStatus: z.enum(['incomplete', 'pending_review', 'approved', 'rejected']),
+  credits: z.coerce.number().min(0, "Créditos não podem ser negativos."),
+});
+
+type AdminEditUserFormValues = z.infer<typeof adminEditUserSchema>;
+
+
+function UserEditModal({ user, isOpen, onOpenChange, onUserUpdate }: { user: AdminUser | null, isOpen: boolean, onOpenChange: (open: boolean) => void, onUserUpdate: (user: AdminUser) => void }) {
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const form = useForm<AdminEditUserFormValues>({
+        resolver: zodResolver(adminEditUserSchema),
+    });
+
+    useEffect(() => {
+        if (user) {
+            form.reset({
+                name: user.name || user.nomeFantasia || '',
+                phone: user.phone || '',
+                role: user.role,
+                profileStatus: user.profileStatus as any || 'incomplete',
+                credits: user.credits || 0,
+            });
+        }
+    }, [user, form]);
+
     if (!user) return null;
 
-    const formatDate = (dateString?: string) => {
-        if (!dateString) return 'N/A';
-        return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
+    const onSubmit = async (values: AdminEditUserFormValues) => {
+        setIsSubmitting(true);
+        const result = await updateUserByAdmin(user.uid, values);
+
+        if (result.success) {
+            toast({ title: 'Sucesso!', description: 'Perfil do usuário atualizado.' });
+            onUserUpdate({ ...user, ...values });
+            onOpenChange(false);
+        } else {
+            toast({ variant: 'destructive', title: 'Erro ao Atualizar', description: result.error as string || 'Não foi possível salvar os dados.'});
+        }
+        setIsSubmitting(false);
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-3xl">
+            <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Detalhes do Perfil: {user.name || user.nomeFantasia || user.email}</DialogTitle>
+                    <DialogTitle>Editar Perfil: {user.name || user.nomeFantasia || user.email}</DialogTitle>
                     <DialogDescription>
-                        Informações detalhadas do cadastro do usuário.
+                        Altere as informações do usuário abaixo. Alterações são salvas permanentemente.
                     </DialogDescription>
                 </DialogHeader>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
-                    <div className="space-y-4 border-r-0 md:border-r md:pr-8">
-                        <h4 className="font-semibold text-lg border-b pb-2">Informações Gerais</h4>
-                        <p><strong>Nome/Fantasia:</strong> {user.name || user.nomeFantasia || 'Não informado'}</p>
-                        <p><strong>Email:</strong> {user.email}</p>
-                        <p><strong>Telefone:</strong> {user.phone || 'Não informado'}</p>
-                        <p><strong>Perfil:</strong> <Badge variant="secondary">{user.role}</Badge></p>
-                        <p><strong>Status:</strong> <Badge variant={getStatusVariant(user.profileStatus)}>{user.profileStatus || 'N/A'}</Badge></p>
-                        <p><strong>Créditos:</strong> {user.credits || 0}</p>
-                        <p><strong>Membro desde:</strong> {formatDate(user.createdAt)}</p>
-                    </div>
-                    
-                    <div className="space-y-4">
-                        <h4 className="font-semibold text-lg border-b pb-2">Documentos</h4>
-                        {user.role === 'driver' ? (
-                            <>
-                                <p><strong>Nº CNH:</strong> {user.cnhNumber || 'Não informado'}</p>
-                                <p><strong>Cat. CNH:</strong> {user.cnhCategory || 'Não informado'}</p>
-                                <p><strong>Venc. CNH:</strong> {formatDate(user.cnhExpiration)}</p>
-                                <p><strong>Nº Condutax:</strong> {user.condutaxNumber || 'Não informado'}</p>
-                                <p><strong>Venc. Condutax:</strong> {formatDate(user.condutaxExpiration)}</p>
-                                <p><strong>Placa Veículo:</strong> {user.vehicleLicensePlate || 'Não informado'}</p>
-                                <p><strong>Venc. Alvará:</strong> {formatDate(user.alvaraExpiration)}</p>
-                            </>
-                        ) : user.role === 'fleet' || user.role === 'provider' ? (
-                             <>
-                                <p><strong>Tipo:</strong> {user.personType === 'pf' ? 'Pessoa Física' : 'Pessoa Jurídica'}</p>
-                                <p><strong>CPF:</strong> {user.cpf || 'Não informado'}</p>
-                                <p><strong>CNPJ:</strong> {user.cnpj || 'Não informado'}</p>
-                                <p><strong>Razão Social:</strong> {user.razaoSocial || 'Não informado'}</p>
-                             </>
-                        ) : (
-                            <p className="text-muted-foreground">Usuário não possui documentos específicos.</p>
-                        )}
-                    </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button type="button" variant="secondary">
-                            Fechar
-                        </Button>
-                    </DialogClose>
-                </DialogFooter>
+                 <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 max-h-[70vh] overflow-y-auto px-1">
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nome Completo / Fantasia</FormLabel>
+                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl><Input value={user.email} disabled /></FormControl>
+                            <FormDescription>O email não pode ser alterado por um administrador por razões de segurança.</FormDescription>
+                        </FormItem>
+                         <FormField
+                            control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Telefone</FormLabel>
+                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="role"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Perfil</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="driver">Motorista</SelectItem>
+                                                <SelectItem value="fleet">Frota</SelectItem>
+                                                <SelectItem value="provider">Prestador</SelectItem>
+                                                <SelectItem value="admin">Admin</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="profileStatus"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Status do Perfil</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="approved">Aprovado</SelectItem>
+                                                <SelectItem value="pending_review">Pendente</SelectItem>
+                                                <SelectItem value="rejected">Rejeitado</SelectItem>
+                                                <SelectItem value="incomplete">Incompleto</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="credits"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Créditos</FormLabel>
+                                        <FormControl><Input type="number" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <DialogFooter className="pt-4">
+                            <DialogClose asChild>
+                                <Button type="button" variant="secondary">
+                                    Cancelar
+                                </Button>
+                            </DialogClose>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 animate-spin"/>}
+                                Salvar Alterações
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
             </DialogContent>
         </Dialog>
     );
 }
-
