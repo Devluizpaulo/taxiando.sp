@@ -153,10 +153,14 @@ export default function RentalDetailsPage({ params }: { params: { id: string } }
                             </Card>
                             <Card>
                                 <CardHeader className="flex flex-row items-center gap-4">
-                                    <Image src={fleet.photoUrl || "https://placehold.co/80x80.png"} alt={fleet.nomeFantasia || fleet.name || ''} width={64} height={64} className="rounded-lg bg-muted" data-ai-hint="company logo"/>
+                                     <Link href={`/fleets/${fleet.uid}`}>
+                                        <Image src={fleet.photoUrl || "https://placehold.co/80x80.png"} alt={fleet.nomeFantasia || fleet.name || ''} width={64} height={64} className="rounded-lg bg-muted" data-ai-hint="company logo"/>
+                                    </Link>
                                     <div>
                                         <p className="text-sm text-muted-foreground">Oferecido por</p>
-                                        <CardTitle className="text-xl">{fleet.nomeFantasia || fleet.name}</CardTitle>
+                                        <Link href={`/fleets/${fleet.uid}`} className="hover:underline">
+                                            <CardTitle className="text-xl">{fleet.nomeFantasia || fleet.name}</CardTitle>
+                                        </Link>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="space-y-4">

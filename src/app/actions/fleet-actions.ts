@@ -168,7 +168,7 @@ export async function getVehicleDetails(vehicleId: string) {
             return { success: false, error: 'Frota associada não encontrada.' };
         }
 
-        const fleet = fleetDoc.data() as UserProfile;
+        const fleet = { uid: fleetDoc.id, ...fleetDoc.data() } as UserProfile;
         
         return { 
             success: true, 
@@ -283,5 +283,38 @@ export async function getFeaturedVehicles(limit: number = 3): Promise<Vehicle[]>
     } catch (error) {
         console.error("Error fetching featured vehicles: ", (error as Error).message);
         return [];
+    }
+}
+
+export async function getFleetPublicProfile(fleetId: string) {
+    if (!fleetId) {
+        return { success: false, error: "ID da frota não fornecido." };
+    }
+    try {
+        const fleetDoc = await adminDB.collection('users').doc(fleetId).get();
+        if (!fleetDoc.exists || fleetDoc.data()?.role !== 'fleet') {
+            return { success: false, error: "Frota não encontrada." };
+        }
+        
+        const vehiclesQuery = await adminDB.collection('vehicles')
+            .where('fleetId', '==', fleetId)
+            .where('status', '==', 'Disponível')
+            .orderBy('createdAt', 'desc')
+            .get();
+            
+        const fleetProfile = { uid: fleetDoc.id, ...fleetDoc.data() } as UserProfile;
+        const availableVehicles = vehiclesQuery.docs.map(doc => {
+             const data = doc.data();
+             return {
+                ...data,
+                id: doc.id,
+                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+            } as Vehicle;
+        });
+
+        return { success: true, fleet: fleetProfile, vehicles: availableVehicles };
+
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
     }
 }
