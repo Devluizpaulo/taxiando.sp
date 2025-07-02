@@ -58,8 +58,8 @@ export default function AdminPartnersPage() {
         const result = await updatePartnerStatus(partner.id, newStatus);
         if (result.success) {
             toast({
-                title: 'Status do Parceiro Atualizado!',
-                description: `O parceiro "${partner.name}" agora está ${newStatus ? 'Ativo' : 'Inativo'}.`,
+                title: 'Status do Banner Atualizado!',
+                description: `O banner de "${partner.name}" agora está ${newStatus ? 'Ativo' : 'Inativo'}.`,
             });
             setPartners(partners.map(p => p.id === partner.id ? { ...p, isActive: newStatus } : p));
         } else {
@@ -86,18 +86,18 @@ export default function AdminPartnersPage() {
     return (
         <div className="flex flex-col gap-8">
             <div>
-                <h1 className="font-headline text-3xl font-bold tracking-tight">Gerenciamento de Parceiros</h1>
+                <h1 className="font-headline text-3xl font-bold tracking-tight">Gerenciamento de Banners</h1>
                 <p className="text-muted-foreground">Adicione, edite e organize os banners de parceiros e patrocinadores.</p>
             </div>
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle>Todos os Parceiros</CardTitle>
+                        <CardTitle>Todos os Banners</CardTitle>
                         <CardDescription>Visualize e gerencie todos os parceiros cadastrados.</CardDescription>
                     </div>
                     <Button asChild>
-                        <Link href="/admin/marketing/partners/create"><PlusCircle /> Adicionar Novo Parceiro</Link>
+                        <Link href="/admin/marketing/partners/create"><PlusCircle /> Adicionar Novo Banner</Link>
                     </Button>
                 </CardHeader>
                 <CardContent>

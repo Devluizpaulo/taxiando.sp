@@ -80,7 +80,7 @@ export default function EditPartnerPage({ params }: { params: { id: string } }) 
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-8">
                 <div>
-                    <h1 className="font-headline text-3xl font-bold tracking-tight">Editar Parceiro</h1>
+                    <h1 className="font-headline text-3xl font-bold tracking-tight">Editar Banner</h1>
                     <p className="text-muted-foreground">Ajuste os detalhes do parceiro/patrocinador.</p>
                 </div>
 
@@ -116,7 +116,7 @@ export default function EditPartnerPage({ params }: { params: { id: string } }) 
                          
                          <FormField control={form.control} name="isActive" render={({ field }) => (
                             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                <div className="space-y-0.5"><FormLabel>Parceiro ativo?</FormLabel><FormDescription>Parceiros inativos não aparecem no site.</FormDescription></div>
+                                <div className="space-y-0.5"><FormLabel>Banner ativo?</FormLabel><FormDescription>Banners inativos não aparecem no site.</FormDescription></div>
                                 <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                             </FormItem>
                          )}/>

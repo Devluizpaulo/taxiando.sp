@@ -72,7 +72,7 @@ export default function CreatePartnerPage() {
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-8">
                 <div>
-                    <h1 className="font-headline text-3xl font-bold tracking-tight">Adicionar Novo Parceiro</h1>
+                    <h1 className="font-headline text-3xl font-bold tracking-tight">Adicionar Novo Banner</h1>
                     <p className="text-muted-foreground">Preencha os detalhes do parceiro/patrocinador para exibi-lo no site.</p>
                 </div>
 
@@ -108,7 +108,7 @@ export default function CreatePartnerPage() {
                          
                          <FormField control={form.control} name="isActive" render={({ field }) => (
                             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                <div className="space-y-0.5"><FormLabel>Ativar parceiro imediatamente?</FormLabel><FormDescription>Parceiros inativos não aparecem no site.</FormDescription></div>
+                                <div className="space-y-0.5"><FormLabel>Ativar banner imediatamente?</FormLabel><FormDescription>Banners inativos não aparecem no site.</FormDescription></div>
                                 <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                             </FormItem>
                          )}/>
