@@ -75,6 +75,7 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, ve
                 methods: data.paymentMethods || [],
             },
             perks: perksToSave,
+            moderationStatus: 'Pendente' as const,
             updatedAt: Timestamp.now(),
         };
 
@@ -164,6 +165,7 @@ export async function getAvailableVehicles(): Promise<Vehicle[]> {
     try {
         const snapshot = await adminDB.collection('vehicles')
             .where('status', '==', 'Disponível')
+            .where('moderationStatus', '==', 'Aprovado')
             .orderBy('createdAt', 'desc')
             .get();
         
@@ -295,6 +297,7 @@ export async function getFeaturedVehicles(limit: number = 3): Promise<Vehicle[]>
     try {
         const snapshot = await adminDB.collection('vehicles')
             .where('status', '==', 'Disponível')
+            .where('moderationStatus', '==', 'Aprovado')
             .orderBy('createdAt', 'desc')
             .limit(limit)
             .get();
@@ -329,6 +332,7 @@ export async function getFleetPublicProfile(fleetId: string) {
         const vehiclesQuery = await adminDB.collection('vehicles')
             .where('fleetId', '==', fleetId)
             .where('status', '==', 'Disponível')
+            .where('moderationStatus', '==', 'Aprovado')
             .orderBy('createdAt', 'desc')
             .get();
             

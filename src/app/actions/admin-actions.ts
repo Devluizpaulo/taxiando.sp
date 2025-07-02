@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { adminDB, adminAuth } from '@/lib/firebase-admin';
-import { type UserProfile, type PaymentGatewaySettings, type AnalyticsData, type AdminUser, type Opportunity, type ServiceListing } from '@/lib/types';
+import { type UserProfile, type PaymentGatewaySettings, type AnalyticsData, type AdminUser, type Vehicle, type ServiceListing } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -84,16 +84,30 @@ export async function deleteUserByAdmin(userId: string) {
 
 export async function updateListingStatus(
     listingId: string, 
-    collectionName: 'opportunities' | 'services', 
+    collectionName: 'vehicles' | 'services', 
     newStatus: 'Aprovado' | 'Rejeitado'
 ) {
     try {
         const listingRef = adminDB.collection(collectionName).doc(listingId);
         
-        const finalStatus = collectionName === 'services' && newStatus === 'Aprovado' ? 'Ativo' : newStatus;
+        let dataToUpdate: { [key: string]: any } = {};
+
+        if (collectionName === 'services') {
+             // For services, 'Aprovado' sets the main status to 'Ativo'
+             const serviceStatus = newStatus === 'Aprovado' ? 'Ativo' : 'Rejeitado';
+             dataToUpdate = { status: serviceStatus };
+        } else if (collectionName === 'vehicles') {
+            // For vehicles, we update the specific moderation status field
+            dataToUpdate = { moderationStatus: newStatus };
+        } else {
+             return { success: false, error: "Coleção inválida." };
+        }
         
-        await listingRef.update({ status: finalStatus });
+        await listingRef.update(dataToUpdate);
+
         revalidatePath('/admin');
+        revalidatePath('/rentals');
+        revalidatePath('/services/marketplace');
         return { success: true };
     } catch (error) {
         return { success: false, error: (error as Error).message };
@@ -187,7 +201,7 @@ const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOStri
 
 export async function getAdminDashboardData() {
     let usersData: AdminUser[] = [];
-    let oppsData: Opportunity[] = [];
+    let vehiclesData: Vehicle[] = [];
     let servicesData: ServiceListing[] = [];
     let analyticsData: AnalyticsData = {};
 
@@ -210,8 +224,8 @@ export async function getAdminDashboardData() {
     }
     
     try {
-        const oppsSnapshot = await adminDB.collection('opportunities').where('status', '==', 'Pendente').get();
-        oppsData = oppsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Opportunity));
+        const vehiclesSnapshot = await adminDB.collection('vehicles').where('moderationStatus', '==', 'Pendente').get();
+        vehiclesData = vehiclesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
     } catch (error) {
         // Fail silently
     }
@@ -251,7 +265,7 @@ export async function getAdminDashboardData() {
 
     return { 
         users: usersData, 
-        opportunities: oppsData, 
+        vehicles: vehiclesData, 
         services: servicesData, 
         analytics: analyticsData 
     };

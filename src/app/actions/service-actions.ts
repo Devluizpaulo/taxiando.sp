@@ -17,16 +17,16 @@ export async function createService(data: ServiceFormValues, providerId: string,
         }
 
         const serviceId = nanoid();
-        const serviceData: Omit<ServiceListing, 'id' | 'createdAt'> = {
+        const serviceData: Omit<ServiceListing, 'id' | 'createdAt' | 'status'> = {
             ...validation.data,
             providerId,
             provider: providerName,
-            status: 'Pendente',
         };
         
         await adminDB.collection('services').doc(serviceId).set({
             ...serviceData,
             id: serviceId,
+            status: 'Pendente',
             createdAt: Timestamp.now(),
         });
         
@@ -106,7 +106,17 @@ export async function getServicesByProvider(providerId: string): Promise<Service
 export async function updateServiceStatus(serviceId: string, newStatus: 'Ativo' | 'Pausado') {
     if (!serviceId) return { success: false, error: "ID do serviço não fornecido." };
     try {
-        await adminDB.collection('services').doc(serviceId).update({ status: newStatus });
+        // Only allow toggling if the current status isn't 'Pendente' or 'Rejeitado'
+        const serviceRef = adminDB.collection('services').doc(serviceId);
+        const doc = await serviceRef.get();
+        if (!doc.exists) return { success: false, error: "Serviço não encontrado."};
+        
+        const currentStatus = doc.data()?.status;
+        if (currentStatus === 'Pendente' || currentStatus === 'Rejeitado') {
+             return { success: false, error: `Não é possível alterar o status de um serviço ${currentStatus}.` };
+        }
+
+        await serviceRef.update({ status: newStatus });
         revalidatePath('/services');
         return { success: true };
     } catch (error) {
@@ -178,7 +188,7 @@ export async function getServiceAndProviderDetails(serviceId: string) {
     try {
         const serviceDoc = await adminDB.collection('services').doc(serviceId).get();
         
-        if (!serviceDoc.exists || serviceDoc.data()?.status !== 'Ativo') {
+        if (!serviceDoc.exists || (serviceDoc.data()?.status !== 'Ativo' && serviceDoc.data()?.status !== 'Pendente')) {
             return { success: false, error: 'Serviço não encontrado ou indisponível.' };
         }
         

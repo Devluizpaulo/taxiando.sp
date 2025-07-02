@@ -156,6 +156,7 @@ export interface Vehicle {
   condition: string;
   description: string;
   status: 'Disponível' | 'Alugado' | 'Em Manutenção';
+  moderationStatus?: 'Pendente' | 'Aprovado' | 'Rejeitado';
   dailyRate: number;
   imageUrl: string;
   paymentInfo: PaymentInfo;
@@ -219,17 +220,9 @@ export interface ServiceListing {
   category: string;
   description: string;
   price: string;
-  status: 'Ativo' | 'Pausado' | 'Pendente';
+  status: 'Ativo' | 'Pausado' | 'Pendente' | 'Rejeitado';
   imageUrl?: string;
   createdAt: Timestamp | string;
-}
-
-export interface Opportunity {
-  id: string;
-  vehicle: string;
-  provider: string;
-  type: 'Frota' | 'Porta Branca';
-  status: 'Pendente' | 'Aprovado' | 'Rejeitado';
 }
 
 export interface PaymentGatewaySettings {
