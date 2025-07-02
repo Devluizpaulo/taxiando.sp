@@ -306,6 +306,11 @@ export interface BlogPost {
   imageFile?: File; // For upload
 }
 
-export type AdminUser = Pick<UserProfile, 'uid' | 'name' | 'email' | 'role' | 'profileStatus' | 'credits'> & {
+// Represents a user object with Timestamps converted to ISO strings for client-side use
+export type AdminUser = Omit<UserProfile, 'createdAt' | 'cnhExpiration' | 'condutaxExpiration' | 'alvaraExpiration' | 'lastNotificationCheck'> & {
     createdAt: string;
+    cnhExpiration?: string;
+    condutaxExpiration?: string;
+    alvaraExpiration?: string;
+    lastNotificationCheck?: string;
 };
