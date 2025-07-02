@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -10,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
-import { Wrench, Search, Phone } from 'lucide-react';
+import { Wrench, Search } from 'lucide-react';
 
 export function MarketplaceClientPage({ initialServices }: { initialServices: ServiceListing[] }) {
     const [searchTerm, setSearchTerm] = useState('');
@@ -66,19 +65,21 @@ export function MarketplaceClientPage({ initialServices }: { initialServices: Se
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {filteredServices.map(service => (
                         <Card key={service.id} className="flex flex-col overflow-hidden shadow-md transition-all hover:shadow-xl">
-                            <CardHeader className="p-0">
-                                <Image src={service.imageUrl || 'https://placehold.co/600x400.png'} alt={service.title} width={600} height={400} className="w-full object-cover aspect-video" data-ai-hint="mechanic tools workshop"/>
-                            </CardHeader>
-                            <CardContent className="flex-1 p-4">
-                                <Badge variant="secondary" className="mb-2">{service.category}</Badge>
-                                <CardTitle className="font-headline text-lg line-clamp-2">{service.title}</CardTitle>
-                                <CardDescription>Oferecido por: <span className="font-medium text-foreground">{service.provider}</span></CardDescription>
-                            </CardContent>
+                            <Link href={`/services/${service.id}`} className="block">
+                                <CardHeader className="p-0">
+                                    <Image src={service.imageUrl || 'https://placehold.co/600x400.png'} alt={service.title} width={600} height={400} className="w-full object-cover aspect-video" data-ai-hint="mechanic tools workshop"/>
+                                </CardHeader>
+                                <CardContent className="flex-1 p-4">
+                                    <Badge variant="secondary" className="mb-2">{service.category}</Badge>
+                                    <CardTitle className="font-headline text-lg line-clamp-2">{service.title}</CardTitle>
+                                    <CardDescription>Oferecido por: <span className="font-medium text-foreground">{service.provider}</span></CardDescription>
+                                </CardContent>
+                            </Link>
                              <CardFooter className="flex items-center justify-between bg-muted/50 p-4">
                                 <p className="text-lg font-bold text-primary">{service.price}</p>
                                 <Button asChild size="sm">
-                                    <Link href="#">
-                                        <Phone className="mr-2" /> Contato
+                                    <Link href={`/services/${service.id}`}>
+                                        <Wrench className="mr-2" /> Ver Detalhes
                                     </Link>
                                 </Button>
                             </CardFooter>

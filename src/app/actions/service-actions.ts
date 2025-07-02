@@ -1,9 +1,8 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { adminDB, Timestamp } from '@/lib/firebase-admin';
-import type { ServiceListing } from '@/lib/types';
+import type { ServiceListing, UserProfile } from '@/lib/types';
 import { nanoid } from 'nanoid';
 
 export type ServiceFormValues = Omit<ServiceListing, 'id' | 'providerId' | 'provider' | 'createdAt' | 'status'>;
@@ -115,5 +114,31 @@ export async function getFeaturedServices(limit: number = 3): Promise<ServiceLis
     } catch (error) {
         console.error("Error fetching featured services: ", (error as Error).message);
         return [];
+    }
+}
+
+export async function getServiceAndProviderDetails(serviceId: string) {
+    if (!serviceId) {
+        return { success: false, error: 'ID do serviço não fornecido.' };
+    }
+    try {
+        const serviceDoc = await adminDB.collection('services').doc(serviceId).get();
+        
+        if (!serviceDoc.exists || serviceDoc.data()?.status !== 'Ativo') {
+            return { success: false, error: 'Serviço não encontrado ou indisponível.' };
+        }
+        
+        const serviceData = serviceDoc.data() as ServiceListing;
+        
+        const providerDoc = await adminDB.collection('users').doc(serviceData.providerId).get();
+        const provider = providerDoc.exists() ? providerDoc.data() as UserProfile : null;
+        
+        return { 
+            success: true, 
+            service: { ...serviceData, id: serviceDoc.id }, 
+            provider 
+        };
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
     }
 }
