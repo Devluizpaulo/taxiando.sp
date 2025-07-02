@@ -10,25 +10,35 @@ Táxiando SP é um ecossistema digital completo projetado para conectar, qualifi
 ## ✨ Funcionalidades Principais
 
 ### Para Motoristas (Drivers)
--   **Perfil Profissional Detalhado:** Crie um perfil completo com suas qualificações, documentos e experiência para se destacar no mercado.
+-   **Perfil Profissional Personalizado:** Crie um perfil detalhado com suas qualificações, documentos e experiência, com uma interface que se adapta se você é **proprietário ou locatário**.
 -   **Catálogo de Cursos:** Acesse cursos especializados (Legislação, Atendimento, Direção Defensiva) para aprimorar suas habilidades.
 -   **Busca de Oportunidades:** Encontre e candidate-se a veículos para aluguel de frotas verificadas e de outros taxistas autônomos.
 -   **Agenda Cultural:** Fique por dentro dos principais eventos da cidade para planejar suas corridas e maximizar seus ganhos.
 -   **Marketplace de Serviços:** Encontre prestadores de serviço (oficinas, despachantes, etc.) com avaliações da comunidade.
+-   **Guia "Como se Tornar um Taxista":** Um passo a passo completo para guiar novos profissionais desde a documentação até o primeiro dia de trabalho.
 
 ### Para Frotas (Fleets)
 -   **Painel de Gerenciamento:** Cadastre e gerencie sua frota de veículos, definindo preços, descrições e benefícios.
--   **Gestão de Candidaturas:** Receba e avalie perfis de motoristas interessados em alugar seus veículos.
--   **Perfil da Empresa:** Crie um perfil público para sua frota, destacando suas comodidades e diferenciais para atrair os melhores profissionais.
+-   **Gestão de Candidaturas:** Receba e avalie perfis de motoristas interessados, com acesso a um perfil detalhado do candidato.
+-   **Página de Perfil Pública:** Crie uma vitrine para sua frota, destacando suas comodidades, descrição e todos os seus veículos disponíveis para atrair os melhores profissionais.
+
+### Para Prestadores de Serviço (Providers)
+-   **Painel de Gerenciamento:** Cadastre e gerencie seus produtos e serviços, definindo preços e descrições.
+-   **Página de Perfil Pública:** Mostre todos os seus serviços em uma página dedicada, fortalecendo sua marca e atraindo mais clientes.
+-   **Moderação de Anúncios:** Seus anúncios são revisados para garantir a qualidade e a confiança da plataforma.
 
 ### Para Administradores (Admin)
 -   **Dashboard Central:** Tenha uma visão geral da plataforma com estatísticas de usuários, vendas e atividades.
--   **Moderação de Conteúdo:** Aprove ou rejeite cadastros de usuários, anúncios de veículos e serviços para garantir a qualidade da plataforma.
--   **Construtor de Cursos:** Uma ferramenta poderosa para criar e gerenciar todo o conteúdo educacional, com suporte para aulas em vídeo, texto e quizzes interativos, além de controle de publicação.
--   **Gerenciamento de Blog e Notícias:** Crie, edite e publique artigos e notícias com um editor Markdown e um assistente de IA para geração de conteúdo, mantendo a comunidade informada.
--   **Gerenciador de Eventos:** Cadastre e administre eventos da agenda cultural, com auxílio de IA para preenchimento de detalhes e logística para motoristas.
--   **Gerenciamento de Marketing:** Crie cupons de desconto, envie notificações para públicos segmentados e gerencie banners de parceiros/patrocinadores com controle de ativação.
--   **Configurações de Pagamento:** Integre e gerencie as credenciais do gateway de pagamento (Mercado Pago) para a venda de pacotes de crédito.
+-   **Moderação de Conteúdo Avançada:** Aprove ou rejeite cadastros e anúncios com **filtros por status** (Pendente, Aprovado, Rejeitado) para uma visão completa.
+-   **Construtor de Cursos:** Crie e gerencie conteúdo educacional com suporte a vídeo, texto e quizzes, incluindo um **modo de edição seguro** que protege o conteúdo de cursos já publicados.
+-   **Gerenciamento de Blog e Notícias:** Crie, edite e publique artigos com um editor Markdown e um assistente de IA para geração de conteúdo.
+-   **Gerenciador de Eventos:** Cadastre e administre eventos da agenda cultural, com auxílio de IA para preenchimento de detalhes.
+-   **Gerenciamento de Marketing Avançado:**
+    -   Crie **cupons de desconto** (valor ou porcentagem) para impulsionar vendas de pacotes de crédito.
+    -   Envie **notificações e newsletters** para públicos segmentados.
+    -   Gerencie **banners de parceiros/patrocinadores** para monetização da plataforma.
+-   **Gerenciamento de Quiz:** Crie quizzes interativos para a página inicial com um **assistente de IA** para gerar perguntas e respostas.
+-   **Configurações de Pagamento:** Integre e gerencie as credenciais do gateway de pagamento (Mercado Pago).
 
 ---
 
