@@ -396,5 +396,3 @@ export async function getFleetPublicProfile(fleetId: string) {
         return { success: false, error: (error as Error).message };
     }
 }
-
-    
