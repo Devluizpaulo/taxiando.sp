@@ -2,11 +2,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { adminDB } from '@/lib/firebase-admin';
+import { adminDB, adminAuth } from '@/lib/firebase-admin';
 import { type UserProfile, type PaymentGatewaySettings, type AnalyticsData, type AdminUser, type Opportunity, type ServiceListing } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import * as z from 'zod';
 
 
 export async function updateUserProfileStatus(userId: string, newStatus: 'Aprovado' | 'Rejeitado' | 'Pendente') {
@@ -25,6 +26,61 @@ export async function updateUserProfileStatus(userId: string, newStatus: 'Aprova
         return { success: false, error: (error as Error).message };
     }
 }
+
+const adminEditUserSchema = z.object({
+  name: z.string().optional(),
+  phone: z.string().optional(),
+  role: z.enum(['driver', 'fleet', 'provider', 'admin']),
+  profileStatus: z.enum(['incomplete', 'pending_review', 'approved', 'rejected']),
+  credits: z.coerce.number().min(0, "Créditos não podem ser negativos."),
+});
+
+export async function updateUserByAdmin(userId: string, data: z.infer<typeof adminEditUserSchema>) {
+    try {
+        const validation = adminEditUserSchema.safeParse(data);
+        if (!validation.success) {
+            return { success: false, error: validation.error.flatten().fieldErrors };
+        }
+        
+        const userRef = adminDB.collection('users').doc(userId);
+        await userRef.update(validation.data);
+
+        revalidatePath('/admin');
+        return { success: true };
+
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+
+export async function deleteUserByAdmin(userId: string) {
+    if (!userId) {
+        return { success: false, error: "ID do usuário não fornecido." };
+    }
+    
+    try {
+        // Wrap auth and db deletion in a promise to run them in parallel
+        await Promise.all([
+            adminAuth.deleteUser(userId),
+            adminDB.collection('users').doc(userId).delete()
+        ]);
+        
+        revalidatePath('/admin');
+        return { success: true };
+    } catch (error) {
+        // If user is already deleted from Auth, but not DB, it might throw.
+        // We can try to delete from DB anyway.
+        try {
+            await adminDB.collection('users').doc(userId).delete();
+            revalidatePath('/admin');
+            return { success: true, message: "Usuário removido do banco de dados (já não existia na autenticação)." };
+        } catch (dbError) {
+             return { success: false, error: (error as Error).message };
+        }
+    }
+}
+
 
 export async function updateListingStatus(
     listingId: string, 
@@ -81,17 +137,17 @@ export async function ensureInitialData() {
 
         const pageViewsSnap = await analyticsPageViewsRef.get();
         if (!pageViewsSnap.exists) {
-            await analyticsPageViewsRef.set({ home: 0 });
+            await pageViewsSnap.set({ home: 0 });
         }
         
         const loginsSnap = await analyticsLoginsRef.get();
         if (!loginsSnap.exists) {
-            await analyticsLoginsRef.set({ total: 0 });
+            await loginsSnap.set({ total: 0 });
         }
 
         const salesSnap = await analyticsSalesRef.get();
         if (!salesSnap.exists) {
-            await analyticsSalesRef.set({ totalRevenue: 0, packagesSold: 0 });
+            await salesSnap.set({ totalRevenue: 0, packagesSold: 0 });
         }
         
         return { success: true };
