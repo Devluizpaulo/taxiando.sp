@@ -200,6 +200,9 @@ export async function getAdminDashboardAnalytics(): Promise<AnalyticsData> {
 const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
 
 export async function getAdminDashboardData() {
+    // Ensure analytics documents exist before trying to read them
+    await ensureInitialData();
+
     let usersData: AdminUser[] = [];
     let vehiclesData: Vehicle[] = [];
     let servicesData: ServiceListing[] = [];
