@@ -160,7 +160,9 @@ export default function ServicesPage() {
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem disabled><FilePen /> Editar</DropdownMenuItem>
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href={`/services/${service.id}/edit`}><FilePen /> Editar</Link>
+                                                    </DropdownMenuItem>
                                                     
                                                      <DropdownMenuItem disabled={updatingId === service.id || service.status === 'Pendente'} onClick={() => handleStatusToggle(service)}>
                                                         {updatingId === service.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (service.status === 'Ativo' ? <><PowerOff/>Pausar</> : <><Power/>Ativar</>)}
