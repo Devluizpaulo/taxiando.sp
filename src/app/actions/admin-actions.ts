@@ -20,7 +20,7 @@ export async function updateUserProfileStatus(userId: string, newStatus: 'Aprova
         await userRef.update({ profileStatus: dbStatus });
 
         revalidatePath('/admin');
-        return { success: true };
+        return { success: true, dbStatus };
     } catch (error) {
         return { success: false, error: (error as Error).message };
     }
@@ -127,6 +127,7 @@ export async function getAdminDashboardAnalytics(): Promise<AnalyticsData> {
     }
 }
 
+const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
 
 export async function getAdminDashboardData() {
     let usersData: AdminUser[] = [];
@@ -137,12 +138,15 @@ export async function getAdminDashboardData() {
     try {
         const usersSnapshot = await adminDB.collection('users').orderBy('createdAt', 'desc').get();
         usersData = usersSnapshot.docs.map(doc => {
-            const data = doc.data();
-            const createdAt = data.createdAt as Timestamp;
+            const data = doc.data() as UserProfile;
             return {
                 ...data,
                 uid: doc.id,
-                createdAt: createdAt?.toDate ? createdAt.toDate().toISOString() : new Date().toISOString(),
+                createdAt: toISO(data.createdAt) || new Date().toISOString(),
+                cnhExpiration: toISO(data.cnhExpiration),
+                condutaxExpiration: toISO(data.condutaxExpiration),
+                alvaraExpiration: toISO(data.alvaraExpiration),
+                lastNotificationCheck: toISO(data.lastNotificationCheck),
             } as AdminUser;
         });
     } catch (error) {

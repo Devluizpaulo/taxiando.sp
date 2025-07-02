@@ -1,18 +1,23 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuthProtection } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2, Eye, LogIn } from "lucide-react";
+import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2, Eye, LogIn, UserCheck, Search } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -35,6 +40,7 @@ const getStatusVariant = (status?: string): "default" | "secondary" | "destructi
              return 'default';
         case 'Pendente': 
         case 'pending_review':
+        case 'incomplete':
             return 'secondary';
         case 'Rejeitado':
         case 'rejected':
@@ -53,9 +59,15 @@ export function AdminDashboardClient() {
     const [analytics, setAnalytics] = useState<AnalyticsData>({});
     const [pageLoading, setPageLoading] = useState(true);
     
-    const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [updatingUserStatus, setUpdatingUserStatus] = useState<string | null>(null);
     const [updatingListingStatus, setUpdatingListingStatus] = useState<string | null>(null);
+
+    // State for user filtering and modal
+    const [searchTerm, setSearchTerm] = useState('');
+    const [roleFilter, setRoleFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [isProfileModalOpen, setProfileModalOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
      useEffect(() => {
         if (!authLoading) {
@@ -77,22 +89,23 @@ export function AdminDashboardClient() {
         }
     }, [authLoading, toast]);
 
+    const filteredUsers = useMemo(() => {
+        return users.filter(user => {
+            const searchLower = searchTerm.toLowerCase();
+            const nameMatch = user.name?.toLowerCase().includes(searchLower);
+            const emailMatch = user.email.toLowerCase().includes(searchLower);
+            
+            let roleMatch = roleFilter === 'all' || user.role === roleFilter;
+            // Map our DB statuses to the filter options
+            let statusMatch = statusFilter === 'all';
+            if (statusFilter === 'approved') statusMatch = user.profileStatus === 'approved';
+            if (statusFilter === 'pending') statusMatch = user.profileStatus === 'pending_review';
+            if (statusFilter === 'rejected') statusMatch = user.profileStatus === 'rejected';
+            if (statusFilter === 'incomplete') statusMatch = user.profileStatus === 'incomplete' || !user.profileStatus;
 
-    const handleSelectAll = (checked: boolean | 'indeterminate') => {
-        if (checked === true) {
-            setSelectedUsers(users.filter(u => u.role === 'driver').map(u => u.uid));
-        } else {
-            setSelectedUsers([]);
-        }
-    };
-
-    const handleSelectUser = (userId: string, checked: boolean) => {
-        if (checked) {
-            setSelectedUsers(prev => [...prev, userId]);
-        } else {
-            setSelectedUsers(prev => prev.filter(id => id !== userId));
-        }
-    };
+            return (nameMatch || emailMatch) && roleMatch && statusMatch;
+        });
+    }, [users, searchTerm, roleFilter, statusFilter]);
     
     const handleUserStatusUpdate = async (userId: string, newStatus: 'Aprovado' | 'Rejeitado' | 'Pendente') => {
         setUpdatingUserStatus(userId);
@@ -100,7 +113,7 @@ export function AdminDashboardClient() {
             const result = await updateUserProfileStatus(userId, newStatus);
             if (result.success) {
                 toast({ title: 'Sucesso', description: 'Status do usuário atualizado.' });
-                setUsers(prev => prev.map(u => u.uid === userId ? { ...u, profileStatus: newStatus.toLowerCase() as UserProfile['profileStatus'] } : u));
+                setUsers(prev => prev.map(u => u.uid === userId ? { ...u, profileStatus: result.dbStatus } : u));
             } else {
                 toast({ variant: 'destructive', title: 'Erro', description: result.error });
             }
@@ -222,10 +235,43 @@ export function AdminDashboardClient() {
                 <TabsContent value="users">
                     <Card>
                         <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle>Todos os Usuários</CardTitle>
-                                    <CardDescription>Visualize e gerencie todos os usuários da plataforma.</CardDescription>
+                            <CardTitle>Todos os Usuários</CardTitle>
+                            <CardDescription>Filtre e gerencie todos os usuários da plataforma.</CardDescription>
+                             <div className="mt-4 flex flex-col items-center gap-4 md:flex-row">
+                                <div className="relative w-full md:flex-1">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Buscar por nome ou email..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="pl-10"
+                                    />
+                                </div>
+                                <div className="flex w-full gap-4 md:w-auto">
+                                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                                    <SelectTrigger className="w-full md:w-[180px]">
+                                        <SelectValue placeholder="Filtrar por Perfil" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Todos os Perfis</SelectItem>
+                                        <SelectItem value="driver">Motorista</SelectItem>
+                                        <SelectItem value="fleet">Frota</SelectItem>
+                                        <SelectItem value="provider">Prestador</SelectItem>
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                    <SelectTrigger className="w-full md:w-[180px]">
+                                        <SelectValue placeholder="Filtrar por Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Todos os Status</SelectItem>
+                                        <SelectItem value="approved">Aprovado</SelectItem>
+                                        <SelectItem value="pending">Pendente</SelectItem>
+                                        <SelectItem value="rejected">Rejeitado</SelectItem>
+                                        <SelectItem value="incomplete">Incompleto</SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 </div>
                             </div>
                         </CardHeader>
@@ -241,21 +287,24 @@ export function AdminDashboardClient() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {users.map(user => (
+                                    {filteredUsers.length === 0 ? (
+                                        <TableRow><TableCell colSpan={5} className="h-24 text-center">Nenhum usuário encontrado com esses filtros.</TableCell></TableRow>
+                                    ) : (
+                                    filteredUsers.map(user => (
                                         <TableRow key={user.uid}>
                                             <TableCell>
-                                                <div className="font-medium">{user.name}</div>
+                                                <div className="font-medium">{user.name || user.nomeFantasia || 'Usuário sem nome'}</div>
                                                 <div className="text-sm text-muted-foreground">{user.email}</div>
                                             </TableCell>
                                             <TableCell><Badge variant="outline">{user.role}</Badge></TableCell>
                                             <TableCell className="font-medium">{user.credits ?? 0}</TableCell>
-                                            <TableCell><Badge variant={getStatusVariant(user.profileStatus)}>{user.profileStatus}</Badge></TableCell>
+                                            <TableCell><Badge variant={getStatusVariant(user.profileStatus)}>{user.profileStatus || 'N/A'}</Badge></TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                        <DropdownMenuItem>Ver Perfil Completo</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => { setSelectedUser(user); setProfileModalOpen(true); }}>Ver Perfil Completo</DropdownMenuItem>
                                                         {(user.profileStatus === 'Pendente' || user.profileStatus === 'pending_review') && (
                                                             updatingUserStatus === user.uid ? (
                                                                 <DropdownMenuItem disabled>
@@ -264,7 +313,7 @@ export function AdminDashboardClient() {
                                                                 </DropdownMenuItem>
                                                             ) : (
                                                                 <>
-                                                                    <DropdownMenuItem onClick={() => handleUserStatusUpdate(user.uid, 'Aprovado')}>Aprovar Cadastro</DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleUserStatusUpdate(user.uid, 'Aprovado')}><UserCheck className="mr-2 h-4 w-4"/> Aprovar Cadastro</DropdownMenuItem>
                                                                     <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => handleUserStatusUpdate(user.uid, 'Rejeitado')}>Rejeitar Cadastro</DropdownMenuItem>
                                                                 </>
                                                             )
@@ -273,7 +322,7 @@ export function AdminDashboardClient() {
                                                 </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    )))}
                                 </TableBody>
                             </Table>
                         </CardContent>
@@ -390,6 +439,74 @@ export function AdminDashboardClient() {
                     </Card>
                 </TabsContent>
             </Tabs>
+             <UserProfileModal user={selectedUser} isOpen={isProfileModalOpen} onOpenChange={setProfileModalOpen} />
         </div>
     );
 }
+
+
+function UserProfileModal({ user, isOpen, onOpenChange }: { user: AdminUser | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+    if (!user) return null;
+
+    const formatDate = (dateString?: string) => {
+        if (!dateString) return 'N/A';
+        return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle>Detalhes do Perfil: {user.name || user.nomeFantasia || user.email}</DialogTitle>
+                    <DialogDescription>
+                        Informações detalhadas do cadastro do usuário.
+                    </DialogDescription>
+                </DialogHeader>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
+                    <div className="space-y-4 border-r-0 md:border-r md:pr-8">
+                        <h4 className="font-semibold text-lg border-b pb-2">Informações Gerais</h4>
+                        <p><strong>Nome/Fantasia:</strong> {user.name || user.nomeFantasia || 'Não informado'}</p>
+                        <p><strong>Email:</strong> {user.email}</p>
+                        <p><strong>Telefone:</strong> {user.phone || 'Não informado'}</p>
+                        <p><strong>Perfil:</strong> <Badge variant="secondary">{user.role}</Badge></p>
+                        <p><strong>Status:</strong> <Badge variant={getStatusVariant(user.profileStatus)}>{user.profileStatus || 'N/A'}</Badge></p>
+                        <p><strong>Créditos:</strong> {user.credits || 0}</p>
+                        <p><strong>Membro desde:</strong> {formatDate(user.createdAt)}</p>
+                    </div>
+                    
+                    <div className="space-y-4">
+                        <h4 className="font-semibold text-lg border-b pb-2">Documentos</h4>
+                        {user.role === 'driver' ? (
+                            <>
+                                <p><strong>Nº CNH:</strong> {user.cnhNumber || 'Não informado'}</p>
+                                <p><strong>Cat. CNH:</strong> {user.cnhCategory || 'Não informado'}</p>
+                                <p><strong>Venc. CNH:</strong> {formatDate(user.cnhExpiration)}</p>
+                                <p><strong>Nº Condutax:</strong> {user.condutaxNumber || 'Não informado'}</p>
+                                <p><strong>Venc. Condutax:</strong> {formatDate(user.condutaxExpiration)}</p>
+                                <p><strong>Placa Veículo:</strong> {user.vehicleLicensePlate || 'Não informado'}</p>
+                                <p><strong>Venc. Alvará:</strong> {formatDate(user.alvaraExpiration)}</p>
+                            </>
+                        ) : user.role === 'fleet' || user.role === 'provider' ? (
+                             <>
+                                <p><strong>Tipo:</strong> {user.personType === 'pf' ? 'Pessoa Física' : 'Pessoa Jurídica'}</p>
+                                <p><strong>CPF:</strong> {user.cpf || 'Não informado'}</p>
+                                <p><strong>CNPJ:</strong> {user.cnpj || 'Não informado'}</p>
+                                <p><strong>Razão Social:</strong> {user.razaoSocial || 'Não informado'}</p>
+                             </>
+                        ) : (
+                            <p className="text-muted-foreground">Usuário não possui documentos específicos.</p>
+                        )}
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">
+                            Fechar
+                        </Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
