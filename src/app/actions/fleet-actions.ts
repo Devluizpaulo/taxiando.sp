@@ -7,6 +7,7 @@ import { type Vehicle, type VehicleApplication, type VehiclePerk, type UserProfi
 import { vehiclePerks } from '@/lib/data';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type VehicleFormValues } from '@/lib/fleet-schemas';
+import { auth } from '@/lib/firebase';
 
 // Get all data for a fleet's dashboard
 export async function getFleetData(fleetId: string) {
@@ -110,7 +111,28 @@ export async function deleteVehicle(vehicleId: string) {
     if (!vehicleId) return { success: false, error: 'ID do veículo não fornecido.' };
     
     try {
-        await adminDB.collection('vehicles').doc(vehicleId).delete();
+        const { currentUser } = auth;
+        if (!currentUser) {
+            return { success: false, error: 'Usuário não autenticado.' };
+        }
+
+        const vehicleRef = adminDB.collection('vehicles').doc(vehicleId);
+        const vehicleDoc = await vehicleRef.get();
+        if (!vehicleDoc.exists) {
+            return { success: false, error: 'Veículo não encontrado.' };
+        }
+        
+        const userDoc = await adminDB.collection('users').doc(currentUser.uid).get();
+        const userProfile = userDoc.data();
+
+        const vehicleData = vehicleDoc.data() as Vehicle;
+        
+        // Allow deletion if user is admin OR if user owns the vehicle
+        if (userProfile?.role !== 'admin' && vehicleData.fleetId !== currentUser.uid) {
+            return { success: false, error: 'Você não tem permissão para remover este veículo.' };
+        }
+
+        await vehicleRef.delete();
         revalidatePath('/fleet');
         revalidatePath(`/rentals`);
         return { success: true };
@@ -124,7 +146,29 @@ export async function updateApplicationStatus(applicationId: string, newStatus: 
     if (!applicationId) return { success: false, error: 'ID da candidatura não fornecido.' };
 
     try {
-        await adminDB.collection('applications').doc(applicationId).update({ status: newStatus });
+        const { currentUser } = auth;
+        if (!currentUser) {
+            return { success: false, error: 'Usuário não autenticado.' };
+        }
+
+        const applicationRef = adminDB.collection('applications').doc(applicationId);
+        const applicationDoc = await applicationRef.get();
+
+        if (!applicationDoc.exists) {
+            return { success: false, error: 'Candidatura não encontrada.' };
+        }
+
+        const userDoc = await adminDB.collection('users').doc(currentUser.uid).get();
+        const userProfile = userDoc.data();
+
+        const applicationData = applicationDoc.data() as VehicleApplication;
+
+        // Allow update if user is admin OR if user owns the vehicle associated with the application
+        if (userProfile?.role !== 'admin' && applicationData.fleetId !== currentUser.uid) {
+            return { success: false, error: 'Você não tem permissão para alterar esta candidatura.' };
+        }
+
+        await applicationRef.update({ status: newStatus });
         revalidatePath('/fleet');
         return { success: true };
     } catch (error) {
@@ -352,3 +396,5 @@ export async function getFleetPublicProfile(fleetId: string) {
         return { success: false, error: (error as Error).message };
     }
 }
+
+    
