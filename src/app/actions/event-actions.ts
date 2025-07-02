@@ -61,6 +61,10 @@ export async function getUpcomingEvents(): Promise<Event[]> {
         } as Event;
     });
   } catch (error) {
+    if ((error as Error).message.includes('Firebase Admin SDK not initialized')) {
+        return []; // Gracefully fail during initial setup
+    }
+    console.error("Error fetching upcoming events: ", (error as Error).message);
     return [];
   }
 }

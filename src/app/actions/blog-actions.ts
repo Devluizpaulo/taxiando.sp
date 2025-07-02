@@ -108,7 +108,10 @@ export async function getPublishedBlogPosts(postLimit?: number): Promise<BlogPos
             } as BlogPost;
         });
     } catch (error) {
-        
+        if ((error as Error).message.includes('Firebase Admin SDK not initialized')) {
+            return []; // Gracefully fail during initial setup
+        }
+        console.error("Error fetching published blog posts: ", (error as Error).message);
         return [];
     }
 }

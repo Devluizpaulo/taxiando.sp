@@ -112,6 +112,9 @@ export async function getFeaturedServices(limit: number = 3): Promise<ServiceLis
             } as ServiceListing;
         });
     } catch (error) {
+        if ((error as Error).message.includes('Firebase Admin SDK not initialized')) {
+            return []; // Gracefully fail during initial setup
+        }
         console.error("Error fetching featured services: ", (error as Error).message);
         return [];
     }
