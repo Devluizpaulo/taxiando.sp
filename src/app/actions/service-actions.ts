@@ -75,6 +75,27 @@ export async function deleteService(serviceId: string) {
     }
 }
 
+export async function getActiveServices(): Promise<ServiceListing[]> {
+    try {
+        const snapshot = await adminDB.collection('services')
+            .where('status', '==', 'Ativo')
+            .orderBy('createdAt', 'desc')
+            .get();
+
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                ...data,
+                id: doc.id,
+                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+            } as ServiceListing;
+        });
+    } catch (error) {
+        console.error("Error fetching active services: ", (error as Error).message);
+        return [];
+    }
+}
+
 export async function getFeaturedServices(limit: number = 3): Promise<ServiceListing[]> {
      try {
         const snapshot = await adminDB.collection('services')
