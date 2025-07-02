@@ -1,45 +1,12 @@
 
-'use client';
-
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { type Partner } from '@/lib/types';
 import { getActivePartners } from '@/app/actions/marketing-actions';
 import { cn } from '@/lib/utils';
-import { Skeleton } from './ui/skeleton';
 
-export function PartnersSection() {
-    const [partners, setPartners] = useState<Partner[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        getActivePartners().then(data => {
-            setPartners(data);
-            setLoading(false);
-        }).catch(err => {
-            console.error("Failed to load partners, section will be hidden.", err);
-            setLoading(false);
-        });
-    }, []);
-
-    if (loading) {
-        return (
-            <section id="partners" className="py-16 md:py-24 bg-muted">
-                <div className="container mx-auto px-4 md:px-6">
-                    <div className="mb-12 text-center">
-                        <Skeleton className="h-10 w-3/4 mx-auto" />
-                        <Skeleton className="h-6 w-1/2 mx-auto mt-4" />
-                    </div>
-                    <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-10">
-                        <Skeleton className="w-40 h-20" />
-                        <Skeleton className="w-60 h-32" />
-                        <Skeleton className="w-40 h-20" />
-                    </div>
-                </div>
-            </section>
-        );
-    }
+export async function PartnersSection() {
+    const partners = await getActivePartners();
 
     if (partners.length === 0) {
         return null;
