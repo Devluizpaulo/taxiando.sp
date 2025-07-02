@@ -6,6 +6,7 @@ import { adminDB, Timestamp } from '@/lib/firebase-admin';
 import type { ServiceListing, UserProfile } from '@/lib/types';
 import { nanoid } from 'nanoid';
 import { serviceFormSchema, type ServiceFormValues } from '@/lib/service-schemas';
+import { auth } from '@/lib/firebase';
 
 export async function createService(data: ServiceFormValues, providerId: string, providerName: string) {
     if (!providerId) return { success: false, error: "ID do prestador não fornecido." };
@@ -106,12 +107,25 @@ export async function getServicesByProvider(providerId: string): Promise<Service
 export async function updateServiceStatus(serviceId: string, newStatus: 'Ativo' | 'Pausado') {
     if (!serviceId) return { success: false, error: "ID do serviço não fornecido." };
     try {
-        // Only allow toggling if the current status isn't 'Pendente' or 'Rejeitado'
+        const { currentUser } = auth;
+        if (!currentUser) {
+            return { success: false, error: 'Usuário não autenticado.' };
+        }
+
         const serviceRef = adminDB.collection('services').doc(serviceId);
         const doc = await serviceRef.get();
         if (!doc.exists) return { success: false, error: "Serviço não encontrado."};
         
-        const currentStatus = doc.data()?.status;
+        const userDoc = await adminDB.collection('users').doc(currentUser.uid).get();
+        const userProfile = userDoc.data();
+        const serviceData = doc.data() as ServiceListing;
+
+        // Allow update if user is admin OR if user is the provider
+        if (userProfile?.role !== 'admin' && serviceData.providerId !== currentUser.uid) {
+            return { success: false, error: 'Você não tem permissão para alterar este serviço.' };
+        }
+        
+        const currentStatus = serviceData.status;
         if (currentStatus === 'Pendente' || currentStatus === 'Rejeitado') {
              return { success: false, error: `Não é possível alterar o status de um serviço ${currentStatus}.` };
         }
@@ -126,9 +140,30 @@ export async function updateServiceStatus(serviceId: string, newStatus: 'Ativo' 
 
 export async function deleteService(serviceId: string) {
     if (!serviceId) return { success: false, error: "ID do serviço não fornecido." };
+    
     try {
-        await adminDB.collection('services').doc(serviceId).delete();
+        const { currentUser } = auth;
+        if (!currentUser) {
+            return { success: false, error: 'Usuário não autenticado.' };
+        }
+
+        const serviceRef = adminDB.collection('services').doc(serviceId);
+        const serviceDoc = await serviceRef.get();
+        if (!serviceDoc.exists) {
+            return { success: false, error: 'Serviço não encontrado.' };
+        }
+
+        const userDoc = await adminDB.collection('users').doc(currentUser.uid).get();
+        const userProfile = userDoc.data();
+        const serviceData = serviceDoc.data() as ServiceListing;
+
+        if (userProfile?.role !== 'admin' && serviceData.providerId !== currentUser.uid) {
+            return { success: false, error: 'Você não tem permissão para remover este serviço.' };
+        }
+
+        await serviceRef.delete();
         revalidatePath('/services');
+        revalidatePath('/admin'); // Also revalidate admin in case admin deleted it
         return { success: true };
     } catch (error) {
         return { success: false, error: (error as Error).message };
@@ -206,3 +241,5 @@ export async function getServiceAndProviderDetails(serviceId: string) {
         return { success: false, error: (error as Error).message };
     }
 }
+
+    
