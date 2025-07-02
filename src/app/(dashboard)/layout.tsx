@@ -17,7 +17,7 @@ import {
   SidebarTrigger,
   useSidebar
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -182,7 +182,8 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                             <SidebarMenu>
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/newsletter"><Mail className="text-orange-500" /> Newsletter</Link></SidebarMenuButton></SidebarMenuItem>
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/notifications"><Megaphone className="text-pink-500" /> Notificações</Link></SidebarMenuButton></SidebarMenuItem>
-                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/partners"><Handshake className="text-cyan-500" /> Parceiros</Link></SidebarMenuButton></SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/partners"><Handshake className="text-cyan-500" /> Parceiros / Banners</Link></SidebarMenuButton></SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/quiz"><Star className="text-yellow-500" /> Quizzes</Link></SidebarMenuButton></SidebarMenuItem>
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>

@@ -1,5 +1,4 @@
 
-
 import { PublicHeader } from "@/components/layout/public-header";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { Button } from "@/components/ui/button";
@@ -234,7 +233,7 @@ const ClassifiedsSection = async () => {
                                     <CardContent className="flex-1 p-4">
                                         <Badge variant="secondary" className="mb-2">{srv.category}</Badge>
                                         <CardTitle className="font-headline text-lg">{srv.title}</CardTitle>
-                                        <CardDescription>Oferecido por: {srv.provider}</CardDescription>
+                                        <CardDescription>Oferecido por: <span className="font-medium text-foreground">{srv.provider}</span></CardDescription>
                                     </CardContent>
                                     <CardFooter className="flex items-center justify-between bg-muted/50 p-4">
                                       <p className="text-lg font-bold text-primary">{srv.price}</p>
