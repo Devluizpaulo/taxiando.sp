@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { BookOpen, Briefcase, FileCheck, Search, Award, AlertTriangle, ShieldCheck, HelpCircle, UserPlus, Car } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LoadingScreen } from '@/components/loading-screen';
+import { getDriverApplications } from '@/app/actions/fleet-actions';
 
 
 interface CourseWithProgress extends Course {
@@ -70,10 +71,10 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [inProgressCourses, setInProgressCourses] = useState<CourseWithProgress[]>([]);
     const [completedCoursesCount, setCompletedCoursesCount] = useState(0);
+    const [applicationsCount, setApplicationsCount] = useState(0);
 
     const profileCompleteness = useMemo(() => calculateProfileCompleteness(userProfile), [userProfile]);
     const vehicleStatus = useMemo(() => getVehicleStatus(userProfile), [userProfile]);
-    const applicationsCount = 4; // Mock data for now
 
     useEffect(() => {
         if (!user) return;
@@ -81,15 +82,19 @@ export default function DashboardPage() {
         const fetchDashboardData = async () => {
             setLoading(true);
             try {
-                // 1. Get all progress documents for the user to see which courses they've started
+                // Fetch applications and course progress in parallel
                 const progressCollectionRef = collection(db, 'users', user.uid, 'progress');
-                const progressSnapshot = await getDocs(progressCollectionRef);
+                const [progressSnapshot, applications] = await Promise.all([
+                    getDocs(progressCollectionRef),
+                    getDriverApplications(user.uid),
+                ]);
+
+                setApplicationsCount(applications.length);
                 
                 const userInProgress: CourseWithProgress[] = [];
                 let userCompletedCount = 0;
 
                 if (!progressSnapshot.empty) {
-                    // 2. For each progress document, fetch the corresponding full course details
                     const coursePromises = progressSnapshot.docs.map(async (progressDoc) => {
                         const courseId = progressDoc.id;
                         const courseDocRef = doc(db, 'courses', courseId);
@@ -216,7 +221,7 @@ export default function DashboardPage() {
                                 <Link href="/courses"><BookOpen className="mr-2" /> Ver todos os Cursos</Link>
                             </Button>
                             <Button asChild variant="outline" className="justify-start">
-                                <Link href="/opportunities"><Search className="mr-2" /> Buscar Oportunidades</Link>
+                                <Link href="/rentals"><Search className="mr-2" /> Buscar Oportunidades</Link>
                             </Button>
                             <Button asChild variant="outline" className="justify-start">
                                 <Link href="/applications"><FileCheck className="mr-2" /> Minhas Candidaturas</Link>
