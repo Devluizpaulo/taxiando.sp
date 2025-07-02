@@ -12,18 +12,19 @@ import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera } from 'lucide-react';
+import { Loader2, Camera, User, FileText, HeartHandshake } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DatePicker } from '@/components/ui/datepicker';
 import { LoadingScreen } from '@/components/loading-screen';
 import { uploadFile } from '@/app/actions/storage-actions';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -49,6 +50,9 @@ const profileFormSchema = z.object({
   cnhPoints: z.coerce.number().min(0).max(40).optional().nullable(),
   condutaxNumber: z.string().optional(),
   condutaxExpiration: z.date().optional(),
+  
+  // Modo de Trabalho e Veículo Próprio
+  workMode: z.enum(['owner', 'rental'], { required_error: 'Selecione seu modo de trabalho.' }),
   vehicleLicensePlate: z.string().optional(),
   alvaraExpiration: z.date().optional(),
   
@@ -64,7 +68,17 @@ const profileFormSchema = z.object({
   financialConsent: z.boolean().refine(val => val === true, {
     message: 'Você deve concordar com a análise financeira.',
   }),
+}).superRefine((data, ctx) => {
+    if (data.workMode === 'owner') {
+        if (!data.vehicleLicensePlate || data.vehicleLicensePlate.trim().length < 7) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'A placa do veículo é obrigatória para proprietários.', path: ['vehicleLicensePlate']});
+        }
+        if (!data.alvaraExpiration) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'O vencimento do alvará é obrigatório para proprietários.', path: ['alvaraExpiration']});
+        }
+    }
 });
+
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
@@ -96,6 +110,7 @@ export default function CompleteProfilePage() {
             cnhPoints: null,
             condutaxNumber: '',
             condutaxExpiration: undefined,
+            workMode: 'rental',
             vehicleLicensePlate: '',
             alvaraExpiration: undefined,
             specializedCourses: [],
@@ -105,6 +120,8 @@ export default function CompleteProfilePage() {
             financialConsent: false,
         },
     });
+    
+    const workMode = form.watch('workMode');
     
     useEffect(() => {
         if (!loading && userProfile) {
@@ -125,6 +142,7 @@ export default function CompleteProfilePage() {
                 cnhPoints: userProfile.cnhPoints ?? null,
                 condutaxNumber: userProfile.condutaxNumber || '',
                 condutaxExpiration: toDate(userProfile.condutaxExpiration),
+                workMode: userProfile.workMode || 'rental',
                 vehicleLicensePlate: userProfile.vehicleLicensePlate || '',
                 alvaraExpiration: toDate(userProfile.alvaraExpiration),
                 specializedCourses: userProfile.specializedCourses || [],
@@ -185,7 +203,8 @@ export default function CompleteProfilePage() {
                 profileStatus: 'pending_review',
                 cnhExpiration: values.cnhExpiration ? Timestamp.fromDate(values.cnhExpiration) : null,
                 condutaxExpiration: values.condutaxExpiration ? Timestamp.fromDate(values.condutaxExpiration) : null,
-                alvaraExpiration: values.alvaraExpiration ? Timestamp.fromDate(values.alvaraExpiration) : null,
+                alvaraExpiration: values.workMode === 'owner' && values.alvaraExpiration ? Timestamp.fromDate(values.alvaraExpiration) : null,
+                vehicleLicensePlate: values.workMode === 'owner' ? values.vehicleLicensePlate : null,
                 reference: {
                     name: values.referenceName,
                     relationship: values.referenceRelationship,
@@ -288,6 +307,50 @@ export default function CompleteProfilePage() {
                             <CardDescription>Mantenha seus documentos em dia para acessar as melhores oportunidades.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
+                             <FormField
+                                control={form.control}
+                                name="workMode"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-3">
+                                    <FormLabel>Qual seu modo de trabalho principal?</FormLabel>
+                                    <FormControl>
+                                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <Label htmlFor="rental" className="flex flex-col p-4 border rounded-md cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                                                <RadioGroupItem value="rental" id="rental" className="sr-only"/>
+                                                <span className="font-bold text-lg">Alugo carro de Frota</span>
+                                                <span className="text-sm text-muted-foreground">Busco oportunidades e não preciso me preocupar com a documentação do veículo.</span>
+                                            </Label>
+                                            <Label htmlFor="owner" className="flex flex-col p-4 border rounded-md cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                                                <RadioGroupItem value="owner" id="owner" className="sr-only"/>
+                                                <span className="font-bold text-lg">Tenho meu próprio veículo</span>
+                                                <span className="text-sm text-muted-foreground">Sou proprietário(a) e quero usar a plataforma para gerenciar meus documentos.</span>
+                                            </Label>
+                                        </RadioGroup>
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                             {workMode === 'owner' && (
+                                <div className="space-y-4 rounded-lg border bg-muted/50 p-6">
+                                    <div className="space-y-1">
+                                        <h3 className="text-lg font-semibold">Documentação do Veículo Próprio</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            Preencha os dados do seu veículo para receber lembretes de vencimento.
+                                        </p>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                         <FormField control={form.control} name="vehicleLicensePlate" render={({ field }) => (
+                                            <FormItem><FormLabel>Placa do Veículo (Alvará)</FormLabel><FormControl><Input placeholder="ABC-1234" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                         <FormField control={form.control} name="alvaraExpiration" render={({ field }) => (
+                                            <FormItem><FormLabel>Vencimento do Alvará</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
                                 <FormField control={form.control} name="cnhNumber" render={({ field }) => (
                                     <FormItem><FormLabel>Nº da CNH</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
@@ -308,7 +371,7 @@ export default function CompleteProfilePage() {
                                     <FormItem><FormLabel>Pontos na CNH</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                             </div>
-                             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <FormField control={form.control} name="condutaxNumber" render={({ field }) => (
                                     <FormItem><FormLabel>Nº do Condutax (Opcional)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                 )}/>
@@ -316,23 +379,6 @@ export default function CompleteProfilePage() {
                                     <FormItem><FormLabel>Vencimento do Condutax</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                              </div>
-                            
-                            <div className="space-y-4 rounded-lg border bg-muted/50 p-6">
-                                <div className="space-y-1">
-                                    <h3 className="text-lg font-semibold">Meu Veículo (Opcional)</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        Possui veículo próprio? Cadastre-o para acompanhar o vencimento de documentos e receber alertas.
-                                    </p>
-                                </div>
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                     <FormField control={form.control} name="vehicleLicensePlate" render={({ field }) => (
-                                        <FormItem><FormLabel>Placa do Veículo (Alvará)</FormLabel><FormControl><Input placeholder="ABC-1234" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                     <FormField control={form.control} name="alvaraExpiration" render={({ field }) => (
-                                        <FormItem><FormLabel>Vencimento do Alvará</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                </div>
-                            </div>
                         </CardContent>
                     </Card>
 

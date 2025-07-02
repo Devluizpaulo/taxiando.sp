@@ -25,9 +25,12 @@ export interface UserProfile {
     cnhExpiration?: Timestamp;
     condutaxNumber?: string;
     condutaxExpiration?: Timestamp;
+    cnhPoints?: number;
+
+    // Driver: Work Mode and Vehicle
+    workMode?: 'owner' | 'rental';
     alvaraExpiration?: Timestamp;
     vehicleLicensePlate?: string;
-    cnhPoints?: number;
 
     // Driver: Qualifications
     specializedCourses?: string[];
