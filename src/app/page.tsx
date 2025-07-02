@@ -86,7 +86,9 @@ const HowToBeDriverSection = () => (
     try {
       blogPosts = await getPublishedBlogPosts(3);
     } catch (error) {
-      console.error("Failed to fetch blog posts for homepage, hiding section.", error);
+      if (!(error as Error).message.includes('Firebase Admin SDK not initialized')) {
+        console.error("Failed to fetch blog posts for homepage, hiding section.", error);
+      }
     }
     
     if (!blogPosts || blogPosts.length === 0) return null;
@@ -126,10 +128,20 @@ const HowToBeDriverSection = () => (
   }
   
 const ClassifiedsSection = async () => {
-    const [featuredVehicles, featuredServices] = await Promise.all([
-        getFeaturedVehicles(3),
-        getFeaturedServices(3)
-    ]);
+    let featuredVehicles: Vehicle[] = [];
+    let featuredServices: ServiceListing[] = [];
+    
+    try {
+      [featuredVehicles, featuredServices] = await Promise.all([
+          getFeaturedVehicles(3),
+          getFeaturedServices(3)
+      ]);
+    } catch (error) {
+       if (!(error as Error).message.includes('Firebase Admin SDK not initialized')) {
+        console.error("Error fetching classifieds for homepage:", error);
+      }
+    }
+
 
     const hasContent = featuredVehicles.length > 0 || featuredServices.length > 0;
     if (!hasContent) return null;
@@ -201,6 +213,31 @@ const ClassifiedsSection = async () => {
           </section>
     );
 }
+
+const RentVehiclePrompt = () => (
+    <section id="rent-vehicle" className="py-16 md:py-24 bg-accent text-accent-foreground">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="text-center md:text-left">
+            <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">
+              Precisa de um carro pra rodar?
+            </h2>
+            <p className="mt-4 text-lg text-accent-foreground/80">
+              Não fique a pé. Na Táxiando SP você encontra veículos de frotas e "porta branca" verificados, prontos para você começar a trabalhar hoje mesmo.
+            </p>
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center md:justify-start">
+              <Button asChild size="lg" variant="secondary" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Link href="/rentals">Ver Veículos Disponíveis</Link>
+              </Button>
+            </div>
+          </div>
+          <div className="relative h-80 w-full order-first md:order-last">
+            <Image src="https://placehold.co/600x400.png" alt="Chave de carro sendo entregue" layout="fill" objectFit="cover" className="rounded-lg shadow-xl" data-ai-hint="handing car keys" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 
 export default function Home() {
   return (
@@ -309,6 +346,8 @@ export default function Home() {
             </div>
           </section>
 
+          <RentVehiclePrompt />
+          
           <HowToBeDriverSection />
 
           <QuizSection />
