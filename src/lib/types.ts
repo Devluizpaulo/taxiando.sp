@@ -195,11 +195,20 @@ export interface CreditPackage {
 }
 
 export interface Transaction {
-    id: string;
-    date: string;
-    description: string;
-    amount: string;
-    type: 'debit' | 'credit_usage';
+  id: string;
+  type: 'purchase' | 'usage';
+  createdAt: Timestamp | string;
+
+  // Purchase-specific fields
+  packageId?: string;
+  packageName?: string;
+  creditsPurchased?: number;
+  amountPaid?: number;
+  paymentId?: string;
+
+  // Usage-specific fields
+  creditsUsed?: number;
+  usageReason?: string;
 }
 
 export interface ServiceListing {

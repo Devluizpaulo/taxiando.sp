@@ -1,5 +1,5 @@
 
-import { type Vehicle, type VehicleApplication, type Transaction, type Course, type ServiceListing } from './types';
+import { type Vehicle, type VehicleApplication, type Course, type ServiceListing } from './types';
 
 export const mockVehicles: (Omit<Vehicle, 'fleetId' | 'createdAt'>)[] = [
   { id: 'v_mock_1', plate: 'BRA2E19', make: 'Chevrolet', model: 'Onix', year: 2022, status: 'Disponível', dailyRate: 120, imageUrl: 'https://placehold.co/600x400.png', condition: 'Novo', description: 'Carro novo, completo, com ar, direção e som bluetooth.', paymentInfo: { terms: 'Diária (Seg-Sáb)', methods: ['Cartão de Crédito', 'PIX'] }, perks: [{ id: 'full_tank', label: 'Tanque Cheio' }, { id: 'car_wash', label: 'Lava-rápido' }] },
@@ -13,13 +13,6 @@ export const mockApplications: VehicleApplication[] = [
     { id: 'app_1', driverId: 'd_1', fleetId: 'mockFleet', driverName: 'Carlos Pereira', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Aprovado', vehicleId: 'v_1', vehicleName: 'Onix (BRA2E19)', company: 'Frota Rápida SP', appliedAt: new Date('2024-07-28T10:00:00Z').toISOString(), status: 'Pendente' },
     { id: 'app_2', driverId: 'd_2', fleetId: 'mockFleet', driverName: 'Ana Costa', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Pendente', vehicleId: 'v_1', vehicleName: 'Onix (BRA2E19)', company: 'Frota Rápida SP', appliedAt: new Date('2024-07-27T15:30:00Z').toISOString(), status: 'Pendente' },
     { id: 'app_3', driverId: 'd_3', fleetId: 'mockFleet', driverName: 'Ricardo Alves', driverPhotoUrl: 'https://placehold.co/40x40.png', driverProfileStatus: 'Aprovado', vehicleId: 'v_4', vehicleName: 'Kwid (JKL8M90)', company: 'Porta Branca', appliedAt: new Date('2024-07-26T09:00:00Z').toISOString(), status: 'Aprovado' },
-];
-
-
-export const mockTransactions: Transaction[] = [
-  { id: 't_1', date: '25/07/2024', description: 'Compra de 50 créditos', amount: '- R$ 44,90', type: 'debit' },
-  { id: 't_2', date: '26/07/2024', description: 'Uso de 2 créditos - Anúncio em Destaque', amount: '- 2 créditos', type: 'credit_usage' },
-  { id: 't_3', date: '28/07/2024', description: 'Uso de 1 crédito - Download de Certificado', amount: '- 1 crédito', type: 'credit_usage' },
 ];
 
 type HomePageServiceListing = Pick<ServiceListing, 'id' | 'title' | 'provider' | 'category' | 'price' | 'status' | 'imageUrl'> & { imageHint: string };
@@ -136,5 +129,3 @@ Lembre-se: dirigir com segurança não só evita multas, mas também protege a s
     }
   ]
 };
-
-    
