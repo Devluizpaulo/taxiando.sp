@@ -70,7 +70,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                     lessons: module.lessons.map(lesson => ({
                         ...lesson,
                         id: lesson.id || nanoid(),
-                        questions: lesson.questions?.map(q => ({
+                        questions: module.questions?.map(q => ({
                             ...q,
                             id: q.id || nanoid(),
                             options: q.options.map(o => ({ ...o, id: o.id || nanoid() }))
@@ -293,3 +293,5 @@ function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQu
         </Card>
     );
 }
+
+    
