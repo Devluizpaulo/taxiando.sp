@@ -12,6 +12,12 @@ const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// This check helps developers diagnose a misconfigured .env.local file.
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey.length < 10) {
+    throw new Error('Your NEXT_PUBLIC_FIREBASE_API_KEY is not set or is too short. Please check your .env.local file. Refer to .env.example for the full list of required variables.');
+}
+
+
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
