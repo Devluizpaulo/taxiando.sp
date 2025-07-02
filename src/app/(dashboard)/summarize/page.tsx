@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 import { summarizeTranscript, type SummarizeTranscriptOutput } from '@/ai/flows/summarize-transcript';
 import { Button } from '@/components/ui/button';
@@ -11,11 +13,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, FileText } from 'lucide-react';
+import { Loader2, FileText, Wand2 } from 'lucide-react';
 
 const formSchema = z.object({
-  transcript: z.string().min(50, {
-    message: 'O texto precisa ter pelo menos 50 caracteres.',
+  transcript: z.string().min(100, {
+    message: 'O texto precisa ter pelo menos 100 caracteres para um bom resumo.',
   }),
 });
 
@@ -52,15 +54,15 @@ export default function SummarizePage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="font-headline text-3xl font-bold tracking-tight">Sumarizador de Conteúdo</h1>
-        <p className="text-muted-foreground">Cole o conteúdo de uma aula ou palestra para gerar um resumo com IA.</p>
+        <h1 className="font-headline text-3xl font-bold tracking-tight">Sumarizador Rápido para o Taxista</h1>
+        <p className="text-muted-foreground">Cole uma notícia, regulamento ou texto longo para obter os pontos-chave rapidamente.</p>
       </div>
       
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Texto Original</CardTitle>
-            <CardDescription>Insira o texto que você deseja resumir abaixo.</CardDescription>
+            <CardDescription>Insira o texto que você deseja resumir no campo abaixo.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -70,10 +72,10 @@ export default function SummarizePage() {
                   name="transcript"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="sr-only">Transcrição</FormLabel>
+                      <FormLabel className="sr-only">Texto para resumir</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Cole sua transcrição aqui..."
+                          placeholder="Cole a matéria ou o texto longo aqui..."
                           className="min-h-[300px] resize-y"
                           {...field}
                         />
@@ -89,7 +91,10 @@ export default function SummarizePage() {
                       Gerando Resumo...
                     </>
                   ) : (
-                    'Gerar Resumo'
+                    <>
+                      <Wand2 className="mr-2 h-4 w-4" />
+                      Gerar Resumo com IA
+                    </>
                   )}
                 </Button>
               </form>
@@ -99,8 +104,8 @@ export default function SummarizePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Resumo Gerado por IA</CardTitle>
-            <CardDescription>Os pontos chave do seu texto aparecerão aqui.</CardDescription>
+            <CardTitle>Resumo Gerado</CardTitle>
+            <CardDescription>Os pontos chave do seu texto, de forma direta e objetiva.</CardDescription>
           </CardHeader>
           <CardContent className="min-h-[300px]">
             {isLoading ? (
@@ -109,8 +114,8 @@ export default function SummarizePage() {
                 <p>Analisando o texto...</p>
               </div>
             ) : summary ? (
-              <div className="prose prose-sm max-w-none rounded-md bg-muted p-4">
-                <p>{summary.summary}</p>
+              <div className="prose prose-sm max-w-none dark:prose-invert rounded-md bg-muted p-4">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{summary.summary}</ReactMarkdown>
               </div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center rounded-md border-2 border-dashed text-muted-foreground">
