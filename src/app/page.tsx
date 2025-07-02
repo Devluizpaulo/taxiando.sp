@@ -167,7 +167,7 @@ const ClassifiedsSection = async () => {
                                     </CardContent>
                                     <CardFooter>
                                         <Button asChild className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                                          <Link href={`/rentals/${vehicle.id}`}>Ver mais veículos</Link>
+                                          <Link href={`/rentals/${vehicle.id}`}>Ver Detalhes</Link>
                                         </Button>
                                     </CardFooter>
                                 </Card>
@@ -189,7 +189,7 @@ const ClassifiedsSection = async () => {
                                     <CardFooter className="flex items-center justify-between bg-muted/50 p-4">
                                       <p className="text-lg font-bold text-primary">{srv.price}</p>
                                       <Button asChild>
-                                          <Link href="/services/marketplace">Ver todos os serviços</Link>
+                                          <Link href={`/services/${srv.id}`}>Ver Detalhes</Link>
                                       </Button>
                                     </CardFooter>
                                 </Card>
