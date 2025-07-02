@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { type CreditPackage, type Transaction } from '@/lib/types';
 import { purchaseCredits, createPaymentPreference } from '@/app/actions/billing-actions';
@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CreditCard, Loader2, ShoppingCart, AlertCircle, Tag, Ticket } from "lucide-react";
-import { mockTransactions } from '@/lib/mock-data';
 import { LoadingScreen } from '@/components/loading-screen';
 import { Input } from '@/components/ui/input';
 
@@ -27,7 +26,7 @@ export default function BillingPage() {
     const searchParams = useSearchParams();
 
     const [packages, setPackages] = useState<CreditPackage[]>([]);
-    const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreatingPreference, setIsCreatingPreference] = useState<string | null>(null);
     const [preferenceId, setPreferenceId] = useState<string | null>(null);
@@ -77,6 +76,28 @@ export default function BillingPage() {
         };
         fetchInitialData();
     }, [toast]);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const transCollectionRef = collection(db, 'users', user.uid, 'transactions');
+        const q = query(transCollectionRef, orderBy('createdAt', 'desc'));
+
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const userTransactions: Transaction[] = [];
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                userTransactions.push({
+                    id: doc.id,
+                    ...data,
+                    createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+                } as Transaction);
+            });
+            setTransactions(userTransactions);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
 
 
     const handlePurchaseAttempt = async (pkg: CreditPackage) => {
@@ -242,13 +263,33 @@ export default function BillingPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {transactions.map(t => (
-                                <TableRow key={t.id}>
-                                    <TableCell>{t.date}</TableCell>
-                                    <TableCell className="font-medium">{t.description}</TableCell>
-                                    <TableCell className={`text-right font-mono ${t.type === 'debit' ? 'text-red-600' : 'text-muted-foreground'}`}>{t.amount}</TableCell>
+                            {transactions.length === 0 ? (
+                                 <TableRow>
+                                    <TableCell colSpan={3} className="h-24 text-center">Nenhum histórico de transações.</TableCell>
                                 </TableRow>
-                            ))}
+                            ) : (
+                                transactions.map(t => {
+                                    const date = new Date(t.createdAt as string).toLocaleDateString('pt-BR');
+                                    let description = "Transação desconhecida";
+                                    let amount = "";
+
+                                    if (t.type === 'purchase') {
+                                        description = `Compra: ${t.packageName}`;
+                                        amount = `- R$ ${t.amountPaid?.toFixed(2)}`;
+                                    } else if (t.type === 'usage') {
+                                        description = t.usageReason || 'Uso de créditos';
+                                        amount = `- ${t.creditsUsed} créditos`;
+                                    }
+
+                                    return (
+                                        <TableRow key={t.id}>
+                                            <TableCell>{date}</TableCell>
+                                            <TableCell className="font-medium">{description}</TableCell>
+                                            <TableCell className={`text-right font-mono ${t.type === 'purchase' ? 'text-red-600' : 'text-primary'}`}>{amount}</TableCell>
+                                        </TableRow>
+                                    )
+                                })
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
