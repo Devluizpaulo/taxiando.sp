@@ -23,8 +23,10 @@ import { LoadingScreen } from '@/components/loading-screen';
 const providerProfileSchema = z.object({
   personType: z.enum(['pf', 'pj']),
   name: z.string().optional(),
+  cpf: z.string().optional(),
   razaoSocial: z.string().optional(),
   nomeFantasia: z.string().optional(),
+  cnpj: z.string().optional(),
   companyDescription: z.string().min(20, "A descrição deve ter no mínimo 20 caracteres.").max(500, "A descrição deve ter no máximo 500 caracteres."),
   address: z.string().min(10, "O endereço é obrigatório."),
   contactPhone: z.string().min(10, "O telefone é obrigatório."),
@@ -34,14 +36,26 @@ const providerProfileSchema = z.object({
     facebook: z.string().optional(),
     whatsapp: z.string().optional(),
   }),
-}).refine(data => {
-    if (data.personType === 'pf') return data.name && data.name.length >= 3;
-    return true;
-}, { message: 'O nome completo é obrigatório.', path: ['name']})
-.refine(data => {
-    if (data.personType === 'pj') return data.nomeFantasia && data.nomeFantasia.length >= 3;
-    return true;
-}, { message: 'O nome fantasia é obrigatório.', path: ['nomeFantasia']});
+}).superRefine((data, ctx) => {
+    if (data.personType === 'pf') {
+        if (!data.name || data.name.trim().length < 3) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'O nome completo é obrigatório.', path: ['name'] });
+        }
+        const cleanCpf = data.cpf?.replace(/\D/g, '') || '';
+        if (cleanCpf.length !== 11) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'O CPF é obrigatório e deve ter 11 dígitos.', path: ['cpf'] });
+        }
+    } else if (data.personType === 'pj') {
+        if (!data.nomeFantasia || data.nomeFantasia.trim().length < 3) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'O nome fantasia é obrigatório.', path: ['nomeFantasia'] });
+        }
+         const cleanCnpj = data.cnpj?.replace(/\D/g, '') || '';
+         if (cleanCnpj && cleanCnpj.length !== 14) {
+             ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Se preenchido, o CNPJ deve ter 14 dígitos.', path: ['cnpj'] });
+        }
+    }
+});
+
 
 type ProviderProfileValues = z.infer<typeof providerProfileSchema>;
 
@@ -69,8 +83,10 @@ export default function ProviderProfilePage() {
             form.reset({
                 personType: userProfile.personType || 'pf',
                 name: userProfile.name || '',
+                cpf: userProfile.cpf || '',
                 razaoSocial: userProfile.razaoSocial || '',
                 nomeFantasia: userProfile.nomeFantasia || '',
+                cnpj: userProfile.cnpj || '',
                 companyDescription: userProfile.companyDescription || '',
                 address: userProfile.address || '',
                 contactPhone: userProfile.phone || '',
@@ -89,8 +105,19 @@ export default function ProviderProfilePage() {
         setIsSubmitting(true);
         try {
             const userDocRef = doc(db, 'users', user.uid);
+            
+            const dataToSave = { ...values };
+            if (values.personType === 'pf') {
+                dataToSave.razaoSocial = '';
+                dataToSave.nomeFantasia = '';
+                dataToSave.cnpj = '';
+            } else {
+                dataToSave.name = '';
+                dataToSave.cpf = '';
+            }
+
             await updateDoc(userDocRef, {
-                ...values,
+                ...dataToSave,
                 profileStatus: 'pending_review',
             });
             toast({
@@ -131,7 +158,7 @@ export default function ProviderProfilePage() {
                                     <FormItem className="space-y-3">
                                     <FormLabel>Tipo de Conta</FormLabel>
                                     <FormControl>
-                                        <Tabs defaultValue={field.value} onValueChange={field.onChange} className="w-full">
+                                        <Tabs defaultValue={field.value} onValueChange={field.onChange as (value: string) => void} className="w-full">
                                             <TabsList className="grid w-full grid-cols-2">
                                                 <TabsTrigger value="pf">Pessoa Física</TabsTrigger>
                                                 <TabsTrigger value="pj">Pessoa Jurídica</TabsTrigger>
@@ -143,9 +170,14 @@ export default function ProviderProfilePage() {
                                 )}
                             />
                             {personType === 'pf' ? (
-                                <FormField control={form.control} name="name" render={({ field }) => (
-                                    <FormItem><FormLabel>Seu Nome Completo</FormLabel><FormControl><Input placeholder="Seu nome como autônomo" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
+                                <>
+                                    <FormField control={form.control} name="name" render={({ field }) => (
+                                        <FormItem><FormLabel>Seu Nome Completo</FormLabel><FormControl><Input placeholder="Seu nome como autônomo" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                     <FormField control={form.control} name="cpf" render={({ field }) => (
+                                        <FormItem><FormLabel>CPF</FormLabel><FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                </>
                             ) : (
                                 <>
                                  <FormField control={form.control} name="nomeFantasia" render={({ field }) => (
@@ -153,6 +185,9 @@ export default function ProviderProfilePage() {
                                  )}/>
                                  <FormField control={form.control} name="razaoSocial" render={({ field }) => (
                                     <FormItem><FormLabel>Razão Social</FormLabel><FormControl><Input placeholder="Nome de registro da empresa" {...field} /></FormControl><FormMessage /></FormItem>
+                                 )}/>
+                                 <FormField control={form.control} name="cnpj" render={({ field }) => (
+                                    <FormItem><FormLabel>CNPJ</FormLabel><FormControl><Input placeholder="00.000.000/0000-00" {...field} /></FormControl><FormMessage /></FormItem>
                                  )}/>
                                 </>
                             )}
