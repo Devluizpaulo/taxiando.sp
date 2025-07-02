@@ -1,19 +1,24 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { adminDB, Timestamp } from '@/lib/firebase-admin';
 import type { ServiceListing, UserProfile } from '@/lib/types';
 import { nanoid } from 'nanoid';
-
-export type ServiceFormValues = Omit<ServiceListing, 'id' | 'providerId' | 'provider' | 'createdAt' | 'status'>;
+import { serviceFormSchema, type ServiceFormValues } from '@/lib/service-schemas';
 
 export async function createService(data: ServiceFormValues, providerId: string, providerName: string) {
     if (!providerId) return { success: false, error: "ID do prestador não fornecido." };
     
     try {
+        const validation = serviceFormSchema.safeParse(data);
+        if (!validation.success) {
+            return { success: false, error: 'Dados inválidos.' };
+        }
+
         const serviceId = nanoid();
         const serviceData: Omit<ServiceListing, 'id' | 'createdAt'> = {
-            ...data,
+            ...validation.data,
             providerId,
             provider: providerName,
             status: 'Pendente',
@@ -33,6 +38,52 @@ export async function createService(data: ServiceFormValues, providerId: string,
         return { success: false, error: (error as Error).message };
     }
 }
+
+export async function getServiceById(serviceId: string): Promise<ServiceListing | null> {
+    if (!serviceId) return null;
+    try {
+        const docRef = await adminDB.collection('services').doc(serviceId).get();
+        if (!docRef.exists) return null;
+
+        const data = docRef.data()!;
+        return {
+            ...data,
+            id: docRef.id,
+            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+        } as ServiceListing;
+    } catch (error) {
+        console.error("Error fetching service by ID:", error);
+        return null;
+    }
+}
+
+export async function updateService(serviceId: string, data: ServiceFormValues) {
+    if (!serviceId) return { success: false, error: 'ID do serviço não fornecido.' };
+
+    try {
+        const validation = serviceFormSchema.safeParse(data);
+        if (!validation.success) {
+            return { success: false, error: 'Dados inválidos.' };
+        }
+
+        const serviceRef = adminDB.collection('services').doc(serviceId);
+        await serviceRef.update({
+            ...validation.data,
+            status: 'Pendente',
+            updatedAt: Timestamp.now(),
+        });
+        
+        revalidatePath('/services');
+        revalidatePath('/admin');
+        revalidatePath(`/services/${serviceId}`);
+        revalidatePath(`/services/${serviceId}/edit`);
+
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
+
 
 export async function getServicesByProvider(providerId: string): Promise<ServiceListing[]> {
     if (!providerId) return [];
