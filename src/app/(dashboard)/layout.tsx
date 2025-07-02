@@ -71,135 +71,142 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
         <SidebarContent>
             {userProfile ? (
               <SidebarMenu>
-                {userProfile?.role === 'driver' && (
-                <>
-                    <SidebarMenuItem onClick={handleMenuClick}>
-                    <SidebarMenuButton asChild>
-                        <Link href="/dashboard"><LayoutDashboard/> Meu Painel</Link>
-                    </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem onClick={handleMenuClick}>
-                    <SidebarMenuButton asChild>
-                        <Link href="/profile"><FilePen/> Completar Perfil</Link>
-                    </SidebarMenuButton>
-                    </SidebarMenuItem>
-                     <SidebarMenuItem onClick={handleMenuClick}>
-                      <SidebarMenuButton asChild>
-                        <Link href="/rentals"><KeyRound/> Alugar Veículo</Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem onClick={handleMenuClick}>
-                    <SidebarMenuButton asChild>
-                        <Link href="/courses"><BookOpen/> Cursos</Link>
-                    </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem onClick={handleMenuClick}>
-                    <SidebarMenuButton asChild>
-                        <Link href="/applications"><CheckSquare/> Minhas Candidaturas</Link>
-                    </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </>
-                )}
-                {(userProfile?.role === 'fleet' || userProfile?.role === 'admin') && (
-                <SidebarMenuItem onClick={handleMenuClick}>
-                    <SidebarMenuButton asChild>
-                    <Link href="/fleet"><Building/> Minha Frota</Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                )}
-                {userProfile?.role === 'provider' && (
-                <SidebarMenuItem onClick={handleMenuClick}>
-                    <SidebarMenuButton asChild>
-                    <Link href="/services"><Wrench/> Meus Serviços</Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                )}
-                <SidebarMenuItem onClick={handleMenuClick}>
-                <SidebarMenuButton asChild>
-                    <Link href="/billing"><CreditCard/> Faturamento e Créditos</Link>
-                </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem onClick={handleMenuClick}>
-                <SidebarMenuButton asChild>
-                    <Link href="/summarize"><FileText/> Sumarizador</Link>
-                </SidebarMenuButton>
-                </SidebarMenuItem>
-                {userProfile?.role === 'admin' && (
-                <>
-                    <SidebarMenuItem onClick={handleMenuClick}>
-                        <SidebarMenuButton asChild>
-                            <Link href="/admin"><Shield className="text-red-500" /> Painel Admin</Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
+                {/* === MENU DO MOTORISTA === */}
+                {userProfile.role === 'driver' && (
+                  <>
+                    <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/dashboard"><LayoutDashboard/> Meu Painel</Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarGroup>
-                        <SidebarGroupLabel>Gestão</SidebarGroupLabel>
+                      <SidebarGroupLabel>Minha Carreira</SidebarGroupLabel>
+                      <SidebarGroupContent>
+                        <SidebarMenu>
+                          <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/rentals"><KeyRound/> Alugar Veículo</Link></SidebarMenuButton></SidebarMenuItem>
+                          <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/applications"><CheckSquare/> Minhas Candidaturas</Link></SidebarMenuButton></SidebarMenuItem>
+                          <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/courses"><BookOpen/> Cursos</Link></SidebarMenuButton></SidebarMenuItem>
+                        </SidebarMenu>
+                      </SidebarGroupContent>
+                    </SidebarGroup>
+                    <SidebarGroup>
+                      <SidebarGroupLabel>Meu Perfil</SidebarGroupLabel>
+                      <SidebarGroupContent>
+                        <SidebarMenu>
+                          <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/profile"><FilePen/> Completar Perfil</Link></SidebarMenuButton></SidebarMenuItem>
+                          <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/billing"><CreditCard/> Faturamento</Link></SidebarMenuButton></SidebarMenuItem>
+                        </SidebarMenu>
+                      </SidebarGroupContent>
+                    </SidebarGroup>
+                     <SidebarGroup>
+                      <SidebarGroupLabel>Ferramentas</SidebarGroupLabel>
+                      <SidebarGroupContent>
+                        <SidebarMenu>
+                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/summarize"><FileText/> Sumarizador</Link></SidebarMenuButton></SidebarMenuItem>
+                        </SidebarMenu>
+                      </SidebarGroupContent>
+                    </SidebarGroup>
+                  </>
+                )}
+
+                {/* === MENU DA FROTA === */}
+                {userProfile.role === 'fleet' && (
+                  <>
+                    <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/fleet"><LayoutDashboard/> Meu Painel</Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarGroup>
+                      <SidebarGroupLabel>Minha Empresa</SidebarGroupLabel>
+                      <SidebarGroupContent>
+                        <SidebarMenu>
+                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/fleet/profile"><Building/> Perfil da Frota</Link></SidebarMenuButton></SidebarMenuItem>
+                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/billing"><CreditCard/> Faturamento</Link></SidebarMenuButton></SidebarMenuItem>
+                        </SidebarMenu>
+                      </SidebarGroupContent>
+                    </SidebarGroup>
+                    <SidebarGroup>
+                      <SidebarGroupLabel>Ferramentas</SidebarGroupLabel>
+                      <SidebarGroupContent>
+                        <SidebarMenu>
+                          <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/summarize"><FileText/> Sumarizador</Link></SidebarMenuButton></SidebarMenuItem>
+                        </SidebarMenu>
+                      </SidebarGroupContent>
+                    </SidebarGroup>
+                  </>
+                )}
+
+                {/* === MENU DO PRESTADOR === */}
+                {userProfile.role === 'provider' && (
+                   <>
+                    <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/services"><LayoutDashboard/> Meu Painel</Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarGroup>
+                      <SidebarGroupLabel>Minha Empresa</SidebarGroupLabel>
+                      <SidebarGroupContent>
+                        <SidebarMenu>
+                          <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/services/profile"><Wrench/> Perfil do Prestador</Link></SidebarMenuButton></SidebarMenuItem>
+                          <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/billing"><CreditCard/> Faturamento</Link></SidebarMenuButton></SidebarMenuItem>
+                        </SidebarMenu>
+                      </SidebarGroupContent>
+                    </SidebarGroup>
+                    <SidebarGroup>
+                      <SidebarGroupLabel>Ferramentas</SidebarGroupLabel>
+                      <SidebarGroupContent>
+                        <SidebarMenu>
+                          <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/summarize"><FileText/> Sumarizador</Link></SidebarMenuButton></SidebarMenuItem>
+                        </SidebarMenu>
+                      </SidebarGroupContent>
+                    </SidebarGroup>
+                  </>
+                )}
+                
+                {/* === MENU DO ADMIN === */}
+                {userProfile.role === 'admin' && (
+                  <>
+                    <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin"><Shield className="text-red-500" /> Painel Admin</Link></SidebarMenuButton></SidebarMenuItem>
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Gestão de Conteúdo</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
-                                <SidebarMenuItem onClick={handleMenuClick}>
-                                    <SidebarMenuButton asChild>
-                                        <Link href="/admin/courses"><BookOpen className="text-blue-500" /> Cursos</Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem onClick={handleMenuClick}>
-                                    <SidebarMenuButton asChild>
-                                        <Link href="/admin/events"><Calendar className="text-orange-500" /> Eventos</Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem onClick={handleMenuClick}>
-                                    <SidebarMenuButton asChild>
-                                        <Link href="/admin/billing"><ShoppingCart className="text-green-500" /> Pacotes de Crédito</Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem onClick={handleMenuClick}>
-                                    <SidebarMenuButton asChild>
-                                        <Link href="/admin/blog"><Newspaper className="text-purple-500" /> Blog/Notícias</Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
+                                <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/courses"><BookOpen className="text-blue-500" /> Cursos</Link></SidebarMenuButton></SidebarMenuItem>
+                                <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/blog"><Newspaper className="text-purple-500" /> Blog/Notícias</Link></SidebarMenuButton></SidebarMenuItem>
+                                <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/events"><Calendar className="text-orange-500" /> Eventos</Link></SidebarMenuButton></SidebarMenuItem>
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>
                     <SidebarGroup>
-                        <SidebarGroupLabel>Marketing</SidebarGroupLabel>
+                        <SidebarGroupLabel>Gestão Financeira</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
-                                 <SidebarMenuItem onClick={handleMenuClick}>
-                                    <SidebarMenuButton asChild>
-                                        <Link href="/admin/marketing/coupons"><Tag className="text-teal-500" /> Cupons</Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                 <SidebarMenuItem onClick={handleMenuClick}>
-                                    <SidebarMenuButton asChild>
-                                        <Link href="/admin/marketing/newsletter"><Mail className="text-orange-500" /> Newsletter</Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                 <SidebarMenuItem onClick={handleMenuClick}>
-                                    <SidebarMenuButton asChild>
-                                        <Link href="/admin/marketing/notifications"><Megaphone className="text-pink-500" /> Notificações</Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                 <SidebarMenuItem onClick={handleMenuClick}>
-                                    <SidebarMenuButton asChild>
-                                        <Link href="/admin/marketing/partners"><Handshake className="text-cyan-500" /> Parceiros</Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/billing"><ShoppingCart className="text-green-500" /> Pacotes de Crédito</Link></SidebarMenuButton></SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/coupons"><Tag className="text-teal-500" /> Cupons</Link></SidebarMenuButton></SidebarMenuItem>
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>
                      <SidebarGroup>
-                        <SidebarGroupLabel>Configurações</SidebarGroupLabel>
+                        <SidebarGroupLabel>Marketing & Comunicação</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
-                                 <SidebarMenuItem onClick={handleMenuClick}>
-                                    <SidebarMenuButton asChild>
-                                        <Link href="/admin/settings/payments"><CreditCard className="text-indigo-500" /> Pagamentos</Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/newsletter"><Mail className="text-orange-500" /> Newsletter</Link></SidebarMenuButton></SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/notifications"><Megaphone className="text-pink-500" /> Notificações</Link></SidebarMenuButton></SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/partners"><Handshake className="text-cyan-500" /> Parceiros</Link></SidebarMenuButton></SidebarMenuItem>
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>
-                </>
+                     <SidebarGroup>
+                        <SidebarGroupLabel>Configurações Gerais</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/settings/payments"><CreditCard className="text-indigo-500" /> Pagamentos</Link></SidebarMenuButton></SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                     <SidebarGroup>
+                        <SidebarGroupLabel>Painéis de Usuário</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/dashboard"><LayoutDashboard/> Painel de Motorista</Link></SidebarMenuButton></SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/fleet"><Building/> Painel de Frota</Link></SidebarMenuButton></SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/services"><Wrench/> Painel de Prestador</Link></SidebarMenuButton></SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                  </>
                 )}
-            </SidebarMenu>
+              </SidebarMenu>
             ) : (
                 <div className="p-2 space-y-2">
                     <Skeleton className="h-8 w-full" />
