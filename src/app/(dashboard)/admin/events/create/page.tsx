@@ -41,45 +41,61 @@ const eventFormSchema = z.object({
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
-const EventPreviewCard = ({ title, location, description, startDate, peakTimes, trafficTips }: Partial<EventFormValues>) => {
+const EventPosterPreviewCard = ({ title, location, description, startDate, peakTimes, trafficTips }: Partial<EventFormValues>) => {
+    const eventDate = startDate ? new Date(startDate) : new Date();
+    const day = format(eventDate, "d");
+    const month = format(eventDate, "MMM", { locale: ptBR });
+    const startTime = format(eventDate, "HH:mm");
+
     return (
-        <Card className="flex flex-col overflow-hidden bg-card shadow-lg border-2 border-transparent">
-            <CardHeader className="p-4 bg-accent text-accent-foreground flex flex-row items-center justify-between">
-                <Image src="/logo.png" alt="Táxiando SP Logo" width={50} height={50} className="rounded" />
-                 {startDate && (
-                    <div className="text-right">
-                        <p className="text-sm font-semibold">Início às</p>
-                        <p className="text-2xl font-bold">{format(startDate, "HH:mm")}</p>
-                    </div>
-                 )}
-            </CardHeader>
-            <CardContent className="p-4 flex-1 space-y-3">
-                <CardTitle className="font-headline text-lg truncate">{title || "Título do Seu Evento"}</CardTitle>
-                <CardDescription className="flex items-start gap-2 pt-1">
-                    <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                    <span className="truncate">{location || "Localização do evento"}</span>
-                </CardDescription>
-                <p className="text-muted-foreground text-xs line-clamp-2">{description || "A descrição completa do seu evento aparecerá aqui."}</p>
-                 <div className="space-y-2 text-xs border-t pt-3">
-                    <div className="flex items-start gap-2">
-                        <Lightbulb className="h-3 w-3 flex-shrink-0 mt-0.5 text-primary" />
-                        <div className="truncate">
-                            <span className="font-semibold">Pico:</span> {peakTimes || "Horários de pico"}
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                        <TrafficCone className="h-3 w-3 flex-shrink-0 mt-0.5 text-primary" />
-                        <div className="truncate">
-                            <span className="font-semibold">Trânsito:</span> {trafficTips || "Dicas de trânsito"}
-                        </div>
+        <Card className="flex h-[450px] w-full max-w-sm flex-row overflow-hidden rounded-xl border-2 bg-card shadow-lg">
+            {/* Vertical Stripe */}
+            <div className="relative flex w-20 flex-shrink-0 flex-col items-center justify-end bg-background/70 p-2">
+                <div className="absolute inset-0 z-0 flex items-center justify-center">
+                    <span className="font-headline text-8xl font-bold text-muted-foreground/10">{day || '01'}</span>
+                </div>
+                <div className="relative z-10 flex h-full flex-col items-center justify-between">
+                    <Image src="/logo.png" alt="Logo" width={40} height={40} className="mt-2 rounded-md" />
+                    <div className="flex h-full items-center justify-center">
+                         <h3 className="font-headline text-2xl font-bold uppercase text-muted-foreground [writing-mode:vertical-rl]">{month.replace('.', '') || 'MÊS'}</h3>
                     </div>
                 </div>
-            </CardContent>
-            <CardFooter className="p-4 bg-muted/50">
-                <Button variant="outline" className="w-full" disabled size="sm">
-                    Ver no Mapa <MoveRight className="ml-2" />
-                </Button>
-            </CardFooter>
+            </div>
+            
+            {/* Main Content */}
+            <div className="flex flex-1 flex-col justify-between p-4">
+                 <div className="space-y-3">
+                    <CardHeader className="p-0">
+                        <CardTitle className="font-headline text-xl leading-tight line-clamp-2">{title || "Título do Evento"}</CardTitle>
+                        <CardDescription className="flex items-center gap-2 pt-1 text-sm">
+                            <MapPin className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                            <span className="line-clamp-1">{location || "Localização do evento"}</span>
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <p className="text-xs text-muted-foreground line-clamp-3">
+                           {description || "Descrição breve do evento, com os principais destaques para atrair o público e informar os motoristas sobre o que esperar."}
+                        </p>
+                        <div className="mt-3 space-y-2 border-t pt-3 text-xs">
+                            <div className="flex items-start gap-2 text-muted-foreground">
+                                <Lightbulb className="h-4 w-4 flex-shrink-0 text-primary" />
+                                <p><span className="font-semibold text-foreground">Dica de Pico:</span> {peakTimes || "Horários de maior movimento."}</p>
+                            </div>
+                            <div className="flex items-start gap-2 text-muted-foreground">
+                                <TrafficCone className="h-4 w-4 flex-shrink-0 text-primary" />
+                                <p><span className="font-semibold text-foreground">Dica de Trânsito:</span> {trafficTips || "Conselhos sobre ruas e acesso."}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                 </div>
+
+                <CardFooter className="flex items-center justify-between p-0 pt-4">
+                    <p className="font-bold text-lg text-accent">{startTime || '00:00'}</p>
+                    <Button variant="ghost" size="sm" disabled>
+                        Mapa <MoveRight className="ml-2" />
+                    </Button>
+                </CardFooter>
+            </div>
         </Card>
     );
 };
@@ -258,7 +274,7 @@ export default function CreateEventPage() {
                                         <CardDescription>Veja como o evento aparecerá na página inicial.</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <EventPreviewCard {...watchedValues} />
+                                        <EventPosterPreviewCard {...watchedValues} />
                                     </CardContent>
                                 </Card>
                             </div>

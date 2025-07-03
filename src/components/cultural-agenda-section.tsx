@@ -79,7 +79,7 @@ export function CulturalAgendaSection() {
                             </h3>
                             <div className="flex overflow-x-auto space-x-6 pb-4 -mx-4 px-4 snap-x snap-mandatory">
                                 {groupedEvents[date].map((event) => (
-                                    <div key={event.id} className="w-80 flex-shrink-0 snap-start">
+                                    <div key={event.id} className="w-full max-w-sm sm:w-[22rem] flex-shrink-0 snap-start">
                                       <EventCard event={event} />
                                     </div>
                                 ))}
