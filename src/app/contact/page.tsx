@@ -13,6 +13,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { createSupportTicket } from "@/app/actions/support-actions";
 
 const contactFormSchema = z.object({
   name: z.string().min(3, "O nome é obrigatório."),
@@ -28,18 +29,25 @@ export default function ContactPage() {
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
+    defaultValues: { name: "", email: "", message: "" }
   });
 
   const onSubmit = async (data: ContactFormValues) => {
     setIsLoading(true);
-    // Placeholder for actual submission logic
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log(data);
-    toast({
-      title: "Mensagem Enviada!",
-      description: "Obrigado por entrar em contato. Responderemos em breve.",
-    });
-    form.reset({ name: "", email: "", message: "" });
+    const result = await createSupportTicket(data);
+    if (result.success) {
+      toast({
+        title: "Mensagem Enviada!",
+        description: "Obrigado por entrar em contato. Nossa equipe responderá em breve.",
+      });
+      form.reset({ name: "", email: "", message: "" });
+    } else {
+       toast({
+        variant: "destructive",
+        title: "Erro ao Enviar",
+        description: result.error || "Não foi possível enviar sua mensagem.",
+      });
+    }
     setIsLoading(false);
   };
 

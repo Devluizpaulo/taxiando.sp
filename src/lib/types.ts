@@ -311,6 +311,23 @@ export interface Testimonial {
     imageUrl: string;
 }
 
+export interface QuizQuestionData {
+    id: string;
+    question: string;
+    options: { id: string; text: string; }[];
+    correctOptionId: string;
+    explanation?: string;
+}
+
+export interface QuizData {
+    id: string;
+    title: string;
+    status: 'Draft' | 'Active';
+    questions: QuizQuestionData[];
+    createdAt: Timestamp | string;
+}
+
+
 // Represents a user object with Timestamps converted to ISO strings for client-side use
 export type AdminUser = Omit<UserProfile, 'createdAt' | 'cnhExpiration' | 'condutaxExpiration' | 'alvaraExpiration' | 'lastNotificationCheck'> & {
     createdAt: string;
@@ -319,3 +336,13 @@ export type AdminUser = Omit<UserProfile, 'createdAt' | 'cnhExpiration' | 'condu
     alvaraExpiration?: string;
     lastNotificationCheck?: string;
 };
+
+export interface SupportTicket {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  status: 'Open' | 'Resolved';
+  createdAt: Timestamp | string;
+  resolvedAt?: Timestamp | string;
+}
