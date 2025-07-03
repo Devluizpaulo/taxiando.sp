@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -22,7 +23,8 @@ export const EventCard = ({ event }: { event: Event }) => {
     
     const eventDate = parseISO(event.startDate as string);
     const day = format(eventDate, "d");
-    const month = format(eventDate, "MMM", { locale: ptBR });
+    const monthString = format(eventDate, "MMM", { locale: ptBR }).replace('.', '').toUpperCase();
+    const monthLetters = monthString.split('');
     const startTime = format(eventDate, "HH:mm");
 
     return (
@@ -35,7 +37,11 @@ export const EventCard = ({ event }: { event: Event }) => {
                 <div className="relative z-10 flex h-full flex-col items-center justify-between">
                     <Image src="/logo.png" alt="Logo" width={40} height={40} className="mt-2 rounded-md" />
                     <div className="flex h-full items-center justify-center">
-                         <h3 className="font-headline text-2xl font-bold uppercase text-muted-foreground [writing-mode:vertical-rl]">{month.replace('.', '')}</h3>
+                         <div className="font-headline text-2xl font-bold uppercase text-muted-foreground flex flex-col items-center justify-center space-y-1">
+                            {monthLetters.map((letter, index) => (
+                                <span key={index}>{letter}</span>
+                            ))}
+                         </div>
                     </div>
                 </div>
             </div>
