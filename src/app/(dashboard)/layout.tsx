@@ -17,7 +17,7 @@ import {
   SidebarTrigger,
   useSidebar
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star, LifeBuoy } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -188,9 +188,10 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                         </SidebarGroupContent>
                     </SidebarGroup>
                      <SidebarGroup>
-                        <SidebarGroupLabel>Configurações Gerais</SidebarGroupLabel>
+                        <SidebarGroupLabel>Gerenciamento</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/support"><LifeBuoy className="text-red-500" /> Suporte</Link></SidebarMenuButton></SidebarMenuItem>
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/settings/payments"><CreditCard className="text-indigo-500" /> Pagamentos</Link></SidebarMenuButton></SidebarMenuItem>
                             </SidebarMenu>
                         </SidebarGroupContent>
