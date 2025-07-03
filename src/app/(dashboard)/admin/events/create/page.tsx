@@ -42,22 +42,27 @@ const eventFormSchema = z.object({
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
 const EventPosterPreviewCard = ({ title, location, description, startDate, peakTimes, trafficTips }: Partial<EventFormValues>) => {
-    const eventDate = startDate ? new Date(startDate) : new Date();
-    const day = format(eventDate, "d");
-    const month = format(eventDate, "MMM", { locale: ptBR });
-    const startTime = format(eventDate, "HH:mm");
+    const eventDate = startDate ? new Date(startDate) : undefined;
+    const day = eventDate ? format(eventDate, "d") : "01";
+    const monthString = (eventDate ? format(eventDate, "MMM", { locale: ptBR }) : 'MÊS').replace('.', '').toUpperCase();
+    const monthLetters = monthString.split('');
+    const startTime = eventDate ? format(eventDate, "HH:mm") : "00:00";
 
     return (
         <Card className="flex h-[450px] w-full max-w-sm flex-row overflow-hidden rounded-xl border-2 bg-card shadow-lg">
             {/* Vertical Stripe */}
             <div className="relative flex w-20 flex-shrink-0 flex-col items-center justify-end bg-background/70 p-2">
                 <div className="absolute inset-0 z-0 flex items-center justify-center">
-                    <span className="font-headline text-8xl font-bold text-muted-foreground/10">{day || '01'}</span>
+                    <span className="font-headline text-8xl font-bold text-muted-foreground/10">{day}</span>
                 </div>
                 <div className="relative z-10 flex h-full flex-col items-center justify-between">
                     <Image src="/logo.png" alt="Logo" width={40} height={40} className="mt-2 rounded-md" />
                     <div className="flex h-full items-center justify-center">
-                         <h3 className="font-headline text-2xl font-bold uppercase text-muted-foreground [writing-mode:vertical-rl]">{month.replace('.', '') || 'MÊS'}</h3>
+                         <div className="font-headline text-2xl font-bold uppercase text-muted-foreground flex flex-col items-center justify-center space-y-1">
+                            {monthLetters.map((letter, index) => (
+                                <span key={index}>{letter}</span>
+                            ))}
+                         </div>
                     </div>
                 </div>
             </div>
@@ -90,7 +95,7 @@ const EventPosterPreviewCard = ({ title, location, description, startDate, peakT
                  </div>
 
                 <CardFooter className="flex items-center justify-between p-0 pt-4">
-                    <p className="font-bold text-lg text-accent">{startTime || '00:00'}</p>
+                    <p className="font-bold text-lg text-accent">{startTime}</p>
                      <div className="flex items-center gap-1">
                         <Button variant="ghost" size="sm" disabled>
                             Mapa
