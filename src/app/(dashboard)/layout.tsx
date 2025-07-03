@@ -17,7 +17,7 @@ import {
   SidebarTrigger,
   useSidebar
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star, LifeBuoy } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star, LifeBuoy, Headset } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -248,7 +248,12 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
             <div className="w-full flex-1">
                 {/* Potentially a search bar here */}
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Button asChild variant="ghost" size="icon" title="Suporte">
+                <Link href={userProfile?.role === 'admin' ? '/admin/support' : '/contact'}>
+                  <Headset />
+                </Link>
+              </Button>
               <NotificationBell />
               <Button onClick={handleSignOut} variant="outline">
                 <LogOut className="mr-2 h-4 w-4" />
