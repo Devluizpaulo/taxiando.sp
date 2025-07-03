@@ -90,9 +90,11 @@ const EventPosterPreviewCard = ({ title, location, description, startDate, peakT
 
                 <CardFooter className="flex items-center justify-between p-0 pt-4">
                     <p className="font-bold text-lg text-accent">{startTime || '00:00'}</p>
-                    <Button variant="ghost" size="sm" disabled>
-                        Mapa <MoveRight className="ml-2" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" disabled>
+                            Mapa
+                        </Button>
+                    </div>
                 </CardFooter>
             </div>
         </Card>
