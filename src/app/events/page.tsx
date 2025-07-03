@@ -50,9 +50,11 @@ export default async function EventsPage() {
                                         <Calendar className="text-primary"/> 
                                         <span className="capitalize">{getDateLabel(date)}</span>
                                     </h2>
-                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
                                         {groupedEvents[date].map((event) => (
-                                            <EventCard key={event.id} event={event} />
+                                            <div key={event.id} className="flex justify-center">
+                                                <EventCard event={event} />
+                                            </div>
                                         ))}
                                     </div>
                                 </div>
