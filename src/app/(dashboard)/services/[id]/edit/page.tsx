@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { getServiceById } from '@/app/actions/service-actions';
-import { ServiceForm } from '../service-form';
+import { ServiceForm } from '../../service-form';
 import { LoadingScreen } from '@/components/loading-screen';
 import { type ServiceListing } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
