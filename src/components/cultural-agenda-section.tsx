@@ -71,7 +71,7 @@ export function CulturalAgendaSection() {
                     </p>
                 </div>
                 <div className="space-y-10">
-                    {sortedDates.map(date => (
+                    {sortedDates.slice(0, 2).map(date => ( // Show max 2 days on homepage
                         <div key={date}>
                             <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
                                 <Calendar className="text-primary"/> 
@@ -79,7 +79,7 @@ export function CulturalAgendaSection() {
                             </h3>
                             <div className="flex overflow-x-auto space-x-6 pb-4 -mx-4 px-4 snap-x snap-mandatory">
                                 {groupedEvents[date].map((event) => (
-                                    <div key={event.id} className="w-full max-w-sm sm:w-[22rem] flex-shrink-0 snap-start">
+                                    <div key={event.id} className="w-full max-w-md sm:w-[24rem] flex-shrink-0 snap-start">
                                       <EventCard event={event} />
                                     </div>
                                 ))}
