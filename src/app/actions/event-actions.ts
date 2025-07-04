@@ -43,7 +43,6 @@ export async function getUpcomingEvents(): Promise<Event[]> {
     const eventsCollection = adminDB.collection('events');
     const q = eventsCollection
       .where('startDate', '>=', Timestamp.fromDate(today))
-      .where('startDate', '<', Timestamp.fromDate(nextSevenDays))
       .orderBy('startDate', 'asc')
       .limit(20);
 
