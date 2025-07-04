@@ -6,6 +6,21 @@ import { type Timestamp } from "firebase/firestore";
 // they should be converted to a serializable format like an ISO string or number.
 // The client can then convert them back to Date objects.
 
+export interface Review {
+  id: string;
+  rating: number; // 1 to 5
+  comment: string;
+  reviewerId: string;
+  reviewerName: string;
+  reviewerRole: UserProfile['role'];
+  revieweeId: string;
+  revieweeRole: UserProfile['role'];
+  relatedTo?: string; // e.g., vehicleId, serviceId
+  relatedToName?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: Timestamp | string;
+}
+
 export interface UserProfile {
     uid: string;
     email: string;
@@ -69,6 +84,10 @@ export interface UserProfile {
     uploadCredits?: number;
     loginCount?: number;
     lastNotificationCheck?: Timestamp;
+
+    // Reviews
+    averageRating?: number;
+    reviewCount?: number;
 }
 
 export interface Enrollment {
