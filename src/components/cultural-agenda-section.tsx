@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -79,7 +80,7 @@ export function CulturalAgendaSection() {
                             </h3>
                             <div className="flex overflow-x-auto space-x-6 pb-4 -mx-4 px-4 snap-x snap-mandatory">
                                 {groupedEvents[date].map((event) => (
-                                    <div key={event.id} className="w-full max-w-md sm:w-[24rem] flex-shrink-0 snap-start">
+                                    <div key={event.id} className="w-full max-w-xl sm:w-[32rem] flex-shrink-0 snap-start">
                                       <EventCard event={event} />
                                     </div>
                                 ))}

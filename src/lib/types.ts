@@ -144,7 +144,6 @@ export interface Event {
   mapUrl: string;
   imageUrl?: string;
   startDate: Timestamp | string;
-  endDate: Timestamp | string;
   createdAt: Timestamp | string;
 }
 

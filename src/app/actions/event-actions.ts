@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { adminDB } from '@/lib/firebase-admin';
@@ -18,14 +19,12 @@ export async function getAdminEvents(): Promise<Event[]> {
         const eventsData = querySnapshot.docs.map(doc => {
             const data = doc.data();
             const startDate = (data.startDate as Timestamp)?.toDate();
-            const endDate = (data.endDate as Timestamp)?.toDate();
             const createdAt = (data.createdAt as Timestamp)?.toDate();
 
             return {
                 ...data,
                 id: doc.id,
                 startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
-                endDate: endDate ? endDate.toISOString() : new Date().toISOString(),
                 createdAt: createdAt ? createdAt.toISOString() : new Date().toISOString(),
             } as Event;
         });
@@ -51,12 +50,10 @@ export async function getUpcomingEvents(): Promise<Event[]> {
     return querySnapshot.docs.map(doc => {
         const data = doc.data();
         const startDate = (data.startDate as Timestamp)?.toDate();
-        const endDate = (data.endDate as Timestamp)?.toDate();
         return { 
             id: doc.id,
             ...data,
             startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
-            endDate: endDate ? endDate.toISOString() : new Date().toISOString(),
         } as Event;
     });
   } catch (error) {
@@ -68,10 +65,9 @@ export async function getUpcomingEvents(): Promise<Event[]> {
   }
 }
 
-// Using native Date for startDate/endDate as they come from the client form.
-type EventFormInput = Omit<Event, 'id' | 'createdAt' | 'startDate' | 'endDate'> & {
+// Using native Date for startDate as it comes from the client form.
+type EventFormInput = Omit<Event, 'id' | 'createdAt' | 'startDate'> & {
     startDate: Date;
-    endDate: Date;
 };
 
 
@@ -83,7 +79,6 @@ export async function createEvent(eventData: EventFormInput) {
             ...eventData,
             id: eventId,
             startDate: Timestamp.fromDate(new Date(eventData.startDate)),
-            endDate: Timestamp.fromDate(new Date(eventData.endDate)),
             createdAt: Timestamp.now(),
         };
 
@@ -110,7 +105,6 @@ export async function getEventById(eventId: string): Promise<Event | null> {
             ...data,
             id: eventDoc.id,
             startDate: (data.startDate as Timestamp).toDate().toISOString(),
-            endDate: (data.endDate as Timestamp).toDate().toISOString(),
             createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
         } as Event;
 
@@ -124,7 +118,6 @@ export async function updateEvent(eventId: string, eventData: EventFormInput) {
         const dataToSave = {
             ...eventData,
             startDate: Timestamp.fromDate(new Date(eventData.startDate)),
-            endDate: Timestamp.fromDate(new Date(eventData.endDate)),
         };
 
         await adminDB.collection('events').doc(eventId).update(dataToSave);
