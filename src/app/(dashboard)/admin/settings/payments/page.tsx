@@ -11,16 +11,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, Lock, ExternalLink } from 'lucide-react';
+import { Loader2, KeyRound, Lock, ExternalLink, Replace } from 'lucide-react';
 import { getPaymentSettings, updatePaymentSettings } from '@/app/actions/admin-actions';
 import { type PaymentGatewaySettings } from '@/lib/types';
 import { LoadingScreen } from '@/components/loading-screen';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const settingsFormSchema = z.object({
-  publicKey: z.string().min(10, "A Public Key é obrigatória."),
-  accessToken: z.string().min(10, "O Access Token é obrigatório."),
+  activeGateway: z.enum(['mercadoPago', 'stripe']).optional(),
+  mercadoPagoPublicKey: z.string().optional(),
+  mercadoPagoAccessToken: z.string().optional(),
+  stripePublicKey: z.string().optional(),
+  stripeSecretKey: z.string().optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
@@ -33,10 +38,6 @@ export default function PaymentSettingsPage() {
 
     const form = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsFormSchema),
-        defaultValues: {
-            publicKey: '',
-            accessToken: '',
-        },
     });
 
     useEffect(() => {
@@ -44,8 +45,11 @@ export default function PaymentSettingsPage() {
             try {
                 const settings = await getPaymentSettings();
                 form.reset({
-                    publicKey: settings.mercadoPago?.publicKey || '',
-                    accessToken: settings.mercadoPago?.accessToken || '',
+                    activeGateway: settings.activeGateway || 'mercadoPago',
+                    mercadoPagoPublicKey: settings.mercadoPago?.publicKey || '',
+                    mercadoPagoAccessToken: settings.mercadoPago?.accessToken || '',
+                    stripePublicKey: settings.stripe?.publicKey || '',
+                    stripeSecretKey: settings.stripe?.secretKey || '',
                 });
             } catch (error) {
                  toast({ variant: 'destructive', title: "Erro", description: "Não foi possível carregar as configurações." });
@@ -60,9 +64,14 @@ export default function PaymentSettingsPage() {
         setIsSubmitting(true);
         try {
             const settingsToSave: PaymentGatewaySettings = {
+                activeGateway: values.activeGateway,
                 mercadoPago: {
-                    publicKey: values.publicKey,
-                    accessToken: values.accessToken,
+                    publicKey: values.mercadoPagoPublicKey,
+                    accessToken: values.mercadoPagoAccessToken,
+                },
+                stripe: {
+                    publicKey: values.stripePublicKey,
+                    secretKey: values.stripeSecretKey,
                 }
             };
             const result = await updatePaymentSettings(settingsToSave);
@@ -88,40 +97,84 @@ export default function PaymentSettingsPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-8">
                 <div>
                     <h1 className="font-headline text-3xl font-bold tracking-tight">Configurações de Pagamento</h1>
-                    <p className="text-muted-foreground">Gerencie a integração com o gateway de pagamento (Mercado Pago).</p>
+                    <p className="text-muted-foreground">Gerencie os gateways de pagamento da plataforma.</p>
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Credenciais do Mercado Pago</CardTitle>
-                        <CardDescription>
-                            Insira suas credenciais de produção para começar a aceitar pagamentos.
-                             <Button variant="link" asChild className="p-1 h-auto">
-                                <Link href="https://www.mercadopago.com.br/developers/panel/credentials" target="_blank">
-                                    Encontre suas credenciais aqui <ExternalLink className="ml-1" />
-                                </Link>
-                            </Button>
-                        </CardDescription>
+                        <CardTitle>Gateway de Pagamento Ativo</CardTitle>
+                        <CardDescription>Selecione qual provedor de pagamento será usado para as transações na plataforma.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                        <FormField control={form.control} name="publicKey" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="flex items-center gap-2"><KeyRound/> Public Key</FormLabel>
-                                <FormControl><Input {...field} placeholder="APP_USR-..." /></FormControl>
-                                <FormDescription>Chave pública usada no frontend para inicializar o checkout.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
-                        <FormField control={form.control} name="accessToken" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="flex items-center gap-2"><Lock/> Access Token</FormLabel>
-                                <FormControl><Input type="password" {...field} placeholder="APP_USR-..." /></FormControl>
-                                <FormDescription>Credencial privada usada no backend para criar pagamentos. Não compartilhe.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
+                    <CardContent>
+                        <FormField
+                            control={form.control}
+                            name="activeGateway"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="sr-only">Gateway Ativo</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger className="w-full md:w-1/2">
+                                                <SelectValue placeholder="Selecione o gateway ativo..." />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="mercadoPago">
+                                                <div className="flex items-center gap-2">
+                                                    <Image src="https://placehold.co/16x16.png" data-ai-hint="mercadopago logo" alt="Mercado Pago" width={16} height={16}/> Mercado Pago
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="stripe">
+                                                <div className="flex items-center gap-2">
+                                                    <Image src="https://placehold.co/16x16.png" data-ai-hint="stripe logo" alt="Stripe" width={16} height={16}/> Stripe
+                                                </div>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     </CardContent>
                 </Card>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Credenciais do Mercado Pago</CardTitle>
+                            <CardDescription>
+                                Credenciais de produção para aceitar pagamentos.
+                                <Button variant="link" asChild className="p-1 h-auto"><Link href="https://www.mercadopago.com.br/developers/panel/credentials" target="_blank">Encontre aqui <ExternalLink className="ml-1" /></Link></Button>
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <FormField control={form.control} name="mercadoPagoPublicKey" render={({ field }) => (
+                                <FormItem><FormLabel className="flex items-center gap-2"><KeyRound/> Public Key</FormLabel><FormControl><Input {...field} placeholder="APP_USR-..." /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="mercadoPagoAccessToken" render={({ field }) => (
+                                <FormItem><FormLabel className="flex items-center gap-2"><Lock/> Access Token</FormLabel><FormControl><Input type="password" {...field} placeholder="APP_USR-..." /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                        </CardContent>
+                    </Card>
+
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Credenciais do Stripe</CardTitle>
+                            <CardDescription>
+                                Credenciais de produção para aceitar pagamentos.
+                                <Button variant="link" asChild className="p-1 h-auto"><Link href="https://dashboard.stripe.com/apikeys" target="_blank">Encontre aqui <ExternalLink className="ml-1" /></Link></Button>
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <FormField control={form.control} name="stripePublicKey" render={({ field }) => (
+                                <FormItem><FormLabel className="flex items-center gap-2"><KeyRound/> Publishable Key</FormLabel><FormControl><Input {...field} placeholder="pk_live_..." /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="stripeSecretKey" render={({ field }) => (
+                                <FormItem><FormLabel className="flex items-center gap-2"><Lock/> Secret Key</FormLabel><FormControl><Input type="password" {...field} placeholder="sk_live_..." /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                        </CardContent>
+                    </Card>
+                </div>
 
                 <div className="flex justify-end items-center mt-4">
                     <Button type="submit" disabled={isSubmitting} size="lg">

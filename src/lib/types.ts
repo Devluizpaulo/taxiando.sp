@@ -237,10 +237,14 @@ export interface ServiceListing {
 }
 
 export interface PaymentGatewaySettings {
-    mercadoPago: {
+    activeGateway?: 'mercadoPago' | 'stripe';
+    mercadoPago?: {
         publicKey?: string;
         accessToken?: string;
-        enabledMethods?: ('pix' | 'credit_card' | 'debit_card' | 'account_money')[];
+    };
+    stripe?: {
+        publicKey?: string;
+        secretKey?: string;
     }
 }
 
