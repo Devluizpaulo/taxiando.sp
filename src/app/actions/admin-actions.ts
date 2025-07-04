@@ -152,8 +152,12 @@ export async function getPaymentSettings(): Promise<PaymentGatewaySettings> {
     if (docSnap.exists) {
         return docSnap.data() as PaymentGatewaySettings;
     }
-    // Return default empty structure if not found
-    return { mercadoPago: {} };
+    
+    return { 
+        activeGateway: 'mercadoPago',
+        mercadoPago: { publicKey: '', accessToken: '' },
+        stripe: { publicKey: '', secretKey: '' },
+    };
 }
 
 export async function updatePaymentSettings(data: PaymentGatewaySettings) {
@@ -177,7 +181,11 @@ export async function ensureInitialData() {
 
         const settingsSnap = await settingsRef.get();
         if (!settingsSnap.exists) {
-            await settingsRef.set({ mercadoPago: { publicKey: '', accessToken: '' } });
+            await settingsRef.set({ 
+                activeGateway: 'mercadoPago',
+                mercadoPago: { publicKey: '', accessToken: '' },
+                stripe: { publicKey: '', secretKey: '' },
+            });
         }
 
         const pageViewsSnap = await analyticsPageViewsRef.get();

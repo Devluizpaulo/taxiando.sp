@@ -2,13 +2,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { collection, getDocs, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { type CreditPackage, type Transaction } from '@/lib/types';
-import { createPaymentPreference } from '@/app/actions/billing-actions';
+import { type CreditPackage, type Transaction, type PaymentGatewaySettings } from '@/lib/types';
+import { createCheckoutSession } from '@/app/actions/billing-actions';
 import { getPaymentSettings } from '@/app/actions/admin-actions';
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 
@@ -23,15 +23,16 @@ import { Input } from '@/components/ui/input';
 export default function BillingPage() {
     const { user, userProfile, loading: authLoading } = useAuth();
     const { toast } = useToast();
+    const router = useRouter();
     const searchParams = useSearchParams();
 
     const [packages, setPackages] = useState<CreditPackage[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [settings, setSettings] = useState<PaymentGatewaySettings | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isCreatingPreference, setIsCreatingPreference] = useState<string | null>(null);
-    const [preferenceId, setPreferenceId] = useState<string | null>(null);
-    const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
-    const [mercadoPagoKey, setMercadoPagoKey] = useState<string | null>(null);
+    const [isCreatingSession, setIsCreatingSession] = useState<string | null>(null);
+    const [mpPreferenceId, setMpPreferenceId] = useState<string | null>(null);
+    const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
     const [couponCode, setCouponCode] = useState('');
 
     useEffect(() => {
@@ -42,33 +43,36 @@ export default function BillingPage() {
                 title: "Pagamento Falhou",
                 description: "Ocorreu um erro ao processar seu pagamento. Por favor, tente novamente."
             });
+             router.replace('/billing', { scroll: false });
         } else if (status === 'pending') {
             toast({
                 title: "Pagamento Pendente",
-                description: "Seu pagamento está sendo processado. Avisaremos quando for aprovado e seu saldo será atualizado."
+                description: "Seu pagamento está sendo processado. Avisaremos quando for aprovado."
             });
+             router.replace('/billing', { scroll: false });
         } else if (status === 'success') {
              toast({
                 title: "Pagamento Aprovado!",
                 description: "Seu saldo será atualizado em instantes. Obrigado pela sua compra!"
             });
+             router.replace('/billing', { scroll: false });
         }
-    }, [searchParams, toast]);
+    }, [searchParams, toast, router]);
 
      useEffect(() => {
         const fetchInitialData = async () => {
             try {
-                const [packagesSnapshot, settings] = await Promise.all([
+                const [packagesSnapshot, paymentSettings] = await Promise.all([
                     getDocs(query(collection(db, 'credit_packages'), orderBy('price', 'asc'))),
                     getPaymentSettings()
                 ]);
 
                 const packagesData = packagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CreditPackage));
                 setPackages(packagesData);
+                setSettings(paymentSettings);
 
-                if (settings.mercadoPago.publicKey) {
-                    setMercadoPagoKey(settings.mercadoPago.publicKey);
-                    initMercadoPago(settings.mercadoPago.publicKey, { locale: 'pt-BR' });
+                if (paymentSettings.activeGateway === 'mercadoPago' && paymentSettings.mercadoPago?.publicKey) {
+                    initMercadoPago(paymentSettings.mercadoPago.publicKey, { locale: 'pt-BR' });
                 }
 
             } catch (error) {
@@ -109,29 +113,34 @@ export default function BillingPage() {
             toast({ variant: 'destructive', title: "Erro", description: "Você precisa estar logado para comprar." });
             return;
         }
-        if (!mercadoPagoKey) {
+        if (!settings?.activeGateway) {
             toast({ variant: 'destructive', title: "Erro de Configuração", description: "O sistema de pagamento não está configurado. Contate o suporte." });
             return;
         }
 
-        setIsCreatingPreference(pkg.id);
-        setPreferenceId(null);
-        setSelectedPackage(pkg);
+        setIsCreatingSession(pkg.id);
+        setMpPreferenceId(null);
+        setSelectedPackageId(pkg.id);
 
         try {
-            const result = await createPaymentPreference({
+            const result = await createCheckoutSession({
                 packageId: pkg.id,
                 userId: user.uid,
                 couponCode: couponCode || undefined,
             });
 
-            if (result.success && result.preferenceId) {
-                setPreferenceId(result.preferenceId);
-                 if (result.discountApplied) {
+            if (result.success) {
+                if (result.discountApplied) {
                     toast({ title: "Cupom Aplicado!", description: `Desconto de ${result.discountApplied.description} aplicado com sucesso.`});
                 }
+
+                if (result.gateway === 'stripe' && result.url) {
+                    router.push(result.url);
+                } else if (result.gateway === 'mercadoPago' && result.preferenceId) {
+                    setMpPreferenceId(result.preferenceId);
+                }
             } else {
-                throw new Error(result.error || "ID de preferência não retornado.");
+                throw new Error(result.error || "Falha ao criar sessão de checkout.");
             }
         } catch (error) {
              toast({
@@ -139,12 +148,16 @@ export default function BillingPage() {
                 title: "Erro ao Iniciar Pagamento",
                 description: (error as Error).message || "Não foi possível iniciar o processo de pagamento. Tente novamente."
             });
-             console.error("Preference creation error:", error);
-             setSelectedPackage(null);
+             console.error("Checkout session creation error:", error);
+             setSelectedPackageId(null);
         } finally {
-            setIsCreatingPreference(null);
+            setIsCreatingSession(null);
         }
     }
+
+    const isPaymentConfigured = settings?.activeGateway === 'mercadoPago'
+        ? !!settings.mercadoPago?.accessToken
+        : !!settings?.stripe?.secretKey;
 
     if (authLoading || loading) {
          return <LoadingScreen />;
@@ -189,7 +202,7 @@ export default function BillingPage() {
 
             <div className="space-y-4">
                 <h2 className="font-headline text-2xl font-semibold">Comprar Créditos</h2>
-                {!mercadoPagoKey && (
+                {!isPaymentConfigured && (
                     <Card className="border-destructive bg-destructive/10">
                         <CardHeader className="flex-row items-center gap-4">
                             <AlertCircle className="h-8 w-8 text-destructive" />
@@ -215,15 +228,15 @@ export default function BillingPage() {
                                 <p className="text-sm text-muted-foreground">{pkg.credits} créditos</p>
                             </CardContent>
                             <CardContent>
-                                {selectedPackage?.id === pkg.id && preferenceId ? (
+                                {settings?.activeGateway === 'mercadoPago' && selectedPackageId === pkg.id && mpPreferenceId ? (
                                     <Wallet
-                                        initialization={{ preferenceId: preferenceId }}
+                                        initialization={{ preferenceId: mpPreferenceId }}
                                         customization={{ texts: { valueProp: 'smart_option' } }}
                                     />
                                 ) : (
-                                    <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => handlePurchaseAttempt(pkg)} disabled={isCreatingPreference === pkg.id || !mercadoPagoKey}>
-                                        {isCreatingPreference === pkg.id ? <Loader2 className="mr-2 animate-spin" /> : <ShoppingCart className="mr-2" />}
-                                        {isCreatingPreference === pkg.id ? 'Aguarde...' : 'Comprar com Mercado Pago'}
+                                    <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => handlePurchaseAttempt(pkg)} disabled={isCreatingSession === pkg.id || !isPaymentConfigured}>
+                                        {isCreatingSession === pkg.id ? <Loader2 className="mr-2 animate-spin" /> : <ShoppingCart className="mr-2" />}
+                                        {isCreatingSession === pkg.id ? 'Aguarde...' : 'Comprar Agora'}
                                     </Button>
                                 )}
                             </CardContent>
