@@ -2,8 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
@@ -11,64 +10,31 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, MapPin, Calendar, Lightbulb, TrafficCone, MoveRight, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import { DatePicker } from '@/components/ui/datepicker';
 import { getEventById, updateEvent } from '@/app/actions/event-actions';
 import { planEvent, type EventPlannerOutput } from '@/ai/flows/event-planner-flow';
 import { LoadingScreen } from '@/components/loading-screen';
+import { EventCard } from '@/components/event-card';
 
 const eventFormSchema = z.object({
     title: z.string().min(5, { message: "O título deve ter pelo menos 5 caracteres." }),
     description: z.string().min(20, { message: "A descrição deve ter pelo menos 20 caracteres." }),
     location: z.string().min(3, { message: "O local é obrigatório." }),
-    startDate: z.date({ required_error: "A data de início é obrigatória." }),
-    endDate: z.date({ required_error: "A data de término é obrigatória." }),
+    startDate: z.date({ required_error: "A data e hora de início são obrigatórias." }),
     driverSummary: z.string().min(5, { message: "O resumo tático é obrigatório." }),
     peakTimes: z.string().min(5, { message: "A dica de horários de pico é obrigatória." }),
     trafficTips: z.string().min(5, { message: "A dica de trânsito é obrigatória." }),
     pickupPoints: z.string().min(5, { message: "A sugestão de pontos de embarque é obrigatória." }),
-    mapUrl: z.string().min(1, "A URL do mapa é obrigatória."),
-}).refine(data => data.endDate >= data.startDate, {
-    message: "A data de término deve ser posterior ou igual à data de início.",
-    path: ["endDate"],
+    mapUrl: z.string().url("A URL do mapa precisa ser um link válido.").min(1, "A URL do mapa é obrigatória."),
 });
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
-
-const EventBannerPreview = ({ title, description, startDate }: Partial<EventFormValues>) => {
-    const eventDate = startDate ? new Date(startDate) : new Date();
-    const day = format(eventDate, "d");
-    const month = format(eventDate, "MMM", { locale: ptBR }).replace('.', '');
-
-    return (
-        <Card className="w-full max-w-md overflow-hidden rounded-xl border-2 bg-card shadow-lg">
-            <div className="flex h-40">
-                <div className="flex w-28 flex-shrink-0 flex-col items-center justify-center bg-muted/50 p-2 text-center">
-                    <Image src="/logo.png" alt="Logo" width={32} height={32} className="mb-2 rounded-md" />
-                    <p className="text-4xl font-bold font-headline text-primary">{day}</p>
-                    <p className="font-semibold uppercase text-muted-foreground">{month}</p>
-                </div>
-                <div className="flex flex-1 flex-col justify-between p-4">
-                    <div>
-                        <CardTitle className="font-headline text-lg leading-tight line-clamp-2">{title || 'Título do Evento'}</CardTitle>
-                        <CardDescription className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                            {description || 'Descrição breve do evento...'}
-                        </CardDescription>
-                    </div>
-                    <div className="text-right text-sm font-semibold text-primary">
-                        Saiba Mais &rarr;
-                    </div>
-                </div>
-            </div>
-        </Card>
-    );
-};
-
 
 const AiAssistantCard = ({ onDetailsGenerated, isGenerating }: { onDetailsGenerated: (details: EventPlannerOutput) => void, isGenerating: boolean }) => {
     const [eventQuery, setEventQuery] = useState('');
@@ -133,7 +99,6 @@ export default function EditEventPage({ params }: { params: { id: string }}) {
                     form.reset({
                         ...data,
                         startDate: new Date(data.startDate as string),
-                        endDate: new Date(data.endDate as string),
                     });
                 } else {
                      toast({ variant: 'destructive', title: 'Erro', description: 'Evento não encontrado.' });
@@ -157,6 +122,25 @@ export default function EditEventPage({ params }: { params: { id: string }}) {
         form.setValue('mapUrl', details.mapUrl);
         setIsGenerating(false);
     }
+    
+     const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const time = e.target.value; // "HH:mm"
+        if (!time) return;
+        const [hours, minutes] = time.split(':').map(Number);
+        const newDate = new Date(watchedValues.startDate);
+        newDate.setHours(hours, minutes);
+        form.setValue('startDate', newDate, { shouldValidate: true, shouldDirty: true });
+    };
+
+    const handleDateChange = (date?: Date) => {
+        if (!date) return;
+        const currentStartDate = watchedValues.startDate || new Date();
+        const hours = currentStartDate.getHours();
+        const minutes = currentStartDate.getMinutes();
+        const newDate = new Date(date);
+        newDate.setHours(hours, minutes);
+        form.setValue('startDate', newDate, { shouldValidate: true, shouldDirty: true });
+    };
 
     const onSubmit = async (values: EventFormValues) => {
         setIsSubmitting(true);
@@ -216,12 +200,16 @@ export default function EditEventPage({ params }: { params: { id: string }}) {
                                         <FormItem><FormLabel>Descrição Curta</FormLabel><FormControl><Textarea {...field} placeholder="Descreva o que é o evento, principais atrações, etc." /></FormControl><FormMessage /></FormItem>
                                     )} />
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <FormField control={form.control} name="startDate" render={({ field }) => (
-                                            <FormItem><FormLabel>Início do Evento</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                        <FormField control={form.control} name="endDate" render={({ field }) => (
-                                            <FormItem><FormLabel>Fim do Evento</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>
-                                        )} />
+                                        <FormItem>
+                                            <FormLabel>Data do Evento</FormLabel>
+                                            <DatePicker value={watchedValues.startDate} onChange={handleDateChange} />
+                                            <FormMessage />
+                                        </FormItem>
+                                        <FormItem>
+                                            <FormLabel>Horário de Início</FormLabel>
+                                            <Input type="time" value={watchedValues.startDate ? format(watchedValues.startDate, 'HH:mm') : ''} onChange={handleTimeChange} />
+                                            <FormMessage />
+                                        </FormItem>
                                     </div>
                                     <FormField control={form.control} name="mapUrl" render={({ field }) => (
                                         <FormItem><FormLabel>URL do Google Maps para o Local</FormLabel><FormControl><Input {...field} placeholder="https://maps.app.goo.gl/..." /></FormControl><FormMessage /></FormItem>
@@ -258,7 +246,7 @@ export default function EditEventPage({ params }: { params: { id: string }}) {
                                         <CardDescription>Veja como o evento aparecerá na página inicial.</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <EventBannerPreview {...watchedValues} />
+                                       <EventCard event={{...watchedValues, id: 'preview', createdAt: new Date().toISOString()}} />
                                     </CardContent>
                                 </Card>
                             </div>

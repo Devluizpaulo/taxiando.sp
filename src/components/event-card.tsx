@@ -1,10 +1,11 @@
 
+
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { MoveRight, MapPin, Lightbulb, TrafficCone, Phone, Share2 } from 'lucide-react';
+import { MoveRight, MapPin, Lightbulb, TrafficCone, Phone, Share2, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { type Event } from '@/lib/types';
@@ -33,28 +34,30 @@ export const EventCard = ({ event }: { event: Event }) => {
     const eventDate = parseISO(event.startDate as string);
     const day = format(eventDate, "d");
     const month = format(eventDate, "MMM", { locale: ptBR }).replace('.', '');
+    const time = format(eventDate, "HH:mm");
 
     return (
         <Dialog>
             <DialogTrigger asChild>
                 <Card id={`event-${event.id}`} className="w-full overflow-hidden rounded-xl border-2 border-transparent bg-card shadow-lg transition-all duration-300 ease-in-out hover:border-primary hover:shadow-2xl hover:-translate-y-1 cursor-pointer">
-                    <div className="flex h-40">
-                        {/* Date Section */}
-                        <div className="flex w-28 flex-shrink-0 flex-col items-center justify-center bg-muted/50 p-2 text-center">
-                            <Image src="/logo.png" alt="Logo" width={32} height={32} className="mb-2 rounded-md" />
-                            <p className="text-4xl font-bold font-headline text-primary">{day}</p>
+                    <div className="flex h-36">
+                        <div className="flex w-24 flex-shrink-0 flex-col items-center justify-center bg-muted/50 p-2 text-center">
+                            <Image src="/logo.png" alt="Logo" width={24} height={24} className="mb-2 rounded-md" />
+                            <p className="text-3xl font-bold font-headline text-primary">{day}</p>
                             <p className="font-semibold uppercase text-muted-foreground">{month}</p>
                         </div>
-                        {/* Info Section */}
                         <div className="flex flex-1 flex-col justify-between p-4">
                             <div>
                                 <CardTitle className="font-headline text-lg leading-tight line-clamp-2">{event.title}</CardTitle>
-                                <CardDescription className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                                    {event.description}
+                                <CardDescription className="mt-1 text-xs text-muted-foreground flex items-center gap-1.5">
+                                    <MapPin className="h-3 w-3" /> {event.location}
+                                </CardDescription>
+                                <CardDescription className="mt-1 text-xs text-muted-foreground flex items-center gap-1.5">
+                                    <Clock className="h-3 w-3" /> {time}h
                                 </CardDescription>
                             </div>
-                             <div className="text-right text-sm font-semibold text-primary">
-                                Saiba Mais &rarr;
+                            <div className="text-right text-sm font-semibold text-primary flex items-center justify-end gap-1">
+                                Saiba Mais <MoveRight className="h-4 w-4" />
                             </div>
                         </div>
                     </div>
@@ -73,8 +76,7 @@ export const EventCard = ({ event }: { event: Event }) => {
                         <p className="text-sm text-muted-foreground">{event.description}</p>
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <p><strong className="block text-foreground">Início:</strong> {format(eventDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
-                        <p><strong className="block text-foreground">Término:</strong> {format(parseISO(event.endDate as string), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                        <p><strong className="block text-foreground">Data e Hora:</strong> {format(eventDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}h</p>
                     </div>
 
                     <div className="space-y-4 rounded-lg border bg-muted/30 p-4">

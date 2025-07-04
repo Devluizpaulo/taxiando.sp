@@ -1,4 +1,5 @@
 
+
 import { PublicHeader } from "@/components/layout/public-header";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -50,7 +51,7 @@ export default async function EventsPage() {
                                         <Calendar className="text-primary"/> 
                                         <span className="capitalize">{getDateLabel(date)}</span>
                                     </h2>
-                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                                         {groupedEvents[date].map((event) => (
                                             <EventCard key={event.id} event={event} />
                                         ))}
