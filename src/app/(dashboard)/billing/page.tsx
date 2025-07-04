@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { collection, getDocs, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { type CreditPackage, type Transaction } from '@/lib/types';
-import { purchaseCredits, createPaymentPreference } from '@/app/actions/billing-actions';
+import { createPaymentPreference } from '@/app/actions/billing-actions';
 import { getPaymentSettings } from '@/app/actions/admin-actions';
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 
@@ -16,12 +16,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CreditCard, Loader2, ShoppingCart, AlertCircle, Ticket } from "lucide-react";
+import { CreditCard, Loader2, ShoppingCart, AlertCircle, Ticket, PlusCircle, MinusCircle } from "lucide-react";
 import { LoadingScreen } from '@/components/loading-screen';
 import { Input } from '@/components/ui/input';
 
 export default function BillingPage() {
-    const { user, userProfile, setUserProfile, loading: authLoading } = useAuth();
+    const { user, userProfile, loading: authLoading } = useAuth();
     const { toast } = useToast();
     const searchParams = useSearchParams();
 
@@ -42,11 +42,15 @@ export default function BillingPage() {
                 title: "Pagamento Falhou",
                 description: "Ocorreu um erro ao processar seu pagamento. Por favor, tente novamente."
             });
-        }
-        if (status === 'pending') {
+        } else if (status === 'pending') {
             toast({
                 title: "Pagamento Pendente",
-                description: "Seu pagamento está sendo processado. Avisaremos quando for aprovado."
+                description: "Seu pagamento está sendo processado. Avisaremos quando for aprovado e seu saldo será atualizado."
+            });
+        } else if (status === 'success') {
+             toast({
+                title: "Pagamento Aprovado!",
+                description: "Seu saldo será atualizado em instantes. Obrigado pela sua compra!"
             });
         }
     }, [searchParams, toast]);
@@ -215,26 +219,6 @@ export default function BillingPage() {
                                     <Wallet
                                         initialization={{ preferenceId: preferenceId }}
                                         customization={{ texts: { valueProp: 'smart_option' } }}
-                                        onSubmit={async (formData) => {
-                                            // Este callback é chamado quando o pagamento é processado no lado do MP.
-                                            // A atualização de créditos DEVE ser feita via Webhook para segurança.
-                                            // Para fins de demonstração, vamos chamar a ação aqui.
-                                            if (user && formData.status === 'approved') {
-                                                await purchaseCredits({
-                                                    userId: user.uid,
-                                                    packageId: pkg.id,
-                                                    packageName: pkg.name,
-                                                    credits: pkg.credits,
-                                                    amountPaid: pkg.price,
-                                                    paymentId: formData.id?.toString() || 'N/A'
-                                                });
-                                                setUserProfile(prev => prev ? { ...prev, credits: (prev.credits || 0) + pkg.credits } : null);
-                                                toast({
-                                                    title: "Compra Aprovada!",
-                                                    description: `Você adquiriu ${pkg.credits} créditos.`
-                                                });
-                                            }
-                                        }}
                                     />
                                 ) : (
                                     <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => handlePurchaseAttempt(pkg)} disabled={isCreatingPreference === pkg.id || !mercadoPagoKey}>
@@ -270,22 +254,18 @@ export default function BillingPage() {
                             ) : (
                                 transactions.map(t => {
                                     const date = new Date(t.createdAt as string).toLocaleDateString('pt-BR');
-                                    let description = "Transação desconhecida";
-                                    let amount = "";
-
-                                    if (t.type === 'purchase') {
-                                        description = `Compra: ${t.packageName}`;
-                                        amount = `- R$ ${t.amountPaid?.toFixed(2)}`;
-                                    } else if (t.type === 'usage') {
-                                        description = t.usageReason || 'Uso de créditos';
-                                        amount = `- ${t.creditsUsed} créditos`;
-                                    }
+                                    const isPurchase = t.type === 'purchase';
+                                    const description = isPurchase ? `Compra: ${t.packageName}` : (t.usageReason || 'Uso de créditos');
+                                    const amount = isPurchase ? `+${t.creditsPurchased} créditos` : `-${t.creditsUsed} créditos`;
 
                                     return (
                                         <TableRow key={t.id}>
                                             <TableCell>{date}</TableCell>
-                                            <TableCell className="font-medium">{description}</TableCell>
-                                            <TableCell className={`text-right font-mono ${t.type === 'purchase' ? 'text-red-600' : 'text-primary'}`}>{amount}</TableCell>
+                                            <TableCell className="font-medium flex items-center gap-2">
+                                                {isPurchase ? <PlusCircle className="h-4 w-4 text-green-500"/> : <MinusCircle className="h-4 w-4 text-red-500"/>}
+                                                {description}
+                                            </TableCell>
+                                            <TableCell className={`text-right font-mono font-semibold ${isPurchase ? 'text-green-600' : 'text-red-600'}`}>{amount}</TableCell>
                                         </TableRow>
                                     )
                                 })

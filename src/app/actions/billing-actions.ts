@@ -132,44 +132,62 @@ interface PurchaseCreditsParams {
     paymentId: string;
 }
 
-export async function purchaseCredits(params: PurchaseCreditsParams) {
-    const { currentUser } = auth;
-    if (!currentUser || currentUser.uid !== params.userId) {
-        throw new Error('Usuário não autenticado ou inválido.');
+export async function processApprovedPayment(params: PurchaseCreditsParams) {
+    const { userId, packageId, packageName, credits, amountPaid, paymentId } = params;
+
+    if (!userId || !packageId || !paymentId) {
+        console.error("Process payment failed: Missing required parameters.");
+        return { success: false, error: "Missing required parameters." };
     }
-    
+
     try {
-        await adminDB.runTransaction(async (transaction) => {
-            const userRef = adminDB.collection('users').doc(params.userId);
+        const transactionResult = await adminDB.runTransaction(async (transaction) => {
+            const userRef = adminDB.collection('users').doc(userId);
             const salesRef = adminDB.collection('analytics').doc('sales');
+            const transactionHistoryRef = userRef.collection('transactions');
+
+            // Idempotency Check: Verify this paymentId hasn't been processed
+            const existingTransactionQuery = transactionHistoryRef.where('paymentId', '==', paymentId).limit(1);
+            const existingTransactionSnap = await transaction.get(existingTransactionQuery);
+            if (!existingTransactionSnap.empty) {
+                console.log(`Payment ID ${paymentId} already processed. Skipping.`);
+                return { success: false, error: "Payment already processed." };
+            }
 
             // 1. Update user's credit balance
             transaction.update(userRef, {
-                credits: admin.firestore.FieldValue.increment(params.credits)
+                credits: admin.firestore.FieldValue.increment(credits)
             });
 
             // 2. Create a transaction record in user's subcollection
-            const userTransactionRef = userRef.collection('transactions').doc();
-            transaction.set(userTransactionRef, {
-                packageId: params.packageId,
-                packageName: params.packageName,
-                creditsPurchased: params.credits,
-                amountPaid: params.amountPaid,
-                paymentId: params.paymentId,
+            const newTransactionRef = transactionHistoryRef.doc();
+            transaction.set(newTransactionRef, {
+                packageId,
+                packageName,
+                creditsPurchased: credits,
+                amountPaid,
+                paymentId,
                 type: 'purchase',
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
 
              // 3. Update global analytics
             transaction.set(salesRef, {
-                totalRevenue: admin.firestore.FieldValue.increment(params.amountPaid),
+                totalRevenue: admin.firestore.FieldValue.increment(amountPaid),
                 packagesSold: admin.firestore.FieldValue.increment(1),
             }, { merge: true });
+
+            return { success: true };
         });
+
+        return transactionResult;
+
     } catch (error) {
-        throw new Error('Falha ao processar a compra.');
+        console.error(`Failed to process payment ${paymentId}:`, error);
+        return { success: false, error: `Failed to process payment: ${(error as Error).message}` };
     }
 }
+
 
 interface CreatePreferenceParams {
     packageId: string;
@@ -266,6 +284,7 @@ export async function createPaymentPreference({ packageId, userId, couponCode }:
                     pending: `${origin}/billing?status=pending`,
                 },
                 auto_return: 'approved',
+                notification_url: `${origin}/api/webhooks/mercadopago`,
                 metadata: {
                     user_id: userId,
                     package_id: packageId,

@@ -3,7 +3,7 @@
 
 import { useState, useEffect, SetStateAction, createContext, ReactNode } from 'react';
 import { onAuthStateChanged, type User, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { type UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -25,33 +25,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      let unsubscribeProfile: (() => void) | undefined;
+
       if (user) {
         setUser(user);
         const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUserProfile(userDoc.data() as UserProfile);
-        } else {
-          // This can happen if the firestore doc creation fails after auth user is created
-          console.error("User exists in Auth, but not in Firestore. Signing out.");
-          toast({
-            variant: "destructive",
-            title: "Falha no Cadastro",
-            description: "Não encontramos seu perfil. Por favor, tente se cadastrar novamente."
-          });
-          await signOut(auth);
-          // The onAuthStateChanged listener will handle clearing the state on sign out.
-        }
+        
+        unsubscribeProfile = onSnapshot(userDocRef, (doc) => {
+          if (doc.exists()) {
+            setUserProfile(doc.data() as UserProfile);
+          } else {
+            console.error("User exists in Auth, but not in Firestore. Signing out.");
+            toast({
+              variant: "destructive",
+              title: "Falha no Cadastro",
+              description: "Não encontramos seu perfil. Por favor, tente se cadastrar novamente."
+            });
+            signOut(auth);
+          }
+           if (loading) setLoading(false);
+        }, (error) => {
+            console.error("Error listening to user profile:", error);
+            setUser(null);
+            setUserProfile(null);
+            if (loading) setLoading(false);
+        });
+
       } else {
         setUser(null);
         setUserProfile(null);
+        if (loading) setLoading(false);
       }
-      setLoading(false);
+      
+      return () => {
+        if (unsubscribeProfile) {
+          unsubscribeProfile();
+        }
+      };
     });
 
-    return () => unsubscribe();
-  }, [toast]);
+    return () => unsubscribeAuth();
+  }, [toast, loading]);
 
   const value = { user, userProfile, loading, setUserProfile };
 
