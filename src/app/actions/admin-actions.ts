@@ -21,6 +21,7 @@ export async function updateUserProfileStatus(userId: string, newStatus: 'Aprova
         await userRef.update({ profileStatus: dbStatus });
 
         revalidatePath('/admin');
+        revalidatePath(`/admin/users/${userId}`);
         return { success: true, dbStatus };
     } catch (error) {
         return { success: false, error: (error as Error).message };
@@ -33,6 +34,7 @@ const adminEditUserSchema = z.object({
   role: z.enum(['driver', 'fleet', 'provider', 'admin']),
   profileStatus: z.enum(['incomplete', 'pending_review', 'approved', 'rejected']),
   credits: z.coerce.number().min(0, "Créditos não podem ser negativos."),
+  uploadCredits: z.coerce.number().min(0, "Créditos de upload não podem ser negativos."),
 });
 
 export async function updateUserByAdmin(userId: string, data: z.infer<typeof adminEditUserSchema>) {
@@ -46,8 +48,37 @@ export async function updateUserByAdmin(userId: string, data: z.infer<typeof adm
         await userRef.update(validation.data);
 
         revalidatePath('/admin');
+        revalidatePath(`/admin/users/${userId}`);
         return { success: true };
 
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function grantUploadCredits(userId: string, amount: number) {
+    try {
+        const userRef = adminDB.collection('users').doc(userId);
+        await userRef.update({
+            uploadCredits: Timestamp.from(new Date(amount))
+        });
+        revalidatePath(`/admin/users/${userId}`);
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function enrollUserInCourse(userId: string, courseId: string) {
+    try {
+        const enrollmentRef = adminDB.collection('users').doc(userId).collection('enrollments').doc(courseId);
+        await enrollmentRef.set({
+            courseId: courseId,
+            enrolledAt: Timestamp.now(),
+            status: 'active',
+            source: 'admin_grant',
+        });
+        return { success: true };
     } catch (error) {
         return { success: false, error: (error as Error).message };
     }

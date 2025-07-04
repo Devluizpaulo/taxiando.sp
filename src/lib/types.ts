@@ -66,8 +66,16 @@ export interface UserProfile {
 
     // Billing, Analytics & Notifications
     credits?: number;
+    uploadCredits?: number;
     loginCount?: number;
     lastNotificationCheck?: Timestamp;
+}
+
+export interface Enrollment {
+    courseId: string;
+    enrolledAt: Timestamp | string;
+    status: 'active' | 'completed';
+    source: 'purchase' | 'admin_grant';
 }
 
 export interface SupportingMaterial {
@@ -345,4 +353,15 @@ export interface SupportTicket {
   status: 'Open' | 'Resolved';
   createdAt: Timestamp | string;
   resolvedAt?: Timestamp | string;
+}
+
+export interface GalleryImage {
+  id: string;
+  url: string;
+  name: string;
+  category: string;
+  ownerId: string; // 'admin' for public or userId for private
+  ownerName: string;
+  isPublic: boolean;
+  createdAt: Timestamp | string;
 }
