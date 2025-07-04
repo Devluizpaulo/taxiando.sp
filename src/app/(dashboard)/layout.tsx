@@ -1,4 +1,5 @@
 
+
 "use client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
@@ -168,32 +169,26 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>
-                    <SidebarGroup>
-                        <SidebarGroupLabel>Gestão Financeira</SidebarGroupLabel>
+                     <SidebarGroup>
+                        <SidebarGroupLabel>Marketing & Finanças</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/billing"><ShoppingCart className="text-green-500" /> Pacotes de Crédito</Link></SidebarMenuButton></SidebarMenuItem>
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/coupons"><Tag className="text-teal-500" /> Cupons</Link></SidebarMenuButton></SidebarMenuItem>
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
-                     <SidebarGroup>
-                        <SidebarGroupLabel>Marketing & Comunicação</SidebarGroupLabel>
-                        <SidebarGroupContent>
-                            <SidebarMenu>
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/newsletter"><Mail className="text-orange-500" /> Newsletter</Link></SidebarMenuButton></SidebarMenuItem>
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/notifications"><Megaphone className="text-pink-500" /> Notificações</Link></SidebarMenuButton></SidebarMenuItem>
-                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/partners"><Handshake className="text-cyan-500" /> Parceiros / Banners</Link></SidebarMenuButton></SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/partners"><Handshake className="text-cyan-500" /> Parceiros</Link></SidebarMenuButton></SidebarMenuItem>
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/quiz"><Star className="text-yellow-500" /> Quizzes</Link></SidebarMenuButton></SidebarMenuItem>
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>
                      <SidebarGroup>
-                        <SidebarGroupLabel>Gerenciamento</SidebarGroupLabel>
+                        <SidebarGroupLabel>Moderação</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/reviews"><Star className="text-amber-500" /> Avaliações</Link></SidebarMenuButton></SidebarMenuItem>
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/support"><LifeBuoy className="text-red-500" /> Suporte</Link></SidebarMenuButton></SidebarMenuItem>
-                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/settings/payments"><CreditCard className="text-indigo-500" /> Pagamentos</Link></SidebarMenuButton></SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/settings"><Settings className="text-indigo-500" /> Configurações</Link></SidebarMenuButton></SidebarMenuItem>
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>

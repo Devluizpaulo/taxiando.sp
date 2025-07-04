@@ -1,14 +1,16 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useAuthProtection } from '@/hooks/use-auth';
-import type { Vehicle, VehicleApplication, UserProfile, AdminUser } from '@/lib/types';
+import { useAuth, useAuthProtection } from '@/hooks/use-auth';
+import type { Vehicle, VehicleApplication, UserProfile, AdminUser, Review } from '@/lib/types';
 import { vehicleFormSchema, type VehicleFormValues } from '@/lib/fleet-schemas';
 import { getFleetData, upsertVehicle, deleteVehicle, updateApplicationStatus, getDriverProfile } from '@/app/actions/fleet-actions';
+import { getReviewsForUser } from '@/app/actions/review-actions';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -23,12 +25,14 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle } from "lucide-react";
+import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle, StarHalf } from "lucide-react";
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { vehiclePerks } from '@/lib/data';
 import { LoadingScreen } from '@/components/loading-screen';
+import { ReviewForm } from '@/components/review-form';
+import { StarRating } from '@/components/ui/star-rating';
 
 
 const getVehicleStatusVariant = (status: Vehicle['status']): "default" | "secondary" | "destructive" | "outline" => {
@@ -65,6 +69,7 @@ export default function FleetPage() {
     const [applications, setApplications] = useState<VehicleApplication[]>([]);
     const [pageLoading, setPageLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
     const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -74,6 +79,11 @@ export default function FleetPage() {
     const [isProfileModalOpen, setProfileModalOpen] = useState(false);
     const [isFetchingProfile, setIsFetchingProfile] = useState(false);
     const [selectedDriver, setSelectedDriver] = useState<AdminUser | null>(null);
+    const [driverReviews, setDriverReviews] = useState<Review[]>([]);
+
+    // State for review modal
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [driverToReview, setDriverToReview] = useState<{id: string, name: string} | null>(null);
 
     const form = useForm<VehicleFormValues>({
       resolver: zodResolver(vehicleFormSchema),
@@ -169,12 +179,18 @@ export default function FleetPage() {
 
     const handleViewProfile = async (driverId: string) => {
         setIsFetchingProfile(true);
-        const driverProfile = await getDriverProfile(driverId);
-        if (driverProfile) {
-            setSelectedDriver(driverProfile);
-            setProfileModalOpen(true);
+        setProfileModalOpen(true);
+        const [profileData, reviewsData] = await Promise.all([
+            getDriverProfile(driverId),
+            getReviewsForUser(driverId),
+        ]);
+        
+        if (profileData) {
+            setSelectedDriver(profileData);
+            setDriverReviews(reviewsData);
         } else {
             toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar o perfil do motorista.' });
+            setProfileModalOpen(false);
         }
         setIsFetchingProfile(false);
     };
@@ -214,7 +230,19 @@ export default function FleetPage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Veículos Cadastrados</CardTitle><Car className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{vehicles.length}</div></CardContent></Card>
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Candidaturas</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{applications.length}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Avaliação da Frota</CardTitle><Star className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold flex items-center">4.8 <span className="text-xs text-muted-foreground ml-1">/ 5</span></div></CardContent></Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Avaliação da Frota</CardTitle>
+                        <Star className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold flex items-center gap-2">
+                             {(userProfile?.averageRating || 0).toFixed(1)}
+                            <StarRating rating={userProfile?.averageRating || 0} size={20} readOnly/>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Baseado em {userProfile?.reviewCount || 0} avaliações</p>
+                    </CardContent>
+                </Card>
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Visitas ao Perfil (Mês)</CardTitle><Eye className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">1,432</div></CardContent></Card>
             </div>
             
@@ -320,7 +348,14 @@ export default function FleetPage() {
                                                         <Button variant="outline" size="sm" onClick={() => handleApplicationStatusChange(app.id, 'Aprovado')}>Aprovar</Button>
                                                         <Button variant="destructive" size="sm" onClick={() => handleApplicationStatusChange(app.id, 'Rejeitado')}>Rejeitar</Button>
                                                     </>
-                                                ) : null}
+                                                ) : app.status === 'Aprovado' && (
+                                                     <Button variant="secondary" size="sm" onClick={() => {
+                                                        setDriverToReview({ id: app.driverId, name: app.driverName });
+                                                        setIsReviewModalOpen(true);
+                                                     }}>
+                                                        <StarHalf className="mr-2"/> Avaliar
+                                                     </Button>
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -461,14 +496,30 @@ export default function FleetPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            <DriverProfileModal user={selectedDriver} isOpen={isProfileModalOpen} onOpenChange={setProfileModalOpen}/>
+            <DriverProfileModal user={selectedDriver} reviews={driverReviews} isLoading={isFetchingProfile} isOpen={isProfileModalOpen} onOpenChange={setProfileModalOpen}/>
+            
+            <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Avaliar Motorista</DialogTitle>
+                        <DialogDescription>Deixe um feedback sobre sua experiência com {driverToReview?.name}.</DialogDescription>
+                    </DialogHeader>
+                    {userProfile && driverToReview && (
+                        <ReviewForm
+                            reviewer={userProfile}
+                            reviewee={{ id: driverToReview.id, name: driverToReview.name, role: 'driver' }}
+                            onReviewSubmitted={() => setIsReviewModalOpen(false)}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 }
 
 // Modal Component to Display Driver Profile
-function DriverProfileModal({ user, isOpen, onOpenChange }: { user: AdminUser | null, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
-    if (!user) return null;
+function DriverProfileModal({ user, reviews, isLoading, isOpen, onOpenChange }: { user: AdminUser | null, reviews: Review[], isLoading: boolean, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     
     const formatDate = (dateString?: string) => {
         if (!dateString) return 'Não informado';
@@ -477,58 +528,93 @@ function DriverProfileModal({ user, isOpen, onOpenChange }: { user: AdminUser | 
 
     return (
          <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-3xl">
+            <DialogContent className="sm:max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>Perfil do Candidato</DialogTitle>
                 </DialogHeader>
-                <div className="py-4 grid grid-cols-1 md:grid-cols-3 gap-6 max-h-[70vh] overflow-y-auto pr-4">
-                    <div className="md:col-span-1 flex flex-col items-center text-center gap-4">
-                        <Avatar className="h-32 w-32 border-4 border-primary">
-                            <AvatarImage src={user.photoUrl} alt={user.name}/>
-                            <AvatarFallback className="text-4xl">{user.name?.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="w-full">
-                            <h2 className="text-2xl font-bold font-headline">{user.name}</h2>
-                            <p className="text-muted-foreground">{user.email}</p>
-                        </div>
-                         <Card className="w-full text-left">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-base flex items-center gap-2"><Smartphone/> Contato</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm">{user.phone}</p>
-                                {user.hasWhatsApp && <Badge variant="secondary" className="mt-2">Tem WhatsApp</Badge>}
-                            </CardContent>
-                        </Card>
-                    </div>
-                    <div className="md:col-span-2 space-y-4">
-                        {user.bio && (
-                            <Card>
-                                <CardHeader className="pb-2"><CardTitle className="text-base">Resumo Profissional</CardTitle></CardHeader>
-                                <CardContent><p className="text-sm text-muted-foreground">{user.bio}</p></CardContent>
+                {isLoading || !user ? (
+                    <div className="h-96 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                ) : (
+                    <div className="py-4 grid grid-cols-1 md:grid-cols-3 gap-6 max-h-[70vh] overflow-y-auto pr-4">
+                        <div className="md:col-span-1 flex flex-col items-center text-center gap-4">
+                            <Avatar className="h-32 w-32 border-4 border-primary">
+                                <AvatarImage src={user.photoUrl} alt={user.name}/>
+                                <AvatarFallback className="text-4xl">{user.name?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="w-full">
+                                <h2 className="text-2xl font-bold font-headline">{user.name}</h2>
+                                <p className="text-muted-foreground">{user.email}</p>
+                            </div>
+                            <Card className="w-full text-left">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-base flex items-center gap-2"><Smartphone/> Contato</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm">{user.phone}</p>
+                                    {user.hasWhatsApp && <Badge variant="secondary" className="mt-2">Tem WhatsApp</Badge>}
+                                </CardContent>
                             </Card>
-                        )}
-                        <Card>
-                            <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Briefcase/> Documentação</CardTitle></CardHeader>
-                            <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                                <div><p className="font-semibold">Nº CNH</p><p className="text-muted-foreground">{user.cnhNumber || 'Não informado'}</p></div>
-                                <div><p className="font-semibold">Cat. CNH</p><p className="text-muted-foreground">{user.cnhCategory || 'Não informado'}</p></div>
-                                <div><p className="font-semibold">Validade CNH</p><p className="text-muted-foreground">{formatDate(user.cnhExpiration)}</p></div>
-                                <div><p className="font-semibold">Pontos CNH</p><p className="text-muted-foreground">{user.cnhPoints ?? 'Não informado'}</p></div>
-                                <div><p className="font-semibold">Nº Condutax</p><p className="text-muted-foreground">{user.condutaxNumber || 'Não informado'}</p></div>
-                                <div><p className="font-semibold">Validade Condutax</p><p className="text-muted-foreground">{formatDate(user.condutaxExpiration)}</p></div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><MessageCircle/> Referência Pessoal</CardTitle></CardHeader>
-                             <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                                <div><p className="font-semibold">Nome</p><p className="text-muted-foreground">{user.reference?.name || 'Não informado'}</p></div>
-                                <div><p className="font-semibold">Relação</p><p className="text-muted-foreground">{user.reference?.relationship || 'Não informado'}</p></div>
-                                <div className="col-span-2"><p className="font-semibold">Telefone</p><p className="text-muted-foreground">{user.reference?.phone || 'Não informado'}</p></div>
-                            </CardContent>
-                        </Card>
+                             <Card className="w-full text-left">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-base flex items-center gap-2"><Star/> Avaliações</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {user.reviewCount && user.reviewCount > 0 ? (
+                                         <div className="flex items-center gap-2">
+                                            <StarRating rating={user.averageRating || 0} readOnly size={16}/>
+                                            <span className="text-sm text-muted-foreground">{(user.averageRating || 0).toFixed(1)} ({user.reviewCount} avaliações)</span>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                        <div className="md:col-span-2 space-y-4">
+                            {user.bio && (
+                                <Card>
+                                    <CardHeader className="pb-2"><CardTitle className="text-base">Resumo Profissional</CardTitle></CardHeader>
+                                    <CardContent><p className="text-sm text-muted-foreground">{user.bio}</p></CardContent>
+                                </Card>
+                            )}
+                            <Card>
+                                <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Briefcase/> Documentação</CardTitle></CardHeader>
+                                <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                                    <div><p className="font-semibold">Nº CNH</p><p className="text-muted-foreground">{user.cnhNumber || 'Não informado'}</p></div>
+                                    <div><p className="font-semibold">Cat. CNH</p><p className="text-muted-foreground">{user.cnhCategory || 'Não informado'}</p></div>
+                                    <div><p className="font-semibold">Validade CNH</p><p className="text-muted-foreground">{formatDate(user.cnhExpiration)}</p></div>
+                                    <div><p className="font-semibold">Pontos CNH</p><p className="text-muted-foreground">{user.cnhPoints ?? 'Não informado'}</p></div>
+                                    <div><p className="font-semibold">Nº Condutax</p><p className="text-muted-foreground">{user.condutaxNumber || 'Não informado'}</p></div>
+                                    <div><p className="font-semibold">Validade Condutax</p><p className="text-muted-foreground">{formatDate(user.condutaxExpiration)}</p></div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><MessageCircle/> Referência Pessoal</CardTitle></CardHeader>
+                                <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                                    <div><p className="font-semibold">Nome</p><p className="text-muted-foreground">{user.reference?.name || 'Não informado'}</p></div>
+                                    <div><p className="font-semibold">Relação</p><p className="text-muted-foreground">{user.reference?.relationship || 'Não informado'}</p></div>
+                                    <div className="col-span-2"><p className="font-semibold">Telefone</p><p className="text-muted-foreground">{user.reference?.phone || 'Não informado'}</p></div>
+                                </CardContent>
+                            </Card>
+                            {reviews.length > 0 && (
+                                <Card>
+                                     <CardHeader className="pb-2"><CardTitle className="text-base">Comentários Recebidos</CardTitle></CardHeader>
+                                     <CardContent className="space-y-4">
+                                        {reviews.map(review => (
+                                            <div key={review.id} className="text-sm border-b last:border-0 pb-2 last:pb-0">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-semibold">{review.reviewerName}</span>
+                                                    <StarRating rating={review.rating} readOnly size={14}/>
+                                                </div>
+                                                <p className="text-muted-foreground italic">"{review.comment}"</p>
+                                            </div>
+                                        ))}
+                                     </CardContent>
+                                </Card>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
                  <DialogFooter>
                     <DialogClose asChild><Button type="button" variant="outline">Fechar</Button></DialogClose>
                 </DialogFooter>

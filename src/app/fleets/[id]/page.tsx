@@ -1,14 +1,19 @@
 
+
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { getFleetPublicProfile } from '@/app/actions/fleet-actions';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { PublicHeader } from '@/components/layout/public-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Building, Mail, MapPin, Phone, Sparkles } from 'lucide-react';
+import { Mail, MapPin, Phone, Sparkles, Star } from 'lucide-react';
 import { fleetAmenities } from '@/lib/data';
 import { VehicleCard } from '@/components/vehicle-card';
+import { getReviewsForUser } from '@/app/actions/review-actions';
+import { StarRating } from '@/components/ui/star-rating';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default async function FleetProfilePage({ params }: { params: { id: string } }) {
     const { success, fleet, vehicles } = await getFleetPublicProfile(params.id);
@@ -16,6 +21,8 @@ export default async function FleetProfilePage({ params }: { params: { id: strin
     if (!success || !fleet) {
         notFound();
     }
+    
+    const reviews = await getReviewsForUser(params.id);
 
     return (
         <div className="flex min-h-screen flex-col bg-muted/40">
@@ -34,6 +41,12 @@ export default async function FleetProfilePage({ params }: { params: { id: strin
                             <p className="flex items-center justify-center gap-2 text-muted-foreground md:justify-start">
                                 <MapPin className="h-4 w-4" /> {fleet.address || 'Endereço não informado'}
                             </p>
+                             {fleet.reviewCount && fleet.reviewCount > 0 && (
+                                <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground">
+                                    <StarRating rating={fleet.averageRating || 0} readOnly size={16}/>
+                                    <span>({fleet.averageRating?.toFixed(1)}) de {fleet.reviewCount} avaliações</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -53,6 +66,33 @@ export default async function FleetProfilePage({ params }: { params: { id: strin
                                         vehicles.map(vehicle => <VehicleCard key={vehicle.id} vehicle={vehicle} />)
                                     ) : (
                                         <p className="col-span-full text-center text-muted-foreground">Nenhum veículo disponível no momento.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                             <Card>
+                                <CardHeader><CardTitle>Avaliações de Motoristas ({reviews.length})</CardTitle></CardHeader>
+                                <CardContent className="space-y-6">
+                                    {reviews.length > 0 ? (
+                                        reviews.map(review => (
+                                            <div key={review.id} className="flex items-start gap-4 border-b pb-4 last:border-b-0 last:pb-0">
+                                                <Avatar>
+                                                    <AvatarFallback>{review.reviewerName.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <p className="font-semibold">{review.reviewerName}</p>
+                                                            <p className="text-xs text-muted-foreground">{format(new Date(review.createdAt as string), "dd 'de' MMMM, yyyy", { locale: ptBR })}</p>
+                                                        </div>
+                                                        <StarRating rating={review.rating} readOnly />
+                                                    </div>
+                                                    <p className="mt-2 text-sm text-muted-foreground italic">"{review.comment}"</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="col-span-full text-center text-muted-foreground">Esta frota ainda não recebeu avaliações.</p>
                                     )}
                                 </CardContent>
                             </Card>
