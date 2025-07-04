@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { getBlogPostById } from '@/app/actions/blog-actions';
-import { BlogPostForm } from '../create/blog-post-form';
+import { BlogPostForm } from '../../create/blog-post-form';
 import { LoadingScreen } from '@/components/loading-screen';
 import { type BlogPost } from '@/lib/types';
 
