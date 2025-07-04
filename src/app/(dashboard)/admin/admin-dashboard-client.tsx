@@ -4,7 +4,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuthProtection } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -59,7 +58,6 @@ const getStatusVariant = (status?: string): "default" | "secondary" | "destructi
 };
 
 export function AdminDashboardClient() {
-    const { loading: authLoading } = useAuthProtection({ requiredRoles: ['admin'] });
     const { toast } = useToast();
 
     const [users, setUsers] = useState<AdminUser[]>([]);
@@ -91,24 +89,22 @@ export function AdminDashboardClient() {
 
 
      useEffect(() => {
-        if (!authLoading) {
-            const fetchData = async () => {
-                setPageLoading(true);
-                try {
-                    const data = await getAdminDashboardData();
-                    setUsers(data.users);
-                    setVehicles(data.vehicles);
-                    setServices(data.services);
-                    setAnalytics(data.analytics);
-                } catch (error) {
-                    toast({ variant: 'destructive', title: 'Erro ao Carregar Painel', description: 'Não foi possível carregar os dados do painel. Tente recarregar a página.' });
-                } finally {
-                    setPageLoading(false);
-                }
-            };
-            fetchData();
-        }
-    }, [authLoading, toast]);
+        const fetchData = async () => {
+            setPageLoading(true);
+            try {
+                const data = await getAdminDashboardData();
+                setUsers(data.users);
+                setVehicles(data.vehicles);
+                setServices(data.services);
+                setAnalytics(data.analytics);
+            } catch (error) {
+                toast({ variant: 'destructive', title: 'Erro ao Carregar Painel', description: 'Não foi possível carregar os dados do painel. Tente recarregar a página.' });
+            } finally {
+                setPageLoading(false);
+            }
+        };
+        fetchData();
+    }, [toast]);
 
     const filteredUsers = useMemo(() => {
         return users.filter(user => {
@@ -204,7 +200,7 @@ export function AdminDashboardClient() {
     };
 
 
-    if (authLoading || pageLoading) {
+    if (pageLoading) {
         return <LoadingScreen />;
     }
     

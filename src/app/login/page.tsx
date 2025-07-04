@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +10,7 @@ import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, br
 import Image from 'next/image';
 
 import { auth } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -21,6 +22,7 @@ import Link from 'next/link';
 import { PublicHeader } from '@/components/layout/public-header';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { trackLogin } from '../actions/analytics-actions';
+import { LoadingScreen } from '@/components/loading-screen';
 
 
 const loginFormSchema = z.object({
@@ -33,6 +35,7 @@ const loginFormSchema = z.object({
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof loginFormSchema>>({
@@ -43,6 +46,13 @@ export default function LoginPage() {
       rememberMe: false,
     },
   });
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, authLoading, router]);
+
 
   async function onSubmit(values: z.infer<typeof loginFormSchema>) {
     setIsLoading(true);
@@ -70,6 +80,10 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  if (authLoading || user) {
+    return <LoadingScreen />;
   }
 
   return (
