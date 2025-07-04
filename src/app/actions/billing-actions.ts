@@ -67,6 +67,20 @@ export async function getCreditPackageById(packageId: string): Promise<CreditPac
     }
 }
 
+
+export async function getAllCreditPackages(): Promise<CreditPackage[]> {
+    try {
+        const packagesCollection = adminDB.collection('credit_packages');
+        const q = packagesCollection.orderBy('price', 'asc');
+        const querySnapshot = await q.get();
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CreditPackage));
+    } catch (error) {
+        console.error("Error fetching credit packages: ", error);
+        return [];
+    }
+}
+
+
 // UPDATE
 export async function updateCreditPackage(packageId: string, values: PackageFormValues) {
     if (!packageId) return { success: false, error: 'ID do pacote não fornecido.' };
