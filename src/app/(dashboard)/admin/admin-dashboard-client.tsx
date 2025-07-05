@@ -5,11 +5,6 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +12,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -32,7 +26,7 @@ import {
   Tooltip,
 } from "recharts";
 
-import { updateUserProfileStatus, updateListingStatus, getAdminDashboardData, updateUserByAdmin, deleteUserByAdmin } from '@/app/actions/admin-actions';
+import { updateUserProfileStatus, updateListingStatus, getAdminDashboardData, deleteUserByAdmin } from '@/app/actions/admin-actions';
 import { getVehicleDetails } from '@/app/actions/fleet-actions';
 import { getServiceAndProviderDetails } from '@/app/actions/service-actions';
 import type { UserProfile, Vehicle, ServiceListing, AnalyticsData, AdminUser } from '@/lib/types';
@@ -73,8 +67,6 @@ export function AdminDashboardClient() {
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
-    const [isProfileModalOpen, setProfileModalOpen] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
 
@@ -352,7 +344,9 @@ export function AdminDashboardClient() {
                                     filteredUsers.map(user => (
                                         <TableRow key={user.uid}>
                                             <TableCell>
-                                                <div className="font-medium">{user.name || user.nomeFantasia || 'Usuário sem nome'}</div>
+                                                <Link href={`/admin/users/${user.uid}`} className="hover:underline">
+                                                    <div className="font-medium">{user.name || user.nomeFantasia || 'Usuário sem nome'}</div>
+                                                </Link>
                                                 <div className="text-sm text-muted-foreground">{user.email}</div>
                                             </TableCell>
                                             <TableCell><Badge variant="outline">{user.role}</Badge></TableCell>
@@ -363,7 +357,11 @@ export function AdminDashboardClient() {
                                                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                        <DropdownMenuItem onSelect={() => { setSelectedUser(user); setProfileModalOpen(true); }}><FilePen className="mr-2"/> Editar Perfil</DropdownMenuItem>
+                                                        <DropdownMenuItem asChild>
+                                                            <Link href={`/admin/users/${user.uid}`}>
+                                                                <FilePen className="mr-2"/> Ver Detalhes / Editar
+                                                            </Link>
+                                                        </DropdownMenuItem>
                                                         {(user.profileStatus === 'Pendente' || user.profileStatus === 'pending_review') && (
                                                             updatingUserStatus === user.uid ? (
                                                                 <DropdownMenuItem disabled>
@@ -508,15 +506,7 @@ export function AdminDashboardClient() {
                     </Card>
                 </TabsContent>
             </Tabs>
-             <UserEditModal 
-                user={selectedUser} 
-                isOpen={isProfileModalOpen} 
-                onOpenChange={setProfileModalOpen} 
-                onUserUpdate={(updatedUser) => {
-                    setUsers(prev => prev.map(u => u.uid === updatedUser.uid ? updatedUser : u));
-                }}
-             />
-
+             
              <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -548,162 +538,6 @@ export function AdminDashboardClient() {
                 provider={selectedServiceProvider}
             />
         </div>
-    );
-}
-
-
-const adminEditUserSchema = z.object({
-  name: z.string().min(3, "O nome é obrigatório.").optional().or(z.literal('')),
-  phone: z.string().min(10, "O telefone deve ter pelo menos 10 dígitos.").optional().or(z.literal('')),
-  role: z.enum(['driver', 'fleet', 'provider', 'admin']),
-  profileStatus: z.enum(['incomplete', 'pending_review', 'approved', 'rejected']),
-  credits: z.coerce.number().min(0, "Créditos não podem ser negativos."),
-});
-
-type AdminEditUserFormValues = z.infer<typeof adminEditUserSchema>;
-
-
-function UserEditModal({ user, isOpen, onOpenChange, onUserUpdate }: { user: AdminUser | null, isOpen: boolean, onOpenChange: (open: boolean) => void, onUserUpdate: (user: AdminUser) => void }) {
-    const { toast } = useToast();
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    
-    const form = useForm<AdminEditUserFormValues>({
-        resolver: zodResolver(adminEditUserSchema),
-    });
-
-    useEffect(() => {
-        if (user) {
-            form.reset({
-                name: user.name || user.nomeFantasia || '',
-                phone: user.phone || '',
-                role: user.role,
-                profileStatus: user.profileStatus as any || 'incomplete',
-                credits: user.credits || 0,
-            });
-        }
-    }, [user, form]);
-
-    if (!user) return null;
-
-    const onSubmit = async (values: AdminEditUserFormValues) => {
-        setIsSubmitting(true);
-        const result = await updateUserByAdmin(user.uid, values);
-
-        if (result.success) {
-            toast({ title: 'Sucesso!', description: 'Perfil do usuário atualizado.' });
-            onUserUpdate({ ...user, ...values });
-            onOpenChange(false);
-        } else {
-            toast({ variant: 'destructive', title: 'Erro ao Atualizar', description: result.error as string || 'Não foi possível salvar os dados.'});
-        }
-        setIsSubmitting(false);
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>Editar Perfil: {user.name || user.nomeFantasia || user.email}</DialogTitle>
-                    <DialogDescription>
-                        Altere as informações do usuário abaixo. Alterações são salvas permanentemente.
-                    </DialogDescription>
-                </DialogHeader>
-                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 max-h-[70vh] overflow-y-auto px-1">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nome Completo / Fantasia</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl><Input value={user.email} disabled /></FormControl>
-                            <FormDescription>O email não pode ser alterado por um administrador por razões de segurança.</FormDescription>
-                        </FormItem>
-                         <FormField
-                            control={form.control}
-                            name="phone"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Telefone</FormLabel>
-                                    <FormControl><Input {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="role"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Perfil</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="driver">Motorista</SelectItem>
-                                                <SelectItem value="fleet">Frota</SelectItem>
-                                                <SelectItem value="provider">Prestador</SelectItem>
-                                                <SelectItem value="admin">Admin</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="profileStatus"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Status do Perfil</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="approved">Aprovado</SelectItem>
-                                                <SelectItem value="pending_review">Pendente</SelectItem>
-                                                <SelectItem value="rejected">Rejeitado</SelectItem>
-                                                <SelectItem value="incomplete">Incompleto</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="credits"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Créditos</FormLabel>
-                                        <FormControl><Input type="number" {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <DialogFooter className="pt-4">
-                            <DialogClose asChild>
-                                <Button type="button" variant="secondary">
-                                    Cancelar
-                                </Button>
-                            </DialogClose>
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting && <Loader2 className="mr-2 animate-spin"/>}
-                                Salvar Alterações
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
     );
 }
 
@@ -807,3 +641,5 @@ function ServiceDetailsModal({ isOpen, onOpenChange, service, provider }: { isOp
         </Dialog>
     );
 }
+
+    
