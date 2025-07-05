@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 
 import { getCreditPackageById, updateCreditPackage, type PackageFormValues } from '@/app/actions/billing-actions';
 import { packageFormSchema } from '@/lib/billing-schemas';
-import { type CreditPackage } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -53,7 +52,7 @@ export default function EditPackagePage({ params }: { params: { id: string } }) 
                 toast({ title: 'Pacote Atualizado!', description: `O pacote "${values.name}" foi salvo com sucesso.` });
                 router.push('/admin/billing');
             } else {
-                throw new Error(result.error);
+                throw new Error(result.error as string);
             }
         } catch (error) {
             toast({
