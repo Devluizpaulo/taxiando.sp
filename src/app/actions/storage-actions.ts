@@ -1,8 +1,13 @@
 
+
 'use server';
 
 import { adminStorage } from '@/lib/firebase-admin';
 import { nanoid } from 'nanoid';
+
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const ACCEPTED_FILE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg"];
+
 
 export async function uploadFile(formData: FormData, userId: string): Promise<{success: boolean; url?: string; error?: string}> {
     const file = formData.get('file') as File | null;
@@ -16,11 +21,11 @@ export async function uploadFile(formData: FormData, userId: string): Promise<{s
     }
     
     // Basic validation for file size and type
-    if (file.size > 5 * 1024 * 1024) { // 5MB
-        return { success: false, error: 'O arquivo é muito grande (máx 5MB).' };
+    if (file.size > MAX_FILE_SIZE) { 
+        return { success: false, error: `O arquivo é muito grande (máx ${MAX_FILE_SIZE / 1024 / 1024}MB).` };
     }
-    if (!file.type.startsWith('image/')) {
-        return { success: false, error: 'Tipo de arquivo inválido. Apenas imagens são permitidas.' };
+    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+        return { success: false, error: 'Tipo de arquivo inválido. Apenas imagens e áudios são permitidos.' };
     }
 
 

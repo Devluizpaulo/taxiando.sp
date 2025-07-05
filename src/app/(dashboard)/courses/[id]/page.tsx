@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useEffect, useState, useMemo } from 'react';
@@ -16,7 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock, ClipboardCheck, AlertTriangle, RefreshCw, XCircle } from "lucide-react";
+import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock, ClipboardCheck, AlertTriangle, RefreshCw, XCircle, Mic } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { type Course, type Lesson } from "@/lib/types";
@@ -31,6 +32,7 @@ const getLessonIcon = (type: Lesson['type']) => {
         case 'video': return <PlayCircle className="h-5 w-5 text-muted-foreground" />;
         case 'text': return <FileText className="h-5 w-5 text-muted-foreground" />;
         case 'quiz': return <ClipboardCheck className="h-5 w-5 text-muted-foreground" />;
+        case 'audio': return <Mic className="h-5 w-5 text-muted-foreground" />;
     }
 }
 
@@ -153,14 +155,19 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
 }
 
 function LessonItem({ lesson, moduleId, courseId, isCompleted, onLessonCompleted, isLocked }: { lesson: Lesson; moduleId: string; courseId: string; isCompleted: boolean; onLessonCompleted: (lessonId: string) => void; isLocked: boolean }) {
+    const { user } = useAuth();
     const { toast } = useToast();
     const [completingLessonId, setCompletingLessonId] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const handleCompleteLesson = async () => {
+        if (!user) {
+            toast({ variant: "destructive", title: "Erro", description: "Usuário não autenticado." });
+            return;
+        }
         setCompletingLessonId(lesson.id);
         try {
-            await markLessonAsComplete({ courseId, moduleId, lessonId: lesson.id });
+            await markLessonAsComplete({ courseId, moduleId, lessonId: lesson.id, userId: user.uid });
             onLessonCompleted(lesson.id);
             toast({ title: "Aula Concluída!", description: "Seu progresso foi salvo." });
             setIsDialogOpen(false);
@@ -220,6 +227,12 @@ function LessonItem({ lesson, moduleId, courseId, isCompleted, onLessonCompleted
                                 ></iframe>
                             </div>
                         )}
+                        {lesson.type === 'audio' && lesson.content && (
+                            <audio controls className="w-full">
+                                <source src={lesson.content} type="audio/mpeg" />
+                                Seu navegador não suporta o elemento de áudio.
+                            </audio>
+                        )}
                          {lesson.type === 'text' && lesson.content && (
                            <div className="prose prose-sm lg:prose-base max-w-none dark:prose-invert">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -260,6 +273,7 @@ function LessonItem({ lesson, moduleId, courseId, isCompleted, onLessonCompleted
 
 // Quiz Player Component
 function QuizPlayer({ lesson, courseId, moduleId, isCompleted, onLessonCompleted }: { lesson: Lesson; courseId: string; moduleId: string; isCompleted: boolean; onLessonCompleted: (lessonId: string) => void }) {
+    const { user } = useAuth();
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [result, setResult] = useState<{ score: number, total: number, passed: boolean, correctAnswers: Record<string, string> } | null>(null);
     const { toast } = useToast();
@@ -271,6 +285,11 @@ function QuizPlayer({ lesson, courseId, moduleId, isCompleted, onLessonCompleted
     };
 
     const handleSubmit = async () => {
+        if (!user) {
+            toast({ variant: "destructive", title: "Erro", description: "Usuário não autenticado." });
+            return;
+        }
+
         const correctAnswers: Record<string, string> = {};
         let score = 0;
         lesson.questions?.forEach(q => {
@@ -290,7 +309,7 @@ function QuizPlayer({ lesson, courseId, moduleId, isCompleted, onLessonCompleted
         
         if (passed) {
             toast({ title: "Prova Aprovada!", description: "Seu progresso foi salvo." });
-            await markLessonAsComplete({ courseId, moduleId, lessonId: lesson.id });
+            await markLessonAsComplete({ courseId, moduleId, lessonId: lesson.id, userId: user.uid });
             onLessonCompleted(lesson.id);
         } else {
             toast({ variant: "destructive", title: "Não foi desta vez!", description: `Você precisa acertar pelo menos ${lesson.passingScore}% para ser aprovado.` });
