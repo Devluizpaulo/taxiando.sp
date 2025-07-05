@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { adminDB, adminAuth } from '@/lib/firebase-admin';
-import { type UserProfile, type PaymentGatewaySettings, type AnalyticsData, type AdminUser, type Vehicle, type ServiceListing } from '@/lib/types';
+import { type UserProfile, type PaymentGatewaySettings, type GlobalSettings, type AnalyticsData, type AdminUser, type Vehicle, type ServiceListing } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -144,6 +144,87 @@ export async function updateListingStatus(
         return { success: false, error: (error as Error).message };
     }
 }
+
+export async function getGlobalSettings(): Promise<GlobalSettings> {
+    const defaultSettings: GlobalSettings = { 
+        siteName: 'Táxiando SP',
+        logoUrl: '/logo.png',
+        activeGateway: 'mercadoPago',
+        mercadoPagoPublicKey: '',
+        mercadoPagoAccessToken: '',
+        stripePublicKey: '',
+        stripeSecretKey: '',
+        activeThemeName: 'Padrão',
+        themes: [
+            {
+                name: "Padrão",
+                colors: {
+                    '--background': '0 0% 94.1%',
+                    '--foreground': '222.2 84% 4.9%',
+                    '--card': '0 0% 100%',
+                    '--primary': '55 100% 50%',
+                    '--primary-foreground': '222.2 84% 4.9%',
+                    '--secondary': '0 0% 96.1%',
+                    '--accent': '215 100% 33.5%',
+                    '--destructive': '0 84.2% 60.2%',
+                    '--border': '0 0% 89.8%',
+                    '--input': '0 0% 89.8%',
+                    '--ring': '215 100% 33.5%',
+                }
+            }
+        ]
+    };
+
+    try {
+        const docRef = adminDB.collection('settings').doc('global');
+        const docSnap = await docRef.get();
+
+        if (docSnap.exists) {
+            return docSnap.data() as GlobalSettings;
+        }
+        
+        // If doc doesn't exist, return default
+        return defaultSettings;
+    } catch (error) {
+        // If the SDK is not initialized, gracefully return default settings to allow app to build.
+        if ((error as Error).message.includes('Firebase Admin SDK not initialized')) {
+            console.warn("Could not fetch global settings because Admin SDK is not initialized. Returning default settings.");
+            return defaultSettings;
+        }
+        // For other errors, re-throw to indicate a real problem during runtime.
+        console.error("Error fetching global settings:", error);
+        throw error;
+    }
+}
+
+
+export async function updateGlobalSettings(data: GlobalSettings) {
+    try {
+        const docRef = adminDB.collection('settings').doc('global');
+        await docRef.set(data, { merge: true });
+
+        revalidatePath('/', 'layout');
+        return { success: true, message: 'Configurações salvas com sucesso!' };
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function getPublicSettings(): Promise<{siteName: string, logoUrl: string}> {
+    try {
+        const settings = await getGlobalSettings();
+        return {
+            siteName: settings.siteName,
+            logoUrl: settings.logoUrl,
+        };
+    } catch (error) {
+        return {
+            siteName: 'Táxiando SP',
+            logoUrl: '/logo.png',
+        }
+    }
+}
+
 
 export async function getPaymentSettings(): Promise<PaymentGatewaySettings> {
     const docRef = adminDB.collection('settings').doc('payment');

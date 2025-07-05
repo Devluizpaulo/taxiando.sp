@@ -409,3 +409,32 @@ export interface UserBookProgress {
   totalPages: number;
   lastReadAt: Timestamp | string;
 }
+
+export interface Theme {
+  name: string;
+  colors: {
+    '--background': string;
+    '--foreground': string;
+    '--card': string;
+    '--primary': string;
+    '--primary-foreground': string;
+    '--secondary': string;
+    '--accent': string;
+    '--destructive': string;
+    '--border': string;
+    '--input': string;
+    '--ring': string;
+  }
+}
+
+export interface GlobalSettings {
+  siteName: string;
+  logoUrl: string;
+  activeGateway?: 'mercadoPago' | 'stripe';
+  mercadoPagoPublicKey?: string;
+  mercadoPagoAccessToken?: string;
+  stripePublicKey?: string;
+  stripeSecretKey?: string;
+  activeThemeName: string;
+  themes: Theme[];
+}

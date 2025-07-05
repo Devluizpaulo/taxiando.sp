@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2, Eye, LogIn, UserCheck, Search, Trash2, FilePen, Sparkles, Building } from "lucide-react";
+import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2, Eye, LogIn, UserCheck, Search, Trash2, FilePen, Sparkles, Building, Settings } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -496,14 +496,14 @@ export function AdminDashboardClient() {
                         <CardHeader className="flex flex-row items-center justify-between">
                              <div>
                                 <CardTitle>Configurações da Plataforma</CardTitle>
-                                <CardDescription>Acesse as configurações de pagamento e outras opções.</CardDescription>
+                                <CardDescription>Acesse as configurações de pagamento, temas e outras opções.</CardDescription>
                             </div>
                             <Button asChild>
-                                <Link href="/admin/settings/payments">Gerenciar Configurações <ArrowRight className="ml-2"/></Link>
+                                <Link href="/admin/settings">Gerenciar Configurações <ArrowRight className="ml-2"/></Link>
                             </Button>
                         </CardHeader>
                         <CardContent>
-                            <p>Clique no botão para configurar o gateway de pagamento (Mercado Pago) e outras definições da plataforma.</p>
+                            <p>Clique no botão para gerenciar gateways de pagamento, aparência do site e outras definições.</p>
                         </CardContent>
                     </Card>
                 </TabsContent>

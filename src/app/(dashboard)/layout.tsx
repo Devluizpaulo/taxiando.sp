@@ -29,12 +29,18 @@ import React from "react";
 import { LoadingScreen } from "@/components/loading-screen";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NotificationBell } from "@/components/notification-bell";
+import { getPublicSettings } from "../actions/admin-actions";
 
 
 function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
   const { isMobile, setOpenMobile } = useSidebar();
+  const [siteSettings, setSiteSettings] = useState<{siteName: string, logoUrl: string} | null>(null);
+
+  useEffect(() => {
+    getPublicSettings().then(setSiteSettings);
+  }, []);
 
   React.useEffect(() => {
     if (!loading && !user) {
@@ -66,7 +72,11 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
       <Sidebar>
         <SidebarHeader className="border-b border-sidebar-border p-4">
             <Link href="/dashboard" onClick={handleMenuClick}>
-              <Image src="/logo.png" alt="Táxiando SP Logo" width={150} height={142} className="h-12 w-auto rounded-lg shadow-md" />
+              {siteSettings ? (
+                  <Image src={siteSettings.logoUrl} alt={siteSettings.siteName} width={150} height={42} className="h-12 w-auto rounded-lg shadow-md" />
+              ) : (
+                  <Skeleton className="h-12 w-36" />
+              )}
             </Link>
         </SidebarHeader>
         <SidebarContent>

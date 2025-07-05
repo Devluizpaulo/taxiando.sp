@@ -9,9 +9,17 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getPublicSettings } from "@/app/actions/admin-actions";
+import { Skeleton } from "../ui/skeleton";
 
 export function PublicHeader() {
   const pathname = usePathname();
+  const [siteSettings, setSiteSettings] = useState<{siteName: string, logoUrl: string} | null>(null);
+
+  useEffect(() => {
+    getPublicSettings().then(setSiteSettings);
+  }, []);
 
   const navLinks = [
     { href: "/", label: "Início" },
@@ -27,7 +35,11 @@ export function PublicHeader() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
       <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="Táxiando SP Logo" width={150} height={142} className="h-16 w-auto rounded-lg shadow-md" priority />
+            {siteSettings ? (
+                <Image src={siteSettings.logoUrl} alt={siteSettings.siteName} width={150} height={42} className="h-16 w-auto rounded-lg" priority />
+            ) : (
+                <Skeleton className="h-12 w-36" />
+            )}
         </Link>
         <nav className="hidden items-center gap-6 md:flex">
           {navLinks.map((link) => (

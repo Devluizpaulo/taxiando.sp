@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { CookieConsentBanner } from '@/components/cookie-consent-banner';
+import { getGlobalSettings } from './actions/admin-actions';
 
 export const metadata: Metadata = {
   title: 'Táxiando SP',
@@ -25,13 +26,25 @@ const poppins = Poppins({
   display: 'swap',
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const settings = await getGlobalSettings();
+  const activeTheme = settings.themes?.find(t => t.name === settings.activeThemeName) || settings.themes?.[0];
+
+  const themeVariables = activeTheme 
+    ? Object.entries(activeTheme.colors)
+      .map(([key, value]) => `${key}: ${value};`)
+      .join('\n')
+    : '';
+
   return (
     <html lang="pt-BR" suppressHydrationWarning>
+       <head>
+        {themeVariables && <style>{`:root { ${themeVariables} }`}</style>}
+      </head>
       <body className={cn(
         "min-h-screen bg-background font-body antialiased",
         ptSans.variable,
