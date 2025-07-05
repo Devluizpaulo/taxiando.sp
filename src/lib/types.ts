@@ -122,7 +122,7 @@ export interface QuizQuestion {
 export interface Lesson {
   id: string;
   title: string;
-  type: 'video' | 'text' | 'quiz';
+  type: 'video' | 'text' | 'quiz' | 'audio';
   duration: number; // in minutes
   content?: string;
   materials?: SupportingMaterial[];

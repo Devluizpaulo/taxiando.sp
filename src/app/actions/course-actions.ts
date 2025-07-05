@@ -1,19 +1,22 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, deleteDoc, collection, query, orderBy } from 'firebase/firestore';
-import { type Course, type Module } from '@/lib/types';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { type Course } from '@/lib/types';
 import { adminDB } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type CourseFormValues } from '@/lib/course-schemas';
 import { nanoid } from 'nanoid';
+import { uploadFile } from './storage-actions';
 
 interface MarkLessonAsCompleteParams {
     courseId: string;
     moduleId: string;
     lessonId: string;
+    userId: string;
 }
 
 export async function createCourse(values: { title: string; description: string; category: string }) {
@@ -46,12 +49,10 @@ export async function createCourse(values: { title: string; description: string;
 }
 
 
-export async function markLessonAsComplete({ courseId, moduleId, lessonId }: MarkLessonAsCompleteParams) {
-    const { currentUser } = auth;
-    if (!currentUser) {
+export async function markLessonAsComplete({ courseId, moduleId, lessonId, userId }: MarkLessonAsCompleteParams) {
+    if (!userId) {
         throw new Error('Usuário não autenticado.');
     }
-    const userId = currentUser.uid;
 
     try {
         // 1. Update user's progress for the course
@@ -158,15 +159,44 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
     }
 }
 
-export async function updateCourse(courseId: string, values: CourseFormValues) {
-    if (!courseId || !values) {
-        return { success: false, error: 'Dados inválidos.' };
+export async function updateCourse(courseId: string, values: CourseFormValues, userId: string) {
+    if (!courseId || !values || !userId) {
+        return { success: false, error: 'Dados inválidos ou usuário não autenticado.' };
     }
     try {
         let totalLessons = 0;
         let totalDuration = 0;
 
-        values.modules.forEach(module => {
+        // Handle file uploads first
+        const modulesWithUploads = await Promise.all(
+            values.modules.map(async (module) => {
+                const lessonsWithUploads = await Promise.all(
+                    module.lessons.map(async (lesson) => {
+                        if (lesson.audioFile instanceof File) {
+                            const formData = new FormData();
+                            formData.append('file', lesson.audioFile);
+                            const uploadResult = await uploadFile(formData, userId);
+
+                            if (uploadResult.success && uploadResult.url) {
+                                // Create a new lesson object without audioFile and with the new URL
+                                const { audioFile, ...restOfLesson } = lesson;
+                                return { ...restOfLesson, content: uploadResult.url };
+                            } else {
+                                throw new Error(uploadResult.error || 'Falha no upload do áudio.');
+                            }
+                        }
+                        // If no file, return lesson as is (removing any stale file objects)
+                        const { audioFile, ...restOfLesson } = lesson;
+                        return restOfLesson;
+                    })
+                );
+                return { ...module, lessons: lessonsWithUploads };
+            })
+        );
+        
+        const finalModules = modulesWithUploads;
+
+        finalModules.forEach(module => {
             module.lessons.forEach(lesson => {
                 totalLessons++;
                 totalDuration += Number(lesson.duration) || 0;
@@ -175,6 +205,7 @@ export async function updateCourse(courseId: string, values: CourseFormValues) {
 
         const courseData = {
             ...values,
+            modules: finalModules,
             totalLessons,
             totalDuration,
         };
