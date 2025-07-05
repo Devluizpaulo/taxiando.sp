@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { getCouponById, updateCoupon, type CouponFormValues } from '@/app/actions/marketing-actions';
+import { couponFormSchema } from '@/lib/marketing-schemas';
 import { type Coupon } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
@@ -18,16 +19,6 @@ import { Loader2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { DatePicker } from '@/components/ui/datepicker';
 import { LoadingScreen } from '@/components/loading-screen';
-import * as z from 'zod';
-
-const couponFormSchema = z.object({
-  code: z.string().min(3, "O código é obrigatório.").max(20, "Máximo de 20 caracteres.").transform(value => value.toUpperCase()),
-  discountType: z.enum(['percentage', 'fixed'], { required_error: "O tipo de desconto é obrigatório."}),
-  discountValue: z.coerce.number().min(0.01, "O valor do desconto é obrigatório."),
-  maxUses: z.coerce.number().optional(),
-  expiresAt: z.date().optional(),
-  isActive: z.boolean().default(true),
-});
 
 export default function EditCouponPage({ params }: { params: { id: string } }) {
     const router = useRouter();

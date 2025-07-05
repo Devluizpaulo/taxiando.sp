@@ -4,7 +4,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -16,18 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { DatePicker } from '@/components/ui/datepicker';
-import { createCoupon } from '@/app/actions/marketing-actions';
-
-const couponFormSchema = z.object({
-  code: z.string().min(3, "O código é obrigatório.").max(20, "Máximo de 20 caracteres.").transform(value => value.toUpperCase()),
-  discountType: z.enum(['percentage', 'fixed'], { required_error: "O tipo de desconto é obrigatório."}),
-  discountValue: z.coerce.number().min(0.01, "O valor do desconto é obrigatório."),
-  maxUses: z.coerce.number().optional(),
-  expiresAt: z.date().optional(),
-  isActive: z.boolean().default(true),
-});
-
-type CouponFormValues = z.infer<typeof couponFormSchema>;
+import { createCoupon, type CouponFormValues } from '@/app/actions/marketing-actions';
+import { couponFormSchema } from '@/lib/marketing-schemas';
 
 export default function CreateCouponPage() {
     const router = useRouter();

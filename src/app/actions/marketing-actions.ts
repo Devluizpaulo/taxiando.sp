@@ -6,21 +6,12 @@ import { adminDB, Timestamp as AdminTimestamp } from '@/lib/firebase-admin';
 import admin from 'firebase-admin';
 import { type Coupon, type Notification, type UserProfile, type Partner } from '@/lib/types';
 import { auth } from '@/lib/firebase';
-import * as z from 'zod';
+import { uploadFile } from './storage-actions';
+import { uploadToGallery } from './gallery-actions';
+import type { PartnerFormValues, CouponFormValues } from '@/lib/marketing-schemas';
 
 
 // --- Coupon Actions ---
-
-const couponFormSchema = z.object({
-  code: z.string().min(3, "O código é obrigatório.").max(20, "Máximo de 20 caracteres.").transform(value => value.toUpperCase()),
-  discountType: z.enum(['percentage', 'fixed'], { required_error: "O tipo de desconto é obrigatório."}),
-  discountValue: z.coerce.number().min(0.01, "O valor do desconto é obrigatório."),
-  maxUses: z.coerce.number().optional(),
-  expiresAt: z.date().optional(),
-  isActive: z.boolean().default(true),
-});
-export type CouponFormValues = z.infer<typeof couponFormSchema>;
-
 
 export async function createCoupon(couponData: CouponFormValues) {
     try {
@@ -118,31 +109,49 @@ export async function getAllCoupons(): Promise<Coupon[]> {
 
 // --- Partner/Sponsor Actions ---
 
-const partnerFormSchema = z.object({
-  name: z.string().min(3, "O nome do parceiro é obrigatório."),
-  imageUrl: z.string().url("A URL da imagem é obrigatória e deve ser válida."),
-  linkUrl: z.string().url("A URL de destino é obrigatória e deve ser válida."),
-  size: z.enum(['small', 'medium', 'large'], { required_error: "O tamanho do banner é obrigatório."}),
-  isActive: z.boolean().default(true),
-});
-export type PartnerFormValues = z.infer<typeof partnerFormSchema>;
-
-
-export async function createPartner(partnerData: PartnerFormValues) {
-    try {
-        const validation = partnerFormSchema.safeParse(partnerData);
-        if (!validation.success) return { success: false, error: 'Dados inválidos.' };
-        
-        await adminDB.collection('partners').add({
-            ...partnerData,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        revalidatePath('/admin/marketing/partners');
-        revalidatePath('/'); // Revalidate home to show new partner
-        return { success: true };
-    } catch (error) {
-        return { success: false, error: (error as Error).message };
+export async function createPartner(partnerData: PartnerFormValues, userId: string, userName: string) {
+    if (!userId || !userName) {
+        return { success: false, error: "Usuário não autenticado." };
     }
+    const validation = partnerFormSchema.safeParse(partnerData);
+    if (!validation.success) return { success: false, error: 'Dados inválidos.' };
+    
+    const { imageFile, ...restOfData } = validation.data;
+    let finalImageUrl = restOfData.imageUrl;
+
+    if (imageFile) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        const uploadResult = await uploadFile(formData, userId);
+
+        if (uploadResult.success && uploadResult.url) {
+            finalImageUrl = uploadResult.url;
+            // Add to public gallery since it's an admin uploading
+            await uploadToGallery({
+                url: finalImageUrl,
+                name: imageFile.name,
+                category: 'Banners',
+                ownerId: userId,
+                ownerName: userName,
+            }, true);
+        } else {
+            return { success: false, error: uploadResult.error || 'Falha no upload do banner.' };
+        }
+    }
+
+    if (!finalImageUrl) {
+        return { success: false, error: 'A imagem do banner é obrigatória.' };
+    }
+
+    await adminDB.collection('partners').add({
+        ...restOfData,
+        imageUrl: finalImageUrl,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    
+    revalidatePath('/admin/marketing/partners');
+    revalidatePath('/');
+    return { success: true };
 }
 
 export async function getPartnerById(id: string): Promise<Partner | null> {
@@ -162,21 +171,48 @@ export async function getPartnerById(id: string): Promise<Partner | null> {
     }
 }
 
-export async function updatePartner(id: string, partnerData: PartnerFormValues) {
-    try {
-        const validation = partnerFormSchema.safeParse(partnerData);
-        if (!validation.success) return { success: false, error: 'Dados inválidos.' };
+export async function updatePartner(id: string, partnerData: PartnerFormValues, userId: string, userName: string) {
+    if (!id) return { success: false, error: 'ID do parceiro não fornecido.' };
+    if (!userId || !userName) return { success: false, error: "Usuário não autenticado." };
+    
+    const validation = partnerFormSchema.safeParse(partnerData);
+    if (!validation.success) return { success: false, error: 'Dados inválidos.' };
 
-        await adminDB.collection('partners').doc(id).update({
-            ...partnerData,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        revalidatePath('/admin/marketing/partners');
-        revalidatePath('/');
-        return { success: true };
-    } catch (error) {
-        return { success: false, error: (error as Error).message };
+    const { imageFile, ...restOfData } = validation.data;
+    let finalImageUrl = restOfData.imageUrl;
+
+    if (imageFile) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        const uploadResult = await uploadFile(formData, userId);
+
+        if (uploadResult.success && uploadResult.url) {
+            finalImageUrl = uploadResult.url;
+            await uploadToGallery({
+                url: finalImageUrl,
+                name: imageFile.name,
+                category: 'Banners',
+                ownerId: userId,
+                ownerName: userName,
+            }, true);
+        } else {
+            return { success: false, error: uploadResult.error || 'Falha no upload do banner.' };
+        }
     }
+
+    if (!finalImageUrl) {
+        return { success: false, error: 'A imagem do banner é obrigatória.' };
+    }
+
+    await adminDB.collection('partners').doc(id).update({
+        ...restOfData,
+        imageUrl: finalImageUrl,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    revalidatePath('/admin/marketing/partners');
+    revalidatePath('/');
+    return { success: true };
 }
 
 export async function updatePartnerStatus(partnerId: string, newStatus: boolean) {
