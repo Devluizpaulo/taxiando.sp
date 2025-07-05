@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { adminDB, adminAuth } from '@/lib/firebase-admin';
-import { type UserProfile, type PaymentGatewaySettings, type GlobalSettings, type AnalyticsData, type AdminUser, type Vehicle, type ServiceListing } from '@/lib/types';
+import { type UserProfile, type GlobalSettings, type AnalyticsData, type AdminUser, type Vehicle, type ServiceListing } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -94,7 +94,6 @@ export async function deleteUserByAdmin(userId: string) {
     }
     
     try {
-        // Wrap auth and db deletion in a promise to run them in parallel
         await Promise.all([
             adminAuth.deleteUser(userId),
             adminDB.collection('users').doc(userId).delete()
@@ -103,8 +102,6 @@ export async function deleteUserByAdmin(userId: string) {
         revalidatePath('/admin');
         return { success: true };
     } catch (error) {
-        // If user is already deleted from Auth, but not DB, it might throw.
-        // We can try to delete from DB anyway.
         try {
             await adminDB.collection('users').doc(userId).delete();
             revalidatePath('/admin');
@@ -127,11 +124,9 @@ export async function updateListingStatus(
         let dataToUpdate: { [key: string]: any } = {};
 
         if (collectionName === 'services') {
-             // For services, 'Aprovado' sets the main status to 'Ativo'
              const serviceStatus = newStatus === 'Aprovado' ? 'Ativo' : 'Rejeitado';
              dataToUpdate = { status: serviceStatus };
         } else if (collectionName === 'vehicles') {
-            // For vehicles, we update the specific moderation status field
             dataToUpdate = { moderationStatus: newStatus };
         } else {
              return { success: false, error: "Coleção inválida." };
@@ -152,27 +147,46 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
     const defaultSettings: GlobalSettings = { 
         siteName: 'Táxiando SP',
         logoUrl: '/logo.png',
+        contactEmail: 'contato@taxiando.com',
+        contactPhone: '(11) 99999-9999',
         activeGateway: 'mercadoPago',
         mercadoPagoPublicKey: '',
         mercadoPagoAccessToken: '',
         stripePublicKey: '',
         stripeSecretKey: '',
         activeThemeName: 'Padrão',
+        seo: {
+            metaDescription: 'A plataforma completa para o profissional do volante em São Paulo. Encontre veículos, cursos e uma comunidade para acelerar seus resultados.',
+            metaKeywords: 'táxi, sp, taxista, frota, aluguel de táxi, cursos para taxistas',
+        },
+        homepage: {
+            showAgenda: true,
+            showTestimonials: true,
+            showPartners: true,
+        },
+        user: {
+            allowPublicRegistration: true,
+            defaultNewUserCredits: 0,
+        },
         themes: [
             {
                 name: "Padrão",
                 colors: {
-                    '--background': '0 0% 94.1%',
-                    '--foreground': '222.2 84% 4.9%',
-                    '--card': '0 0% 100%',
-                    '--primary': '55 100% 50%',
-                    '--primary-foreground': '222.2 84% 4.9%',
-                    '--secondary': '0 0% 96.1%',
-                    '--accent': '215 100% 33.5%',
-                    '--destructive': '0 84.2% 60.2%',
-                    '--border': '0 0% 89.8%',
-                    '--input': '0 0% 89.8%',
-                    '--ring': '215 100% 33.5%',
+                    '--background': '0 0% 94.1%', '--foreground': '222.2 84% 4.9%',
+                    '--card': '0 0% 100%', '--primary': '55 100% 50%',
+                    '--primary-foreground': '222.2 84% 4.9%', '--secondary': '0 0% 96.1%',
+                    '--accent': '215 100% 33.5%', '--destructive': '0 84.2% 60.2%',
+                    '--border': '0 0% 89.8%', '--input': '0 0% 89.8%', '--ring': '215 100% 33.5%',
+                }
+            },
+            {
+                name: "Natalino",
+                colors: {
+                    '--background': '0 0% 94.1%', '--foreground': '222.2 84% 4.9%',
+                    '--card': '0 0% 100%', '--primary': '0 84.2% 60.2%',
+                    '--primary-foreground': '0 0% 98%', '--secondary': '0 0% 96.1%',
+                    '--accent': '120 60% 30%', '--destructive': '0 84.2% 60.2%',
+                    '--border': '0 0% 89.8%', '--input': '0 0% 89.8%', '--ring': '120 60% 30%',
                 }
             }
         ]
@@ -183,19 +197,25 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
         const docSnap = await docRef.get();
 
         if (docSnap.exists) {
-            return docSnap.data() as GlobalSettings;
+            // Merge defaults with existing data to handle newly added settings gracefully
+            const existingData = docSnap.data();
+            return {
+                ...defaultSettings,
+                ...existingData,
+                seo: { ...defaultSettings.seo, ...existingData?.seo },
+                homepage: { ...defaultSettings.homepage, ...existingData?.homepage },
+                user: { ...defaultSettings.user, ...existingData?.user },
+                themes: existingData?.themes && existingData.themes.length > 0 ? existingData.themes : defaultSettings.themes,
+            } as GlobalSettings;
         }
         
-        // If doc doesn't exist, create it with default values
         await docRef.set(defaultSettings);
         return defaultSettings;
     } catch (error) {
-        // If the SDK is not initialized, gracefully return default settings to allow app to build.
         if ((error as Error).message.includes('Firebase Admin SDK not initialized')) {
             console.warn("Could not fetch global settings because Admin SDK is not initialized. Returning default settings.");
             return defaultSettings;
         }
-        // For other errors, re-throw to indicate a real problem during runtime.
         console.error("Error fetching global settings:", error);
         throw error;
     }
@@ -214,17 +234,34 @@ export async function updateGlobalSettings(data: GlobalSettings) {
     }
 }
 
-export async function getPublicSettings(): Promise<{siteName: string, logoUrl: string}> {
-    try {
+export async function getPublicSettings() {
+     try {
         const settings = await getGlobalSettings();
         return {
             siteName: settings.siteName,
             logoUrl: settings.logoUrl,
+            seo: settings.seo,
+            homepage: settings.homepage,
+            user: settings.user,
         };
     } catch (error) {
+        // Return a default structure if there's an error
         return {
             siteName: 'Táxiando SP',
             logoUrl: '/logo.png',
+            seo: {
+                metaDescription: 'A plataforma completa para o profissional do volante em São Paulo.',
+                metaKeywords: 'táxi, sp, taxista, frota',
+            },
+            homepage: {
+                showAgenda: true,
+                showTestimonials: true,
+                showPartners: true,
+            },
+            user: {
+                allowPublicRegistration: true,
+                defaultNewUserCredits: 0,
+            }
         }
     }
 }
@@ -244,17 +281,6 @@ export async function getPaymentSettings(): Promise<PaymentGatewaySettings> {
     };
 }
 
-export async function updatePaymentSettings(data: PaymentGatewaySettings) {
-    try {
-        const docRef = adminDB.collection('settings').doc('payment');
-        await docRef.set(data, { merge: true });
-
-        revalidatePath('/admin/settings/payments');
-        return { success: true, message: 'Configurações salvas com sucesso!' };
-    } catch (error) {
-        return { success: false, error: (error as Error).message };
-    }
-}
 
 export async function ensureInitialData() {
     try {
@@ -315,7 +341,6 @@ export async function getAdminDashboardAnalytics(): Promise<AnalyticsData> {
         return analytics;
 
     } catch (error) {
-        // Fail silently and return an empty object. The dashboard will show 0 for these values.
         return {};
     }
 }
@@ -323,7 +348,6 @@ export async function getAdminDashboardAnalytics(): Promise<AnalyticsData> {
 const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
 
 export async function getAdminDashboardData() {
-    // Ensure analytics documents exist before trying to read them
     await ensureInitialData();
 
     let usersData: AdminUser[] = [];
@@ -345,29 +369,21 @@ export async function getAdminDashboardData() {
                 lastNotificationCheck: toISO(data.lastNotificationCheck),
             } as AdminUser;
         });
-    } catch (error) {
-        // Fail silently
-    }
+    } catch (error) {}
     
     try {
         const vehiclesSnapshot = await adminDB.collection('vehicles').where('moderationStatus', '==', 'Pendente').get();
         vehiclesData = vehiclesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
-    } catch (error) {
-        // Fail silently
-    }
+    } catch (error) {}
     
     try {
         const servicesSnapshot = await adminDB.collection('services').where('status', '==', 'Pendente').get();
         servicesData = servicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceListing));
-    } catch (error) {
-       // Fail silently
-    }
+    } catch (error) {}
 
     try {
         analyticsData = await getAdminDashboardAnalytics();
-    } catch (analyticsError) {
-        // Fail silently
-    }
+    } catch (analyticsError) {}
 
     const userGrowthData: { month: string; total: number; }[] = [];
     const months = Array.from({ length: 12 }, (_, i) => subMonths(new Date(), i)).reverse();

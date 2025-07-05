@@ -13,16 +13,17 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, Lock, ExternalLink, Replace, PlusCircle, Trash2, Palette } from 'lucide-react';
+import { Loader2, KeyRound, Lock, Palette, PlusCircle, Trash2, Home, Users, Search, Mail } from 'lucide-react';
 import { getGlobalSettings, updateGlobalSettings } from '@/app/actions/admin-actions';
-import { type GlobalSettings } from '@/lib/types';
+import { type GlobalSettings, type Theme } from '@/lib/types';
 import { LoadingScreen } from '@/components/loading-screen';
-import Link from 'next/link';
-import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const themeSchema = z.object({
+    id: z.string().optional(),
     name: z.string().min(1, "O nome do tema é obrigatório."),
     colors: z.object({
         '--background': z.string().min(1),
@@ -42,13 +43,34 @@ const themeSchema = z.object({
 const settingsFormSchema = z.object({
   siteName: z.string().min(3, "O nome do site é obrigatório."),
   logoUrl: z.string().url("URL do logo inválida.").optional().or(z.literal('')),
+  
+  contactEmail: z.string().email("Email de contato inválido.").optional().or(z.literal('')),
+  contactPhone: z.string().optional(),
+  
   activeGateway: z.enum(['mercadoPago', 'stripe']).optional(),
   mercadoPagoPublicKey: z.string().optional(),
   mercadoPagoAccessToken: z.string().optional(),
   stripePublicKey: z.string().optional(),
   stripeSecretKey: z.string().optional(),
+  
   activeThemeName: z.string().min(1, "É necessário selecionar um tema ativo."),
   themes: z.array(themeSchema).min(1, "É necessário ter pelo menos um tema."),
+
+  seo: z.object({
+    metaDescription: z.string().optional(),
+    metaKeywords: z.string().optional(),
+  }).optional(),
+  
+  homepage: z.object({
+    showAgenda: z.boolean().default(true),
+    showTestimonials: z.boolean().default(true),
+    showPartners: z.boolean().default(true),
+  }).optional(),
+
+  user: z.object({
+    allowPublicRegistration: z.boolean().default(true),
+    defaultNewUserCredits: z.coerce.number().min(0).default(0),
+  }).optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
@@ -90,7 +112,6 @@ export default function SettingsPage() {
 
             if (result.success) {
                  toast({ title: 'Sucesso!', description: result.message });
-                 // A quick reload to see theme changes applied immediately
                  setTimeout(() => window.location.reload(), 1000);
             } else {
                  toast({ variant: 'destructive', title: 'Erro ao Salvar', description: result.error });
@@ -134,15 +155,18 @@ export default function SettingsPage() {
                 </div>
 
                 <Tabs defaultValue="general">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
                         <TabsTrigger value="general">Geral</TabsTrigger>
-                        <TabsTrigger value="themes">Temas</TabsTrigger>
-                        <TabsTrigger value="payments">Pagamentos</TabsTrigger>
+                        <TabsTrigger value="themes"><Palette/> Temas</TabsTrigger>
+                        <TabsTrigger value="homepage"><Home/> Homepage</TabsTrigger>
+                        <TabsTrigger value="payments"><KeyRound/> Pagamentos</TabsTrigger>
+                        <TabsTrigger value="users"><Users/> Usuários</TabsTrigger>
+                        <TabsTrigger value="seo"><Search/> SEO</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="general" className="mt-6">
                         <Card>
-                            <CardHeader><CardTitle>Informações Gerais</CardTitle><CardDescription>Configure o nome e o logo do site.</CardDescription></CardHeader>
+                            <CardHeader><CardTitle>Informações Gerais</CardTitle><CardDescription>Configure o nome, logo e contatos públicos do site.</CardDescription></CardHeader>
                             <CardContent className="space-y-6">
                                 <FormField control={form.control} name="siteName" render={({ field }) => (
                                     <FormItem><FormLabel>Nome do Site</FormLabel><FormControl><Input {...field} placeholder="Táxiando SP" /></FormControl><FormMessage /></FormItem>
@@ -150,6 +174,14 @@ export default function SettingsPage() {
                                  <FormField control={form.control} name="logoUrl" render={({ field }) => (
                                     <FormItem><FormLabel>URL do Logo</FormLabel><FormControl><Input {...field} placeholder="/logo.png" /></FormControl><FormDescription>Use um caminho local (ex: /logo.png) ou uma URL completa.</FormDescription><FormMessage /></FormItem>
                                 )}/>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+                                     <FormField control={form.control} name="contactEmail" render={({ field }) => (
+                                        <FormItem><FormLabel>Email Público de Contato</FormLabel><FormControl><Input {...field} placeholder="contato@taxiando.com" /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                     <FormField control={form.control} name="contactPhone" render={({ field }) => (
+                                        <FormItem><FormLabel>Telefone Público de Contato</FormLabel><FormControl><Input {...field} placeholder="(11) 9..." /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -160,7 +192,7 @@ export default function SettingsPage() {
                             <CardContent className="space-y-6">
                                 <FormField control={form.control} name="activeThemeName" render={({ field }) => (
                                     <FormItem><FormLabel>Tema Ativo</FormLabel>
-                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl><SelectTrigger><SelectValue placeholder="Selecione o tema ativo..." /></SelectTrigger></FormControl>
                                             <SelectContent>{themeFields.map((theme, index) => (<SelectItem key={theme.id} value={form.getValues(`themes.${index}.name`)}>{form.getValues(`themes.${index}.name`)}</SelectItem>))}</SelectContent>
                                         </Select>
@@ -181,7 +213,7 @@ export default function SettingsPage() {
                                                     <FormField
                                                         key={`${field.id}-${colorKey}`}
                                                         control={form.control}
-                                                        name={`themes.${index}.colors.${colorKey as keyof typeof field.colors}`}
+                                                        name={`themes.${index}.colors.${colorKey as keyof Theme['colors']}`}
                                                         render={({ field: colorField }) => (
                                                             <FormItem>
                                                                 <FormLabel className="text-xs capitalize">{colorKey.replace('--', '')}</FormLabel>
@@ -201,6 +233,32 @@ export default function SettingsPage() {
                             </CardContent>
                         </Card>
                     </TabsContent>
+                    
+                    <TabsContent value="homepage" className="mt-6">
+                        <Card>
+                             <CardHeader><CardTitle>Visibilidade da Homepage</CardTitle><CardDescription>Controle quais seções são exibidas na página inicial.</CardDescription></CardHeader>
+                             <CardContent className="space-y-4">
+                                <FormField control={form.control} name="homepage.showAgenda" render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5"><FormLabel>Mostrar Agenda Cultural?</FormLabel></div>
+                                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                    </FormItem>
+                                )}/>
+                                <FormField control={form.control} name="homepage.showTestimonials" render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5"><FormLabel>Mostrar Depoimentos?</FormLabel></div>
+                                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                    </FormItem>
+                                )}/>
+                                <FormField control={form.control} name="homepage.showPartners" render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5"><FormLabel>Mostrar Parceiros/Patrocinadores?</FormLabel></div>
+                                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                    </FormItem>
+                                )}/>
+                             </CardContent>
+                        </Card>
+                    </TabsContent>
 
                     <TabsContent value="payments" className="mt-6">
                         <Card>
@@ -208,7 +266,7 @@ export default function SettingsPage() {
                             <CardContent className="space-y-6">
                                <FormField control={form.control} name="activeGateway" render={({ field }) => (
                                     <FormItem><FormLabel>Gateway Ativo</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl><SelectTrigger className="w-full md:w-1/2"><SelectValue placeholder="Selecione o gateway..." /></SelectTrigger></FormControl>
                                             <SelectContent><SelectItem value="mercadoPago">Mercado Pago</SelectItem><SelectItem value="stripe">Stripe</SelectItem></SelectContent>
                                         </Select>
@@ -233,6 +291,43 @@ export default function SettingsPage() {
                             </CardContent>
                         </Card>
                     </TabsContent>
+                    
+                    <TabsContent value="users" className="mt-6">
+                        <Card>
+                            <CardHeader><CardTitle>Configurações de Usuários</CardTitle><CardDescription>Gerencie o registro e os padrões para novos usuários.</CardDescription></CardHeader>
+                            <CardContent className="space-y-6">
+                                 <FormField control={form.control} name="user.allowPublicRegistration" render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5"><FormLabel>Permitir registro público?</FormLabel><FormDescription>Se desativado, novos usuários não poderão se cadastrar.</FormDescription></div>
+                                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                    </FormItem>
+                                )}/>
+                                 <FormField control={form.control} name="user.defaultNewUserCredits" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Créditos Iniciais para Novos Usuários</FormLabel>
+                                        <FormControl><Input type="number" {...field} /></FormControl>
+                                        <FormDescription>A quantidade de créditos que cada novo usuário recebe ao se cadastrar.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    
+                     <TabsContent value="seo" className="mt-6">
+                        <Card>
+                            <CardHeader><CardTitle>SEO (Otimização para Buscadores)</CardTitle><CardDescription>Melhore como seu site aparece no Google e outros buscadores.</CardDescription></CardHeader>
+                            <CardContent className="space-y-6">
+                                <FormField control={form.control} name="seo.metaDescription" render={({ field }) => (
+                                    <FormItem><FormLabel>Meta Description</FormLabel><FormControl><Textarea {...field} placeholder="Descreva sua plataforma em até 160 caracteres." /></FormControl><FormDescription>Esta descrição aparece nos resultados de busca.</FormDescription><FormMessage /></FormItem>
+                                )}/>
+                                 <FormField control={form.control} name="seo.metaKeywords" render={({ field }) => (
+                                    <FormItem><FormLabel>Palavras-chave</FormLabel><FormControl><Input {...field} placeholder="táxi, sp, motorista, frota, cursos" /></FormControl><FormDescription>Separe as palavras-chave por vírgula.</FormDescription><FormMessage /></FormItem>
+                                )}/>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
                 </Tabs>
 
 

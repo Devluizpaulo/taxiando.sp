@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, ResolvingMetadata } from 'next';
 import { PT_Sans, Poppins } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -7,10 +7,16 @@ import { AuthProvider } from '@/components/providers/auth-provider';
 import { CookieConsentBanner } from '@/components/cookie-consent-banner';
 import { getGlobalSettings } from './actions/admin-actions';
 
-export const metadata: Metadata = {
-  title: 'Táxiando SP',
-  description: 'A plataforma completa para taxistas de São Paulo.',
-};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getGlobalSettings();
+ 
+  return {
+    title: settings.siteName || 'Táxiando SP',
+    description: settings.seo?.metaDescription || 'A plataforma completa para taxistas de São Paulo.',
+    keywords: settings.seo?.metaKeywords || 'táxi, sp, taxista, frota',
+  }
+}
 
 const ptSans = PT_Sans({
   subsets: ['latin'],

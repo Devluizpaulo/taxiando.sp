@@ -1,21 +1,16 @@
 
-
 import { type Timestamp } from "firebase/firestore";
-
-// Note: When passing Timestamps from server components to client components,
-// they should be converted to a serializable format like an ISO string or number.
-// The client can then convert them back to Date objects.
 
 export interface Review {
   id: string;
-  rating: number; // 1 to 5
+  rating: number; 
   comment: string;
   reviewerId: string;
   reviewerName: string;
   reviewerRole: UserProfile['role'];
   revieweeId: string;
   revieweeRole: UserProfile['role'];
-  relatedTo?: string; // e.g., vehicleId, serviceId
+  relatedTo?: string; 
   relatedToName?: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: Timestamp | string;
@@ -28,14 +23,12 @@ export interface UserProfile {
     createdAt: Timestamp;
     profileStatus?: 'incomplete' | 'pending_review' | 'approved' | 'rejected' | 'N/A';
     
-    // Driver: Personal & Contact
     name?: string;
     phone?: string;
     hasWhatsApp?: boolean;
     bio?: string;
     photoUrl?: string;
 
-    // Driver: Documents
     cnhNumber?: string;
     cnhCategory?: 'A' | 'B' | 'C' | 'D' | 'E' | 'AB' | 'AC' | 'AD' | 'AE';
     cnhExpiration?: Timestamp;
@@ -43,28 +36,22 @@ export interface UserProfile {
     condutaxExpiration?: Timestamp;
     cnhPoints?: number;
 
-    // Driver: Work Mode and Vehicle
     workMode?: 'owner' | 'rental';
     alvaraExpiration?: Timestamp;
     vehicleLicensePlate?: string;
 
-    // Driver: Qualifications
     specializedCourses?: string[];
     
-    // Driver: Gamification
     earnedBadges?: Badge[];
 
-    // Driver: Reference
     reference?: {
         name: string;
         relationship: string;
         phone: string;
     };
 
-    // Driver: Consents
     financialConsent?: boolean;
     
-    // Fleet/Provider: Business Info
     personType?: 'pf' | 'pj';
     cpf?: string;
     cnpj?: string;
@@ -79,12 +66,10 @@ export interface UserProfile {
         whatsapp?: string;
     };
 
-    // Billing, Analytics & Notifications
     credits?: number;
     loginCount?: number;
     lastNotificationCheck?: Timestamp;
 
-    // Reviews
     averageRating?: number;
     reviewCount?: number;
 }
@@ -122,12 +107,12 @@ export interface Lesson {
   id: string;
   title: string;
   type: 'video' | 'text' | 'quiz' | 'audio';
-  duration: number; // in minutes
+  duration: number; 
   content?: string;
-  audioFile?: any; // For upload
+  audioFile?: any; 
   materials?: SupportingMaterial[];
   questions?: QuizQuestion[];
-  passingScore?: number; // As a percentage, e.g., 70
+  passingScore?: number; 
 }
 
 
@@ -145,8 +130,8 @@ export interface Course {
   category: string;
   modules: Module[];
   totalLessons: number;
-  totalDuration: number; // in minutes
-  createdAt: Timestamp | string; // Allow string for serialized data
+  totalDuration: number; 
+  createdAt: Timestamp | string; 
   status?: 'Published' | 'Draft';
   students?: number;
 }
@@ -219,7 +204,7 @@ export interface CreditPackage {
   description: string;
   credits: number;
   price: number;
-  priceId: string; // For Mercado Pago
+  priceId: string; 
   popular?: boolean;
   createdAt: Timestamp | string;
   updatedAt?: Timestamp | string;
@@ -230,14 +215,12 @@ export interface Transaction {
   type: 'purchase' | 'usage';
   createdAt: Timestamp | string;
 
-  // Purchase-specific fields
   packageId?: string;
   packageName?: string;
   creditsPurchased?: number;
   amountPaid?: number;
   paymentId?: string;
 
-  // Usage-specific fields
   creditsUsed?: number;
   usageReason?: string;
 }
@@ -245,7 +228,7 @@ export interface Transaction {
 export interface ServiceListing {
   id: string;
   providerId: string;
-  provider: string; // nomeFantasia or name
+  provider: string; 
   title: string;
   category: string;
   description: string;
@@ -323,14 +306,14 @@ export interface BlogPost {
   title: string;
   slug: string;
   excerpt: string;
-  content: string; // Markdown content
+  content: string; 
   imageUrl: string;
   authorId: string;
   authorName: string;
   status: 'Published' | 'Draft';
   createdAt: Timestamp | string;
   updatedAt?: Timestamp | string;
-  imageFile?: File; // For upload
+  imageFile?: File; 
 }
 
 export interface Testimonial {
@@ -357,8 +340,6 @@ export interface QuizData {
     createdAt: Timestamp | string;
 }
 
-
-// Represents a user object with Timestamps converted to ISO strings for client-side use
 export type AdminUser = Omit<UserProfile, 'createdAt' | 'cnhExpiration' | 'condutaxExpiration' | 'alvaraExpiration' | 'lastNotificationCheck'> & {
     createdAt: string;
     cnhExpiration?: string;
@@ -382,7 +363,7 @@ export interface GalleryImage {
   url: string;
   name: string;
   category: string;
-  ownerId: string; // 'admin' for public or userId for private
+  ownerId: string; 
   ownerName: string;
   isPublic: boolean;
   createdAt: Timestamp | string;
@@ -410,6 +391,7 @@ export interface UserBookProgress {
 }
 
 export interface Theme {
+  id?: string;
   name: string;
   colors: {
     '--background': string;
@@ -429,11 +411,31 @@ export interface Theme {
 export interface GlobalSettings {
   siteName: string;
   logoUrl: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  
   activeGateway?: 'mercadoPago' | 'stripe';
   mercadoPagoPublicKey?: string;
   mercadoPagoAccessToken?: string;
   stripePublicKey?: string;
   stripeSecretKey?: string;
+  
   activeThemeName: string;
   themes: Theme[];
+
+  seo?: {
+    metaDescription?: string;
+    metaKeywords?: string;
+  };
+  
+  homepage?: {
+    showAgenda?: boolean;
+    showTestimonials?: boolean;
+    showPartners?: boolean;
+  };
+  
+  user?: {
+    allowPublicRegistration?: boolean;
+    defaultNewUserCredits?: number;
+  };
 }

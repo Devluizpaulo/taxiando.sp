@@ -18,6 +18,7 @@ import { getFeaturedServices } from "@/app/actions/service-actions";
 import { BlogPost, ServiceListing, Testimonial, Vehicle } from "@/lib/types";
 import { mockTestimonials } from "@/lib/mock-data";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getGlobalSettings } from "./actions/admin-actions";
 
 
 const HowToBeDriverSection = () => (
@@ -276,7 +277,9 @@ const RentVehiclePrompt = () => (
     </section>
   );
 
-export default function Home() {
+export default async function Home() {
+  const settings = await getGlobalSettings();
+  
   return (
     <>
       <PageViewTracker page="home" />
@@ -387,17 +390,17 @@ export default function Home() {
           
           <HowToBeDriverSection />
 
-          <TestimonialsSection testimonials={mockTestimonials} />
+          {settings.homepage?.showTestimonials && <TestimonialsSection testimonials={mockTestimonials} />}
 
           <QuizSection />
-
-          <CulturalAgendaSection />
+          
+          {settings.homepage?.showAgenda && <CulturalAgendaSection />}
 
           <BlogSection />
 
           <ClassifiedsSection />
-
-          <PartnersSection />
+          
+          {settings.homepage?.showPartners && <PartnersSection />}
 
           <section className="bg-primary py-20">
             <div className="container mx-auto px-4 text-center md:px-6">

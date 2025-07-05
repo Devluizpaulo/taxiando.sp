@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,6 +19,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Car, Building, Wrench, ArrowLeft, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getPublicSettings } from '../actions/admin-actions';
+import { type GlobalSettings } from '@/lib/types';
 
 const passwordSchema = z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' });
 
@@ -84,6 +86,11 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'select_role' | 'fill_form'>('select_role');
   const [selectedRole, setSelectedRole] = useState<Role>('driver');
+  const [settings, setSettings] = useState<Awaited<ReturnType<typeof getPublicSettings>> | null>(null);
+
+  useEffect(() => {
+    getPublicSettings().then(setSettings);
+  }, []);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerFormSchema),
@@ -123,14 +130,16 @@ export default function RegisterPage() {
   async function onSubmit(values: RegisterFormValues) {
     setIsLoading(true);
     try {
+        if (!settings?.user?.allowPublicRegistration) {
+            throw new Error("O registro está temporariamente desativado. Tente novamente mais tarde.");
+        }
+
         const { email, password, role, personType, name, cpf, nomeFantasia, cnpj } = values;
 
-        // Create user in Firebase Auth
         const auth = getAuth(app);
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Prepare user profile data for Firestore
         const cleanCpf = cpf?.replace(/\D/g, '');
         const cleanCnpj = cnpj?.replace(/\D/g, '');
         const userData: { [key: string]: any } = {
@@ -138,28 +147,15 @@ export default function RegisterPage() {
             role: role,
             createdAt: Timestamp.now(),
             profileStatus: role === 'admin' ? 'approved' : 'incomplete',
-            credits: 0,
+            credits: settings?.user?.defaultNewUserCredits || 0,
         };
 
-        let displayName = user.email;
-
-        // Add fields only if they have a value
-        if (name && name.trim()) {
-          userData.name = name.trim();
-          displayName = name.trim();
-        }
+        if (name && name.trim()) userData.name = name.trim();
         if (cleanCpf) userData.cpf = cleanCpf;
         if (personType) userData.personType = personType;
-
-        if (nomeFantasia && nomeFantasia.trim()) {
-            userData.nomeFantasia = nomeFantasia.trim();
-            if (personType === 'pj') {
-              displayName = nomeFantasia.trim();
-            }
-        }
+        if (nomeFantasia && nomeFantasia.trim()) userData.nomeFantasia = nomeFantasia.trim();
         if (cleanCnpj) userData.cnpj = cleanCnpj;
         
-        // Save user profile to Firestore
         const db = getFirestore(app);
         await setDoc(doc(db, 'users', user.uid), userData);
 
@@ -173,8 +169,8 @@ export default function RegisterPage() {
         let errorMessage = 'Não foi possível criar a conta. Verifique os dados e tente novamente.';
         if (error.code === 'auth/email-already-in-use') {
             errorMessage = 'Este email já está em uso por outra conta.';
-        } else if (error instanceof z.ZodError) {
-             errorMessage = error.errors.map(e => e.message).join('; ');
+        } else {
+            errorMessage = error.message;
         }
         console.error("REGISTRATION ERROR:", error);
         toast({
