@@ -125,6 +125,7 @@ export interface Lesson {
   type: 'video' | 'text' | 'quiz' | 'audio';
   duration: number; // in minutes
   content?: string;
+  audioFile?: any; // For upload
   materials?: SupportingMaterial[];
   questions?: QuizQuestion[];
   passingScore?: number; // As a percentage, e.g., 70
