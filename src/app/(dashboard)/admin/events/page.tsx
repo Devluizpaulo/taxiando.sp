@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { type Event } from '@/lib/types';
-import { useAuthProtection } from '@/hooks/use-auth';
 import { getAdminEvents, deleteEvent } from '@/app/actions/event-actions';
 
 import { Button } from '@/components/ui/button';
@@ -36,15 +35,14 @@ import { useToast } from '@/hooks/use-toast';
 import { LoadingScreen } from '@/components/loading-screen';
 
 export default function AdminEventsPage() {
-    const { loading: authLoading } = useAuthProtection({ requiredRoles: ['admin'] });
     const [events, setEvents] = useState<Event[]>([]);
-    const [dataLoading, setDataLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
     const { toast } = useToast();
 
     useEffect(() => {
         getAdminEvents().then(data => {
             setEvents(data);
-            setDataLoading(false);
+            setLoading(false);
         });
     }, []);
 
@@ -58,7 +56,7 @@ export default function AdminEventsPage() {
         }
     };
 
-    if (authLoading || dataLoading) {
+    if (loading) {
         return <LoadingScreen />;
     }
 

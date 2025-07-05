@@ -1,4 +1,3 @@
-
 # Táxiando SP
 
 **A plataforma completa para o profissional do volante em São Paulo.**
@@ -10,35 +9,36 @@ Táxiando SP é um ecossistema digital completo projetado para conectar, qualifi
 ## ✨ Funcionalidades Principais
 
 ### Para Motoristas (Drivers)
--   **Perfil Profissional Personalizado:** Crie um perfil detalhado com suas qualificações, documentos e experiência, com uma interface que se adapta se você é **proprietário ou locatário**.
--   **Catálogo de Cursos:** Acesse cursos especializados (Legislação, Atendimento, Direção Defensiva) para aprimorar suas habilidades.
+-   **Perfil Profissional Detalhado:** Crie um perfil com qualificações, documentos e experiência, com uma interface que se adapta se você é **proprietário ou locatário**.
+-   **Catálogo de Cursos:** Acesse cursos especializados (Legislação, Atendimento, Direção Defensiva) com aulas em vídeo, texto, áudio e provas interativas.
+-   **Biblioteca Digital:** Acesse uma biblioteca de livros e materiais em PDF com um leitor integrado que salva seu progresso.
 -   **Busca de Oportunidades:** Encontre e candidate-se a veículos para aluguel de frotas verificadas e de outros taxistas autônomos.
--   **Agenda Cultural:** Fique por dentro dos principais eventos da cidade para planejar suas corridas e maximizar seus ganhos.
+-   **Agenda Cultural:** Fique por dentro dos principais eventos da cidade para planejar suas corridas.
 -   **Marketplace de Serviços:** Encontre prestadores de serviço (oficinas, despachantes, etc.) com avaliações da comunidade.
--   **Guia "Como se Tornar um Taxista":** Um passo a passo completo para guiar novos profissionais desde a documentação até o primeiro dia de trabalho.
+-   **Guia "Como se Tornar um Taxista":** Um passo a passo completo para guiar novos profissionais.
+-   **Assistente de IA:** Use a IA para resumir textos longos e regulamentações.
 
-### Para Frotas (Fleets)
--   **Painel de Gerenciamento:** Cadastre e gerencie sua frota de veículos, definindo preços, descrições e benefícios.
--   **Gestão de Candidaturas:** Receba e avalie perfis de motoristas interessados, com acesso a um perfil detalhado do candidato.
--   **Página de Perfil Pública:** Crie uma vitrine para sua frota, destacando suas comodidades, descrição e todos os seus veículos disponíveis para atrair os melhores profissionais.
-
-### Para Prestadores de Serviço (Providers)
--   **Painel de Gerenciamento:** Cadastre e gerencie seus produtos e serviços, definindo preços e descrições.
--   **Página de Perfil Pública:** Mostre todos os seus serviços em uma página dedicada, fortalecendo sua marca e atraindo mais clientes.
--   **Moderação de Anúncios:** Seus anúncios são revisados para garantir a qualidade e a confiança da plataforma.
+### Para Frotas (Fleets) e Prestadores (Providers)
+-   **Painel de Gerenciamento:** Cadastre e gerencie seus veículos (frotas) ou serviços/produtos (prestadores).
+-   **Gestão de Candidaturas (Frotas):** Receba e avalie perfis de motoristas interessados.
+-   **Página de Perfil Pública:** Crie uma vitrine para sua empresa, destacando seus diferenciais para atrair clientes ou motoristas.
 
 ### Para Administradores (Admin)
 -   **Dashboard Central:** Tenha uma visão geral da plataforma com estatísticas de usuários, vendas e atividades.
--   **Moderação de Conteúdo Avançada:** Aprove ou rejeite cadastros e anúncios com **filtros por status** (Pendente, Aprovado, Rejeitado) para uma visão completa.
--   **Construtor de Cursos:** Crie e gerencie conteúdo educacional com suporte a vídeo, texto e quizzes, incluindo um **modo de edição seguro** que protege o conteúdo de cursos já publicados.
--   **Gerenciamento de Blog e Notícias:** Crie, edite e publique artigos com um editor Markdown e um assistente de IA para geração de conteúdo.
--   **Gerenciador de Eventos:** Cadastre e administre eventos da agenda cultural, com auxílio de IA para preenchimento de detalhes.
+-   **Moderação de Conteúdo:** Aprove ou rejeite cadastros de usuários e anúncios de veículos/serviços com filtros avançados.
+-   **Construtor de Cursos:** Crie e gerencie conteúdo educacional com suporte a **vídeo, texto, áudio e provas**, incluindo um modo de edição seguro para cursos publicados.
+-   **Gerenciamento da Biblioteca:** Adicione e gerencie livros (PDFs) para a biblioteca digital dos usuários.
+-   **Gerenciamento da Galeria de Mídia:** Centralize o upload e o gerenciamento de todas as imagens da plataforma.
 -   **Gerenciamento de Marketing Avançado:**
-    -   Crie **cupons de desconto** (valor ou porcentagem) para impulsionar vendas de pacotes de crédito.
+    -   Crie e gerencie **cupons de desconto**.
     -   Envie **notificações e newsletters** para públicos segmentados.
-    -   Gerencie **banners de parceiros/patrocinadores** para monetização da plataforma.
--   **Gerenciamento de Quiz:** Crie quizzes interativos para a página inicial com um **assistente de IA** para gerar perguntas e respostas.
--   **Configurações de Pagamento:** Integre e gerencie as credenciais do gateway de pagamento (Mercado Pago).
+    -   Gerencie **banners de parceiros/patrocinadores**.
+-   **Gerenciamento de Ferramentas de Engajamento:**
+    -   Crie e administre eventos na **agenda cultural**, com auxílio de IA para preenchimento de detalhes.
+    -   Crie e gerencie **quizzes interativos** para a página inicial com assistente de IA.
+-   **Configurações Globais da Plataforma:**
+    -   Gerencie **gateways de pagamento** (Mercado Pago, Stripe).
+    -   Crie e alterne entre **temas visuais** para customizar a aparência do site.
 
 ---
 
@@ -73,7 +73,7 @@ Táxiando SP é um ecossistema digital completo projetado para conectar, qualifi
     ```bash
     npm install
     ```
-4.  Configure suas variáveis de ambiente. Copie o arquivo `.env.example` para `.env.local` e preencha com suas credenciais, seguindo as instruções detalhadas no arquivo.
+4.  Configure suas variáveis de ambiente. Copie o arquivo `.env.example` para `.env.local` e preencha com suas credenciais.
     ```bash
     cp .env.example .env.local
     ```
@@ -85,58 +85,58 @@ npm run dev
 ```
 Abra [http://localhost:9002](http://localhost:9002) no seu navegador para ver o resultado.
 
+---
+
 ## ⚠️ Solução de Problemas: Erro de "Credenciais não definidas"
 
-Se você encontrar um erro dizendo `CRITICAL: Firebase Admin SDK credentials are not set`, não se preocupe! Isso não é um bug no código, mas sim a etapa final e mais importante da configuração. Significa que a aplicação, ao rodar no servidor (seja na sua máquina ou na Vercel), não encontrou as "chaves secretas" para se conectar ao seu banco de dados.
+Se você encontrar um erro dizendo `Firebase Admin SDK not initialized`, significa que a aplicação não encontrou as "chaves secretas" para se conectar ao seu banco de dados no servidor.
 
 **Como Resolver:**
 
-1.  **Encontre seu arquivo de Chave de Serviço:**
+1.  **Encontre sua Chave de Serviço:**
     *   Vá para as **Configurações do Projeto** no seu console do Firebase.
     *   Acesse a aba **Contas de serviço**.
-    *   Clique em **"Gerar nova chave privada"**. Isso fará o download de um arquivo JSON. Guarde-o com segurança.
+    *   Clique em **"Gerar nova chave privada"**. Isso fará o download de um arquivo JSON.
 
-2.  **Configure a Variável de Ambiente (Método Recomendado):**
-    *   **No seu computador (local):**
-        *   No seu arquivo `.env.local`, encontre a linha `FIREBASE_SERVICE_ACCOUNT_JSON=''`.
-        *   Copie o **conteúdo completo** do seu arquivo JSON e cole dentro das aspas simples.
-    *   **Na Vercel (produção):**
-        *   Vá para as configurações do seu projeto na Vercel.
-        *   Na seção "Environment Variables", crie uma nova variável chamada `FIREBASE_SERVICE_ACCOUNT_JSON`.
-        *   No campo de valor, cole o **conteúdo completo** do seu arquivo JSON.
+2.  **Configure a Variável de Ambiente:**
+    *   No seu arquivo `.env.local`, encontre a linha `FIREBASE_SERVICE_ACCOUNT_JSON=''`.
+    *   Copie o **conteúdo completo** do seu arquivo JSON e cole dentro das aspas simples.
 
-3.  **Preencha o restante das variáveis** no seu `.env.local` (ou na Vercel) usando o arquivo `.env.example` como guia para as chaves públicas do Firebase e a chave do Gemini.
-
-Depois de configurar `FIREBASE_SERVICE_ACCOUNT_JSON` e as outras chaves, o erro desaparecerá.
+Após configurar `FIREBEASE_SERVICE_ACCOUNT_JSON` e as outras chaves do `.env.example`, o erro desaparecerá.
 
 ---
 
-## 📂 Estrutura do Projeto
-
-Uma visão geral da organização das pastas e arquivos principais:
+## 📂 Estrutura do Projeto (Simplificada)
 
 ```
 .
 ├── src
 │   ├── app                 # Rotas principais (App Router)
-│   │   ├── (auth)          # Rotas públicas (login, register)
-│   │   ├── (dashboard)     # Rotas protegidas (autenticação)
+│   │   ├── (auth)          # Rotas de autenticação (login, register)
+│   │   ├── (dashboard)     # Rotas protegidas (após login)
 │   │   │   ├── admin       #   - Painel de Administração
 │   │   │   │   ├── blog
 │   │   │   │   ├── billing
 │   │   │   │   ├── courses
 │   │   │   │   ├── events
-│   │   │   │   └── marketing
-│   │   │   └── ...         #   - Painéis de usuário (motorista, frota)
-│   │   ├── actions         # Server Actions
-│   │   └── api             # Rotas de API (ex: webhooks)
+│   │   │   │   ├── gallery
+│   │   │   │   ├── library
+│   │   │   │   ├── marketing
+│   │   │   │   ├── reviews
+│   │   │   │   ├── settings
+│   │   │   │   ├── support
+│   │   │   │   └── users
+│   │   │   ├── fleet       #   - Painel da Frota
+│   │   │   ├── services    #   - Painel do Prestador
+│   │   │   └── ...         #   - Painéis de Motorista
+│   │   ├── actions         # Server Actions (lógica de backend)
+│   │   └── api             # Rotas de API (webhooks)
 │   ├── components          # Componentes React reutilizáveis
 │   │   ├── ui              # Componentes de UI (ShadCN)
 │   │   └── layout          # Componentes de layout (Header, Footer, etc)
-│   ├── hooks               # Hooks customizados (ex: useAuth)
+│   ├── hooks               # Hooks customizados (useAuth, etc)
 │   ├── lib                 # Funções utilitárias, schemas, config
 │   └── ai                  # Lógica de IA com Genkit
 │       └── flows           #   - Fluxos de IA
 └── ...
 ```
-# taxiando.sp

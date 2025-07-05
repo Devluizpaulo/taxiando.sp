@@ -1,13 +1,11 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { adminDB, Timestamp } from '@/lib/firebase-admin';
 import { type GalleryImage } from '@/lib/types';
-import admin from 'firebase-admin';
 import { nanoid } from 'nanoid';
-
-const UPLOAD_COST_IN_CREDITS = 1; // Define cost per upload
 
 export async function getGalleryImages(userId?: string) {
     try {
@@ -39,23 +37,6 @@ export async function uploadToGallery(
     }
 
     try {
-        const userRef = adminDB.collection('users').doc(ownerId);
-        const userDoc = await userRef.get();
-        const userData = userDoc.data();
-
-        if (userData?.role !== 'admin') {
-            const uploadCredits = userData?.uploadCredits ?? 0;
-            if (uploadCredits > 0) {
-                 await userRef.update({ uploadCredits: admin.firestore.FieldValue.increment(-1) });
-            } else {
-                const credits = userData?.credits ?? 0;
-                if (credits < UPLOAD_COST_IN_CREDITS) {
-                    return { success: false, error: 'Créditos insuficientes para o upload.' };
-                }
-                await userRef.update({ credits: admin.firestore.FieldValue.increment(-UPLOAD_COST_IN_CREDITS) });
-            }
-        }
-        
         const docRef = adminDB.collection('gallery').doc(nanoid());
         const galleryImageData = {
             id: docRef.id,

@@ -81,7 +81,6 @@ export interface UserProfile {
 
     // Billing, Analytics & Notifications
     credits?: number;
-    uploadCredits?: number;
     loginCount?: number;
     lastNotificationCheck?: Timestamp;
 

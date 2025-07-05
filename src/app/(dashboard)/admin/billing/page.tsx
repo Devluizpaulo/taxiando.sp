@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { type CreditPackage } from '@/lib/types';
-import { deleteCreditPackage, getAllCoupons } from '@/app/actions/billing-actions';
+import { deleteCreditPackage } from '@/app/actions/billing-actions';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -148,4 +148,3 @@ export default function AdminBillingPage() {
         </div>
     );
 }
-

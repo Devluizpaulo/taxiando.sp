@@ -9,9 +9,7 @@ import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 
 import {
-  updateUserProfileStatus,
   updateUserByAdmin,
-  grantUploadCredits,
   enrollUserInCourse,
 } from '@/app/actions/admin-actions';
 import { getAllCourses } from '@/app/actions/course-actions';
@@ -26,9 +24,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, ArrowLeft, ShieldCheck, Mail, Phone, UploadCloud, GraduationCap, Gift } from 'lucide-react';
+import { Loader2, ArrowLeft, GraduationCap, Gift } from 'lucide-react';
 
 const adminEditUserSchema = z.object({
   name: z.string().min(3, "O nome é obrigatório.").optional().or(z.literal('')),
@@ -36,7 +33,6 @@ const adminEditUserSchema = z.object({
   role: z.enum(['driver', 'fleet', 'provider', 'admin']),
   profileStatus: z.enum(['incomplete', 'pending_review', 'approved', 'rejected']),
   credits: z.coerce.number().min(0, "Créditos não podem ser negativos."),
-  uploadCredits: z.coerce.number().min(0, "Créditos de upload não podem ser negativos."),
 });
 
 type AdminEditUserFormValues = z.infer<typeof adminEditUserSchema>;
@@ -79,7 +75,6 @@ export default function AdminUserDetailsPage({ params }: { params: { id: string 
                     role: userData.role,
                     profileStatus: userData.profileStatus as any || 'incomplete',
                     credits: userData.credits || 0,
-                    uploadCredits: userData.uploadCredits || 0,
                 });
 
             } catch (error) {
@@ -151,50 +146,43 @@ export default function AdminUserDetailsPage({ params }: { params: { id: string 
                                 <FormItem><FormLabel>Telefone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
                          </div>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <FormField control={form.control} name="role" render={({ field }) => (
                                 <FormItem><FormLabel>Perfil</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="driver">Motorista</SelectItem><SelectItem value="fleet">Frota</SelectItem><SelectItem value="provider">Prestador</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select><FormMessage /></FormItem>
                             )}/>
                             <FormField control={form.control} name="profileStatus" render={({ field }) => (
                                 <FormItem><FormLabel>Status do Perfil</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="approved">Aprovado</SelectItem><SelectItem value="pending_review">Pendente</SelectItem><SelectItem value="rejected">Rejeitado</SelectItem><SelectItem value="incomplete">Incompleto</SelectItem></SelectContent></Select><FormMessage /></FormItem>
                             )}/>
+                             <FormField control={form.control} name="credits" render={({ field }) => (
+                                <FormItem><FormLabel>Créditos da Plataforma</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
                         </div>
                     </CardContent>
                 </Card>
                 
                 <Card>
-                    <CardHeader><CardTitle>Créditos e Cortesias</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>Cortesias</CardTitle></CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <FormField control={form.control} name="credits" render={({ field }) => (
-                                <FormItem><FormLabel>Créditos da Plataforma</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription>Para destacar anúncios, etc.</FormDescription><FormMessage /></FormItem>
-                            )}/>
-                            <FormField control={form.control} name="uploadCredits" render={({ field }) => (
-                                <FormItem><FormLabel>Créditos de Upload (Cortesia)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription>Para uploads de imagens na galeria.</FormDescription><FormMessage /></FormItem>
-                            )}/>
-                        </div>
-                        <div className="border-t pt-4">
-                             <Dialog open={isCourseModalOpen} onOpenChange={setIsCourseModalOpen}>
-                                <DialogTrigger asChild>
-                                    <Button type="button" variant="outline"><Gift className="mr-2"/> Conceder Curso Gratuito</Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader><DialogTitle>Conceder Curso</DialogTitle><DialogDescription>Selecione um curso para inscrever {user.name} gratuitamente.</DialogDescription></DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <Label>Curso</Label>
-                                        <Select onValueChange={setSelectedCourseId}><SelectTrigger><SelectValue placeholder="Selecione um curso..." /></SelectTrigger>
-                                            <SelectContent>
-                                                {courses.map(course => <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <DialogFooter>
-                                        <DialogClose asChild><Button type="button" variant="secondary">Cancelar</Button></DialogClose>
-                                        <Button onClick={handleGrantCourse} disabled={isUpdating || !selectedCourseId}>Conceder</Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
-                        </div>
+                         <Dialog open={isCourseModalOpen} onOpenChange={setIsCourseModalOpen}>
+                            <DialogTrigger asChild>
+                                <Button type="button" variant="outline"><Gift className="mr-2"/> Conceder Curso Gratuito</Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader><DialogTitle>Conceder Curso</DialogTitle><DialogDescription>Selecione um curso para inscrever {user.name} gratuitamente.</DialogDescription></DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    <Label>Curso</Label>
+                                    <Select onValueChange={setSelectedCourseId}><SelectTrigger><SelectValue placeholder="Selecione um curso..." /></SelectTrigger>
+                                        <SelectContent>
+                                            {courses.map(course => <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <DialogFooter>
+                                    <DialogClose asChild><Button type="button" variant="secondary">Cancelar</Button></DialogClose>
+                                    <Button onClick={handleGrantCourse} disabled={isUpdating || !selectedCourseId}>Conceder</Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </CardContent>
                 </Card>
 

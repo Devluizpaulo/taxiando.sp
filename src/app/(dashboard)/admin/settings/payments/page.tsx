@@ -1,188 +1,142 @@
+# Táxiando SP
 
-'use client';
+**A plataforma completa para o profissional do volante em São Paulo.**
 
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useAuthProtection } from '@/hooks/use-auth';
+Táxiando SP é um ecossistema digital completo projetado para conectar, qualificar e fortalecer a comunidade de taxistas, frotas e prestadores de serviço da cidade de São Paulo. A plataforma oferece ferramentas para desenvolvimento profissional, oportunidades de negócio e um canal de comunicação centralizado para o setor.
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, Lock, ExternalLink, Replace } from 'lucide-react';
-import { getPaymentSettings, updatePaymentSettings } from '@/app/actions/admin-actions';
-import { type PaymentGatewaySettings } from '@/lib/types';
-import { LoadingScreen } from '@/components/loading-screen';
-import Link from 'next/link';
-import Image from 'next/image';
+---
 
-const settingsFormSchema = z.object({
-  activeGateway: z.enum(['mercadoPago', 'stripe']).optional(),
-  mercadoPagoPublicKey: z.string().optional(),
-  mercadoPagoAccessToken: z.string().optional(),
-  stripePublicKey: z.string().optional(),
-  stripeSecretKey: z.string().optional(),
-});
+## ✨ Funcionalidades Principais
 
-type SettingsFormValues = z.infer<typeof settingsFormSchema>;
+### Para Motoristas (Drivers)
+-   **Perfil Profissional Detalhado:** Crie um perfil com qualificações, documentos e experiência, com uma interface que se adapta se você é **proprietário ou locatário**.
+-   **Catálogo de Cursos:** Acesse cursos especializados (Legislação, Atendimento, Direção Defensiva) com aulas em vídeo, texto, áudio e provas interativas.
+-   **Biblioteca Digital:** Acesse uma biblioteca de livros e materiais em PDF com um leitor integrado que salva seu progresso.
+-   **Busca de Oportunidades:** Encontre e candidate-se a veículos para aluguel de frotas verificadas e de outros taxistas autônomos.
+-   **Agenda Cultural:** Fique por dentro dos principais eventos da cidade para planejar suas corridas.
+-   **Marketplace de Serviços:** Encontre prestadores de serviço (oficinas, despachantes, etc.) com avaliações da comunidade.
+-   **Guia "Como se Tornar um Taxista":** Um passo a passo completo para guiar novos profissionais.
+-   **Assistente de IA:** Use a IA para resumir textos longos e regulamentações.
 
-export default function PaymentSettingsPage() {
-    const { loading: authLoading } = useAuthProtection({ requiredRoles: ['admin'] });
-    const { toast } = useToast();
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isLoadingData, setIsLoadingData] = useState(true);
+### Para Frotas (Fleets) e Prestadores (Providers)
+-   **Painel de Gerenciamento:** Cadastre e gerencie seus veículos (frotas) ou serviços/produtos (prestadores).
+-   **Gestão de Candidaturas (Frotas):** Receba e avalie perfis de motoristas interessados.
+-   **Página de Perfil Pública:** Crie uma vitrine para sua empresa, destacando seus diferenciais para atrair clientes ou motoristas.
 
-    const form = useForm<SettingsFormValues>({
-        resolver: zodResolver(settingsFormSchema),
-    });
+### Para Administradores (Admin)
+-   **Dashboard Central:** Tenha uma visão geral da plataforma com estatísticas de usuários, vendas e atividades.
+-   **Moderação de Conteúdo:** Aprove ou rejeite cadastros de usuários e anúncios de veículos/serviços com filtros avançados.
+-   **Construtor de Cursos:** Crie e gerencie conteúdo educacional com suporte a **vídeo, texto, áudio e provas**, incluindo um modo de edição seguro para cursos publicados.
+-   **Gerenciamento da Biblioteca:** Adicione e gerencie livros (PDFs) para a biblioteca digital dos usuários.
+-   **Gerenciamento da Galeria de Mídia:** Centralize o upload e o gerenciamento de todas as imagens da plataforma.
+-   **Gerenciamento de Marketing Avançado:**
+    -   Crie e gerencie **cupons de desconto**.
+    -   Envie **notificações e newsletters** para públicos segmentados.
+    -   Gerencie **banners de parceiros/patrocinadores**.
+-   **Gerenciamento de Ferramentas de Engajamento:**
+    -   Crie e administre eventos na **agenda cultural**, com auxílio de IA para preenchimento de detalhes.
+    -   Crie e gerencie **quizzes interativos** para a página inicial com assistente de IA.
+-   **Configurações Globais da Plataforma:**
+    -   Gerencie **gateways de pagamento** (Mercado Pago, Stripe).
+    -   Crie e alterne entre **temas visuais** para customizar a aparência do site.
 
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const settings = await getPaymentSettings();
-                form.reset({
-                    activeGateway: settings.activeGateway || 'mercadoPago',
-                    mercadoPagoPublicKey: settings.mercadoPago?.publicKey || '',
-                    mercadoPagoAccessToken: settings.mercadoPago?.accessToken || '',
-                    stripePublicKey: settings.stripe?.publicKey || '',
-                    stripeSecretKey: settings.stripe?.secretKey || '',
-                });
-            } catch (error) {
-                 toast({ variant: 'destructive', title: "Erro", description: "Não foi possível carregar as configurações." });
-            } finally {
-                setIsLoadingData(false);
-            }
-        };
-        fetchSettings();
-    }, [form, toast]);
+---
 
-    const onSubmit = async (values: SettingsFormValues) => {
-        setIsSubmitting(true);
-        try {
-            const settingsToSave: PaymentGatewaySettings = {
-                activeGateway: values.activeGateway,
-                mercadoPago: {
-                    publicKey: values.mercadoPagoPublicKey,
-                    accessToken: values.mercadoPagoAccessToken,
-                },
-                stripe: {
-                    publicKey: values.stripePublicKey,
-                    secretKey: values.stripeSecretKey,
-                }
-            };
-            const result = await updatePaymentSettings(settingsToSave);
+## 🚀 Tecnologias Utilizadas
 
-            if (result.success) {
-                 toast({ title: 'Sucesso!', description: result.message });
-            } else {
-                 toast({ variant: 'destructive', title: 'Erro ao Salvar', description: result.error });
-            }
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Erro Crítico', description: 'Não foi possível se comunicar com o servidor.' });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+*   **Framework:** [Next.js](https://nextjs.org/) (com App Router)
+*   **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
+*   **Estilização:** [Tailwind CSS](https://tailwindcss.com/)
+*   **Componentes UI:** [ShadCN/UI](https://ui.shadcn.com/)
+*   **Backend & Banco de Dados:** [Firebase](https://firebase.google.com/) (Authentication, Firestore, Storage)
+*   **Funcionalidades de IA:** [Genkit (Google AI)](https://firebase.google.com/docs/genkit)
+*   **Formulários:** [React Hook Form](https://react-hook-form.com/) com [Zod](https://zod.dev/) para validação.
 
-    if (authLoading || isLoadingData) {
-        return <LoadingScreen />;
-    }
+---
 
-    return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-8">
-                <div>
-                    <h1 className="font-headline text-3xl font-bold tracking-tight">Configurações de Pagamento</h1>
-                    <p className="text-muted-foreground">Gerencie os gateways de pagamento da plataforma.</p>
-                </div>
+## 🏁 Como Começar
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Gateway de Pagamento Ativo</CardTitle>
-                        <CardDescription>Selecione qual provedor de pagamento será usado para as transações na plataforma.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <FormField
-                            control={form.control}
-                            name="activeGateway"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="sr-only">Gateway Ativo</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger className="w-full md:w-1/2">
-                                                <SelectValue placeholder="Selecione o gateway ativo..." />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="mercadoPago">
-                                                <div className="flex items-center gap-2">
-                                                    <Image src="https://placehold.co/16x16.png" data-ai-hint="mercadopago logo" alt="Mercado Pago" width={16} height={16}/> Mercado Pago
-                                                </div>
-                                            </SelectItem>
-                                            <SelectItem value="stripe">
-                                                <div className="flex items-center gap-2">
-                                                    <Image src="https://placehold.co/16x16.png" data-ai-hint="stripe logo" alt="Stripe" width={16} height={16}/> Stripe
-                                                </div>
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </CardContent>
-                </Card>
+### Pré-requisitos
+-   Node.js (versão 20 ou superior)
+-   Um projeto Firebase configurado.
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Credenciais do Mercado Pago</CardTitle>
-                            <CardDescription>
-                                Credenciais de produção para aceitar pagamentos.
-                                <Button variant="link" asChild className="p-1 h-auto"><Link href="https://www.mercadopago.com.br/developers/panel/credentials" target="_blank">Encontre aqui <ExternalLink className="ml-1" /></Link></Button>
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <FormField control={form.control} name="mercadoPagoPublicKey" render={({ field }) => (
-                                <FormItem><FormLabel className="flex items-center gap-2"><KeyRound/> Public Key</FormLabel><FormControl><Input {...field} placeholder="APP_USR-..." /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                            <FormField control={form.control} name="mercadoPagoAccessToken" render={({ field }) => (
-                                <FormItem><FormLabel className="flex items-center gap-2"><Lock/> Access Token</FormLabel><FormControl><Input type="password" {...field} placeholder="APP_USR-..." /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                        </CardContent>
-                    </Card>
+### Instalação
+1.  Clone o repositório:
+    ```bash
+    git clone https://github.com/seu-usuario/taxiando-sp.git
+    ```
+2.  Navegue até o diretório do projeto:
+    ```bash
+    cd taxiando-sp
+    ```
+3.  Instale as dependências:
+    ```bash
+    npm install
+    ```
+4.  Configure suas variáveis de ambiente. Copie o arquivo `.env.example` para `.env.local` e preencha com suas credenciais.
+    ```bash
+    cp .env.example .env.local
+    ```
 
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Credenciais do Stripe</CardTitle>
-                            <CardDescription>
-                                Credenciais de produção para aceitar pagamentos.
-                                <Button variant="link" asChild className="p-1 h-auto"><Link href="https://dashboard.stripe.com/apikeys" target="_blank">Encontre aqui <ExternalLink className="ml-1" /></Link></Button>
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <FormField control={form.control} name="stripePublicKey" render={({ field }) => (
-                                <FormItem><FormLabel className="flex items-center gap-2"><KeyRound/> Publishable Key</FormLabel><FormControl><Input {...field} placeholder="pk_live_..." /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                            <FormField control={form.control} name="stripeSecretKey" render={({ field }) => (
-                                <FormItem><FormLabel className="flex items-center gap-2"><Lock/> Secret Key</FormLabel><FormControl><Input type="password" {...field} placeholder="sk_live_..." /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                        </CardContent>
-                    </Card>
-                </div>
+### Rodando o Projeto
+Para iniciar o servidor de desenvolvimento:
+```bash
+npm run dev
+```
+Abra [http://localhost:9002](http://localhost:9002) no seu navegador para ver o resultado.
 
-                <div className="flex justify-end items-center mt-4">
-                    <Button type="submit" disabled={isSubmitting} size="lg">
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Salvar Configurações
-                    </Button>
-                </div>
-            </form>
-        </Form>
-    );
-}
+---
+
+## ⚠️ Solução de Problemas: Erro de "Credenciais não definidas"
+
+Se você encontrar um erro dizendo `Firebase Admin SDK not initialized`, significa que a aplicação não encontrou as "chaves secretas" para se conectar ao seu banco de dados no servidor.
+
+**Como Resolver:**
+
+1.  **Encontre sua Chave de Serviço:**
+    *   Vá para as **Configurações do Projeto** no seu console do Firebase.
+    *   Acesse a aba **Contas de serviço**.
+    *   Clique em **"Gerar nova chave privada"**. Isso fará o download de um arquivo JSON.
+
+2.  **Configure a Variável de Ambiente:**
+    *   No seu arquivo `.env.local`, encontre a linha `FIREBASE_SERVICE_ACCOUNT_JSON=''`.
+    *   Copie o **conteúdo completo** do seu arquivo JSON e cole dentro das aspas simples.
+
+Após configurar `FIREBEASE_SERVICE_ACCOUNT_JSON` e as outras chaves do `.env.example`, o erro desaparecerá.
+
+---
+
+## 📂 Estrutura do Projeto (Simplificada)
+
+```
+.
+├── src
+│   ├── app                 # Rotas principais (App Router)
+│   │   ├── (auth)          # Rotas de autenticação (login, register)
+│   │   ├── (dashboard)     # Rotas protegidas (após login)
+│   │   │   ├── admin       #   - Painel de Administração
+│   │   │   │   ├── blog
+│   │   │   │   ├── billing
+│   │   │   │   ├── courses
+│   │   │   │   ├── events
+│   │   │   │   ├── gallery
+│   │   │   │   ├── library
+│   │   │   │   ├── marketing
+│   │   │   │   ├── reviews
+│   │   │   │   ├── settings
+│   │   │   │   ├── support
+│   │   │   │   └── users
+│   │   │   ├── fleet       #   - Painel da Frota
+│   │   │   ├── services    #   - Painel do Prestador
+│   │   │   └── ...         #   - Painéis de Motorista
+│   │   ├── actions         # Server Actions (lógica de backend)
+│   │   └── api             # Rotas de API (webhooks)
+│   ├── components          # Componentes React reutilizáveis
+│   │   ├── ui              # Componentes de UI (ShadCN)
+│   │   └── layout          # Componentes de layout (Header, Footer, etc)
+│   ├── hooks               # Hooks customizados (useAuth, etc)
+│   ├── lib                 # Funções utilitárias, schemas, config
+│   └── ai                  # Lógica de IA com Genkit
+│       └── flows           #   - Fluxos de IA
+└── ...
+```

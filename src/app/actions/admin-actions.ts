@@ -34,36 +34,39 @@ const adminEditUserSchema = z.object({
   role: z.enum(['driver', 'fleet', 'provider', 'admin']),
   profileStatus: z.enum(['incomplete', 'pending_review', 'approved', 'rejected']),
   credits: z.coerce.number().min(0, "Créditos não podem ser negativos."),
-  uploadCredits: z.coerce.number().min(0, "Créditos de upload não podem ser negativos."),
 });
 
 export async function updateUserByAdmin(userId: string, data: z.infer<typeof adminEditUserSchema>) {
     try {
         const validation = adminEditUserSchema.safeParse(data);
         if (!validation.success) {
-            return { success: false, error: validation.error.flatten().fieldErrors };
+            const errorMessages = Object.values(validation.error.flatten().fieldErrors).flat().join('; ');
+            return { success: false, error: errorMessages || 'Dados inválidos.' };
         }
         
         const userRef = adminDB.collection('users').doc(userId);
-        await userRef.update(validation.data);
+        
+        const updateData: Partial<UserProfile> = {
+            ...validation.data,
+        };
+        
+        const userDoc = await userRef.get();
+        const existingData = userDoc.data();
+
+        if (existingData?.personType === 'pj') {
+            updateData.nomeFantasia = validation.data.name;
+            delete (updateData as any).name;
+        } else {
+            updateData.name = validation.data.name;
+        }
+
+
+        await userRef.update(updateData);
 
         revalidatePath('/admin');
         revalidatePath(`/admin/users/${userId}`);
         return { success: true };
 
-    } catch (error) {
-        return { success: false, error: (error as Error).message };
-    }
-}
-
-export async function grantUploadCredits(userId: string, amount: number) {
-    try {
-        const userRef = adminDB.collection('users').doc(userId);
-        await userRef.update({
-            uploadCredits: Timestamp.from(new Date(amount))
-        });
-        revalidatePath(`/admin/users/${userId}`);
-        return { success: true };
     } catch (error) {
         return { success: false, error: (error as Error).message };
     }
@@ -183,7 +186,8 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
             return docSnap.data() as GlobalSettings;
         }
         
-        // If doc doesn't exist, return default
+        // If doc doesn't exist, create it with default values
+        await docRef.set(defaultSettings);
         return defaultSettings;
     } catch (error) {
         // If the SDK is not initialized, gracefully return default settings to allow app to build.
@@ -224,7 +228,6 @@ export async function getPublicSettings(): Promise<{siteName: string, logoUrl: s
         }
     }
 }
-
 
 export async function getPaymentSettings(): Promise<PaymentGatewaySettings> {
     const docRef = adminDB.collection('settings').doc('payment');
