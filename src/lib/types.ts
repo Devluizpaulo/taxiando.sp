@@ -387,3 +387,24 @@ export interface GalleryImage {
   isPublic: boolean;
   createdAt: Timestamp | string;
 }
+
+export interface LibraryBook {
+  id: string;
+  title: string;
+  author: string;
+  description: string;
+  category: string;
+  coverImageUrl: string;
+  pdfUrl: string;
+  accessCount: number;
+  averageRating: number;
+  reviewCount: number;
+  createdAt: Timestamp | string;
+}
+
+export interface UserBookProgress {
+  bookId: string;
+  currentPage: number;
+  totalPages: number;
+  lastReadAt: Timestamp | string;
+}
