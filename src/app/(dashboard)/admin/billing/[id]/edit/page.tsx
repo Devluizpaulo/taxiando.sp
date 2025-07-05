@@ -46,23 +46,19 @@ export default function EditPackagePage({ params }: { params: { id: string } }) 
 
     const onSubmit = async (values: PackageFormValues) => {
         setIsSubmitting(true);
-        try {
-            const result = await updateCreditPackage(params.id, values);
-            if (result.success) {
-                toast({ title: 'Pacote Atualizado!', description: `O pacote "${values.name}" foi salvo com sucesso.` });
-                router.push('/admin/billing');
-            } else {
-                throw new Error(result.error as string);
-            }
-        } catch (error) {
+        const result = await updateCreditPackage(params.id, values);
+
+        if (result.success) {
+            toast({ title: 'Pacote Atualizado!', description: `O pacote "${values.name}" foi salvo com sucesso.` });
+            router.push('/admin/billing');
+        } else {
             toast({
                 variant: 'destructive',
                 title: 'Erro ao Atualizar',
-                description: (error as Error).message || 'Não foi possível salvar as alterações.',
+                description: result.error || 'Não foi possível salvar as alterações.',
             });
-        } finally {
-            setIsSubmitting(false);
         }
+        setIsSubmitting(false);
     };
     
     if (isLoading) {
