@@ -82,7 +82,7 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
             } as BlogPost;
         });
     } catch (error) {
-        
+        console.error("Error fetching all blog posts:", error);
         return [];
     }
 }

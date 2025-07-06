@@ -29,8 +29,8 @@ export async function updateUserProfileStatus(userId: string, newStatus: 'Aprova
 }
 
 const adminEditUserSchema = z.object({
-  name: z.string().optional(),
-  phone: z.string().optional(),
+  name: z.string().min(3, "O nome é obrigatório.").optional().or(z.literal('')),
+  phone: z.string().min(10, "O telefone deve ter pelo menos 10 dígitos.").optional().or(z.literal('')),
   role: z.enum(['driver', 'fleet', 'provider', 'admin']),
   profileStatus: z.enum(['incomplete', 'pending_review', 'approved', 'rejected']),
   credits: z.coerce.number().min(0, "Créditos não podem ser negativos."),
@@ -229,10 +229,10 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
     } catch (error) {
         if ((error as Error).message.includes('Firebase Admin SDK not initialized')) {
             console.warn("Could not fetch global settings because Admin SDK is not initialized. Returning default settings.");
-            return defaultSettings;
+        } else {
+             console.error("Error fetching global settings, returning defaults:", error);
         }
-        console.error("Error fetching global settings:", error);
-        throw error;
+        return defaultSettings;
     }
 }
 

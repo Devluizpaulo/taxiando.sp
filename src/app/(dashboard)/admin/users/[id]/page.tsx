@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -63,7 +62,7 @@ export default function AdminUserDetailsPage({ params }: { params: { id: string 
                 
                 if (!userData) {
                     toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não encontrado.' });
-                    router.push('/admin');
+                    router.push('/admin/users');
                     return;
                 }
                 
@@ -120,7 +119,7 @@ export default function AdminUserDetailsPage({ params }: { params: { id: string 
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <div>
-                    <Button type="button" variant="ghost" size="sm" onClick={() => router.push('/admin')} className="mb-4">
+                    <Button type="button" variant="ghost" size="sm" onClick={() => router.push('/admin/users')} className="mb-4">
                         <ArrowLeft /> Voltar para o painel
                     </Button>
                     <div className="flex items-center gap-4">
