@@ -438,4 +438,9 @@ export interface GlobalSettings {
     allowPublicRegistration?: boolean;
     defaultNewUserCredits?: number;
   };
+
+  legal?: {
+    termsOfService?: string;
+    privacyPolicy?: string;
+  };
 }

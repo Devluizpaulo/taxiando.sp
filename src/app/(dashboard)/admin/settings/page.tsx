@@ -13,7 +13,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, Lock, Palette, PlusCircle, Trash2, Home, Users, Search, Mail } from 'lucide-react';
+import { Loader2, KeyRound, Lock, Palette, PlusCircle, Trash2, Home, Users, Search, Mail, Gavel } from 'lucide-react';
 import { getGlobalSettings, updateGlobalSettings } from '@/app/actions/admin-actions';
 import { type GlobalSettings, type Theme } from '@/lib/types';
 import { LoadingScreen } from '@/components/loading-screen';
@@ -70,6 +70,11 @@ const settingsFormSchema = z.object({
   user: z.object({
     allowPublicRegistration: z.boolean().default(true),
     defaultNewUserCredits: z.coerce.number().min(0).default(0),
+  }).optional(),
+
+  legal: z.object({
+    termsOfService: z.string().optional(),
+    privacyPolicy: z.string().optional(),
   }).optional(),
 });
 
@@ -155,13 +160,14 @@ export default function SettingsPage() {
                 </div>
 
                 <Tabs defaultValue="general">
-                    <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
+                    <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7">
                         <TabsTrigger value="general">Geral</TabsTrigger>
                         <TabsTrigger value="themes"><Palette/> Temas</TabsTrigger>
                         <TabsTrigger value="homepage"><Home/> Homepage</TabsTrigger>
                         <TabsTrigger value="payments"><KeyRound/> Pagamentos</TabsTrigger>
                         <TabsTrigger value="users"><Users/> Usuários</TabsTrigger>
                         <TabsTrigger value="seo"><Search/> SEO</TabsTrigger>
+                        <TabsTrigger value="legal"><Gavel/> Legal</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="general" className="mt-6">
@@ -323,6 +329,30 @@ export default function SettingsPage() {
                                 )}/>
                                  <FormField control={form.control} name="seo.metaKeywords" render={({ field }) => (
                                     <FormItem><FormLabel>Palavras-chave</FormLabel><FormControl><Input {...field} placeholder="táxi, sp, motorista, frota, cursos" /></FormControl><FormDescription>Separe as palavras-chave por vírgula.</FormDescription><FormMessage /></FormItem>
+                                )}/>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="legal" className="mt-6">
+                        <Card>
+                            <CardHeader><CardTitle>Conteúdo Legal</CardTitle><CardDescription>Edite o conteúdo das páginas de Termos de Serviço e Política de Privacidade.</CardDescription></CardHeader>
+                            <CardContent className="space-y-6">
+                                 <FormField control={form.control} name="legal.termsOfService" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Termos de Serviço</FormLabel>
+                                        <FormControl><Textarea {...field} placeholder="Escreva os termos de serviço aqui..." rows={15} /></FormControl>
+                                        <FormDescription>Este conteúdo será exibido na página <a href="/terms" target="_blank" className="underline">/terms</a>. Suporta Markdown.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                <FormField control={form.control} name="legal.privacyPolicy" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Política de Privacidade</FormLabel>
+                                        <FormControl><Textarea {...field} placeholder="Escreva a política de privacidade aqui..." rows={15} /></FormControl>
+                                        <FormDescription>Este conteúdo será exibido na página <a href="/privacy" target="_blank" className="underline">/privacy</a>. Suporta Markdown.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
                                 )}/>
                             </CardContent>
                         </Card>

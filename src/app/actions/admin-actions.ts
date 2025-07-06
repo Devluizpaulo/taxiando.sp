@@ -168,6 +168,10 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
             allowPublicRegistration: true,
             defaultNewUserCredits: 0,
         },
+        legal: {
+            termsOfService: '## Termos de Serviço\n\nBem-vindo! O conteúdo dos termos de serviço pode ser editado no painel do administrador.',
+            privacyPolicy: '## Política de Privacidade\n\nBem-vindo! O conteúdo da política de privacidade pode ser editado no painel do administrador.',
+        },
         themes: [
             {
                 name: "Padrão",
@@ -205,6 +209,7 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
                 seo: { ...defaultSettings.seo, ...existingData?.seo },
                 homepage: { ...defaultSettings.homepage, ...existingData?.homepage },
                 user: { ...defaultSettings.user, ...existingData?.user },
+                legal: { ...defaultSettings.legal, ...existingData?.legal },
                 themes: existingData?.themes && existingData.themes.length > 0 ? existingData.themes : defaultSettings.themes,
             } as GlobalSettings;
         }
