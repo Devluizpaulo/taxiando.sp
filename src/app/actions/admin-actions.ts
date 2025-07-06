@@ -155,6 +155,11 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
         stripePublicKey: '',
         stripeSecretKey: '',
         activeThemeName: 'Padrão',
+        socialMedia: {
+          instagram: { url: 'https://instagram.com', enabled: true },
+          facebook: { url: 'https://facebook.com', enabled: true },
+          whatsapp: { url: 'https://wa.me/5511999999999', enabled: false },
+        },
         seo: {
             metaDescription: 'A plataforma completa para o profissional do volante em São Paulo. Encontre veículos, cursos e uma comunidade para acelerar seus resultados.',
             metaKeywords: 'táxi, sp, taxista, frota, aluguel de táxi, cursos para taxistas',
@@ -177,10 +182,14 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
                 name: "Padrão",
                 colors: {
                     '--background': '0 0% 94.1%', '--foreground': '222.2 84% 4.9%',
-                    '--card': '0 0% 100%', '--primary': '55 100% 50%',
-                    '--primary-foreground': '222.2 84% 4.9%', '--secondary': '0 0% 96.1%',
-                    '--accent': '215 100% 33.5%', '--destructive': '0 84.2% 60.2%',
-                    '--border': '0 0% 89.8%', '--input': '0 0% 89.8%', '--ring': '215 100% 33.5%',
+                    '--card': '0 0% 100%', 
+                    '--primary': '217.2 91.2% 59.8%', // Blue
+                    '--primary-foreground': '0 0% 98%', // White
+                    '--secondary': '0 0% 96.1%',
+                    '--accent': '55 100% 50%', // Yellow
+                    '--destructive': '0 84.2% 60.2%',
+                    '--border': '0 0% 89.8%', '--input': '0 0% 89.8%', 
+                    '--ring': '217.2 91.2% 59.8%',
                 }
             },
             {
@@ -210,6 +219,7 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
                 homepage: { ...defaultSettings.homepage, ...existingData?.homepage },
                 user: { ...defaultSettings.user, ...existingData?.user },
                 legal: { ...defaultSettings.legal, ...existingData?.legal },
+                socialMedia: { ...defaultSettings.socialMedia, ...existingData?.socialMedia },
                 themes: existingData?.themes && existingData.themes.length > 0 ? existingData.themes : defaultSettings.themes,
             } as GlobalSettings;
         }

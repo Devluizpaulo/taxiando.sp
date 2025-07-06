@@ -13,13 +13,14 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, Lock, Palette, PlusCircle, Trash2, Home, Users, Search, Mail, Gavel } from 'lucide-react';
+import { Loader2, KeyRound, Lock, Palette, PlusCircle, Trash2, Home, Users, Search, Mail, Gavel, Instagram, MessageSquare } from 'lucide-react';
 import { getGlobalSettings, updateGlobalSettings } from '@/app/actions/admin-actions';
 import { type GlobalSettings, type Theme } from '@/lib/types';
 import { LoadingScreen } from '@/components/loading-screen';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { FacebookIcon } from '@/components/icons/facebook-icon';
 
 
 const themeSchema = z.object({
@@ -55,6 +56,12 @@ const settingsFormSchema = z.object({
   
   activeThemeName: z.string().min(1, "É necessário selecionar um tema ativo."),
   themes: z.array(themeSchema).min(1, "É necessário ter pelo menos um tema."),
+  
+  socialMedia: z.object({
+    instagram: z.object({ url: z.string().optional(), enabled: z.boolean().default(true) }),
+    facebook: z.object({ url: z.string().optional(), enabled: z.boolean().default(true) }),
+    whatsapp: z.object({ url: z.string().optional(), enabled: z.boolean().default(true) }),
+  }).optional(),
 
   seo: z.object({
     metaDescription: z.string().optional(),
@@ -132,7 +139,7 @@ export default function SettingsPage() {
         appendTheme({
             name: "Novo Tema",
             colors: {
-                 '--background': '0 0% 100%',
+                '--background': '0 0% 100%',
                 '--foreground': '222.2 84% 4.9%',
                 '--card': '0 0% 100%',
                 '--primary': '210 40% 98%',
@@ -187,6 +194,39 @@ export default function SettingsPage() {
                                      <FormField control={form.control} name="contactPhone" render={({ field }) => (
                                         <FormItem><FormLabel>Telefone Público de Contato</FormLabel><FormControl><Input {...field} placeholder="(11) 9..." /></FormControl><FormMessage /></FormItem>
                                     )}/>
+                                </div>
+                                <div className="pt-6 border-t">
+                                    <h3 className="text-lg font-medium">Redes Sociais</h3>
+                                    <p className="text-sm text-muted-foreground">Configure os links e a visibilidade das redes sociais no rodapé.</p>
+                                    <div className="space-y-4 mt-4">
+                                        <div className="flex items-center gap-4 p-4 border rounded-lg">
+                                            <div className="flex flex-col space-y-1.5">
+                                                <FormLabel className="flex items-center gap-2"><Instagram/> Instagram</FormLabel>
+                                                <FormField control={form.control} name="socialMedia.instagram.enabled" render={({ field }) => (
+                                                    <div className="flex items-center space-x-2"><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} id="ig-enabled"/></FormControl><label htmlFor="ig-enabled" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Exibir no rodapé</label></div>
+                                                )}/>
+                                            </div>
+                                            <FormField control={form.control} name="socialMedia.instagram.url" render={({ field }) => (<FormItem className="flex-1"><FormLabel className="sr-only">URL Instagram</FormLabel><FormControl><Input {...field} placeholder="https://instagram.com/seu_perfil"/></FormControl><FormMessage /></FormItem>)}/>
+                                        </div>
+                                         <div className="flex items-center gap-4 p-4 border rounded-lg">
+                                            <div className="flex flex-col space-y-1.5">
+                                                <FormLabel className="flex items-center gap-2"><FacebookIcon/> Facebook</FormLabel>
+                                                <FormField control={form.control} name="socialMedia.facebook.enabled" render={({ field }) => (
+                                                    <div className="flex items-center space-x-2"><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} id="fb-enabled"/></FormControl><label htmlFor="fb-enabled" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Exibir no rodapé</label></div>
+                                                )}/>
+                                            </div>
+                                            <FormField control={form.control} name="socialMedia.facebook.url" render={({ field }) => (<FormItem className="flex-1"><FormLabel className="sr-only">URL Facebook</FormLabel><FormControl><Input {...field} placeholder="https://facebook.com/sua_pagina"/></FormControl><FormMessage /></FormItem>)}/>
+                                        </div>
+                                         <div className="flex items-center gap-4 p-4 border rounded-lg">
+                                            <div className="flex flex-col space-y-1.5">
+                                                <FormLabel className="flex items-center gap-2"><MessageSquare/> WhatsApp</FormLabel>
+                                                <FormField control={form.control} name="socialMedia.whatsapp.enabled" render={({ field }) => (
+                                                    <div className="flex items-center space-x-2"><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} id="wpp-enabled"/></FormControl><label htmlFor="wpp-enabled" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Exibir no rodapé</label></div>
+                                                )}/>
+                                            </div>
+                                            <FormField control={form.control} name="socialMedia.whatsapp.url" render={({ field }) => (<FormItem className="flex-1"><FormLabel className="sr-only">URL WhatsApp</FormLabel><FormControl><Input {...field} placeholder="https://wa.me/5511..."/></FormControl><FormMessage /></FormItem>)}/>
+                                        </div>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>

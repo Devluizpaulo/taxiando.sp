@@ -1,5 +1,4 @@
 
-
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "../ui/button";
@@ -8,9 +7,10 @@ import { FacebookIcon } from "../icons/facebook-icon";
 import { Instagram, MessageSquare, MoveRight } from "lucide-react";
 import fs from 'fs';
 import path from 'path';
+import { getGlobalSettings } from "@/app/actions/admin-actions";
 
 
-export function PublicFooter() {
+export async function PublicFooter() {
   const packageJsonPath = path.join(process.cwd(), 'package.json');
   let version = '0.0.0';
   try {
@@ -19,6 +19,9 @@ export function PublicFooter() {
   } catch (error) {
     console.error("Could not read package.json version:", error);
   }
+  
+  const settings = await getGlobalSettings();
+  const socialMedia = settings.socialMedia;
 
   return (
     <footer className="border-t bg-muted/40">
@@ -32,15 +35,21 @@ export function PublicFooter() {
                     A plataforma completa para o profissional do volante em SP. Qualificação, notícias e as melhores oportunidades.
                  </p>
                  <div className="mt-6 flex gap-4">
-                    <Link href="#" aria-label="Facebook">
-                      <FacebookIcon className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
-                    </Link>
-                    <Link href="#" aria-label="Instagram">
-                       <Instagram className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
-                    </Link>
-                    <Link href="#" aria-label="WhatsApp">
-                        <MessageSquare className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
-                    </Link>
+                    {socialMedia?.facebook?.enabled && socialMedia.facebook.url && (
+                        <Link href={socialMedia.facebook.url} aria-label="Facebook" target="_blank" rel="noopener noreferrer">
+                            <FacebookIcon className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
+                        </Link>
+                    )}
+                    {socialMedia?.instagram?.enabled && socialMedia.instagram.url && (
+                        <Link href={socialMedia.instagram.url} aria-label="Instagram" target="_blank" rel="noopener noreferrer">
+                            <Instagram className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
+                        </Link>
+                    )}
+                    {socialMedia?.whatsapp?.enabled && socialMedia.whatsapp.url && (
+                        <Link href={socialMedia.whatsapp.url} aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
+                            <MessageSquare className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
+                        </Link>
+                    )}
                  </div>
             </div>
             <div className="space-y-4">

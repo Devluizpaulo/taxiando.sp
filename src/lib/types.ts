@@ -423,6 +423,12 @@ export interface GlobalSettings {
   activeThemeName: string;
   themes: Theme[];
 
+  socialMedia?: {
+    instagram: { url: string; enabled: boolean };
+    facebook: { url: string; enabled: boolean };
+    whatsapp: { url: string; enabled: boolean };
+  };
+
   seo?: {
     metaDescription?: string;
     metaKeywords?: string;
