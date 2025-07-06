@@ -290,13 +290,13 @@ export default async function Home() {
             <div className="container mx-auto grid grid-cols-1 items-center gap-12 px-4 md:grid-cols-2 md:px-6">
               <div className="space-y-8 text-center md:text-left">
                 <Badge variant="secondary" className="bg-primary/20 text-primary-foreground font-semibold py-1 px-3">
-                  A plataforma completa para o taxista de São Paulo
+                  A plataforma completa para o profissional do volante em São Paulo
                 </Badge>
                 <h1 className="font-headline text-4xl font-bold tracking-tighter text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
-                  Sua Carreira no Ponto Certo.
+                  O ecossistema completo para o profissional do volante.
                 </h1>
                 <p className="mx-auto max-w-xl text-lg text-muted-foreground text-justify md:mx-0 md:text-xl">
-                  Encontre os melhores veículos, cursos de qualificação e uma comunidade de profissionais para você acelerar seus resultados.
+                  Mais que uma plataforma, uma comunidade. Encontre veículos, qualifique-se com cursos exclusivos e descubra os melhores roteiros da cidade com nosso Guia SP.
                 </p>
                 <div className="flex flex-col gap-4 sm:flex-row sm:justify-center md:justify-start">
                   <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg shadow-accent/20">
@@ -314,6 +314,10 @@ export default async function Home() {
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-5 w-5 text-primary" />
                     <span>Cursos Especializados</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    <span>Guia da Cidade</span>
                   </div>
                 </div>
               </div>
