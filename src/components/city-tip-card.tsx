@@ -61,10 +61,19 @@ export const CityTipCard = ({ tip }: { tip: CityTip }) => {
                     <p className="text-sm text-muted-foreground">{tip.description}</p>
                  </div>
                  <DialogFooter className="p-6 pt-4 border-t bg-background/90 backdrop-blur-sm flex-row justify-between items-center w-full z-10">
-                    {tip.priceRange && (
-                        <p className="font-bold text-xl text-primary">{tip.priceRange}</p>
-                    )}
+                    <div>
+                         {tip.priceRange && (
+                            <p className="font-bold text-xl text-primary">{tip.priceRange}</p>
+                        )}
+                    </div>
                     <div className="flex items-center gap-2">
+                         {tip.mapUrl && (
+                            <Button asChild variant="outline">
+                                <a href={tip.mapUrl} target="_blank" rel="noopener noreferrer">
+                                    <MapPin className="mr-2 h-4 w-4"/> Ver no Mapa
+                                </a>
+                            </Button>
+                        )}
                         {currentUrl && <SharePopover title={tip.title} url={currentUrl} />}
                     </div>
                  </DialogFooter>

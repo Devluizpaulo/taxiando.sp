@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,7 @@ export function TipFormDialog({ isOpen, setIsOpen, tip, onFinished }: TipFormDia
             description: '',
             location: '',
             imageUrl: '',
+            mapUrl: '',
             target: 'driver',
         }
     });
@@ -96,9 +97,14 @@ export function TipFormDialog({ isOpen, setIsOpen, tip, onFinished }: TipFormDia
                                 <FormItem><FormLabel>Localização</FormLabel><FormControl><Input {...field} placeholder="Ex: Vila Madalena, São Paulo" /></FormControl><FormMessage /></FormItem>
                             )}/>
                         </div>
-                        <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                            <FormItem><FormLabel>URL da Imagem (Opcional)</FormLabel><FormControl><Input {...field} placeholder="https://..." /></FormControl><FormMessage /></FormItem>
-                        )}/>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                                <FormItem><FormLabel>URL da Imagem (Opcional)</FormLabel><FormControl><Input {...field} placeholder="https://..." /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                             <FormField control={form.control} name="mapUrl" render={({ field }) => (
+                                <FormItem><FormLabel>URL do Mapa (Opcional)</FormLabel><FormControl><Input {...field} placeholder="https://maps.app.goo.gl/..." /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                        </div>
                         {target === 'client' && (
                             <FormField control={form.control} name="priceRange" render={({ field }) => (
                                 <FormItem><FormLabel>Faixa de Preço (para Clientes)</FormLabel>

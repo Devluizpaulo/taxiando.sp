@@ -159,6 +159,7 @@ export interface CityTip {
   description: string;
   location: string;
   imageUrl?: string;
+  mapUrl?: string;
   target: 'driver' | 'client';
   priceRange?: '$' | '$$' | '$$$' | '$$$$';
   createdAt: Timestamp | string;

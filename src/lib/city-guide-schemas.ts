@@ -7,6 +7,7 @@ export const cityGuideFormSchema = z.object({
   description: z.string().min(20, "A descrição é obrigatória."),
   location: z.string().min(3, "A localização é obrigatória."),
   imageUrl: z.string().url("URL da imagem inválida.").optional().or(z.literal('')),
+  mapUrl: z.string().url("URL do mapa inválida.").optional().or(z.literal('')),
   target: z.enum(['driver', 'client']),
   priceRange: z.enum(['$', '$$', '$$$', '$$$$']).optional(),
 });
