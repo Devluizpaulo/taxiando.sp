@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BookForm } from '../book-form';
+import { BookForm } from './book-form';
 import { LoadingScreen } from '@/components/loading-screen';
 import { type LibraryBook } from '@/lib/types';
 import { getBookById } from '@/app/actions/library-actions';
