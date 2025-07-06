@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2, Eye, LogIn, UserCheck, Search, Trash2, FilePen, Sparkles, Building, Settings } from "lucide-react";
+import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2, Eye, LogIn, UserCheck, Search, Trash2, FilePen, Sparkles, Building, Settings, Car, Wrench, Shield } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -32,6 +32,7 @@ import { getServiceAndProviderDetails } from '@/app/actions/service-actions';
 import type { UserProfile, Vehicle, ServiceListing, AnalyticsData, AdminUser } from '@/lib/types';
 import { LoadingScreen } from '@/components/loading-screen';
 import { vehiclePerks } from '@/lib/data';
+import { format } from 'date-fns';
 
 
 const getStatusVariant = (status?: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -65,7 +66,6 @@ export function AdminDashboardClient() {
 
     // State for user filtering and modal
     const [searchTerm, setSearchTerm] = useState('');
-    const [roleFilter, setRoleFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
     const [isDeleting, setIsDeleting] = useState(false);
     const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
@@ -104,17 +104,15 @@ export function AdminDashboardClient() {
             const nameMatch = user.name?.toLowerCase().includes(searchLower) || user.nomeFantasia?.toLowerCase().includes(searchLower);
             const emailMatch = user.email.toLowerCase().includes(searchLower);
             
-            let roleMatch = roleFilter === 'all' || user.role === roleFilter;
-            // Map our DB statuses to the filter options
             let statusMatch = statusFilter === 'all';
             if (statusFilter === 'approved') statusMatch = user.profileStatus === 'approved';
             if (statusFilter === 'pending') statusMatch = user.profileStatus === 'pending_review';
             if (statusFilter === 'rejected') statusMatch = user.profileStatus === 'rejected';
             if (statusFilter === 'incomplete') statusMatch = user.profileStatus === 'incomplete' || !user.profileStatus;
 
-            return (nameMatch || emailMatch) && roleMatch && statusMatch;
+            return (nameMatch || emailMatch) && statusMatch;
         });
-    }, [users, searchTerm, roleFilter, statusFilter]);
+    }, [users, searchTerm, statusFilter]);
     
     const handleUserStatusUpdate = async (userId: string, newStatus: 'Aprovado' | 'Rejeitado' | 'Pendente') => {
         setUpdatingUserStatus(userId);
@@ -276,119 +274,116 @@ export function AdminDashboardClient() {
                 </Card>
             </div>
 
-            <Tabs defaultValue="users">
-                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                    <TabsTrigger value="users">Gerenciar Usuários</TabsTrigger>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Gerenciamento de Usuários</CardTitle>
+                    <CardDescription>Filtre e gerencie todos os usuários da plataforma.</CardDescription>
+                     <div className="mt-4 flex flex-col items-center gap-4 md:flex-row">
+                        <div className="relative w-full md:flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Buscar por nome ou email..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10"
+                            />
+                        </div>
+                         <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="w-full md:w-[180px]">
+                                <SelectValue placeholder="Filtrar por Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos os Status</SelectItem>
+                                <SelectItem value="approved">Aprovado</SelectItem>
+                                <SelectItem value="pending">Pendente</SelectItem>
+                                <SelectItem value="rejected">Rejeitado</SelectItem>
+                                <SelectItem value="incomplete">Incompleto</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                     <Tabs defaultValue="drivers">
+                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+                            <TabsTrigger value="drivers"><Car className="mr-2"/>Motoristas</TabsTrigger>
+                            <TabsTrigger value="fleets"><Building className="mr-2"/>Frotas</TabsTrigger>
+                            <TabsTrigger value="providers"><Wrench className="mr-2"/>Prestadores</TabsTrigger>
+                            <TabsTrigger value="admins"><Shield className="mr-2"/>Admins</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="drivers" className="mt-4">
+                            <Table>
+                                <TableHeader><TableRow><TableHead>Motorista</TableHead><TableHead>Status</TableHead><TableHead>CNH</TableHead><TableHead>Créditos</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {filteredUsers.filter(u => u.role === 'driver').map(user => (
+                                        <TableRow key={user.uid}>
+                                            <TableCell><Link href={`/admin/users/${user.uid}`} className="font-medium hover:underline">{user.name}</Link><div className="text-sm text-muted-foreground">{user.email}</div></TableCell>
+                                            <TableCell><Badge variant={getStatusVariant(user.profileStatus)}>{user.profileStatus || 'N/A'}</Badge></TableCell>
+                                            <TableCell>{user.cnhExpiration ? format(new Date(user.cnhExpiration), 'dd/MM/yyyy') : 'N/A'}</TableCell>
+                                            <TableCell>{user.credits ?? 0}</TableCell>
+                                            <TableCell className="text-right"><UserActions user={user} setUpdatingUserStatus={setUpdatingUserStatus} setUserToDelete={setUserToDelete} handleUserStatusUpdate={handleUserStatusUpdate} updatingUserStatus={updatingUserStatus} /></TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TabsContent>
+                        <TabsContent value="fleets" className="mt-4">
+                             <Table>
+                                <TableHeader><TableRow><TableHead>Frota</TableHead><TableHead>Status</TableHead><TableHead>Veículos</TableHead><TableHead>Créditos</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {filteredUsers.filter(u => u.role === 'fleet').map(user => (
+                                        <TableRow key={user.uid}>
+                                            <TableCell><Link href={`/admin/users/${user.uid}`} className="font-medium hover:underline">{user.nomeFantasia}</Link><div className="text-sm text-muted-foreground">{user.email}</div></TableCell>
+                                            <TableCell><Badge variant={getStatusVariant(user.profileStatus)}>{user.profileStatus || 'N/A'}</Badge></TableCell>
+                                            <TableCell>{user.vehicleCount ?? 0}</TableCell>
+                                            <TableCell>{user.credits ?? 0}</TableCell>
+                                            <TableCell className="text-right"><UserActions user={user} setUpdatingUserStatus={setUpdatingUserStatus} setUserToDelete={setUserToDelete} handleUserStatusUpdate={handleUserStatusUpdate} updatingUserStatus={updatingUserStatus} /></TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TabsContent>
+                         <TabsContent value="providers" className="mt-4">
+                             <Table>
+                                <TableHeader><TableRow><TableHead>Prestador</TableHead><TableHead>Status</TableHead><TableHead>Serviços</TableHead><TableHead>Créditos</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {filteredUsers.filter(u => u.role === 'provider').map(user => (
+                                        <TableRow key={user.uid}>
+                                            <TableCell><Link href={`/admin/users/${user.uid}`} className="font-medium hover:underline">{user.nomeFantasia || user.name}</Link><div className="text-sm text-muted-foreground">{user.email}</div></TableCell>
+                                            <TableCell><Badge variant={getStatusVariant(user.profileStatus)}>{user.profileStatus || 'N/A'}</Badge></TableCell>
+                                            <TableCell>{user.serviceCount ?? 0}</TableCell>
+                                            <TableCell>{user.credits ?? 0}</TableCell>
+                                            <TableCell className="text-right"><UserActions user={user} setUpdatingUserStatus={setUpdatingUserStatus} setUserToDelete={setUserToDelete} handleUserStatusUpdate={handleUserStatusUpdate} updatingUserStatus={updatingUserStatus} /></TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TabsContent>
+                         <TabsContent value="admins" className="mt-4">
+                              <Table>
+                                <TableHeader><TableRow><TableHead>Administrador</TableHead><TableHead>Email</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {filteredUsers.filter(u => u.role === 'admin').map(user => (
+                                        <TableRow key={user.uid}>
+                                            <TableCell><Link href={`/admin/users/${user.uid}`} className="font-medium hover:underline">{user.name}</Link></TableCell>
+                                            <TableCell>{user.email}</TableCell>
+                                            <TableCell className="text-right"><UserActions user={user} setUpdatingUserStatus={setUpdatingUserStatus} setUserToDelete={setUserToDelete} handleUserStatusUpdate={handleUserStatusUpdate} updatingUserStatus={updatingUserStatus} /></TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
+
+            <Tabs defaultValue="opportunities">
+                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
                     <TabsTrigger value="opportunities">Moderar Locações</TabsTrigger>
                     <TabsTrigger value="services">Moderar Serviços</TabsTrigger>
                     <TabsTrigger value="settings">Configurações</TabsTrigger>
                 </TabsList>
-                <TabsContent value="users">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Todos os Usuários</CardTitle>
-                            <CardDescription>Filtre e gerencie todos os usuários da plataforma.</CardDescription>
-                             <div className="mt-4 flex flex-col items-center gap-4 md:flex-row">
-                                <div className="relative w-full md:flex-1">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Buscar por nome ou email..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="pl-10"
-                                    />
-                                </div>
-                                <div className="flex w-full gap-4 md:w-auto">
-                                <Select value={roleFilter} onValueChange={setRoleFilter}>
-                                    <SelectTrigger className="w-full md:w-[180px]">
-                                        <SelectValue placeholder="Filtrar por Perfil" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Todos os Perfis</SelectItem>
-                                        <SelectItem value="driver">Motorista</SelectItem>
-                                        <SelectItem value="fleet">Frota</SelectItem>
-                                        <SelectItem value="provider">Prestador</SelectItem>
-                                        <SelectItem value="admin">Admin</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="w-full md:w-[180px]">
-                                        <SelectValue placeholder="Filtrar por Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Todos os Status</SelectItem>
-                                        <SelectItem value="approved">Aprovado</SelectItem>
-                                        <SelectItem value="pending">Pendente</SelectItem>
-                                        <SelectItem value="rejected">Rejeitado</SelectItem>
-                                        <SelectItem value="incomplete">Incompleto</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Usuário</TableHead>
-                                        <TableHead>Perfil</TableHead>
-                                        <TableHead>Créditos</TableHead>
-                                        <TableHead>Status do Perfil</TableHead>
-                                        <TableHead className="text-right">Ações</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredUsers.length === 0 ? (
-                                        <TableRow><TableCell colSpan={5} className="h-24 text-center">Nenhum usuário encontrado com esses filtros.</TableCell></TableRow>
-                                    ) : (
-                                    filteredUsers.map(user => (
-                                        <TableRow key={user.uid}>
-                                            <TableCell>
-                                                <Link href={`/admin/users/${user.uid}`} className="hover:underline">
-                                                    <div className="font-medium">{user.name || user.nomeFantasia || 'Usuário sem nome'}</div>
-                                                </Link>
-                                                <div className="text-sm text-muted-foreground">{user.email}</div>
-                                            </TableCell>
-                                            <TableCell><Badge variant="outline">{user.role}</Badge></TableCell>
-                                            <TableCell className="font-medium">{user.credits ?? 0}</TableCell>
-                                            <TableCell><Badge variant={getStatusVariant(user.profileStatus)}>{user.profileStatus || 'N/A'}</Badge></TableCell>
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                        <DropdownMenuItem asChild>
-                                                            <Link href={`/admin/users/${user.uid}`}>
-                                                                <FilePen className="mr-2"/> Ver Detalhes / Editar
-                                                            </Link>
-                                                        </DropdownMenuItem>
-                                                        {(user.profileStatus === 'Pendente' || user.profileStatus === 'pending_review') && (
-                                                            updatingUserStatus === user.uid ? (
-                                                                <DropdownMenuItem disabled>
-                                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                                    Atualizando...
-                                                                </DropdownMenuItem>
-                                                            ) : (
-                                                                <>
-                                                                    <DropdownMenuItem onClick={() => handleUserStatusUpdate(user.uid, 'Aprovado')}><UserCheck className="mr-2 h-4 w-4"/> Aprovar Cadastro</DropdownMenuItem>
-                                                                    <DropdownMenuItem className="text-destructive focus:bg-destructive/90 focus:text-destructive-foreground" onClick={() => handleUserStatusUpdate(user.uid, 'Rejeitado')}>Rejeitar Cadastro</DropdownMenuItem>
-                                                                </>
-                                                            )
-                                                        )}
-                                                        <DropdownMenuSeparator />
-                                                         <DropdownMenuItem onSelect={() => setUserToDelete(user)} className="text-destructive focus:bg-destructive/90 focus:text-destructive-foreground">
-                                                            <Trash2 className="mr-2" /> Remover Usuário
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    )))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+                
                 <TabsContent value="opportunities">
                     <Card>
                         <CardHeader>
@@ -541,6 +536,40 @@ export function AdminDashboardClient() {
     );
 }
 
+function UserActions({ user, updatingUserStatus, handleUserStatusUpdate, setUserToDelete }: { user: AdminUser; updatingUserStatus: string | null; handleUserStatusUpdate: (userId: string, status: 'Aprovado' | 'Rejeitado' | 'Pendente') => void; setUserToDelete: (user: AdminUser) => void; }) {
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                    <Link href={`/admin/users/${user.uid}`}>
+                        <FilePen className="mr-2"/> Ver Detalhes / Editar
+                    </Link>
+                </DropdownMenuItem>
+                {(user.profileStatus === 'Pendente' || user.profileStatus === 'pending_review') && (
+                    updatingUserStatus === user.uid ? (
+                        <DropdownMenuItem disabled>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Atualizando...
+                        </DropdownMenuItem>
+                    ) : (
+                        <>
+                            <DropdownMenuItem onClick={() => handleUserStatusUpdate(user.uid, 'Aprovado')}><UserCheck className="mr-2 h-4 w-4"/> Aprovar Cadastro</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive focus:bg-destructive/90 focus:text-destructive-foreground" onClick={() => handleUserStatusUpdate(user.uid, 'Rejeitado')}>Rejeitar Cadastro</DropdownMenuItem>
+                        </>
+                    )
+                )}
+                <DropdownMenuSeparator />
+                 <DropdownMenuItem onSelect={() => setUserToDelete(user)} className="text-destructive focus:bg-destructive/90 focus:text-destructive-foreground">
+                    <Trash2 className="mr-2" /> Remover Usuário
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+
 function VehicleDetailsModal({ isOpen, onOpenChange, vehicle, fleet }: { isOpen: boolean, onOpenChange: (open: boolean) => void, vehicle: Vehicle | null, fleet: UserProfile | null }) {
     if (!vehicle || !fleet) return null;
 
@@ -641,5 +670,3 @@ function ServiceDetailsModal({ isOpen, onOpenChange, service, provider }: { isOp
         </Dialog>
     );
 }
-
-    

@@ -400,6 +400,36 @@ export async function getAdminDashboardData() {
         analyticsData = await getAdminDashboardAnalytics();
     } catch (analyticsError) {}
 
+    try {
+        const allVehiclesSnapshot = await adminDB.collection('vehicles').get();
+        const vehicleCountsByFleet: Record<string, number> = {};
+        allVehiclesSnapshot.forEach(doc => {
+            const fleetId = doc.data().fleetId;
+            vehicleCountsByFleet[fleetId] = (vehicleCountsByFleet[fleetId] || 0) + 1;
+        });
+
+        const allServicesSnapshot = await adminDB.collection('services').get();
+        const serviceCountsByProvider: Record<string, number> = {};
+        allServicesSnapshot.forEach(doc => {
+            const providerId = doc.data().providerId;
+            serviceCountsByProvider[providerId] = (serviceCountsByProvider[providerId] || 0) + 1;
+        });
+        
+        usersData = usersData.map(user => {
+            if (user.role === 'fleet') {
+                return { ...user, vehicleCount: vehicleCountsByFleet[user.uid] || 0 };
+            }
+            if (user.role === 'provider') {
+                return { ...user, serviceCount: serviceCountsByProvider[user.uid] || 0 };
+            }
+            return user;
+        });
+
+    } catch(e) {
+        console.error("Error counting vehicles/services for admin dashboard", e);
+    }
+
+
     const userGrowthData: { month: string; total: number; }[] = [];
     const months = Array.from({ length: 12 }, (_, i) => subMonths(new Date(), i)).reverse();
     

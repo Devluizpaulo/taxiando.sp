@@ -346,6 +346,8 @@ export type AdminUser = Omit<UserProfile, 'createdAt' | 'cnhExpiration' | 'condu
     condutaxExpiration?: string;
     alvaraExpiration?: string;
     lastNotificationCheck?: string;
+    vehicleCount?: number;
+    serviceCount?: number;
 };
 
 export interface SupportTicket {
