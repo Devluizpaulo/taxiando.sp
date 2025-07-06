@@ -30,10 +30,10 @@ const HowToBeDriverSection = () => (
             <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
               Quer se tornar um taxista profissional em SP?
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground text-justify">
+            <p className="mt-4 text-lg text-muted-foreground">
               Preparamos um guia completo com o passo a passo, desde a documentação necessária até encontrar o veículo ideal para você começar com o pé direito.
             </p>
-            <p className="mt-4 text-muted-foreground text-justify">
+            <p className="mt-4 text-muted-foreground">
               Desmistificamos todo o processo para você focar no que realmente importa: dirigir com segurança e profissionalismo.
             </p>
             <Button asChild size="lg" className="mt-8">
@@ -138,7 +138,7 @@ const HowToBeDriverSection = () => (
                     <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
                         Últimas Notícias e Matérias
                     </h2>
-                    <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground text-justify">
+                    <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
                         Informação de qualidade para o profissional do volante.
                     </p>
                 </div>
@@ -191,7 +191,7 @@ const ClassifiedsSection = async () => {
                     <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
                       Oportunidades em Destaque
                     </h2>
-                    <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground text-justify">
+                    <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
                       Encontre o veículo ideal e os melhores serviços para acelerar sua carreira.
                     </p>
                 </div>
@@ -295,7 +295,7 @@ export default async function Home() {
                 <h1 className="font-headline text-4xl font-bold tracking-tighter text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
                   O ecossistema completo para o profissional do volante.
                 </h1>
-                <p className="mx-auto max-w-xl text-lg text-muted-foreground text-justify md:mx-0 md:text-xl">
+                <p className="mx-auto max-w-xl text-lg text-muted-foreground md:mx-0 md:text-xl">
                   Mais que uma plataforma, uma comunidade. Encontre veículos, qualifique-se com cursos exclusivos e descubra os melhores roteiros da cidade com nosso Guia SP.
                 </p>
                 <div className="flex flex-col gap-4 sm:flex-row sm:justify-center md:justify-start">
@@ -342,7 +342,7 @@ export default async function Home() {
                 <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
                   Tudo que você precisa para decolar
                 </h2>
-                <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground text-justify">
+                <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
                   Oferecemos as ferramentas e o conhecimento para você ir mais longe.
                 </p>
               </div>
