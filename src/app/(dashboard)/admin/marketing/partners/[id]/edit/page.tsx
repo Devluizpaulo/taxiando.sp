@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getPartnerById } from '@/app/actions/marketing-actions';
-import { PartnerForm } from '../partner-form';
+import { PartnerForm } from '../../partner-form';
 import { LoadingScreen } from '@/components/loading-screen';
 import { type Partner } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';

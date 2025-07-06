@@ -21,17 +21,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
-const lessonTypeIcons = {
+const lessonTypeIcons: { [key: string]: React.ReactNode } = {
     video: <Video className="h-4 w-4" />,
     text: <FileText className="h-4 w-4" />,
     quiz: <ClipboardCheck className="h-4 w-4" />,
+    audio: <Mic className="h-4 w-4" />,
 };
 
 export default function EditCoursePage({ params }: { params: { id: string }}) {
     const router = useRouter();
     const { toast } = useToast();
+    const { user } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [isPublished, setIsPublished] = useState(false);
@@ -61,6 +64,12 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
 
     const onSubmit = async (values: CourseFormValues) => {
         setIsSubmitting(true);
+        if (!user) {
+            toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado.' });
+            setIsSubmitting(false);
+            return;
+        }
+
         try {
             const valuesWithIds = {
                 ...values,
@@ -70,7 +79,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                     lessons: module.lessons.map(lesson => ({
                         ...lesson,
                         id: lesson.id || nanoid(),
-                        questions: module.questions?.map(q => ({
+                        questions: lesson.questions?.map(q => ({
                             ...q,
                             id: q.id || nanoid(),
                             options: q.options.map(o => ({ ...o, id: o.id || nanoid() }))
@@ -79,7 +88,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                 }))
             };
             
-            const result = await updateCourse(params.id, valuesWithIds);
+            const result = await updateCourse(params.id, valuesWithIds, user.uid);
 
             if (result.success) {
                 toast({ title: 'Curso Atualizado com Sucesso!', description: `O curso "${values.title}" foi salvo.` });
@@ -205,10 +214,18 @@ function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDi
                 <div className="flex-1 space-y-4">
                     <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.title`} render={({ field }) => (<FormItem><FormLabel>Título da Aula</FormLabel><FormControl><Input {...field} placeholder="Ex: Introdução ao CTB" disabled={isEditingDisabled}/></FormControl><FormMessage /></FormItem>)}/>
                     <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.type`} render={({ field }) => (<FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isEditingDisabled}><FormControl><SelectTrigger>{field.value ? <div className="flex items-center gap-2">{lessonTypeIcons[field.value]} {field.value.charAt(0).toUpperCase() + field.value.slice(1)}</div> : "Selecione..."}</SelectTrigger></FormControl><SelectContent><SelectItem value="video"><div className="flex items-center gap-2"><Video /> Vídeo</div></SelectItem><SelectItem value="text"><div className="flex items-center gap-2"><FileText /> Texto</div></SelectItem><SelectItem value="quiz"><div className="flex items-center gap-2"><ClipboardCheck /> Prova (Quiz)</div></SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.duration`} render={({ field }) => (<FormItem><FormLabel>Duração (min)</FormLabel><FormControl><Input type="number" {...field} disabled={isEditingDisabled} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.type`} render={({ field }) => (<FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isEditingDisabled}><FormControl><SelectTrigger>{field.value ? <div className="flex items-center gap-2">{lessonTypeIcons[field.value]} {field.value.charAt(0).toUpperCase() + field.value.slice(1)}</div> : "Selecione..."}</SelectTrigger></FormControl><SelectContent><SelectItem value="video"><div className="flex items-center gap-2"><Video /> Vídeo</div></SelectItem><SelectItem value="text"><div className="flex items-center gap-2"><FileText /> Texto</div></SelectItem><SelectItem value="audio"><div className="flex items-center gap-2"><Mic /> Áudio</div></SelectItem><SelectItem value="quiz"><div className="flex items-center gap-2"><ClipboardCheck /> Prova (Quiz)</div></SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.duration`} render={({ field }) => (<FormItem><FormLabel>Duração (min)</FormLabel><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} disabled={isEditingDisabled} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
                      {lessonType === 'video' && (<FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (<FormItem><FormLabel>URL do Vídeo (YouTube/Vimeo)</FormLabel><FormControl><Input {...field} placeholder="https://www.youtube.com/watch?v=..." disabled={isEditingDisabled} /></FormControl><FormMessage /></FormItem>)}/>)}
+                    {lessonType === 'audio' && (<FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.audioFile`} render={({ field }) => (
+                        <FormItem><FormLabel>Arquivo de Áudio</FormLabel>
+                            <FormControl>
+                                <Input type="file" accept="audio/*" onChange={(e) => field.onChange(e.target.files?.[0])} disabled={isEditingDisabled} className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"/>
+                            </FormControl>
+                            <FormDescription>Se já houver um áudio salvo, o envio de um novo irá substituí-lo.</FormDescription>
+                        <FormMessage /></FormItem>
+                    )}/>)}
                     {lessonType === 'text' && (<FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (<FormItem><FormLabel>Conteúdo da Aula</FormLabel><FormControl><Textarea {...field} placeholder="Escreva o conteúdo da aula aqui." rows={8} disabled={isEditingDisabled} /></FormControl><FormDescription>Dica: Use Markdown para adicionar **negrito**, *itálico*, listas e mais.</FormDescription><FormMessage /></FormItem>)}/>)}
                     {lessonType === 'quiz' ? (<QuizBuilder form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />) : (<MaterialField form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />)}
                 </div>
@@ -293,5 +310,3 @@ function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQu
         </Card>
     );
 }
-
-    
