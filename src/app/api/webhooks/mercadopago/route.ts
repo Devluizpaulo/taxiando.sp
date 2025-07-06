@@ -53,4 +53,3 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ status: 'received' }, { status: 200 });
 }
-
