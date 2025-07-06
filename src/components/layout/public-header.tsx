@@ -23,10 +23,10 @@ export function PublicHeader() {
   const navLinks = [
     { href: "/", label: "Início" },
     { href: "/how-to-become-a-taxi-driver", label: "Seja um Taxista" },
-    { href: "/events", label: "Agenda" },
+    { href: "/events", label: "Guia SP" },
     { href: "/rentals", label: "Alugar Veículo" },
-    { href: "/#features", label: "Recursos" },
-    { href: "/faq", label: "FAQ" },
+    { href: "/services/marketplace", label: "Serviços" },
+    { href: "/blog", label: "Blog" },
     { href: "/contact", label: "Contato" },
   ];
 

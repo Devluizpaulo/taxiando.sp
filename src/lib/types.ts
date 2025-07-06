@@ -1,4 +1,5 @@
 
+
 import { type Timestamp } from "firebase/firestore";
 
 export interface Review {
@@ -148,6 +149,18 @@ export interface Event {
   mapUrl: string;
   imageUrl?: string;
   startDate: Timestamp | string;
+  createdAt: Timestamp | string;
+}
+
+export interface CityTip {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  location: string;
+  imageUrl?: string;
+  target: 'driver' | 'client';
+  priceRange?: '$' | '$$' | '$$$' | '$$$$';
   createdAt: Timestamp | string;
 }
 
