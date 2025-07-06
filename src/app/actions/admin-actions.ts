@@ -282,35 +282,37 @@ export async function getPublicSettings() {
 }
 
 export async function getPaymentSettings(): Promise<PaymentGatewaySettings> {
-    const docRef = adminDB.collection('settings').doc('payment');
-    const docSnap = await docRef.get();
-
-    if (docSnap.exists) {
-        return docSnap.data() as PaymentGatewaySettings;
+    try {
+        const settings = await getGlobalSettings();
+        return {
+            activeGateway: settings.activeGateway,
+            mercadoPago: {
+                publicKey: settings.mercadoPagoPublicKey,
+                accessToken: settings.mercadoPagoAccessToken,
+            },
+            stripe: {
+                publicKey: settings.stripePublicKey,
+                secretKey: settings.stripeSecretKey,
+            }
+        }
+    } catch(e) {
+        return { 
+            activeGateway: 'mercadoPago',
+        };
     }
-    
-    return { 
-        activeGateway: 'mercadoPago',
-        mercadoPago: { publicKey: '', accessToken: '' },
-        stripe: { publicKey: '', secretKey: '' },
-    };
 }
 
 
 export async function ensureInitialData() {
     try {
-        const settingsRef = adminDB.collection('settings').doc('payment');
+        const settingsRef = adminDB.collection('settings').doc('global');
         const analyticsPageViewsRef = adminDB.collection('analytics').doc('page_views');
         const analyticsLoginsRef = adminDB.collection('analytics').doc('logins');
         const analyticsSalesRef = adminDB.collection('analytics').doc('sales');
 
         const settingsSnap = await settingsRef.get();
         if (!settingsSnap.exists) {
-            await settingsRef.set({ 
-                activeGateway: 'mercadoPago',
-                mercadoPago: { publicKey: '', accessToken: '' },
-                stripe: { publicKey: '', secretKey: '' },
-            });
+            await getGlobalSettings();
         }
 
         const pageViewsSnap = await analyticsPageViewsRef.get();
