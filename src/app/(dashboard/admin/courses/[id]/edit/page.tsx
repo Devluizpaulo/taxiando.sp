@@ -25,7 +25,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
-const lessonTypeIcons = {
+const lessonTypeIcons: { [key: string]: React.ReactNode } = {
     video: <Video className="h-4 w-4" />,
     text: <FileText className="h-4 w-4" />,
     quiz: <ClipboardCheck className="h-4 w-4" />,
@@ -80,7 +80,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                     lessons: module.lessons.map(lesson => ({
                         ...lesson,
                         id: lesson.id || nanoid(),
-                        questions: module.questions?.map(q => ({
+                        questions: lesson.questions?.map(q => ({
                             ...q,
                             id: q.id || nanoid(),
                             options: q.options.map(o => ({ ...o, id: o.id || nanoid() }))
@@ -311,5 +311,3 @@ function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQu
         </Card>
     );
 }
-
-    
