@@ -5,20 +5,11 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { FacebookIcon } from "../icons/facebook-icon";
 import { Instagram, MessageSquare, MoveRight } from "lucide-react";
-import fs from 'fs';
-import path from 'path';
 import { getGlobalSettings } from "@/app/actions/admin-actions";
 
 
 export async function PublicFooter() {
-  const packageJsonPath = path.join(process.cwd(), 'package.json');
-  let version = '0.0.0';
-  try {
-    const fileContents = fs.readFileSync(packageJsonPath, 'utf8');
-    version = JSON.parse(fileContents).version;
-  } catch (error) {
-    console.error("Could not read package.json version:", error);
-  }
+  const version = process.env.APP_VERSION || '0.0.0';
   
   const settings = await getGlobalSettings();
   const socialMedia = settings.socialMedia;
