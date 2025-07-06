@@ -102,7 +102,7 @@ Se você encontrar um erro dizendo `Firebase Admin SDK not initialized`, signifi
     *   No seu arquivo `.env.local`, encontre a linha `FIREBASE_SERVICE_ACCOUNT_JSON=''`.
     *   Copie o **conteúdo completo** do seu arquivo JSON e cole dentro das aspas simples.
 
-Após configurar `FIREBEASE_SERVICE_ACCOUNT_JSON` e as outras chaves do `.env.example`, o erro desaparecerá.
+Após configurar `FIREBASE_SERVICE_ACCOUNT_JSON` e as outras chaves do `.env.example`, o erro desaparecerá.
 
 ---
 
