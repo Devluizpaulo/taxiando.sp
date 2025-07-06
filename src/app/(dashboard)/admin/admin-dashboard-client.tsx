@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -8,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -16,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2, Eye, LogIn, UserCheck, Search, Trash2, FilePen, Sparkles, Building, Settings, Car, Wrench, Shield } from "lucide-react";
+import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2, Eye, LogIn, UserCheck, Search, Trash2, FilePen, Sparkles, Building, Settings, Car, Wrench, Shield, Newspaper, Library, ImageIcon, Tag, Mail, Megaphone, Handshake, LifeBuoy, Star } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -51,6 +52,24 @@ const getStatusVariant = (status?: string): "default" | "secondary" | "destructi
         default: return 'outline';
     }
 };
+
+const adminNavItems = [
+    { title: 'Cursos', href: '/admin/courses', icon: BookOpen, description: 'Crie e gerencie os cursos da plataforma.' },
+    { title: 'Blog', href: '/admin/blog', icon: Newspaper, description: 'Escreva e publique notícias e artigos.' },
+    { title: 'Eventos', href: '/admin/events', icon: Calendar, description: 'Gerencie a agenda cultural.' },
+    { title: 'Biblioteca', href: '/admin/library', icon: Library, description: 'Adicione e organize os livros digitais.' },
+    { title: 'Galeria', href: '/admin/gallery', icon: ImageIcon, description: 'Gerencie todas as imagens da plataforma.' },
+    { title: 'Pacotes de Crédito', href: '/admin/billing', icon: ShoppingCart, description: 'Defina os pacotes de crédito para venda.' },
+    { title: 'Cupons', href: '/admin/marketing/coupons', icon: Tag, description: 'Crie e gerencie cupons de desconto.' },
+    { title: 'Newsletter', href: '/admin/marketing/newsletter', icon: Mail, description: 'Envie emails para seus usuários.' },
+    { title: 'Notificações', href: '/admin/marketing/notifications', icon: Megaphone, description: 'Envie notificações para a plataforma.' },
+    { title: 'Parceiros', href: '/admin/marketing/partners', icon: Handshake, description: 'Gerencie os banners de parceiros.' },
+    { title: 'Quizzes', href: '/admin/marketing/quiz', icon: Star, description: 'Crie quizzes interativos para o site.' },
+    { title: 'Avaliações', href: '/admin/reviews', icon: Star, description: 'Modere as avaliações enviadas.' },
+    { title: 'Suporte', href: '/admin/support', icon: LifeBuoy, description: 'Responda aos tickets de suporte.' },
+    { title: 'Configurações', href: '/admin/settings', icon: Settings, description: 'Ajuste as configurações globais.' },
+];
+
 
 export function AdminDashboardClient() {
     const { toast } = useToast();
@@ -272,6 +291,30 @@ export function AdminDashboardClient() {
                          </Table>
                     </CardContent>
                 </Card>
+            </div>
+
+             <div className="space-y-4">
+                <h2 className="font-headline text-2xl font-semibold">Ferramentas Administrativas</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {adminNavItems.map((item) => (
+                        <Card key={item.href} className="hover:bg-muted/50 transition-colors h-full flex flex-col">
+                            <CardHeader>
+                                <div className="flex items-center gap-4">
+                                    <item.icon className="h-6 w-6 text-primary" />
+                                    <CardTitle className="text-lg">{item.title}</CardTitle>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="flex-grow">
+                                <CardDescription>{item.description}</CardDescription>
+                            </CardContent>
+                            <CardFooter>
+                                <Button asChild variant="link" className="p-0 h-auto">
+                                    <Link href={item.href}>Acessar <ArrowRight className="ml-2" /></Link>
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
             </div>
 
             <Card>
