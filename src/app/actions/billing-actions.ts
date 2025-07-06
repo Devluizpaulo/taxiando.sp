@@ -11,19 +11,7 @@ import { getPaymentSettings } from './admin-actions';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { nanoid } from 'nanoid';
-import * as z from 'zod';
-
-
-// Schema for package creation and update
-const packageFormSchema = z.object({
-  name: z.string().min(3, "O nome do pacote é obrigatório."),
-  description: z.string().min(10, "A descrição é obrigatória."),
-  credits: z.coerce.number().min(1, "O pacote deve dar pelo menos 1 crédito."),
-  price: z.coerce.number().min(0.5, "O preço é obrigatório."),
-  priceId: z.string().min(3, "O ID do Preço do Mercado Pago é obrigatório."),
-  popular: z.boolean().default(false),
-});
-export type PackageFormValues = z.infer<typeof packageFormSchema>;
+import { packageFormSchema, type PackageFormValues } from '@/lib/billing-schemas';
 
 
 // CREATE
