@@ -6,9 +6,20 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { FacebookIcon } from "../icons/facebook-icon";
 import { Instagram, MessageSquare, MoveRight } from "lucide-react";
+import fs from 'fs';
+import path from 'path';
 
 
 export function PublicFooter() {
+  const packageJsonPath = path.join(process.cwd(), 'package.json');
+  let version = '0.0.0';
+  try {
+    const fileContents = fs.readFileSync(packageJsonPath, 'utf8');
+    version = JSON.parse(fileContents).version;
+  } catch (error) {
+    console.error("Could not read package.json version:", error);
+  }
+
   return (
     <footer className="border-t bg-muted/40">
       <div className="container mx-auto px-4 py-12 md:px-6">
@@ -66,6 +77,18 @@ export function PublicFooter() {
         <div className="mt-12 border-t pt-8 text-center">
             <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} Táxiando SP. Todos os direitos reservados.
+            </p>
+             <p className="text-xs text-muted-foreground mt-2">
+                Desenvolvido por{' '}
+                <a
+                    href="https://fenixsolutions.com.br"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-primary hover:underline"
+                >
+                    FênixSolutions & Build
+                </a>{' '}
+                | Versão {version}
             </p>
         </div>
       </div>
