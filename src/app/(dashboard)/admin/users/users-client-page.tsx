@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -51,12 +52,15 @@ const getRoleIcon = (role: string) => {
 
 export function UsersClientPage({ initialUsers }: { initialUsers: AdminUser[] }) {
     const { toast } = useToast();
+    const searchParams = useSearchParams();
     const [users, setUsers] = useState<AdminUser[]>(initialUsers);
     const [updatingUserStatus, setUpdatingUserStatus] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [isDeleting, setIsDeleting] = useState(false);
     const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
+
+    const activeTab = searchParams.get('tab') || 'drivers';
 
     const filteredUsers = useMemo(() => {
         return users.filter(user => {
@@ -139,7 +143,7 @@ export function UsersClientPage({ initialUsers }: { initialUsers: AdminUser[] })
                     </div>
                 </CardHeader>
                 <CardContent>
-                     <Tabs defaultValue="drivers">
+                     <Tabs defaultValue={activeTab}>
                         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
                             <TabsTrigger value="drivers"><Car className="mr-2"/>Motoristas</TabsTrigger>
                             <TabsTrigger value="fleets"><Building className="mr-2"/>Frotas</TabsTrigger>
@@ -286,4 +290,3 @@ function UserActions({ user, updatingUserStatus, handleUserStatusUpdate, setUser
         </DropdownMenu>
     );
 }
-

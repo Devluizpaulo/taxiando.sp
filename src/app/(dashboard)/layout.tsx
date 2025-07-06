@@ -17,7 +17,7 @@ import {
   SidebarTrigger,
   useSidebar
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star, LifeBuoy, Headset, Image as ImageIcon, Library } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star, LifeBuoy, Headset, Image as ImageIcon, Library, Car, Users } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -169,6 +169,16 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                   <>
                     <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin"><Shield className="text-red-500" /> Painel Admin</Link></SidebarMenuButton></SidebarMenuItem>
                     <SidebarGroup>
+                        <SidebarGroupLabel>Gestão de Usuários</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/users?tab=drivers"><Car/> Motoristas</Link></SidebarMenuButton></SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/users?tab=fleets"><Building/> Frotas</Link></SidebarMenuButton></SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/users?tab=providers"><Wrench/> Prestadores</Link></SidebarMenuButton></SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                    <SidebarGroup>
                         <SidebarGroupLabel>Gestão de Conteúdo</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
@@ -200,16 +210,6 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/reviews"><Star className="text-amber-500" /> Avaliações</Link></SidebarMenuButton></SidebarMenuItem>
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/support"><LifeBuoy className="text-red-500" /> Suporte</Link></SidebarMenuButton></SidebarMenuItem>
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/settings"><Settings className="text-indigo-500" /> Configurações</Link></SidebarMenuButton></SidebarMenuItem>
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
-                     <SidebarGroup>
-                        <SidebarGroupLabel>Painéis de Usuário</SidebarGroupLabel>
-                        <SidebarGroupContent>
-                            <SidebarMenu>
-                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/dashboard"><LayoutDashboard/> Painel de Motorista</Link></SidebarMenuButton></SidebarMenuItem>
-                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/fleet"><Building/> Painel de Frota</Link></SidebarMenuButton></SidebarMenuItem>
-                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/services"><Wrench/> Painel de Prestador</Link></SidebarMenuButton></SidebarMenuItem>
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>

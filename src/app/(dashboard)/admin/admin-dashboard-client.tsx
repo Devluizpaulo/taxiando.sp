@@ -47,7 +47,6 @@ const getStatusVariant = (status?: string): "default" | "secondary" | "destructi
 };
 
 const adminNavItems = [
-    { title: 'Usuários', href: '/admin/users', icon: Users, description: 'Gerencie motoristas, frotas e prestadores.' },
     { title: 'Cursos', href: '/admin/courses', icon: BookOpen, description: 'Crie e gerencie os cursos da plataforma.' },
     { title: 'Blog', href: '/admin/blog', icon: Newspaper, description: 'Escreva e publique notícias e artigos.' },
     { title: 'Eventos', href: '/admin/events', icon: Calendar, description: 'Gerencie a agenda cultural.' },
