@@ -317,17 +317,17 @@ export async function ensureInitialData() {
 
         const pageViewsSnap = await analyticsPageViewsRef.get();
         if (!pageViewsSnap.exists) {
-            await pageViewsSnap.set({ home: 0 });
+            await pageViewsSnap.ref.set({ home: 0 });
         }
         
         const loginsSnap = await analyticsLoginsRef.get();
         if (!loginsSnap.exists) {
-            await loginsSnap.set({ total: 0 });
+            await loginsSnap.ref.set({ total: 0 });
         }
 
         const salesSnap = await analyticsSalesRef.get();
         if (!salesSnap.exists) {
-            await salesSnap.set({ totalRevenue: 0, packagesSold: 0 });
+            await salesSnap.ref.set({ totalRevenue: 0, packagesSold: 0 });
         }
         
         return { success: true };
