@@ -8,6 +8,7 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/web
 export const blogPostFormSchema = z.object({
   title: z.string().min(10, "O título deve ter pelo menos 10 caracteres."),
   slug: z.string().min(3, "O slug é obrigatório.").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "O slug deve conter apenas letras minúsculas, números e hífens."),
+  category: z.string().min(3, "A categoria é obrigatória."),
   excerpt: z.string().min(20, "O resumo é obrigatório.").max(200, "O resumo deve ter no máximo 200 caracteres."),
   imageUrl: z.string().url("URL da imagem de capa inválida.").optional().or(z.literal('')),
   imageFile: z.any()

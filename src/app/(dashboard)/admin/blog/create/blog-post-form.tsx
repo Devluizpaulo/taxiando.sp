@@ -84,6 +84,7 @@ const AiAssistantCard = ({ onDetailsGenerated }: { onDetailsGenerated: (details:
     );
 }
 
+const postCategories = ['Notícia', 'Artigo de Opinião', 'Dica Rápida', 'História de SP', 'Análise de Setor'];
 
 export function BlogPostForm({ post }: { post?: BlogPost }) {
     const { user, userProfile } = useAuth();
@@ -97,6 +98,7 @@ export function BlogPostForm({ post }: { post?: BlogPost }) {
         defaultValues: {
             title: post?.title || '',
             slug: post?.slug || '',
+            category: post?.category || '',
             excerpt: post?.excerpt || '',
             imageUrl: post?.imageUrl || '',
             content: post?.content || '',
@@ -210,6 +212,20 @@ export function BlogPostForm({ post }: { post?: BlogPost }) {
                                             <Input {...field} placeholder="Ex: novas-regras-apps-sp" />
                                         </FormControl>
                                         <FormDescription>Será usado na URL do post. Use apenas letras minúsculas, números e hífens.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                 <FormField control={form.control} name="category" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Categoria</FormLabel>
+                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Selecione uma categoria..." /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                {postCategories.map(cat => (
+                                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}/>

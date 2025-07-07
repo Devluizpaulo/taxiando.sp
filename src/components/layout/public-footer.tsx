@@ -50,7 +50,7 @@ export async function PublicFooter() {
                     <Link href="/rentals" className="text-sm text-muted-foreground transition-colors hover:text-primary">Alugar Veículo</Link>
                     <Link href="/events" className="text-sm text-muted-foreground transition-colors hover:text-primary">Agenda Cultural</Link>
                     <Link href="/#features" className="text-sm text-muted-foreground transition-colors hover:text-primary">Recursos</Link>
-                    <Link href="/blog" className="text-sm text-muted-foreground transition-colors hover:text-primary">Notícias</Link>
+                    <Link href="/blog" className="text-sm text-muted-foreground transition-colors hover:text-primary">Guias & Notícias</Link>
                     <Link href="/#quiz" className="text-sm text-muted-foreground transition-colors hover:text-primary">Quiz</Link>
                 </div>
             </div>

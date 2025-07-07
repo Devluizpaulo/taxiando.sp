@@ -26,7 +26,7 @@ export function PublicHeader() {
     { href: "/events", label: "Guia SP" },
     { href: "/rentals", label: "Alugar Veículo" },
     { href: "/services/marketplace", label: "Serviços" },
-    { href: "/blog", label: "Blog" },
+    { href: "/blog", label: "Guias & Notícias" },
     { href: "/contact", label: "Contato" },
   ];
 

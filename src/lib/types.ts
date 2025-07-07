@@ -1,6 +1,5 @@
 
 
-
 import { type Timestamp } from "firebase/firestore";
 
 export interface Review {
@@ -323,6 +322,7 @@ export interface BlogPost {
   excerpt: string;
   content: string; 
   imageUrl: string;
+  category: string;
   authorId: string;
   authorName: string;
   status: 'Published' | 'Draft';

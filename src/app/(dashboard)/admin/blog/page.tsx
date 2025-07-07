@@ -1,4 +1,5 @@
 
+
 import Link from 'next/link';
 import { getAllBlogPosts } from '@/app/actions/blog-actions';
 import { type BlogPost } from '@/lib/types';
@@ -39,6 +40,7 @@ export default async function AdminBlogPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Título</TableHead>
+                                <TableHead>Categoria</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Criado em</TableHead>
                                 <TableHead className="text-right">Ações</TableHead>
@@ -47,7 +49,7 @@ export default async function AdminBlogPage() {
                         <TableBody>
                             {posts.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center">
+                                    <TableCell colSpan={5} className="h-24 text-center">
                                         Nenhum post encontrado. Que tal criar o primeiro?
                                     </TableCell>
                                 </TableRow>
@@ -55,6 +57,9 @@ export default async function AdminBlogPage() {
                                 posts.map(post => (
                                     <TableRow key={post.id}>
                                         <TableCell className="font-medium">{post.title}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline">{post.category}</Badge>
+                                        </TableCell>
                                         <TableCell>
                                             <Badge variant={post.status === 'Published' ? 'default' : 'secondary'}>
                                                 {post.status === 'Published' ? 'Publicado' : 'Rascunho'}
