@@ -17,7 +17,7 @@ import {
   SidebarTrigger,
   useSidebar
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star, LifeBuoy, Headset, ImageIcon, Library, Car, Users, MapPin, BarChart2 } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star, LifeBuoy, Headset, ImageIcon, Library, Car, Users, MapPin, BarChart2, Search } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -125,6 +125,7 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                       <SidebarGroupContent>
                         <SidebarMenu>
                            <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/fleet/profile"><Building/> Perfil da Frota</Link></SidebarMenuButton></SidebarMenuItem>
+                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/fleet/find-drivers"><Search/> Buscar Motoristas</Link></SidebarMenuButton></SidebarMenuItem>
                            <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/billing"><CreditCard/> Faturamento</Link></SidebarMenuButton></SidebarMenuItem>
                         </SidebarMenu>
                       </SidebarGroupContent>

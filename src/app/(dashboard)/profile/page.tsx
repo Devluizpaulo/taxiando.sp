@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -17,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, User, FileText, HeartHandshake, Check, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Loader2, Camera, User, FileText, HeartHandshake, Check, ArrowLeft, ArrowRight, Car } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DatePicker } from '@/components/ui/datepicker';
@@ -29,6 +30,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+const rentalPreferencesSchema = z.object({
+    vehicleTypes: z.array(z.string()).optional(),
+    transmission: z.enum(['automatic', 'manual', 'indifferent']).optional(),
+    fuelTypes: z.array(z.string()).optional(),
+    maxDailyRate: z.coerce.number().min(0).optional(),
+});
 
 const profileFormSchema = z.object({
   // Perfil
@@ -56,6 +64,9 @@ const profileFormSchema = z.object({
   workMode: z.enum(['owner', 'rental'], { required_error: 'Selecione seu modo de trabalho.' }),
   vehicleLicensePlate: z.string().optional(),
   alvaraExpiration: z.date().optional(),
+
+  // Preferências de Locação
+  rentalPreferences: rentalPreferencesSchema.optional(),
   
   // Qualificações
   specializedCourses: z.array(z.string()).optional(),
@@ -90,11 +101,27 @@ const specializedCourseOptions = [
     { id: 'mopp', label: 'MOPP (Cargas Perigosas)' },
 ];
 
+const vehicleTypeOptions = [
+    { id: 'hatch', label: 'Hatch' },
+    { id: 'sedan', label: 'Sedan' },
+    { id: 'suv', label: 'SUV' },
+    { id: 'minivan', label: 'Minivan' },
+];
+
+const fuelTypeOptions = [
+    { id: 'flex', label: 'Flex (Gasolina/Álcool)' },
+    { id: 'gnv', label: 'GNV' },
+    { id: 'diesel', label: 'Diesel' },
+    { id: 'eletrico', label: 'Elétrico' },
+];
+
+
 const steps = [
     { id: 1, name: 'Perfil e Contato' },
     { id: 2, name: 'Documentos' },
     { id: 3, name: 'Modo de Trabalho' },
-    { id: 4, name: 'Qualificações e Termos' },
+    { id: 4, name: 'Preferências' },
+    { id: 5, name: 'Qualificações e Termos' },
 ];
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
@@ -152,6 +179,12 @@ export default function CompleteProfilePage() {
             vehicleLicensePlate: '',
             alvaraExpiration: undefined,
             specializedCourses: [],
+            rentalPreferences: {
+                vehicleTypes: [],
+                transmission: 'indifferent',
+                fuelTypes: [],
+                maxDailyRate: 150,
+            },
             referenceName: '',
             referenceRelationship: '',
             referencePhone: '',
@@ -180,6 +213,7 @@ export default function CompleteProfilePage() {
                 vehicleLicensePlate: userProfile.vehicleLicensePlate || '',
                 alvaraExpiration: toDate(userProfile.alvaraExpiration),
                 specializedCourses: userProfile.specializedCourses || [],
+                rentalPreferences: userProfile.rentalPreferences || { vehicleTypes: [], transmission: 'indifferent', fuelTypes: [], maxDailyRate: 150 },
                 referenceName: userProfile.reference?.name || '',
                 referenceRelationship: userProfile.reference?.relationship || '',
                 referencePhone: userProfile.reference?.phone || '',
@@ -243,9 +277,10 @@ export default function CompleteProfilePage() {
         if (currentStep === 1) fieldsToValidate = ['name', 'phone'];
         if (currentStep === 2) fieldsToValidate = ['cnhNumber', 'cnhCategory', 'cnhExpiration', 'cnhPoints', 'condutaxNumber', 'condutaxExpiration'];
         if (currentStep === 3) fieldsToValidate = ['workMode', 'vehicleLicensePlate', 'alvaraExpiration'];
-        if (currentStep === 4) fieldsToValidate = ['referenceName', 'referenceRelationship', 'referencePhone', 'financialConsent'];
+        if (currentStep === 4) fieldsToValidate = ['rentalPreferences'];
+        if (currentStep === 5) fieldsToValidate = ['referenceName', 'referenceRelationship', 'referencePhone', 'financialConsent'];
 
-        const isValid = await form.trigger(fieldsToValidate);
+        const isValid = await form.trigger(fieldsToValidate as any); // Use 'as any' to bypass complex type checking for dynamic validation
         if (isValid && currentStep < totalSteps) {
             setCurrentStep(prev => prev + 1);
         }
@@ -343,8 +378,45 @@ export default function CompleteProfilePage() {
                         </Card>
                     </div>
 
-                    {/* STEP 4: QUALIFICAÇÕES E TERMOS */}
+                     {/* STEP 4: PREFERÊNCIAS */}
                     <div className={cn(currentStep !== 4 && "hidden")}>
+                        <Card>
+                            <CardHeader><CardTitle>Preferências de Locação</CardTitle><CardDescription>Descreva o veículo ideal para você. Isso ajuda as frotas a te encontrarem.</CardDescription></CardHeader>
+                            <CardContent className="space-y-6">
+                                <FormField control={form.control} name="rentalPreferences.vehicleTypes" render={({ field }) => (
+                                    <FormItem><FormLabel>Tipos de Veículo</FormLabel><div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                                        {vehicleTypeOptions.map((item) => (<FormItem key={item.id} className="flex flex-row items-center space-x-3 space-y-0">
+                                            <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => {return checked ? field.onChange([...(field.value || []), item.id]) : field.onChange(field.value?.filter((value) => value !== item.id))}} /></FormControl>
+                                            <FormLabel className="font-normal">{item.label}</FormLabel></FormItem>
+                                        ))}</div><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="rentalPreferences.fuelTypes" render={({ field }) => (
+                                    <FormItem><FormLabel>Tipos de Combustível</FormLabel><div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                                        {fuelTypeOptions.map((item) => (<FormItem key={item.id} className="flex flex-row items-center space-x-3 space-y-0">
+                                            <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => {return checked ? field.onChange([...(field.value || []), item.id]) : field.onChange(field.value?.filter((value) => value !== item.id))}} /></FormControl>
+                                            <FormLabel className="font-normal">{item.label}</FormLabel></FormItem>
+                                        ))}</div><FormMessage /></FormItem>
+                                )}/>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField control={form.control} name="rentalPreferences.transmission" render={({ field }) => (
+                                        <FormItem className="space-y-3"><FormLabel>Câmbio</FormLabel><FormControl>
+                                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-4">
+                                                <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="manual" /></FormControl><FormLabel className="font-normal">Manual</FormLabel></FormItem>
+                                                <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="automatic" /></FormControl><FormLabel className="font-normal">Automático</FormLabel></FormItem>
+                                                <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="indifferent" /></FormControl><FormLabel className="font-normal">Indiferente</FormLabel></FormItem>
+                                            </RadioGroup>
+                                        </FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                     <FormField control={form.control} name="rentalPreferences.maxDailyRate" render={({ field }) => (
+                                        <FormItem><FormLabel>Valor Máximo da Diária (R$)</FormLabel><FormControl><Input type="number" placeholder="Ex: 150" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* STEP 5: QUALIFICAÇÕES E TERMOS */}
+                    <div className={cn(currentStep !== 5 && "hidden")}>
                         <Card>
                             <CardHeader><CardTitle>Cursos e Qualificações</CardTitle><CardDescription>Marque os cursos especializados que você já concluiu.</CardDescription></CardHeader>
                             <CardContent>

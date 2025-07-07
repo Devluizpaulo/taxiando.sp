@@ -399,3 +399,36 @@ export async function getFleetPublicProfile(fleetId: string) {
         return { success: false, error: (error as Error).message };
     }
 }
+
+
+export async function getDriversSeekingRentals(): Promise<AdminUser[]> {
+    try {
+        const snapshot = await adminDB.collection('users')
+            .where('role', '==', 'driver')
+            .where('profileStatus', '==', 'approved')
+            .orderBy('createdAt', 'desc')
+            .get();
+            
+        const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
+
+        const drivers = snapshot.docs.map(doc => {
+            const data = doc.data() as UserProfile;
+             return {
+                ...data,
+                uid: doc.id,
+                createdAt: toISO(data.createdAt) || new Date().toISOString(),
+                cnhExpiration: toISO(data.cnhExpiration),
+                condutaxExpiration: toISO(data.condutaxExpiration),
+                alvaraExpiration: toISO(data.alvaraExpiration),
+                lastNotificationCheck: toISO(data.lastNotificationCheck),
+            } as AdminUser;
+        });
+        
+        // Filter in code for drivers who have set preferences
+        return drivers.filter(d => d.rentalPreferences && Object.keys(d.rentalPreferences).length > 0);
+
+    } catch (error) {
+        console.error("Error fetching drivers seeking rentals:", error);
+        return [];
+    }
+}

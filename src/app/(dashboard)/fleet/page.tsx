@@ -25,7 +25,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle, StarHalf } from "lucide-react";
+import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle, StarHalf, Search } from "lucide-react";
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -246,17 +246,24 @@ export default function FleetPage() {
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Visitas ao Perfil (Mês)</CardTitle><Eye className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">1,432</div></CardContent></Card>
             </div>
             
-            <Card className="bg-accent/30 border-accent/50">
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>Complete o Perfil da sua Frota</CardTitle>
-                        <CardDescription>Um perfil completo atrai mais motoristas. Adicione sua descrição, endereço e redes sociais.</CardDescription>
+            <Card className="bg-primary/10 border-primary/20">
+                <CardHeader>
+                    <div className="flex flex-col items-start gap-4 md:flex-row md:items-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                            <Search className="h-8 w-8" />
+                        </div>
+                        <div className="flex-1">
+                            <CardTitle className="text-primary">Novo! Encontre Motoristas Qualificados</CardTitle>
+                            <CardDescription className="mt-2 text-primary/80">
+                                Pare de esperar! Busque ativamente por motoristas com o perfil ideal para seus veículos. Filtre por tipo de carro, câmbio e muito mais.
+                            </CardDescription>
+                        </div>
+                        <Button asChild className="w-full md:w-auto">
+                            <Link href="/fleet/find-drivers">
+                                Buscar Motoristas
+                            </Link>
+                        </Button>
                     </div>
-                    <Button asChild variant="outline">
-                        <Link href="/fleet/profile">
-                            Completar Perfil <ChevronRight />
-                        </Link>
-                    </Button>
                 </CardHeader>
             </Card>
 

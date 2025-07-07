@@ -50,6 +50,13 @@ export interface UserProfile {
     
     earnedBadges?: Badge[];
 
+    rentalPreferences?: {
+      vehicleTypes?: string[];
+      transmission?: 'automatic' | 'manual' | 'indifferent';
+      fuelTypes?: string[];
+      maxDailyRate?: number;
+    };
+
     reference?: {
         name: string;
         relationship: string;
