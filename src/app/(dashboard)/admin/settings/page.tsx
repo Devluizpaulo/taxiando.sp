@@ -167,7 +167,7 @@ export default function SettingsPage() {
                 </div>
 
                 <Tabs defaultValue="general">
-                    <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7">
+                    <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
                         <TabsTrigger value="general">Geral</TabsTrigger>
                         <TabsTrigger value="themes"><Palette/> Temas</TabsTrigger>
                         <TabsTrigger value="homepage"><Home/> Homepage</TabsTrigger>
@@ -199,7 +199,7 @@ export default function SettingsPage() {
                                     <h3 className="text-lg font-medium">Redes Sociais</h3>
                                     <p className="text-sm text-muted-foreground">Configure os links e a visibilidade das redes sociais no rodapé.</p>
                                     <div className="space-y-4 mt-4">
-                                        <div className="flex items-center gap-4 p-4 border rounded-lg">
+                                        <div className="flex flex-col items-stretch gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
                                             <div className="flex flex-col space-y-1.5">
                                                 <FormLabel className="flex items-center gap-2"><Instagram/> Instagram</FormLabel>
                                                 <FormField control={form.control} name="socialMedia.instagram.enabled" render={({ field }) => (
@@ -208,7 +208,7 @@ export default function SettingsPage() {
                                             </div>
                                             <FormField control={form.control} name="socialMedia.instagram.url" render={({ field }) => (<FormItem className="flex-1"><FormLabel className="sr-only">URL Instagram</FormLabel><FormControl><Input {...field} placeholder="https://instagram.com/seu_perfil"/></FormControl><FormMessage /></FormItem>)}/>
                                         </div>
-                                         <div className="flex items-center gap-4 p-4 border rounded-lg">
+                                         <div className="flex flex-col items-stretch gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
                                             <div className="flex flex-col space-y-1.5">
                                                 <FormLabel className="flex items-center gap-2"><FacebookIcon/> Facebook</FormLabel>
                                                 <FormField control={form.control} name="socialMedia.facebook.enabled" render={({ field }) => (
@@ -217,7 +217,7 @@ export default function SettingsPage() {
                                             </div>
                                             <FormField control={form.control} name="socialMedia.facebook.url" render={({ field }) => (<FormItem className="flex-1"><FormLabel className="sr-only">URL Facebook</FormLabel><FormControl><Input {...field} placeholder="https://facebook.com/sua_pagina"/></FormControl><FormMessage /></FormItem>)}/>
                                         </div>
-                                         <div className="flex items-center gap-4 p-4 border rounded-lg">
+                                         <div className="flex flex-col items-stretch gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
                                             <div className="flex flex-col space-y-1.5">
                                                 <FormLabel className="flex items-center gap-2"><MessageSquare/> WhatsApp</FormLabel>
                                                 <FormField control={form.control} name="socialMedia.whatsapp.enabled" render={({ field }) => (

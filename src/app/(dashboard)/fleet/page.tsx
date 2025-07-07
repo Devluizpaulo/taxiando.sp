@@ -324,9 +324,9 @@ export default function FleetPage() {
                                                     <AvatarImage src={app.driverPhotoUrl} alt={app.driverName} data-ai-hint="driver portrait"/>
                                                     <AvatarFallback>{app.driverName.charAt(0)}</AvatarFallback>
                                                 </Avatar>
-                                                <div>
+                                                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                                                     <span className="font-medium">{app.driverName}</span>
-                                                    <Badge variant={getProfileStatusVariant(app.driverProfileStatus)} className="ml-2">
+                                                    <Badge variant={getProfileStatusVariant(app.driverProfileStatus)}>
                                                         {app.driverProfileStatus === 'approved' && <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
                                                         Perfil {app.driverProfileStatus === 'approved' ? 'Aprovado' : 'Pendente'}
                                                     </Badge>
@@ -606,7 +606,7 @@ function DriverProfileModal({ user, reviews, isLoading, isOpen, onOpenChange }: 
                                                     <span className="font-semibold">{review.reviewerName}</span>
                                                     <StarRating rating={review.rating} readOnly size={14}/>
                                                 </div>
-                                                <p className="text-muted-foreground italic">"{review.comment}"</p>
+                                                <p className="mt-2 text-muted-foreground italic">"{review.comment}"</p>
                                             </div>
                                         ))}
                                      </CardContent>
