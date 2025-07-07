@@ -1,5 +1,4 @@
 
-
 import * as z from 'zod';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -19,6 +18,11 @@ export const blogPostFormSchema = z.object({
   status: z.enum(['Published', 'Draft']),
   source: z.string().optional(),
   sourceUrl: z.string().url("URL da fonte inválida.").optional().or(z.literal('')),
+  relatedLinks: z.array(z.object({
+    id: z.string().optional(),
+    title: z.string().min(3, "O título do link é obrigatório."),
+    url: z.string().url("A URL do link é inválida."),
+  })).optional(),
 }).refine(data => {
     // For new posts, either imageUrl or imageFile must be present.
     // For existing posts being edited, imageUrl will be populated from the start.

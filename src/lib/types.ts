@@ -1,6 +1,11 @@
 
-
 import { type Timestamp } from "firebase/firestore";
+
+export interface RelatedLink {
+  id?: string;
+  title: string;
+  url: string;
+}
 
 export interface Review {
   id: string;
@@ -331,6 +336,7 @@ export interface BlogPost {
   imageFile?: File; 
   source?: string;
   sourceUrl?: string;
+  relatedLinks?: RelatedLink[];
 }
 
 export interface Testimonial {

@@ -11,6 +11,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { headers } from 'next/headers';
 import { ShareButtons } from "@/components/share-buttons";
+import { Link as LinkIcon } from "lucide-react";
 
 
 export default async function BlogPostPage({ params }: { params: { slug: string }}) {
@@ -50,6 +51,24 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                     <div className="prose dark:prose-invert max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
                     </div>
+                    
+                    {post.relatedLinks && post.relatedLinks.length > 0 && (
+                        <div className="mt-12 pt-8 border-t">
+                            <h3 className="font-headline text-xl font-bold mb-4 flex items-center gap-2">
+                                <LinkIcon className="h-5 w-5" /> Links Relacionados
+                            </h3>
+                            <ul className="space-y-2 list-disc pl-5">
+                                {post.relatedLinks.map((link, index) => (
+                                    <li key={index}>
+                                        <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                            {link.title}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
 
                     <div className="mt-12 border-t pt-8">
                         <ShareButtons title={post.title} url={postUrl} />

@@ -1,9 +1,8 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import Image from 'next/image';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -22,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, Pen, Save, Sparkles, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Eye, Pen, Save, Sparkles, Link as LinkIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { createBlogPost, updateBlogPost } from '@/app/actions/blog-actions';
 import { uploadFile } from '@/app/actions/storage-actions';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post-flow';
@@ -105,6 +104,7 @@ export function BlogPostForm({ post }: { post?: BlogPost }) {
             status: post?.status || 'Draft',
             source: post?.source || '',
             sourceUrl: post?.sourceUrl || '',
+            relatedLinks: post?.relatedLinks || [],
         },
     });
     
@@ -116,6 +116,11 @@ export function BlogPostForm({ post }: { post?: BlogPost }) {
 
     const watchedContent = form.watch('content');
     const watchedImageUrl = form.watch('imageUrl');
+
+    const { fields: linkFields, append: appendLink, remove: removeLink } = useFieldArray({
+        control: form.control,
+        name: "relatedLinks",
+    });
 
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         form.setValue('title', e.target.value);
@@ -270,6 +275,24 @@ export function BlogPostForm({ post }: { post?: BlogPost }) {
                                         </div>
                                     </TabsContent>
                                 </Tabs>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Links Relacionados (Opcional)</CardTitle>
+                                <CardDescription>Adicione links externos que complementem seu post.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {linkFields.map((field, index) => (
+                                    <div key={field.id} className="flex items-end gap-2 p-3 rounded-md bg-muted/50 border">
+                                        <div className="flex-1 grid grid-cols-2 gap-2">
+                                            <FormField control={form.control} name={`relatedLinks.${index}.title`} render={({ field }) => (<FormItem><FormLabel className="text-xs">Título do Link</FormLabel><FormControl><Input {...field} placeholder="Ex: Matéria Original" /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name={`relatedLinks.${index}.url`} render={({ field }) => (<FormItem><FormLabel className="text-xs">URL</FormLabel><FormControl><Input {...field} placeholder="https://..." /></FormControl><FormMessage /></FormItem>)}/>
+                                        </div>
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => removeLink(index)} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-9 w-9"><Trash2 className="h-4 w-4"/></Button>
+                                    </div>
+                                ))}
+                                <Button type="button" variant="outline" size="sm" onClick={() => appendLink({ title: '', url: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Link</Button>
                             </CardContent>
                         </Card>
                     </div>

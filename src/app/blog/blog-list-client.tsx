@@ -13,7 +13,7 @@ import { type BlogPost, type CityTip } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Newspaper, BookHeart, Compass } from "lucide-react";
+import { Newspaper, BookHeart, Compass, Link as LinkIcon } from "lucide-react";
 import { ShareButtons } from '@/components/share-buttons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CityTipCard } from '@/components/city-tip-card';
@@ -62,6 +62,22 @@ function BlogPostCard({ post }: { post: BlogPost }) {
                                 {post.content}
                             </ReactMarkdown>
                         </div>
+                         {post.relatedLinks && post.relatedLinks.length > 0 && (
+                            <div className="mt-8 pt-6 border-t">
+                                <h3 className="font-headline text-xl font-bold mb-4 flex items-center gap-2">
+                                    <LinkIcon className="h-5 w-5" /> Links Relacionados
+                                </h3>
+                                <ul className="space-y-2 list-disc pl-5">
+                                    {post.relatedLinks.map((link, index) => (
+                                        <li key={index}>
+                                            <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                                {link.title}
+                                            </a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                         {post.source && (
                             <div className="text-sm text-muted-foreground border-t pt-4">
                                 <strong>Fonte: </strong> 
