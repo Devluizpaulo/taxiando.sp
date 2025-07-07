@@ -1,5 +1,6 @@
 
 
+
 import { type Timestamp } from "firebase/firestore";
 
 export interface Review {
@@ -328,6 +329,8 @@ export interface BlogPost {
   createdAt: Timestamp | string;
   updatedAt?: Timestamp | string;
   imageFile?: File; 
+  source?: string;
+  sourceUrl?: string;
 }
 
 export interface Testimonial {

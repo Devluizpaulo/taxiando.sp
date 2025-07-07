@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -21,7 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, Pen, Save, Sparkles } from 'lucide-react';
+import { Loader2, Eye, Pen, Save, Sparkles, Link as LinkIcon } from 'lucide-react';
 import { createBlogPost, updateBlogPost } from '@/app/actions/blog-actions';
 import { uploadFile } from '@/app/actions/storage-actions';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post-flow';
@@ -100,6 +101,8 @@ export function BlogPostForm({ post }: { post?: BlogPost }) {
             imageUrl: post?.imageUrl || '',
             content: post?.content || '',
             status: post?.status || 'Draft',
+            source: post?.source || '',
+            sourceUrl: post?.sourceUrl || '',
         },
     });
     
@@ -324,13 +327,22 @@ export function BlogPostForm({ post }: { post?: BlogPost }) {
                                     </div>
                                 )}
                             </CardContent>
-                            <CardContent>
-                                <Button type="submit" disabled={isSubmitting} size="lg" className="w-full">
-                                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save />}
-                                    {post ? 'Salvar Alterações' : 'Salvar Post'}
-                                </Button>
+                        </Card>
+                         <Card>
+                            <CardHeader><CardTitle>Fonte e Credibilidade</CardTitle></CardHeader>
+                            <CardContent className="space-y-6">
+                                 <FormField control={form.control} name="source" render={({ field }) => (
+                                    <FormItem><FormLabel>Fonte da Notícia (Opcional)</FormLabel><FormControl><Input {...field} placeholder="Ex: G1, Prefeitura de SP" /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="sourceUrl" render={({ field }) => (
+                                    <FormItem><FormLabel>URL da Fonte (Opcional)</FormLabel><FormControl><Input {...field} placeholder="https://..." /></FormControl><FormMessage /></FormItem>
+                                )}/>
                             </CardContent>
                         </Card>
+                        <Button type="submit" disabled={isSubmitting} size="lg" className="w-full">
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save />}
+                            {post ? 'Salvar Alterações' : 'Salvar Post'}
+                        </Button>
                     </div>
                 </div>
             </form>

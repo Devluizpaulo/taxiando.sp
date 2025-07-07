@@ -1,4 +1,5 @@
 
+
 import * as z from 'zod';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -15,6 +16,8 @@ export const blogPostFormSchema = z.object({
     .optional(),
   content: z.string().min(100, "O conteúdo deve ter pelo menos 100 caracteres."),
   status: z.enum(['Published', 'Draft']),
+  source: z.string().optional(),
+  sourceUrl: z.string().url("URL da fonte inválida.").optional().or(z.literal('')),
 }).refine(data => {
     // For new posts, either imageUrl or imageFile must be present.
     // For existing posts being edited, imageUrl will be populated from the start.
