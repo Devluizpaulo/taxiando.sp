@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -8,7 +9,7 @@ import { type Coupon, type Notification, type UserProfile, type Partner } from '
 import { auth } from '@/lib/firebase';
 import { uploadFile } from './storage-actions';
 import { uploadToGallery } from './gallery-actions';
-import type { PartnerFormValues, CouponFormValues } from '@/lib/marketing-schemas';
+import type { PartnerFormValues, CouponFormValues, couponFormSchema } from '@/lib/marketing-schemas';
 
 
 // --- Coupon Actions ---

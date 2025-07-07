@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -399,6 +400,14 @@ export async function getAdminDashboardData() {
 
     } catch (error) {
         console.error("Error fetching admin dashboard data in parallel:", error);
+        // Gracefully return empty data if something fails, so the page doesn't crash.
+        // The error is logged on the server for debugging.
+        return { 
+            users: [], 
+            vehicles: [], 
+            services: [], 
+            analytics: {} 
+        };
     }
 
     try {
