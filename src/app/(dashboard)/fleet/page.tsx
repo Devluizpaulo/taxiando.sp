@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -25,7 +24,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle, StarHalf, Search } from "lucide-react";
+import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle, StarHalf, Search, GitCommitHorizontal, Fuel } from "lucide-react";
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -124,7 +123,9 @@ export default function FleetPage() {
                 plate: '',
                 make: '',
                 model: '',
-                condition: '',
+                condition: 'Semi-novo',
+                transmission: 'automatic',
+                fuelType: 'flex',
                 description: '',
                 paymentTerms: '',
             });
@@ -276,38 +277,43 @@ export default function FleetPage() {
                     <Button onClick={handleAddNewVehicle}><PlusCircle /> Cadastrar Novo Veículo</Button>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader><TableRow><TableHead>Veículo</TableHead><TableHead>Status</TableHead><TableHead>Diária</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                            {vehicles.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center">Nenhum veículo cadastrado. Que tal adicionar o primeiro?</TableCell>
-                                </TableRow>
-                            ) : (
-                                vehicles.map(vehicle => (
-                                    <TableRow key={vehicle.id}>
-                                        <TableCell>
-                                            <div className="flex items-center gap-4">
-                                                <Image src={vehicle.imageUrl || 'https://placehold.co/120x80.png'} alt={vehicle.model} width={80} height={50} className="rounded-md object-cover aspect-video" data-ai-hint="car side view"/>
-                                                <div>
-                                                    <div className="font-medium">{vehicle.plate}</div>
-                                                    <div className="text-sm text-muted-foreground">{vehicle.make} {vehicle.model} ({vehicle.year})</div>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell><Badge variant={getVehicleStatusVariant(vehicle.status)}>{vehicle.status}</Badge></TableCell>
-                                        <TableCell className="font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vehicle.dailyRate)}</TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex gap-2 justify-end">
-                                                <Button variant="ghost" size="icon" title="Editar" onClick={() => handleEditVehicle(vehicle)}><FilePen className="h-4 w-4" /></Button>
-                                                <Button variant="ghost" size="icon" title="Remover" className="text-destructive hover:text-destructive-foreground focus:text-destructive-foreground" onClick={() => handleDeleteVehicle(vehicle)}><Trash2 className="h-4 w-4" /></Button>
-                                            </div>
-                                        </TableCell>
+                    <div className="w-full overflow-x-auto">
+                        <Table>
+                            <TableHeader><TableRow><TableHead>Veículo</TableHead><TableHead>Status</TableHead><TableHead>Diária</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+                            <TableBody>
+                                {vehicles.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">Nenhum veículo cadastrado. Que tal adicionar o primeiro?</TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                                ) : (
+                                    vehicles.map(vehicle => (
+                                        <TableRow key={vehicle.id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-4">
+                                                    <Image src={vehicle.imageUrl || 'https://placehold.co/120x80.png'} alt={vehicle.model} width={80} height={50} className="rounded-md object-cover aspect-video" data-ai-hint="car side view"/>
+                                                    <div>
+                                                        <div className="font-medium">{vehicle.plate}</div>
+                                                        <div className="text-sm text-muted-foreground">{vehicle.make} {vehicle.model} ({vehicle.year})</div>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell><Badge variant={getVehicleStatusVariant(vehicle.status)}>{vehicle.status}</Badge></TableCell>
+                                            <TableCell className="font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vehicle.dailyRate)}</TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex gap-2 justify-end">
+                                                    <Button variant="outline" size="sm" asChild>
+                                                        <Link href={`/fleet/matches/${vehicle.id}`}><Search className="mr-2 h-4 w-4"/>Buscar Matches</Link>
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" title="Editar" onClick={() => handleEditVehicle(vehicle)}><FilePen className="h-4 w-4" /></Button>
+                                                    <Button variant="ghost" size="icon" title="Remover" className="text-destructive hover:text-destructive-foreground focus:text-destructive-foreground" onClick={() => handleDeleteVehicle(vehicle)}><Trash2 className="h-4 w-4" /></Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -317,59 +323,61 @@ export default function FleetPage() {
                     <CardDescription>Motoristas que se interessaram pelos seus veículos.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     <Table>
-                        <TableHeader><TableRow><TableHead>Motorista</TableHead><TableHead>Veículo Aplicado</TableHead><TableHead>Status da Candidatura</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                            {applications.length === 0 ? (
-                                <TableRow><TableCell colSpan={4} className="h-24 text-center">Nenhuma candidatura recebida ainda.</TableCell></TableRow>
-                            ) : (
-                                applications.map(app => (
-                                    <TableRow key={app.id}>
-                                        <TableCell>
-                                            <div className="flex items-center gap-3">
-                                                <Avatar>
-                                                    <AvatarImage src={app.driverPhotoUrl} alt={app.driverName} data-ai-hint="driver portrait"/>
-                                                    <AvatarFallback>{app.driverName.charAt(0)}</AvatarFallback>
-                                                </Avatar>
-                                                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                                                    <span className="font-medium">{app.driverName}</span>
-                                                    <Badge variant={getProfileStatusVariant(app.driverProfileStatus)}>
-                                                        {app.driverProfileStatus === 'approved' && <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
-                                                        Perfil {app.driverProfileStatus === 'approved' ? 'Aprovado' : 'Pendente'}
-                                                    </Badge>
+                     <div className="w-full overflow-x-auto">
+                        <Table>
+                            <TableHeader><TableRow><TableHead>Motorista</TableHead><TableHead>Veículo Aplicado</TableHead><TableHead>Status da Candidatura</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+                            <TableBody>
+                                {applications.length === 0 ? (
+                                    <TableRow><TableCell colSpan={4} className="h-24 text-center">Nenhuma candidatura recebida ainda.</TableCell></TableRow>
+                                ) : (
+                                    applications.map(app => (
+                                        <TableRow key={app.id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar>
+                                                        <AvatarImage src={app.driverPhotoUrl} alt={app.driverName} data-ai-hint="driver portrait"/>
+                                                        <AvatarFallback>{app.driverName.charAt(0)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                                        <span className="font-medium">{app.driverName}</span>
+                                                        <Badge variant={getProfileStatusVariant(app.driverProfileStatus)}>
+                                                            {app.driverProfileStatus === 'approved' && <UserCheck className="mr-1.5 h-3.5 w-3.5" />}
+                                                            Perfil {app.driverProfileStatus === 'approved' ? 'Aprovado' : 'Pendente'}
+                                                        </Badge>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{app.vehicleName}</TableCell>
-                                        <TableCell>
-                                             <Badge variant={getProfileStatusVariant(app.status)}>{app.status}</Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex gap-2 justify-end">
-                                                <Button variant="outline" size="sm" onClick={() => handleViewProfile(app.driverId)} disabled={isFetchingProfile}>
-                                                    {isFetchingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Eye className="mr-2 h-4 w-4"/>}
-                                                    Ver Perfil
-                                                </Button>
-                                                {app.status === 'Pendente' ? (
-                                                    <>
-                                                        <Button variant="outline" size="sm" onClick={() => handleApplicationStatusChange(app.id, 'Aprovado')}>Aprovar</Button>
-                                                        <Button variant="destructive" size="sm" onClick={() => handleApplicationStatusChange(app.id, 'Rejeitado')}>Rejeitar</Button>
-                                                    </>
-                                                ) : app.status === 'Aprovado' && (
-                                                     <Button variant="secondary" size="sm" onClick={() => {
-                                                        setDriverToReview({ id: app.driverId, name: app.driverName });
-                                                        setIsReviewModalOpen(true);
-                                                     }}>
-                                                        <StarHalf className="mr-2"/> Avaliar
-                                                     </Button>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                                            </TableCell>
+                                            <TableCell>{app.vehicleName}</TableCell>
+                                            <TableCell>
+                                                 <Badge variant={getProfileStatusVariant(app.status)}>{app.status}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex gap-2 justify-end">
+                                                    <Button variant="outline" size="sm" onClick={() => handleViewProfile(app.driverId)} disabled={isFetchingProfile}>
+                                                        {isFetchingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Eye className="mr-2 h-4 w-4"/>}
+                                                        Ver Perfil
+                                                    </Button>
+                                                    {app.status === 'Pendente' ? (
+                                                        <>
+                                                            <Button variant="outline" size="sm" onClick={() => handleApplicationStatusChange(app.id, 'Aprovado')}>Aprovar</Button>
+                                                            <Button variant="destructive" size="sm" onClick={() => handleApplicationStatusChange(app.id, 'Rejeitado')}>Rejeitar</Button>
+                                                        </>
+                                                    ) : app.status === 'Aprovado' && (
+                                                         <Button variant="secondary" size="sm" onClick={() => {
+                                                            setDriverToReview({ id: app.driverId, name: app.driverName });
+                                                            setIsReviewModalOpen(true);
+                                                         }}>
+                                                            <StarHalf className="mr-2"/> Avaliar
+                                                         </Button>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -408,8 +416,26 @@ export default function FleetPage() {
                                             <FormMessage /></FormItem>
                                         )}/>
                                     </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FormField control={form.control} name="transmission" render={({ field }) => (
+                                            <FormItem><FormLabel className="flex items-center gap-2"><GitCommitHorizontal/>Câmbio</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                                                    <SelectContent><SelectItem value="automatic">Automático</SelectItem><SelectItem value="manual">Manual</SelectItem></SelectContent>
+                                                </Select>
+                                            <FormMessage /></FormItem>
+                                        )}/>
+                                        <FormField control={form.control} name="fuelType" render={({ field }) => (
+                                            <FormItem><FormLabel className="flex items-center gap-2"><Fuel/>Combustível</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                                                    <SelectContent><SelectItem value="flex">Flex</SelectItem><SelectItem value="gnv">GNV</SelectItem><SelectItem value="diesel">Diesel</SelectItem><SelectItem value="electric">Elétrico</SelectItem></SelectContent>
+                                                </Select>
+                                            <FormMessage /></FormItem>
+                                        )}/>
+                                    </div>
                                      <FormField control={form.control} name="description" render={({ field }) => (
-                                        <FormItem><FormLabel>Descrição do Anúncio</FormLabel><FormControl><Textarea {...field} placeholder="Descreva os pontos fortes do carro, opcionais, etc." rows={5}/></FormControl><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>Descrição do Anúncio</FormLabel><FormControl><Textarea {...field} placeholder="Descreva os pontos fortes do carro, opcionais, etc." rows={3}/></FormControl><FormMessage /></FormItem>
                                     )}/>
                                 </div>
                                  <div className="space-y-6">

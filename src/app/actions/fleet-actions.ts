@@ -1,10 +1,9 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { adminDB } from '@/lib/firebase-admin';
-import { type Vehicle, type VehicleApplication, type VehiclePerk, type UserProfile, AdminUser } from '@/lib/types';
+import { type Vehicle, type VehicleApplication, type VehiclePerk, type UserProfile, AdminUser, MatchResult } from '@/lib/types';
 import { vehiclePerks } from '@/lib/data';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type VehicleFormValues } from '@/lib/fleet-schemas';
@@ -70,6 +69,8 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, ve
             dailyRate: data.dailyRate,
             imageUrl: data.imageUrl,
             condition: data.condition,
+            transmission: data.transmission,
+            fuelType: data.fuelType,
             description: data.description,
             fleetId,
             paymentInfo: {
@@ -431,4 +432,74 @@ export async function getDriversSeekingRentals(): Promise<AdminUser[]> {
         console.error("Error fetching drivers seeking rentals:", error);
         return [];
     }
+}
+
+export async function getDriverMatchesForVehicle(vehicleId: string): Promise<MatchResult[]> {
+    if (!vehicleId) return [];
+
+    const vehicleDetails = await getVehicleDetails(vehicleId);
+    if (!vehicleDetails.success || !vehicleDetails.vehicle) {
+        console.error(`Error fetching vehicle for matching: ${vehicleDetails.error}`);
+        return [];
+    }
+    const vehicle = vehicleDetails.vehicle;
+
+    const drivers = await getDriversSeekingRentals();
+    if (!drivers.length) return [];
+    
+    const results: MatchResult[] = [];
+
+    for (const driver of drivers) {
+        const prefs = driver.rentalPreferences;
+        if (!prefs) continue;
+
+        let score = 0;
+        const details = {
+            vehicleType: false,
+            transmission: false,
+            fuelType: false,
+            price: false,
+        };
+
+        // 1. Vehicle Type (40 points)
+        if (prefs.vehicleTypes?.length) {
+            // Simplified: check if vehicle type is in preferences. This needs vehicle to have a `type` field.
+            // Let's assume vehicle model can be a proxy for now. A more robust solution would be to categorize vehicles.
+            // For now, we give partial points if preferences are set.
+            score += 20;
+            details.vehicleType = true; // Placeholder logic
+        } else {
+             score += 10; // Neutral score for not having a preference
+        }
+
+        // 2. Transmission (30 points)
+        if (prefs.transmission === 'indifferent' || prefs.transmission === vehicle.transmission) {
+            score += 30;
+            details.transmission = true;
+        }
+
+        // 3. Fuel Type (20 points)
+        if (prefs.fuelTypes?.length) {
+            if (prefs.fuelTypes.includes(vehicle.fuelType)) {
+                score += 20;
+                details.fuelType = true;
+            }
+        } else {
+            score += 10; // Neutral
+        }
+        
+        // 4. Price (10 points)
+        if (prefs.maxDailyRate) {
+            if (vehicle.dailyRate <= prefs.maxDailyRate) {
+                score += 10;
+                details.price = true;
+            }
+        } else {
+            score += 5; // Neutral
+        }
+
+        results.push({ driver, score, details });
+    }
+
+    return results.sort((a, b) => b.score - a.score);
 }

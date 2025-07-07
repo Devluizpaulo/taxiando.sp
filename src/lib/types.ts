@@ -200,6 +200,8 @@ export interface Vehicle {
   model: string;
   year: number;
   condition: string;
+  transmission: 'automatic' | 'manual';
+  fuelType: 'flex' | 'gnv' | 'diesel' | 'electric';
   description: string;
   status: 'Disponível' | 'Alugado' | 'Em Manutenção';
   moderationStatus?: 'Pendente' | 'Aprovado' | 'Rejeitado';
@@ -486,4 +488,17 @@ export interface GlobalSettings {
     termsOfService?: string;
     privacyPolicy?: string;
   };
+}
+
+export interface MatchDetails {
+  vehicleType: boolean;
+  transmission: boolean;
+  fuelType: boolean;
+  price: boolean;
+}
+
+export interface MatchResult {
+  driver: AdminUser;
+  score: number;
+  details: MatchDetails;
 }
