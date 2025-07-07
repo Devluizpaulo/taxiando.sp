@@ -73,6 +73,9 @@ export const courseFormSchema = z.object({
   description: z.string().min(20, { message: 'A descrição deve ter pelo menos 20 caracteres.' }),
   category: z.string().min(3, { message: 'A categoria é obrigatória.' }),
   modules: z.array(moduleSchema).min(1, "O curso deve ter pelo menos um módulo."),
+  investmentCost: z.coerce.number().min(0).default(0).optional(),
+  authorInfo: z.string().optional(),
+  legalNotice: z.string().optional(),
 });
 
 export type CourseFormValues = z.infer<typeof courseFormSchema>;

@@ -21,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic, DollarSign, Copyright, Gavel } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 const lessonTypeIcons: { [key: string]: React.ReactNode } = {
@@ -42,7 +42,15 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
 
     const form = useForm<CourseFormValues>({
         resolver: zodResolver(courseFormSchema),
-        defaultValues: { title: '', description: '', category: '', modules: [] },
+        defaultValues: { 
+            title: '', 
+            description: '', 
+            category: '', 
+            modules: [],
+            investmentCost: 0,
+            authorInfo: '',
+            legalNotice: '',
+        },
     });
 
     useEffect(() => {
@@ -133,6 +141,40 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                         <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Descrição Curta</FormLabel><FormControl><Textarea {...field} placeholder="Descreva o objetivo principal do curso." disabled={isPublished} /></FormControl><FormMessage /></FormItem>)}/>
                     </CardContent>
                 </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Informações Financeiras e Legais</CardTitle>
+                        <CardDescription>Gerencie custos, direitos autorais e avisos importantes do curso.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <FormField control={form.control} name="investmentCost" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="flex items-center gap-2"><DollarSign /> Custo de Investimento (R$)</FormLabel>
+                                <FormControl><Input type="number" {...field} placeholder="Ex: 500.00" /></FormControl>
+                                <FormDescription>Valor gasto na produção ou compra deste curso.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}/>
+                        <FormField control={form.control} name="authorInfo" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="flex items-center gap-2"><Copyright /> Informações de Direitos Autorais</FormLabel>
+                                <FormControl><Input {...field} placeholder="Ex: © 2024 Nome do Produtor Terceirizado" /></FormControl>
+                                <FormDescription>Caso o conteúdo seja de terceiros, informe aqui.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}/>
+                        <FormField control={form.control} name="legalNotice" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="flex items-center gap-2"><Gavel /> Aviso Legal sobre Reprodução</FormLabel>
+                                <FormControl><Textarea {...field} placeholder="Ex: A reprodução deste conteúdo é proibida..." rows={3}/></FormControl>
+                                <FormDescription>Este aviso será exibido aos alunos ao acessarem as aulas.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}/>
+                    </CardContent>
+                </Card>
+
 
                 <div>
                     <h2 className="text-2xl font-bold font-headline">Estrutura do Curso</h2>

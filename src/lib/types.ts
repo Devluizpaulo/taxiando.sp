@@ -140,6 +140,10 @@ export interface Course {
   createdAt: Timestamp | string; 
   status?: 'Published' | 'Draft';
   students?: number;
+  investmentCost?: number;
+  authorInfo?: string;
+  legalNotice?: string;
+  revenue?: number;
 }
 
 export interface Event {

@@ -36,6 +36,10 @@ export async function createCourse(values: { title: string; description: string;
             createdAt: Timestamp.now(),
             status: 'Draft',
             students: 0,
+            investmentCost: 0,
+            revenue: 0,
+            authorInfo: '',
+            legalNotice: 'Este conteúdo é protegido por direitos autorais. A reprodução não autorizada é proibida.',
         };
 
         await adminDB.collection('courses').doc(courseId).set(courseData);

@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import { useEffect, useState, useMemo } from 'react';
@@ -17,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock, ClipboardCheck, AlertTriangle, RefreshCw, XCircle, Mic } from "lucide-react";
+import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock, ClipboardCheck, AlertTriangle, RefreshCw, XCircle, Mic, Copyright, Gavel } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { type Course, type Lesson } from "@/lib/types";
@@ -128,7 +127,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                                                 const lessonIndex = allLessonsFlat.indexOf(lesson.id);
                                                 const isLocked = lessonIndex > lastCompletedIndex + 1;
                                                 return (
-                                                    <LessonItem key={lesson.id} lesson={lesson} moduleId={module.id} courseId={course.id} isCompleted={completedLessons.includes(lesson.id)} onLessonCompleted={handleLessonCompleted} isLocked={isLocked}/>
+                                                    <LessonItem key={lesson.id} lesson={lesson} course={course} isCompleted={completedLessons.includes(lesson.id)} onLessonCompleted={handleLessonCompleted} isLocked={isLocked}/>
                                                 );
                                             })}
                                         </ul>
@@ -154,7 +153,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
     );
 }
 
-function LessonItem({ lesson, moduleId, courseId, isCompleted, onLessonCompleted, isLocked }: { lesson: Lesson; moduleId: string; courseId: string; isCompleted: boolean; onLessonCompleted: (lessonId: string) => void; isLocked: boolean }) {
+function LessonItem({ lesson, course, isCompleted, onLessonCompleted, isLocked }: { lesson: Lesson; course: Course; isCompleted: boolean; onLessonCompleted: (lessonId: string) => void; isLocked: boolean }) {
     const { user } = useAuth();
     const { toast } = useToast();
     const [completingLessonId, setCompletingLessonId] = useState<string | null>(null);
@@ -167,7 +166,7 @@ function LessonItem({ lesson, moduleId, courseId, isCompleted, onLessonCompleted
         }
         setCompletingLessonId(lesson.id);
         try {
-            await markLessonAsComplete({ courseId, moduleId, lessonId: lesson.id, userId: user.uid });
+            await markLessonAsComplete({ courseId: course.id, moduleId: course.modules.find(m => m.lessons.some(l => l.id === lesson.id))!.id, lessonId: lesson.id, userId: user.uid });
             onLessonCompleted(lesson.id);
             toast({ title: "Aula Concluída!", description: "Seu progresso foi salvo." });
             setIsDialogOpen(false);
@@ -201,7 +200,7 @@ function LessonItem({ lesson, moduleId, courseId, isCompleted, onLessonCompleted
     }
     
     if (lesson.type === 'quiz') {
-        return <li className="flex flex-col rounded-md p-3 hover:bg-muted/50"><QuizPlayer lesson={lesson} courseId={courseId} moduleId={moduleId} isCompleted={isCompleted} onLessonCompleted={onLessonCompleted} /></li>;
+        return <li className="flex flex-col rounded-md p-3 hover:bg-muted/50"><QuizPlayer lesson={lesson} course={course} isCompleted={isCompleted} onLessonCompleted={onLessonCompleted} /></li>;
     }
     
     return (
@@ -213,7 +212,7 @@ function LessonItem({ lesson, moduleId, courseId, isCompleted, onLessonCompleted
                 <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
                     <DialogHeader className="p-6 pb-4 border-b">
                         <DialogTitle className="font-headline text-2xl">{lesson.title}</DialogTitle>
-                        <DialogDescription>Duração estimada: {lesson.duration} minutos</DialogDescription>
+                        <DialogDescription>Duração: {lesson.duration} minutos. {course.authorInfo && <span className="flex items-center gap-1.5 text-xs mt-1"><Copyright/> {course.authorInfo}</span>}</DialogDescription>
                     </DialogHeader>
                     <div className="flex-1 overflow-y-auto p-6">
                         {lesson.type === 'video' && lesson.content && (
@@ -259,11 +258,19 @@ function LessonItem({ lesson, moduleId, courseId, isCompleted, onLessonCompleted
                             </div>
                         )}
                     </div>
-                    <DialogFooter className="p-6 pt-4 border-t bg-muted/50">
-                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Fechar</Button>
-                        <Button onClick={handleCompleteLesson} disabled={isCompleted || !!completingLessonId}>
-                             {completingLessonId === lesson.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isCompleted ? <> <CheckCircle2 className="mr-2"/> Concluída</> : "Marcar como Concluída")}
-                        </Button>
+                    <DialogFooter className="p-6 pt-4 border-t bg-muted/50 flex-col sm:flex-row items-center justify-between gap-4">
+                        {course.legalNotice && (
+                            <div className="text-xs text-muted-foreground flex-1 flex items-start gap-2">
+                                <Gavel className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                <span>{course.legalNotice}</span>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2 self-end">
+                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Fechar</Button>
+                            <Button onClick={handleCompleteLesson} disabled={isCompleted || !!completingLessonId}>
+                                {completingLessonId === lesson.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isCompleted ? <> <CheckCircle2 className="mr-2"/> Concluída</> : "Marcar como Concluída")}
+                            </Button>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -272,7 +279,7 @@ function LessonItem({ lesson, moduleId, courseId, isCompleted, onLessonCompleted
 }
 
 // Quiz Player Component
-function QuizPlayer({ lesson, courseId, moduleId, isCompleted, onLessonCompleted }: { lesson: Lesson; courseId: string; moduleId: string; isCompleted: boolean; onLessonCompleted: (lessonId: string) => void }) {
+function QuizPlayer({ lesson, course, isCompleted, onLessonCompleted }: { lesson: Lesson; course: Course; isCompleted: boolean; onLessonCompleted: (lessonId: string) => void }) {
     const { user } = useAuth();
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [result, setResult] = useState<{ score: number, total: number, passed: boolean, correctAnswers: Record<string, string> } | null>(null);
@@ -309,7 +316,7 @@ function QuizPlayer({ lesson, courseId, moduleId, isCompleted, onLessonCompleted
         
         if (passed) {
             toast({ title: "Prova Aprovada!", description: "Seu progresso foi salvo." });
-            await markLessonAsComplete({ courseId, moduleId, lessonId: lesson.id, userId: user.uid });
+            await markLessonAsComplete({ courseId: course.id, moduleId: course.modules.find(m => m.lessons.some(l => l.id === lesson.id))!.id, lessonId: lesson.id, userId: user.uid });
             onLessonCompleted(lesson.id);
         } else {
             toast({ variant: "destructive", title: "Não foi desta vez!", description: `Você precisa acertar pelo menos ${lesson.passingScore}% para ser aprovado.` });
