@@ -1,4 +1,5 @@
 
+
 "use client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
@@ -127,6 +128,7 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                            <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/fleet/profile"><Building/> Perfil da Frota</Link></SidebarMenuButton></SidebarMenuItem>
                            <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/fleet/find-drivers"><Search/> Buscar Motoristas</Link></SidebarMenuButton></SidebarMenuItem>
                            <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/billing"><CreditCard/> Faturamento</Link></SidebarMenuButton></SidebarMenuItem>
+                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/fleet/reports"><BarChart2/> Relatórios</Link></SidebarMenuButton></SidebarMenuItem>
                         </SidebarMenu>
                       </SidebarGroupContent>
                     </SidebarGroup>
@@ -151,6 +153,7 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                         <SidebarMenu>
                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/services/profile"><Wrench/> Perfil do Prestador</Link></SidebarMenuButton></SidebarMenuItem>
                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/billing"><CreditCard/> Faturamento</Link></SidebarMenuButton></SidebarMenuItem>
+                          <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/services/reports"><BarChart2/> Relatórios</Link></SidebarMenuButton></SidebarMenuItem>
                         </SidebarMenu>
                       </SidebarGroupContent>
                     </SidebarGroup>
@@ -203,6 +206,7 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/notifications"><Megaphone className="text-pink-500" /> Notificações</Link></SidebarMenuButton></SidebarMenuItem>
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/partners"><Handshake className="text-cyan-500" /> Parceiros</Link></SidebarMenuButton></SidebarMenuItem>
                                  <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/marketing/quiz"><Star className="text-yellow-500" /> Quizzes</Link></SidebarMenuButton></SidebarMenuItem>
+                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/reports"><BarChart2 className="text-green-500" /> Relatórios</Link></SidebarMenuButton></SidebarMenuItem>
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>

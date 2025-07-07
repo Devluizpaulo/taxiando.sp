@@ -4,7 +4,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { adminDB, adminAuth } from '@/lib/firebase-admin';
-import { type UserProfile, type GlobalSettings, type AnalyticsData, type AdminUser, type Vehicle, type ServiceListing } from '@/lib/types';
+import { type UserProfile, type GlobalSettings, type AnalyticsData, type AdminUser, type Vehicle, type ServiceListing, type Course, type Coupon } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -492,4 +492,62 @@ export async function getAdminDashboardData() {
         services: servicesData, 
         analytics: analyticsData 
     };
+}
+
+
+export async function getAdminReportsData() {
+    try {
+        const [usersSnapshot, coursesSnapshot, creditPackagesSnapshot, couponsSnapshot, vehiclesSnapshot, applicationsSnapshot] = await Promise.all([
+            adminDB.collection('users').get(),
+            adminDB.collection('courses').get(),
+            adminDB.collection('credit_packages').get(),
+            adminDB.collection('coupons').get(),
+            adminDB.collection('vehicles').get(),
+            adminDB.collection('applications').get(),
+        ]);
+        
+        // User reports
+        const users = usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as AdminUser));
+        const userCounts = users.reduce((acc, user) => {
+            acc[user.role] = (acc[user.role] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        const topRatedDrivers = users.filter(u => u.role === 'driver' && u.averageRating).sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0)).slice(0, 5);
+        
+        // Financial reports
+        const packages = creditPackagesSnapshot.docs.map(doc => doc.data() as CreditPackage);
+        const coupons = couponsSnapshot.docs.map(doc => doc.data() as Coupon);
+        const topUsedCoupons = coupons.sort((a, b) => (b.uses || 0) - (a.uses || 0)).slice(0, 5);
+
+        // Engagement reports
+        const courses = coursesSnapshot.docs.map(doc => doc.data() as Course);
+        const topCourses = courses.sort((a, b) => (b.students || 0) - (a.students || 0)).slice(0, 5);
+        
+        const vehicles = vehiclesSnapshot.docs.map(doc => doc.data() as Vehicle);
+        const rentedVehicles = vehicles.filter(v => v.status === 'Alugado').length;
+        const totalApplications = applicationsSnapshot.size;
+
+
+        return {
+            success: true,
+            userReports: {
+                totalUsers: users.length,
+                userCounts,
+                topRatedDrivers,
+            },
+            financialReports: {
+                packages,
+                topUsedCoupons,
+            },
+            engagementReports: {
+                topCourses,
+                totalVehicles: vehicles.length,
+                rentedVehicles,
+                totalApplications,
+            }
+        }
+    } catch(error) {
+        console.error("Error fetching admin reports data:", error);
+        return { success: false, error: (error as Error).message };
+    }
 }

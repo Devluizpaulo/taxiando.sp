@@ -505,3 +505,21 @@ export interface MatchResult {
   score: number;
   details: MatchDetails;
 }
+
+export interface AdminReportsData {
+    userReports: {
+        totalUsers: number;
+        userCounts: Record<string, number>;
+        topRatedDrivers: AdminUser[];
+    };
+    financialReports: {
+        packages: CreditPackage[];
+        topUsedCoupons: Coupon[];
+    };
+    engagementReports: {
+        topCourses: Course[];
+        totalVehicles: number;
+        rentedVehicles: number;
+        totalApplications: number;
+    };
+}
