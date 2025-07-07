@@ -24,9 +24,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { StarRating } from '@/components/ui/star-rating';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Eye, Smartphone, MessageCircle, Briefcase, Star, Car, Fuel, GitCommitHorizontal, ArrowLeft, Check, X } from 'lucide-react';
+import { Loader2, Eye, Smartphone, MessageCircle, Briefcase, Star, Car, Fuel, GitCommitHorizontal, ArrowLeft, Check, X, CheckCircle, Award } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 
 
 function MatchCard({ match, onViewProfile }: { match: MatchResult; onViewProfile: (driverId: string) => void; }) {
@@ -37,6 +38,8 @@ function MatchCard({ match, onViewProfile }: { match: MatchResult; onViewProfile
         { label: 'Câmbio', matched: details.transmission },
         { label: 'Combustível', matched: details.fuelType },
         { label: 'Preço', matched: details.price },
+        { label: 'Perfil Completo', matched: details.profileCompleteness },
+        { label: 'Boa Avaliação', matched: details.rating },
     ];
     
     return (
@@ -63,10 +66,10 @@ function MatchCard({ match, onViewProfile }: { match: MatchResult; onViewProfile
             </CardHeader>
             <CardContent>
                  <div className="space-y-2 text-sm border-t pt-4">
-                    <h4 className="font-semibold text-xs text-muted-foreground uppercase">Checklist de Preferências</h4>
+                    <h4 className="font-semibold text-xs text-muted-foreground uppercase">Checklist de Compatibilidade</h4>
                     {criteria.map(item => (
                         <div key={item.label} className={cn("flex items-center gap-2", !item.matched && "text-muted-foreground")}>
-                            {item.matched ? <Check className="h-4 w-4 text-green-600"/> : <X className="h-4 w-4 text-destructive"/>}
+                            {item.matched ? <CheckCircle className="h-4 w-4 text-green-600"/> : <X className="h-4 w-4 text-destructive"/>}
                             <span>{item.label}</span>
                         </div>
                     ))}

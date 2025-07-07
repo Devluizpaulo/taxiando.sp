@@ -128,6 +128,7 @@ export default function FleetPage() {
                 fuelType: 'flex',
                 description: '',
                 paymentTerms: '',
+                type: 'sedan',
             });
         }
     }, [isVehicleDialogOpen, selectedVehicle, form]);
@@ -407,6 +408,22 @@ export default function FleetPage() {
                                          <FormField control={form.control} name="year" render={({ field }) => (
                                             <FormItem><FormLabel>Ano</FormLabel><FormControl><Input type="number" {...field} placeholder="Ex: 2023" /></FormControl><FormMessage /></FormItem>
                                         )}/>
+                                        <FormField control={form.control} name="type" render={({ field }) => (
+                                            <FormItem><FormLabel>Tipo</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="hatch">Hatch</SelectItem>
+                                                        <SelectItem value="sedan">Sedan</SelectItem>
+                                                        <SelectItem value="suv">SUV</SelectItem>
+                                                        <SelectItem value="minivan">Minivan</SelectItem>
+                                                        <SelectItem value="other">Outro</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            <FormMessage /></FormItem>
+                                        )}/>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
                                         <FormField control={form.control} name="condition" render={({ field }) => (
                                             <FormItem><FormLabel>Condição</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -415,8 +432,6 @@ export default function FleetPage() {
                                                 </Select>
                                             <FormMessage /></FormItem>
                                         )}/>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
                                         <FormField control={form.control} name="transmission" render={({ field }) => (
                                             <FormItem><FormLabel className="flex items-center gap-2"><GitCommitHorizontal/>Câmbio</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -425,15 +440,15 @@ export default function FleetPage() {
                                                 </Select>
                                             <FormMessage /></FormItem>
                                         )}/>
-                                        <FormField control={form.control} name="fuelType" render={({ field }) => (
-                                            <FormItem><FormLabel className="flex items-center gap-2"><Fuel/>Combustível</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
-                                                    <SelectContent><SelectItem value="flex">Flex</SelectItem><SelectItem value="gnv">GNV</SelectItem><SelectItem value="diesel">Diesel</SelectItem><SelectItem value="electric">Elétrico</SelectItem></SelectContent>
-                                                </Select>
-                                            <FormMessage /></FormItem>
-                                        )}/>
                                     </div>
+                                    <FormField control={form.control} name="fuelType" render={({ field }) => (
+                                        <FormItem><FormLabel className="flex items-center gap-2"><Fuel/>Combustível</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                                                <SelectContent><SelectItem value="flex">Flex</SelectItem><SelectItem value="gnv">GNV</SelectItem><SelectItem value="diesel">Diesel</SelectItem><SelectItem value="electric">Elétrico</SelectItem></SelectContent>
+                                            </Select>
+                                        <FormMessage /></FormItem>
+                                    )}/>
                                      <FormField control={form.control} name="description" render={({ field }) => (
                                         <FormItem><FormLabel>Descrição do Anúncio</FormLabel><FormControl><Textarea {...field} placeholder="Descreva os pontos fortes do carro, opcionais, etc." rows={3}/></FormControl><FormMessage /></FormItem>
                                     )}/>

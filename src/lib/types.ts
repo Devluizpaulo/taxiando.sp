@@ -199,6 +199,7 @@ export interface Vehicle {
   make: string;
   model: string;
   year: number;
+  type: 'hatch' | 'sedan' | 'suv' | 'minivan' | 'other';
   condition: string;
   transmission: 'automatic' | 'manual';
   fuelType: 'flex' | 'gnv' | 'diesel' | 'electric';
@@ -495,6 +496,8 @@ export interface MatchDetails {
   transmission: boolean;
   fuelType: boolean;
   price: boolean;
+  profileCompleteness: boolean;
+  rating: boolean;
 }
 
 export interface MatchResult {

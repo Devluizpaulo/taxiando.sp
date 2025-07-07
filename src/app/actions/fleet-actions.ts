@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { adminDB } from '@/lib/firebase-admin';
-import { type Vehicle, type VehicleApplication, type VehiclePerk, type UserProfile, AdminUser, MatchResult } from '@/lib/types';
+import { type Vehicle, type VehicleApplication, type VehiclePerk, type UserProfile, AdminUser, MatchResult, MatchDetails } from '@/lib/types';
 import { vehiclePerks } from '@/lib/data';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type VehicleFormValues } from '@/lib/fleet-schemas';
@@ -65,6 +65,7 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, ve
             make: data.make,
             model: data.model,
             year: data.year,
+            type: data.type,
             status: data.status,
             dailyRate: data.dailyRate,
             imageUrl: data.imageUrl,
@@ -434,17 +435,41 @@ export async function getDriversSeekingRentals(): Promise<AdminUser[]> {
     }
 }
 
+const calculateProfileCompleteness = (profile: AdminUser): number => {
+    if (!profile) return 0;
+    
+    const fields = [
+        profile.photoUrl,
+        profile.bio,
+        profile.phone,
+        profile.cnhNumber,
+        profile.cnhCategory,
+        profile.cnhExpiration,
+        profile.condutaxNumber,
+        profile.reference?.name,
+        profile.financialConsent,
+        profile.specializedCourses?.length
+    ];
+    
+    const filledCount = fields.filter(Boolean).length;
+    return Math.round((filledCount / fields.length) * 100);
+};
+
+
 export async function getDriverMatchesForVehicle(vehicleId: string): Promise<MatchResult[]> {
     if (!vehicleId) return [];
 
-    const vehicleDetails = await getVehicleDetails(vehicleId);
+    const [vehicleDetails, drivers] = await Promise.all([
+        getVehicleDetails(vehicleId),
+        getDriversSeekingRentals()
+    ]);
+
     if (!vehicleDetails.success || !vehicleDetails.vehicle) {
         console.error(`Error fetching vehicle for matching: ${vehicleDetails.error}`);
         return [];
     }
     const vehicle = vehicleDetails.vehicle;
 
-    const drivers = await getDriversSeekingRentals();
     if (!drivers.length) return [];
     
     const results: MatchResult[] = [];
@@ -454,51 +479,52 @@ export async function getDriverMatchesForVehicle(vehicleId: string): Promise<Mat
         if (!prefs) continue;
 
         let score = 0;
-        const details = {
+        const details: MatchDetails = {
             vehicleType: false,
             transmission: false,
             fuelType: false,
             price: false,
+            profileCompleteness: false,
+            rating: false,
         };
 
-        // 1. Vehicle Type (40 points)
-        if (prefs.vehicleTypes?.length) {
-            // Simplified: check if vehicle type is in preferences. This needs vehicle to have a `type` field.
-            // Let's assume vehicle model can be a proxy for now. A more robust solution would be to categorize vehicles.
-            // For now, we give partial points if preferences are set.
-            score += 20;
-            details.vehicleType = true; // Placeholder logic
-        } else {
-             score += 10; // Neutral score for not having a preference
+        // --- Vehicle Preferences (60 points) ---
+        if (prefs.vehicleTypes?.includes(vehicle.type)) {
+            score += 25;
+            details.vehicleType = true;
         }
-
-        // 2. Transmission (30 points)
         if (prefs.transmission === 'indifferent' || prefs.transmission === vehicle.transmission) {
-            score += 30;
+            score += 15;
             details.transmission = true;
         }
-
-        // 3. Fuel Type (20 points)
-        if (prefs.fuelTypes?.length) {
-            if (prefs.fuelTypes.includes(vehicle.fuelType)) {
-                score += 20;
-                details.fuelType = true;
-            }
-        } else {
-            score += 10; // Neutral
+        if (prefs.fuelTypes?.includes(vehicle.fuelType)) {
+            score += 10;
+            details.fuelType = true;
         }
+        if (!prefs.maxDailyRate || vehicle.dailyRate <= prefs.maxDailyRate) {
+            score += 10;
+            details.price = true;
+        }
+
+        // --- Driver Quality (40 points) ---
+        const completeness = calculateProfileCompleteness(driver);
+        score += (completeness / 100) * 20; // max 20 pts
+        details.profileCompleteness = completeness >= 80;
+
+        const avgRating = driver.averageRating || 0;
+        const reviewCount = driver.reviewCount || 0;
+
+        if (reviewCount > 0) {
+            score += (avgRating / 5) * 15; // max 15 pts
+            details.rating = avgRating >= 4.0;
+        } else {
+            score += 7.5; // Neutral score for new drivers (half points)
+            details.rating = true;
+        }
+
+        score += Math.min(reviewCount / 10, 1) * 5; // max 5 pts
         
-        // 4. Price (10 points)
-        if (prefs.maxDailyRate) {
-            if (vehicle.dailyRate <= prefs.maxDailyRate) {
-                score += 10;
-                details.price = true;
-            }
-        } else {
-            score += 5; // Neutral
-        }
-
-        results.push({ driver, score, details });
+        results.push({ driver, score: Math.min(100, Math.round(score)), details });
     }
 
     return results.sort((a, b) => b.score - a.score);

@@ -6,6 +6,7 @@ export const vehicleFormSchema = z.object({
   make: z.string().min(2, "A marca é obrigatória."),
   model: z.string().min(2, "O modelo é obrigatório."),
   year: z.coerce.number().min(2000, "O ano deve ser superior a 2000.").max(new Date().getFullYear() + 1, "Ano inválido."),
+  type: z.enum(['hatch', 'sedan', 'suv', 'minivan', 'other'], { required_error: "O tipo de veículo é obrigatório."}),
   status: z.enum(['Disponível', 'Alugado', 'Em Manutenção'], { required_error: "O status é obrigatório."}),
   dailyRate: z.coerce.number().min(1, "O valor da diária é obrigatório."),
   imageUrl: z.string().url("URL da imagem inválida.").optional().or(z.literal('')),
