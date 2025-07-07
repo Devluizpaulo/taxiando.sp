@@ -1,14 +1,26 @@
 
+'use client';
+
 import { PublicHeader } from "@/components/layout/public-header";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getGlobalSettings } from "../actions/admin-actions";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useEffect, useState } from 'react';
 
-export default async function PrivacyPolicyPage() {
-  const settings = await getGlobalSettings();
-  const privacyPolicyContent = settings.legal?.privacyPolicy || "## Política de Privacidade\n\nO conteúdo desta página pode ser editado no painel do administrador.";
+type Settings = Awaited<ReturnType<typeof getGlobalSettings>>;
+
+export default function PrivacyPolicyPage() {
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [lastUpdated, setLastUpdated] = useState('');
+
+  useEffect(() => {
+    getGlobalSettings().then(setSettings);
+    setLastUpdated(new Date().toLocaleDateString('pt-BR'));
+  }, []);
+
+  const privacyPolicyContent = settings?.legal?.privacyPolicy || "## Política de Privacidade\n\nO conteúdo desta página pode ser editado no painel do administrador.";
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/40">
@@ -18,7 +30,7 @@ export default async function PrivacyPolicyPage() {
           <Card className="max-w-4xl mx-auto">
             <CardHeader>
               <CardTitle className="font-headline text-3xl">Política de Privacidade</CardTitle>
-              <CardDescription>Última atualização: {new Date().toLocaleDateString('pt-BR')}</CardDescription>
+              {lastUpdated && <CardDescription>Última atualização: {lastUpdated}</CardDescription>}
             </CardHeader>
             <CardContent className="prose max-w-none dark:prose-invert">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>

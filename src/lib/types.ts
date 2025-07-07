@@ -107,6 +107,7 @@ export interface QuizQuestion {
   id: string;
   question: string;
   options: QuizOption[];
+  correctOptionId?: string; // Correct Option ID is used in the Marketing Quiz, while isCorrect is used in the Course Quiz. Both can coexist.
 }
 
 export interface Lesson {
