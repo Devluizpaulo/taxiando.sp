@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useFieldArray, useForm, useWatch } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { nanoid } from 'nanoid';
@@ -205,7 +205,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
     );
 }
 
-function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPublished }: { moduleIndex: number, removeModule: (index: number) => void, form: any, isEditingDisabled: boolean, isPublished: boolean }) {
+function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPublished }: { moduleIndex: number, removeModule: (index: number) => void, form: UseFormReturn<CourseFormValues>, isEditingDisabled: boolean, isPublished: boolean }) {
     const { fields: lessonFields, append: appendLesson, remove: removeLesson } = useFieldArray({
         control: form.control, name: `modules.${moduleIndex}.lessons`,
     });
@@ -247,7 +247,7 @@ function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPub
     );
 }
 
-function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDisabled }: { form: any, moduleIndex: number, lessonIndex: number, removeLesson: (index: number) => void, isEditingDisabled: boolean }) {
+function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, removeLesson: (index: number) => void, isEditingDisabled: boolean }) {
     const lessonType = useWatch({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.type` });
 
     return (
@@ -277,7 +277,7 @@ function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDi
     );
 }
 
-function MaterialField({ form, moduleIndex, lessonIndex, isEditingDisabled }: { form: any, moduleIndex: number, lessonIndex: number, isEditingDisabled: boolean }) {
+function MaterialField({ form, moduleIndex, lessonIndex, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, isEditingDisabled: boolean }) {
     const { fields: materialFields, append: appendMaterial, remove: removeMaterial } = useFieldArray({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.materials` });
     return (
         <div className="space-y-3 pt-3 border-t border-dashed">
@@ -297,7 +297,7 @@ function MaterialField({ form, moduleIndex, lessonIndex, isEditingDisabled }: { 
     );
 }
 
-function QuizBuilder({ form, moduleIndex, lessonIndex, isEditingDisabled }: { form: any, moduleIndex: number, lessonIndex: number, isEditingDisabled: boolean }) {
+function QuizBuilder({ form, moduleIndex, lessonIndex, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, isEditingDisabled: boolean }) {
     const { fields: questionFields, append: appendQuestion, remove: removeQuestion } = useFieldArray({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.questions` });
     return (
         <div className="space-y-4 pt-3 border-t border-dashed">
@@ -314,7 +314,7 @@ function QuizBuilder({ form, moduleIndex, lessonIndex, isEditingDisabled }: { fo
     );
 }
 
-function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQuestion, isEditingDisabled }: { form: any, moduleIndex: number, lessonIndex: number, questionIndex: number, removeQuestion: (index: number) => void, isEditingDisabled: boolean }) {
+function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQuestion, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, questionIndex: number, removeQuestion: (index: number) => void, isEditingDisabled: boolean }) {
     const { fields: optionFields, append: appendOption, remove: removeOption } = useFieldArray({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.options` });
     const optionsPath = `modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.options`;
 
@@ -327,7 +327,7 @@ function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQu
                         <FormLabel>Opções de Resposta (marque a correta)</FormLabel>
                         <FormControl>
                             <RadioGroup 
-                                onValueChange={(value) => { const newOptions = form.getValues(optionsPath).map((opt: any, idx: number) => ({ ...opt, isCorrect: idx === parseInt(value) })); form.setValue(optionsPath, newOptions, { shouldValidate: true }); }}
+                                onValueChange={(value) => { const newOptions = form.getValues(optionsPath).map((opt, idx: number) => ({ ...opt, isCorrect: idx === parseInt(value) })); form.setValue(optionsPath, newOptions, { shouldValidate: true }); }}
                                 value={optionFields.findIndex(opt => opt.isCorrect).toString()}
                                 disabled={isEditingDisabled}
                             >
