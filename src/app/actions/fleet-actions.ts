@@ -368,18 +368,20 @@ export async function getFleetPublicProfile(fleetId: string) {
         return { success: false, error: "ID da frota não fornecido." };
     }
     try {
-        const fleetDoc = await adminDB.collection('users').doc(fleetId).get();
+        const [fleetDoc, vehiclesQuery] = await Promise.all([
+            adminDB.collection('users').doc(fleetId).get(),
+            adminDB.collection('vehicles')
+                .where('fleetId', '==', fleetId)
+                .where('status', '==', 'Disponível')
+                .where('moderationStatus', '==', 'Aprovado')
+                .orderBy('createdAt', 'desc')
+                .get()
+        ]);
+
         if (!fleetDoc.exists || fleetDoc.data()?.role !== 'fleet') {
             return { success: false, error: "Frota não encontrada." };
         }
         
-        const vehiclesQuery = await adminDB.collection('vehicles')
-            .where('fleetId', '==', fleetId)
-            .where('status', '==', 'Disponível')
-            .where('moderationStatus', '==', 'Aprovado')
-            .orderBy('createdAt', 'desc')
-            .get();
-            
         const fleetProfile = { uid: fleetDoc.id, ...fleetDoc.data() } as UserProfile;
         const availableVehicles = vehiclesQuery.docs.map(doc => {
              const data = doc.data();

@@ -373,7 +373,13 @@ export async function getAdminDashboardData() {
     let analyticsData: AnalyticsData = {};
 
     try {
-        const usersSnapshot = await adminDB.collection('users').orderBy('createdAt', 'desc').get();
+        const [usersSnapshot, vehiclesSnapshot, servicesSnapshot, dashboardAnalytics] = await Promise.all([
+            adminDB.collection('users').orderBy('createdAt', 'desc').get(),
+            adminDB.collection('vehicles').where('moderationStatus', '==', 'Pendente').get(),
+            adminDB.collection('services').where('status', '==', 'Pendente').get(),
+            getAdminDashboardAnalytics()
+        ]);
+
         usersData = usersSnapshot.docs.map(doc => {
             const data = doc.data() as UserProfile;
             return {
@@ -386,21 +392,14 @@ export async function getAdminDashboardData() {
                 lastNotificationCheck: toISO(data.lastNotificationCheck),
             } as AdminUser;
         });
-    } catch (error) {}
-    
-    try {
-        const vehiclesSnapshot = await adminDB.collection('vehicles').where('moderationStatus', '==', 'Pendente').get();
-        vehiclesData = vehiclesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
-    } catch (error) {}
-    
-    try {
-        const servicesSnapshot = await adminDB.collection('services').where('status', '==', 'Pendente').get();
-        servicesData = servicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceListing));
-    } catch (error) {}
 
-    try {
-        analyticsData = await getAdminDashboardAnalytics();
-    } catch (analyticsError) {}
+        vehiclesData = vehiclesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
+        servicesData = servicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceListing));
+        analyticsData = dashboardAnalytics;
+
+    } catch (error) {
+        console.error("Error fetching admin dashboard data in parallel:", error);
+    }
 
     try {
         const allVehiclesSnapshot = await adminDB.collection('vehicles').get();
