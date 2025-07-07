@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { BookOpen, Clock, MoveRight } from "lucide-react";
+import { BookOpen, Clock, MoveRight, CreditCard } from "lucide-react";
 import Link from "next/link";
 
 export function CoursesList({ courses }: { courses: Course[] }) {
@@ -57,11 +58,19 @@ export function CoursesList({ courses }: { courses: Course[] }) {
                                 <Clock className="h-4 w-4" />
                                 <span>Aprox. {Math.floor(course.totalDuration / 60)}h {course.totalDuration % 60}min</span>
                             </div>
+                             <div className="flex items-center gap-2 pt-2 border-t mt-2">
+                                <CreditCard className="h-4 w-4 text-primary" />
+                                <span className="font-semibold text-foreground">
+                                    {(course.priceInCredits || 0) > 0 ? `${course.priceInCredits} créditos` : 'Gratuito'}
+                                </span>
+                            </div>
                         </div>
                     </CardContent>
                     <CardFooter>
                         <Button asChild className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                            <Link href={`/courses/${course.id}`}>Ver Curso <MoveRight className="ml-2"/></Link>
+                             <Link href={`/courses/${course.id}`}>
+                                {(course.priceInCredits || 0) > 0 ? 'Comprar Curso' : 'Acessar Curso'} <MoveRight className="ml-2"/>
+                            </Link>
                         </Button>
                     </CardFooter>
                 </Card>

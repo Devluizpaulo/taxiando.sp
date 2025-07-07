@@ -5,7 +5,7 @@
 import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { type Course } from '@/lib/types';
+import { type Course, type UserProfile } from '@/lib/types';
 import { adminDB } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type CourseFormValues } from '@/lib/course-schemas';
@@ -38,6 +38,7 @@ export async function createCourse(values: { title: string; description: string;
             status: 'Draft',
             students: 0,
             investmentCost: 0,
+            priceInCredits: 0,
             revenue: 0,
             authorInfo: '',
             legalNotice: 'Este conteúdo é protegido por direitos autorais. A reprodução não autorizada é proibida.',
@@ -258,4 +259,114 @@ export async function deleteCourse(courseId: string) {
     } catch (error) {
         return { success: false, error: (error as Error).message };
     }
+}
+
+export async function getCourseAccessData(courseId: string, userId: string) {
+    if (!courseId || !userId) return { success: false, error: 'Dados inválidos.' };
+
+    try {
+        const courseDocRef = adminDB.collection('courses').doc(courseId);
+        const progressDocRef = adminDB.collection('users').doc(userId).collection('progress').doc(courseId);
+        const enrollmentDocRef = adminDB.collection('users').doc(userId).collection('enrollments').doc(courseId);
+
+        const [courseSnap, progressSnap, enrollmentSnap] = await Promise.all([
+            courseDocRef.get(),
+            progressDocRef.get(),
+            enrollmentDocRef.get()
+        ]);
+
+        if (!courseSnap.exists) {
+            return { success: false, error: 'Curso não encontrado.' };
+        }
+
+        const course = { id: courseSnap.id, ...courseSnap.data() } as Course;
+        const completedLessons = progressSnap.exists() ? progressSnap.data()?.completedLessons || [] : [];
+        const isEnrolled = enrollmentSnap.exists();
+        
+        const hasAccess = (course.priceInCredits || 0) === 0 || isEnrolled;
+
+        return {
+            success: true,
+            course: {
+                 ...course,
+                 createdAt: (course.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString()
+            },
+            completedLessons,
+            hasAccess
+        };
+
+    } catch(e) {
+        return { success: false, error: (e as Error).message };
+    }
+}
+
+export async function purchaseCourse(courseId: string, userId: string) {
+  if (!userId || !courseId) {
+    return { success: false, error: "Dados inválidos." };
+  }
+
+  const userRef = adminDB.collection('users').doc(userId);
+  const courseRef = adminDB.collection('courses').doc(courseId);
+  const enrollmentRef = userRef.collection('enrollments').doc(courseId);
+  const transactionRef = userRef.collection('transactions').doc();
+
+  try {
+    const { success, error } = await adminDB.runTransaction(async (transaction) => {
+      const userDoc = await transaction.get(userRef);
+      const courseDoc = await transaction.get(courseRef);
+
+      if (!userDoc.exists) {
+        return { success: false, error: "Usuário não encontrado." };
+      }
+      if (!courseDoc.exists) {
+        return { success: false, error: "Curso não encontrado." };
+      }
+
+      const userProfile = userDoc.data() as UserProfile;
+      const courseData = courseDoc.data() as Course;
+      const price = courseData.priceInCredits || 0;
+      const userCredits = userProfile.credits || 0;
+
+      if (price > 0 && userCredits < price) {
+        return { success: false, error: "Créditos insuficientes." };
+      }
+
+      if (price > 0) {
+        transaction.update(userRef, { credits: userCredits - price });
+      }
+
+      transaction.set(enrollmentRef, {
+        courseId: courseId,
+        enrolledAt: Timestamp.now(),
+        status: 'active',
+        source: 'purchase',
+      });
+      
+      transaction.update(courseRef, {
+          students: (courseData.students || 0) + 1,
+          revenue: (courseData.revenue || 0) + price
+      });
+      
+      transaction.set(transactionRef, {
+          type: 'usage',
+          creditsUsed: price,
+          usageReason: `Compra do curso: ${courseData.title}`,
+          createdAt: Timestamp.now(),
+      });
+
+      return { success: true };
+    });
+
+    if (!success) {
+      return { success: false, error };
+    }
+
+    revalidatePath(`/courses/${courseId}`);
+    revalidatePath('/dashboard');
+    revalidatePath('/billing');
+    return { success: true };
+
+  } catch (e) {
+    return { success: false, error: (e as Error).message };
+  }
 }

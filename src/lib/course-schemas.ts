@@ -1,4 +1,5 @@
 
+
 import * as z from 'zod';
 
 export const supportingMaterialSchema = z.object({
@@ -74,6 +75,7 @@ export const courseFormSchema = z.object({
   category: z.string().min(3, { message: 'A categoria é obrigatória.' }),
   modules: z.array(moduleSchema).min(1, "O curso deve ter pelo menos um módulo."),
   investmentCost: z.coerce.number().min(0).default(0).optional(),
+  priceInCredits: z.coerce.number().min(0).default(0).optional(),
   authorInfo: z.string().optional(),
   legalNotice: z.string().optional(),
 });

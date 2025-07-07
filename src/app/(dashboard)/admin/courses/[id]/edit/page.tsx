@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -21,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic, DollarSign, Copyright, Gavel } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic, DollarSign, Copyright, Gavel, CreditCard } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 const lessonTypeIcons: { [key: string]: React.ReactNode } = {
@@ -48,6 +49,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
             category: '', 
             modules: [],
             investmentCost: 0,
+            priceInCredits: 0,
             authorInfo: '',
             legalNotice: '',
         },
@@ -148,14 +150,24 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                         <CardDescription>Gerencie custos, direitos autorais e avisos importantes do curso.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <FormField control={form.control} name="investmentCost" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="flex items-center gap-2"><DollarSign /> Custo de Investimento (R$)</FormLabel>
-                                <FormControl><Input type="number" {...field} placeholder="Ex: 500.00" /></FormControl>
-                                <FormDescription>Valor gasto na produção ou compra deste curso.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField control={form.control} name="investmentCost" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="flex items-center gap-2"><DollarSign /> Custo de Investimento (R$)</FormLabel>
+                                    <FormControl><Input type="number" {...field} placeholder="Ex: 500.00" /></FormControl>
+                                    <FormDescription>Valor gasto na produção ou compra deste curso.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}/>
+                             <FormField control={form.control} name="priceInCredits" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="flex items-center gap-2"><CreditCard /> Preço em Créditos</FormLabel>
+                                    <FormControl><Input type="number" {...field} placeholder="Ex: 10" /></FormControl>
+                                    <FormDescription>Custo para o usuário comprar o curso. Deixe 0 para gratuito.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}/>
+                        </div>
                         <FormField control={form.control} name="authorInfo" render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="flex items-center gap-2"><Copyright /> Informações de Direitos Autorais</FormLabel>

@@ -1,14 +1,13 @@
 
+
 'use client'
 
 import { useEffect, useState, useMemo } from 'react';
 import Link from "next/link";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
-import { markLessonAsComplete } from '@/app/actions/course-actions';
+import { getCourseAccessData, purchaseCourse } from '@/app/actions/course-actions';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,15 +15,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock, ClipboardCheck, AlertTriangle, RefreshCw, XCircle, Mic, Copyright, Gavel } from "lucide-react";
+import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock, ClipboardCheck, AlertTriangle, RefreshCw, XCircle, Mic, Copyright, Gavel, ShoppingCart } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { type Course, type Lesson } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LoadingScreen } from '@/components/loading-screen';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { markLessonAsComplete } from '@/app/actions/course-actions';
+
 
 const getLessonIcon = (type: Lesson['type']) => {
     switch(type) {
@@ -47,22 +49,26 @@ const getYoutubeEmbedUrl = (url: string): string | null => {
 
 
 export default function CourseDetailsPage({ params }: { params: { id: string } }) {
-    const { user } = useAuth();
+    const { user, userProfile } = useAuth();
     const { toast } = useToast();
     const [course, setCourse] = useState<Course | null>(null);
     const [completedLessons, setCompletedLessons] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
+    const [hasAccess, setHasAccess] = useState(false);
+    const [isPurchasing, setIsPurchasing] = useState(false);
 
-    const fetchCourseAndProgress = async () => {
+    const fetchCourseData = async () => {
         if (!user) return;
         setLoading(true);
         try {
-            const courseDocRef = doc(db, 'courses', params.id);
-            const progressDocRef = doc(db, 'users', user.uid, 'progress', params.id);
-            const [courseDoc, progressDoc] = await Promise.all([getDoc(courseDocRef), getDoc(progressDocRef)]);
-
-            if (courseDoc.exists()) setCourse({ id: courseDoc.id, ...courseDoc.data() } as Course);
-            if (progressDoc.exists()) setCompletedLessons(progressDoc.data().completedLessons || []);
+            const result = await getCourseAccessData(params.id, user.uid);
+            if (result.success && result.course) {
+                setCourse(result.course);
+                setCompletedLessons(result.completedLessons || []);
+                setHasAccess(result.hasAccess || false);
+            } else {
+                 toast({ variant: "destructive", title: "Erro", description: result.error || "Não foi possível carregar os dados do curso." });
+            }
         } catch (error) {
             toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar os dados do curso." });
         } finally {
@@ -72,13 +78,42 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
 
     useEffect(() => {
         if (user) {
-            fetchCourseAndProgress();
+            fetchCourseData();
         }
     }, [user, params.id]);
 
     const handleLessonCompleted = (lessonId: string) => {
         if (!completedLessons.includes(lessonId)) {
             setCompletedLessons(prev => [...prev, lessonId]);
+        }
+    };
+
+    const handlePurchase = async () => {
+        if (!user || !course) return;
+
+        if ((userProfile?.credits || 0) < (course.priceInCredits || 0)) {
+            toast({
+                variant: 'destructive',
+                title: 'Créditos Insuficientes',
+                description: 'Você não tem créditos suficientes para comprar este curso.',
+                action: <ToastAction altText="Comprar Créditos" asChild><Link href="/billing">Comprar Créditos</Link></ToastAction>
+            });
+            return;
+        }
+
+        setIsPurchasing(true);
+        try {
+            const result = await purchaseCourse(course.id, user.uid);
+            if (result.success) {
+                toast({ title: 'Compra realizada com sucesso!', description: 'Você agora tem acesso total a este curso.' });
+                await fetchCourseData();
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            toast({ variant: "destructive", title: "Erro na Compra", description: (error as Error).message });
+        } finally {
+            setIsPurchasing(false);
         }
     };
     
@@ -101,7 +136,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
     }
 
     const totalCompleted = completedLessons.length;
-    const progress = Math.round((totalCompleted / course.totalLessons) * 100);
+    const progress = course.totalLessons > 0 ? Math.round((totalCompleted / course.totalLessons) * 100) : 0;
 
     return (
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -111,41 +146,82 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                     <h1 className="font-headline text-3xl font-bold tracking-tight">{course.title}</h1>
                     <p className="mt-2 text-muted-foreground">{course.description}</p>
                  </div>
-                <Card>
-                    <CardHeader><CardTitle>Conteúdo do Curso</CardTitle></CardHeader>
-                    <CardContent>
-                        <Accordion type="single" collapsible className="w-full" defaultValue={course.modules[0]?.id}>
-                            {course.modules.map(module => (
-                                <AccordionItem key={module.id} value={module.id}>
-                                    <AccordionTrigger className="font-bold text-lg hover:no-underline flex justify-between items-center w-full pr-4">
-                                        <span>{module.title}</span>
-                                        {module.badge?.name && (<Badge variant="secondary" className="flex items-center gap-1.5 bg-amber-100 text-amber-800 border-amber-200"><Award className="h-4 w-4" /><span>Medalha: {module.badge.name}</span></Badge>)}
-                                    </AccordionTrigger>
-                                    <AccordionContent>
-                                        <ul className="space-y-1 pt-2">
-                                            {module.lessons.map(lesson => {
-                                                const lessonIndex = allLessonsFlat.indexOf(lesson.id);
-                                                const isLocked = lessonIndex > lastCompletedIndex + 1;
-                                                return (
-                                                    <LessonItem key={lesson.id} lesson={lesson} course={course} isCompleted={completedLessons.includes(lesson.id)} onLessonCompleted={handleLessonCompleted} isLocked={isLocked}/>
-                                                );
-                                            })}
-                                        </ul>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                    </CardContent>
-                </Card>
+                 {hasAccess ? (
+                     <Card>
+                        <CardHeader><CardTitle>Conteúdo do Curso</CardTitle></CardHeader>
+                        <CardContent>
+                            <Accordion type="single" collapsible className="w-full" defaultValue={course.modules[0]?.id}>
+                                {course.modules.map(module => (
+                                    <AccordionItem key={module.id} value={module.id}>
+                                        <AccordionTrigger className="font-bold text-lg hover:no-underline flex justify-between items-center w-full pr-4">
+                                            <span>{module.title}</span>
+                                            {module.badge?.name && (<Badge variant="secondary" className="flex items-center gap-1.5 bg-amber-100 text-amber-800 border-amber-200"><Award className="h-4 w-4" /><span>Medalha: {module.badge.name}</span></Badge>)}
+                                        </AccordionTrigger>
+                                        <AccordionContent>
+                                            <ul className="space-y-1 pt-2">
+                                                {module.lessons.map(lesson => {
+                                                    const lessonIndex = allLessonsFlat.indexOf(lesson.id);
+                                                    const isLocked = lessonIndex > lastCompletedIndex + 1;
+                                                    return (
+                                                        <LessonItem key={lesson.id} lesson={lesson} course={course} isCompleted={completedLessons.includes(lesson.id)} onLessonCompleted={handleLessonCompleted} isLocked={isLocked}/>
+                                                    );
+                                                })}
+                                            </ul>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
+                        </CardContent>
+                    </Card>
+                 ) : (
+                    <Card className="text-center p-8">
+                        <CardHeader>
+                            <Lock className="mx-auto h-12 w-12 text-primary mb-4" />
+                            <CardTitle className="text-2xl">Acesso Exclusivo</CardTitle>
+                            <CardDescription>Compre este curso para desbloquear todo o conteúdo, incluindo aulas, materiais e o certificado de conclusão.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <div className="text-4xl font-bold text-accent-foreground font-headline mb-4">
+                                {course.priceInCredits} créditos
+                            </div>
+                            <Button size="lg" onClick={handlePurchase} disabled={isPurchasing}>
+                                {isPurchasing ? <Loader2 className="mr-2 animate-spin" /> : <ShoppingCart className="mr-2"/>}
+                                Comprar Curso
+                            </Button>
+                        </CardContent>
+                    </Card>
+                 )}
             </div>
             <div className="lg:col-span-1">
                 <Card className="sticky top-20">
-                    <CardHeader><CardTitle>Seu Progresso</CardTitle><CardDescription>Continue de onde parou e conquiste seu certificado.</CardDescription></CardHeader>
+                    <CardHeader>
+                        <CardTitle>{hasAccess ? 'Seu Progresso' : 'Adquirir Curso'}</CardTitle>
+                        <CardDescription>{hasAccess ? 'Continue de onde parou e conquiste seu certificado.' : `Invista ${course.priceInCredits} créditos na sua carreira.`}</CardDescription>
+                    </CardHeader>
                     <CardContent className="space-y-4">
-                        <Progress value={progress} /><p className="text-sm text-muted-foreground">{progress}% concluído ({totalCompleted} de {course.totalLessons} aulas)</p>
+                         {hasAccess ? (
+                            <>
+                                <Progress value={progress} />
+                                <p className="text-sm text-muted-foreground">{progress}% concluído ({totalCompleted} de {course.totalLessons} aulas)</p>
+                            </>
+                        ) : (
+                            <div className="p-4 text-center rounded-lg bg-muted">
+                                <p className="text-sm text-muted-foreground">Preço</p>
+                                <p className="text-3xl font-bold font-headline">{course.priceInCredits} créditos</p>
+                            </div>
+                        )}
                         <div className="border-t pt-4 space-y-2"><div className="flex justify-between text-sm"><span className="font-medium">Categoria:</span><Badge variant="secondary">{course.category}</Badge></div><div className="flex justify-between text-sm"><span className="font-medium">Total de Aulas:</span><span>{course.totalLessons}</span></div><div className="flex justify-between text-sm"><span className="font-medium">Duração Estimada:</span><span>{Math.floor(course.totalDuration / 60)}h {course.totalDuration % 60}min</span></div></div>
-                        <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={progress === 100}>{progress === 100 ? "Curso Concluído!" : "Continuar Curso"}</Button>
-                        {progress === 100 && (<TooltipProvider><Tooltip><TooltipTrigger asChild><div className="w-full"><Button className="w-full" variant="outline" disabled><Lock className="mr-2 h-4 w-4"/> Baixar Certificado (Premium)</Button></div></TooltipTrigger><TooltipContent><p>Faça o upgrade para a versão Pro para emitir certificados.</p></TooltipContent></Tooltip></TooltipProvider>)}
+                        
+                         {hasAccess ? (
+                            <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={progress === 100}>{progress === 100 ? "Curso Concluído!" : "Continuar Curso"}</Button>
+                         ) : (
+                            <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={handlePurchase} disabled={isPurchasing}>
+                                 {isPurchasing ? <Loader2 className="mr-2 animate-spin" /> : <ShoppingCart className="mr-2"/>}
+                                Comprar Agora
+                            </Button>
+                         )}
+
+                        {hasAccess && progress === 100 && (<TooltipProvider><Tooltip><TooltipTrigger asChild><div className="w-full"><Button className="w-full" variant="outline" disabled><Lock className="mr-2 h-4 w-4"/> Baixar Certificado (Premium)</Button></div></TooltipTrigger><TooltipContent><p>Faça o upgrade para a versão Pro para emitir certificados.</p></TooltipContent></Tooltip></TooltipProvider>)}
                     </CardContent>
                 </Card>
             </div>

@@ -1,4 +1,5 @@
 
+
 import { type Timestamp } from "firebase/firestore";
 
 export interface RelatedLink {
@@ -149,6 +150,7 @@ export interface Course {
   status?: 'Published' | 'Draft';
   students?: number;
   investmentCost?: number;
+  priceInCredits?: number;
   authorInfo?: string;
   legalNotice?: string;
   revenue?: number;
