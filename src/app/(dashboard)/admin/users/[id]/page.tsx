@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -10,9 +11,9 @@ import { useRouter } from 'next/navigation';
 import {
   updateUserByAdmin,
   enrollUserInCourse,
+  getUserProfileById,
 } from '@/app/actions/admin-actions';
 import { getAllCourses } from '@/app/actions/course-actions';
-import { getDriverProfile } from '@/app/actions/fleet-actions';
 import { type AdminUser, type Course } from '@/lib/types';
 
 import { useToast } from '@/hooks/use-toast';
@@ -27,8 +28,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, ArrowLeft, GraduationCap, Gift } from 'lucide-react';
 
 const adminEditUserSchema = z.object({
-  name: z.string().min(3, "O nome é obrigatório.").optional().or(z.literal('')),
-  phone: z.string().min(10, "O telefone deve ter pelo menos 10 dígitos.").optional().or(z.literal('')),
+  name: z.string().min(3, "O nome é obrigatório.").optional(),
+  phone: z.string().min(10, "O telefone deve ter pelo menos 10 dígitos.").optional(),
   role: z.enum(['driver', 'fleet', 'provider', 'admin']),
   profileStatus: z.enum(['incomplete', 'pending_review', 'approved', 'rejected']),
   credits: z.coerce.number().min(0, "Créditos não podem ser negativos."),
@@ -56,7 +57,7 @@ export default function AdminUserDetailsPage({ params }: { params: { id: string 
             setLoading(true);
             try {
                 const [userData, coursesData] = await Promise.all([
-                    getDriverProfile(params.id),
+                    getUserProfileById(params.id),
                     getAllCourses()
                 ]);
                 

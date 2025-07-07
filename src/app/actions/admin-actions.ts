@@ -29,9 +29,35 @@ export async function updateUserProfileStatus(userId: string, newStatus: 'Aprova
     }
 }
 
+export async function getUserProfileById(userId: string): Promise<AdminUser | null> {
+    if (!userId) return null;
+    try {
+        const userDoc = await adminDB.collection('users').doc(userId).get();
+        if (!userDoc.exists) return null;
+
+        const data = userDoc.data() as UserProfile;
+        
+        const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
+
+        return {
+            ...data,
+            uid: userDoc.id,
+            createdAt: toISO(data.createdAt) || new Date().toISOString(),
+            cnhExpiration: toISO(data.cnhExpiration),
+            condutaxExpiration: toISO(data.condutaxExpiration),
+            alvaraExpiration: toISO(data.alvaraExpiration),
+            lastNotificationCheck: toISO(data.lastNotificationCheck),
+        } as AdminUser;
+
+    } catch (error) {
+        console.error("Error fetching user profile by ID:", error);
+        return null;
+    }
+}
+
 const adminEditUserSchema = z.object({
-  name: z.string().min(3, "O nome é obrigatório.").optional().or(z.literal('')),
-  phone: z.string().min(10, "O telefone deve ter pelo menos 10 dígitos.").optional().or(z.literal('')),
+  name: z.string().min(3, "O nome é obrigatório.").optional(),
+  phone: z.string().min(10, "O telefone deve ter pelo menos 10 dígitos.").optional(),
   role: z.enum(['driver', 'fleet', 'provider', 'admin']),
   profileStatus: z.enum(['incomplete', 'pending_review', 'approved', 'rejected']),
   credits: z.coerce.number().min(0, "Créditos não podem ser negativos."),

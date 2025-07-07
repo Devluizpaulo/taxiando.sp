@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -81,6 +82,7 @@ export async function markLessonAsComplete({ courseId, moduleId, lessonId, userI
         const targetModule = courseData.modules.find(m => m.id === moduleId);
 
         if (!targetModule) {
+            console.warn(`Module for lesson ${lessonId} not found in course ${courseId}. Cannot check for badge completion.`);
             revalidatePath(`/courses/${courseId}`);
             return;
         }
