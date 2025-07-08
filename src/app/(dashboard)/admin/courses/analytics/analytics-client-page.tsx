@@ -18,9 +18,7 @@ export function CoursesAnalyticsClientPage({ initialCourses }: { initialCourses:
 
     const analytics = useMemo(() => {
         return courses.reduce((acc, course) => {
-            // For now, revenue is mocked. In a real scenario, this would come from sales data.
-            const simulatedRevenue = (course.students || 0) * ((course.id.charCodeAt(0) % 20) + 15.50); // mock price
-            const revenue = course.revenue || simulatedRevenue;
+            const revenue = course.revenue || 0;
             const cost = course.investmentCost || 0;
             acc.totalInvestment += cost;
             acc.totalRevenue += revenue;
@@ -40,7 +38,7 @@ export function CoursesAnalyticsClientPage({ initialCourses }: { initialCourses:
             
              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Receita (Simulada)</CardTitle><TrendingUp className="h-4 w-4 text-green-500" /></CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Receita de Créditos</CardTitle><TrendingUp className="h-4 w-4 text-green-500" /></CardHeader>
                     <CardContent><div className="text-2xl font-bold">{formatCurrency(analytics.totalRevenue)}</div></CardContent>
                 </Card>
                  <Card>
@@ -48,7 +46,7 @@ export function CoursesAnalyticsClientPage({ initialCourses }: { initialCourses:
                     <CardContent><div className="text-2xl font-bold">{formatCurrency(analytics.totalInvestment)}</div></CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Lucro (Simulado)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Lucro/Prejuízo</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground" /></CardHeader>
                     <CardContent><div className={cn("text-2xl font-bold", totalProfit >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCurrency(totalProfit)}</div></CardContent>
                 </Card>
                  <Card>
@@ -60,7 +58,7 @@ export function CoursesAnalyticsClientPage({ initialCourses }: { initialCourses:
             <Card>
                 <CardHeader>
                     <CardTitle>Desempenho por Curso</CardTitle>
-                    <CardDescription>Análise detalhada de cada curso da plataforma. A receita é simulada para fins de demonstração.</CardDescription>
+                    <CardDescription>Análise detalhada de cada curso da plataforma.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -78,8 +76,7 @@ export function CoursesAnalyticsClientPage({ initialCourses }: { initialCourses:
                                 <TableRow><TableCell colSpan={5} className="h-24 text-center">Nenhum curso cadastrado.</TableCell></TableRow>
                             ) : (
                                 courses.map(course => {
-                                    const simulatedRevenue = (course.students || 0) * ((course.id.charCodeAt(0) % 20) + 15.50);
-                                    const revenue = course.revenue || simulatedRevenue;
+                                    const revenue = course.revenue || 0;
                                     const cost = course.investmentCost || 0;
                                     const profit = revenue - cost;
                                     return (

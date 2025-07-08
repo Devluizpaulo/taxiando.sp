@@ -26,17 +26,13 @@ export async function createCourse(values: { title: string; description: string;
     
     try {
         const courseId = nanoid();
-        const courseData = {
-            id: courseId,
+        const courseData: Omit<Course, 'id' | 'createdAt' | 'modules' | 'totalLessons' | 'totalDuration' > = {
             title: values.title,
             description: values.description,
             category: values.category,
-            modules: [],
-            totalLessons: 0,
-            totalDuration: 0,
-            createdAt: Timestamp.now(),
             status: 'Draft',
             students: 0,
+            difficulty: 'Iniciante',
             investmentCost: 0,
             priceInCredits: 0,
             revenue: 0,
@@ -44,7 +40,14 @@ export async function createCourse(values: { title: string; description: string;
             legalNotice: 'Este conteúdo é protegido por direitos autorais. A reprodução não autorizada é proibida.',
         };
 
-        await adminDB.collection('courses').doc(courseId).set(courseData);
+        await adminDB.collection('courses').doc(courseId).set({
+            ...courseData,
+            id: courseId,
+            modules: [],
+            totalLessons: 0,
+            totalDuration: 0,
+            createdAt: Timestamp.now(),
+        });
 
         revalidatePath('/admin/courses');
         return { success: true, courseId: courseId };

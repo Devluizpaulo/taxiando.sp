@@ -22,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic, DollarSign, Copyright, Gavel, CreditCard } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic, DollarSign, Copyright, Gavel, CreditCard, BarChart, Trophy, BrainCircuit } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 const lessonTypeIcons: { [key: string]: React.ReactNode } = {
@@ -48,6 +48,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
             description: '', 
             category: '', 
             modules: [],
+            difficulty: 'Iniciante',
             investmentCost: 0,
             priceInCredits: 0,
             authorInfo: '',
@@ -146,11 +147,26 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Informações Financeiras e Legais</CardTitle>
-                        <CardDescription>Gerencie custos, direitos autorais e avisos importantes do curso.</CardDescription>
+                        <CardTitle>Informações Financeiras, Legais e de Nível</CardTitle>
+                        <CardDescription>Gerencie custos, direitos autorais e a dificuldade do curso.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <FormField control={form.control} name="difficulty" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="flex items-center gap-2"><Trophy /> Nível de Dificuldade</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione o nível..." /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Iniciante"><div className="flex items-center gap-2"><BarChart/> Iniciante</div></SelectItem>
+                                        <SelectItem value="Intermediário"><div className="flex items-center gap-2"><BrainCircuit/> Intermediário</div></SelectItem>
+                                        <SelectItem value="Avançado"><div className="flex items-center gap-2"><Trophy/> Avançado</div></SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormDescription>Isso ajuda os motoristas a escolherem o curso certo.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                         )}/>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
                             <FormField control={form.control} name="investmentCost" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className="flex items-center gap-2"><DollarSign /> Custo de Investimento (R$)</FormLabel>
@@ -168,22 +184,24 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                                 </FormItem>
                             )}/>
                         </div>
-                        <FormField control={form.control} name="authorInfo" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="flex items-center gap-2"><Copyright /> Informações de Direitos Autorais</FormLabel>
-                                <FormControl><Input {...field} placeholder="Ex: © 2024 Nome do Produtor Terceirizado" /></FormControl>
-                                <FormDescription>Caso o conteúdo seja de terceiros, informe aqui.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
-                        <FormField control={form.control} name="legalNotice" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="flex items-center gap-2"><Gavel /> Aviso Legal sobre Reprodução</FormLabel>
-                                <FormControl><Textarea {...field} placeholder="Ex: A reprodução deste conteúdo é proibida..." rows={3}/></FormControl>
-                                <FormDescription>Este aviso será exibido aos alunos ao acessarem as aulas.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
+                        <div className="border-t pt-6 space-y-6">
+                          <FormField control={form.control} name="authorInfo" render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel className="flex items-center gap-2"><Copyright /> Informações de Direitos Autorais</FormLabel>
+                                  <FormControl><Input {...field} placeholder="Ex: © 2024 Nome do Produtor Terceirizado" /></FormControl>
+                                  <FormDescription>Caso o conteúdo seja de terceiros, informe aqui.</FormDescription>
+                                  <FormMessage />
+                              </FormItem>
+                          )}/>
+                          <FormField control={form.control} name="legalNotice" render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel className="flex items-center gap-2"><Gavel /> Aviso Legal sobre Reprodução</FormLabel>
+                                  <FormControl><Textarea {...field} placeholder="Ex: A reprodução deste conteúdo é proibida..." rows={3}/></FormControl>
+                                  <FormDescription>Este aviso será exibido aos alunos ao acessarem as aulas.</FormDescription>
+                                  <FormMessage />
+                              </FormItem>
+                          )}/>
+                        </div>
                     </CardContent>
                 </Card>
 

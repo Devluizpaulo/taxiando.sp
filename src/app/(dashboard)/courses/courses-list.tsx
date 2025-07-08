@@ -9,18 +9,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { BookOpen, Clock, MoveRight, CreditCard } from "lucide-react";
+import { BookOpen, Clock, MoveRight, CreditCard, Trophy } from "lucide-react";
 import Link from "next/link";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function CoursesList({ courses }: { courses: Course[] }) {
     const [searchTerm, setSearchTerm] = useState('');
+    const [difficultyFilter, setDifficultyFilter] = useState('Todos');
+
+    const difficultyLevels = ['Todos', 'Iniciante', 'Intermediário', 'Avançado'];
 
     const filteredCourses = useMemo(() => {
-        return courses.filter(course => 
-            course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            course.category.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [searchTerm, courses]);
+        return courses.filter(course => {
+            const searchMatch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                course.category.toLowerCase().includes(searchTerm.toLowerCase());
+            const difficultyMatch = difficultyFilter === 'Todos' || course.difficulty === difficultyFilter;
+            
+            return searchMatch && difficultyMatch;
+        });
+    }, [searchTerm, difficultyFilter, courses]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -30,13 +37,23 @@ export function CoursesList({ courses }: { courses: Course[] }) {
         </div>
 
         <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-4 flex flex-col md:flex-row gap-4">
                  <Input 
                   placeholder="Buscar por título ou categoria..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="max-w-sm"
+                  className="w-full md:max-w-sm"
                 />
+                <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+                    <SelectTrigger className="w-full md:w-[200px]">
+                        <SelectValue placeholder="Nível..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {difficultyLevels.map(level => (
+                            <SelectItem key={level} value={level}>{level}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </CardContent>
         </Card>
 
@@ -44,7 +61,10 @@ export function CoursesList({ courses }: { courses: Course[] }) {
             {filteredCourses.map(course => (
                 <Card key={course.id} className="flex flex-col">
                     <CardHeader>
-                        <Badge variant="secondary" className="w-fit mb-2">{course.category}</Badge>
+                        <div className="flex justify-between items-center mb-2">
+                           <Badge variant="secondary" className="w-fit">{course.category}</Badge>
+                           {course.difficulty && <Badge variant="outline" className="capitalize flex items-center gap-1"><Trophy className="h-3 w-3" /> {course.difficulty}</Badge>}
+                        </div>
                         <CardTitle className="font-headline text-xl">{course.title}</CardTitle>
                         <CardDescription>{course.description}</CardDescription>
                     </CardHeader>

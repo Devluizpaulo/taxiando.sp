@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock, ClipboardCheck, AlertTriangle, RefreshCw, XCircle, Mic, Copyright, Gavel, ShoppingCart } from "lucide-react";
+import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock, ClipboardCheck, AlertTriangle, RefreshCw, XCircle, Mic, Copyright, Gavel, ShoppingCart, Trophy } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { type Course, type Lesson } from "@/lib/types";
@@ -210,7 +210,11 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                                 <p className="text-3xl font-bold font-headline">{course.priceInCredits} créditos</p>
                             </div>
                         )}
-                        <div className="border-t pt-4 space-y-2"><div className="flex justify-between text-sm"><span className="font-medium">Categoria:</span><Badge variant="secondary">{course.category}</Badge></div><div className="flex justify-between text-sm"><span className="font-medium">Total de Aulas:</span><span>{course.totalLessons}</span></div><div className="flex justify-between text-sm"><span className="font-medium">Duração Estimada:</span><span>{Math.floor(course.totalDuration / 60)}h {course.totalDuration % 60}min</span></div></div>
+                        <div className="border-t pt-4 space-y-2 text-sm">
+                            <div className="flex justify-between"><span className="font-medium flex items-center gap-2"><Trophy /> Nível:</span><Badge variant="outline">{course.difficulty}</Badge></div>
+                            <div className="flex justify-between"><span className="font-medium flex items-center gap-2"><BookOpen /> Aulas:</span><span>{course.totalLessons}</span></div>
+                            <div className="flex justify-between"><span className="font-medium flex items-center gap-2"><Clock /> Duração:</span><span>{Math.floor(course.totalDuration / 60)}h {course.totalDuration % 60}min</span></div>
+                        </div>
                         
                          {hasAccess ? (
                             <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={progress === 100}>{progress === 100 ? "Curso Concluído!" : "Continuar Curso"}</Button>

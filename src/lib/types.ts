@@ -149,6 +149,7 @@ export interface Course {
   createdAt: Timestamp | string; 
   status?: 'Published' | 'Draft';
   students?: number;
+  difficulty?: 'Iniciante' | 'Intermediário' | 'Avançado';
   investmentCost?: number;
   priceInCredits?: number;
   authorInfo?: string;
