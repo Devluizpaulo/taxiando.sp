@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { fleetAmenities } from '@/lib/data';
 import { FacebookIcon } from '@/components/icons/facebook-icon';
 import { LoadingScreen } from '@/components/loading-screen';
+import { Label } from '@/components/ui/label';
 
 const fleetProfileSchema = z.object({
   companyDescription: z.string().min(20, "A descrição deve ter no mínimo 20 caracteres.").max(500, "A descrição deve ter no máximo 500 caracteres."),
