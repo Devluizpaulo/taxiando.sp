@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -104,14 +105,15 @@ export async function getAllBooks(): Promise<LibraryBook[]> {
 export async function getBookById(bookId: string): Promise<LibraryBook | null> {
     if (!bookId) return null;
     try {
-        const doc = await adminDB.collection('library_books').doc(bookId).get();
+        const docRef = adminDB.collection('library_books').doc(bookId);
+        const doc = await docRef.get();
         if (!doc.exists) return null;
 
         const data = doc.data();
         if (!data) return null;
 
         // Increment access count
-        await doc.ref.update({ accessCount: FieldValue.increment(1) });
+        await docRef.update({ accessCount: FieldValue.increment(1) });
         revalidatePath('/library');
 
         return {

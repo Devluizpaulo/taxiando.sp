@@ -106,14 +106,6 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                         </SidebarMenu>
                       </SidebarGroupContent>
                     </SidebarGroup>
-                     <SidebarGroup>
-                      <SidebarGroupLabel>Ferramentas</SidebarGroupLabel>
-                      <SidebarGroupContent>
-                        <SidebarMenu>
-                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/summarize"><FileText/> Sumarizador</Link></SidebarMenuButton></SidebarMenuItem>
-                        </SidebarMenu>
-                      </SidebarGroupContent>
-                    </SidebarGroup>
                   </>
                 )}
 
@@ -132,14 +124,6 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                         </SidebarMenu>
                       </SidebarGroupContent>
                     </SidebarGroup>
-                    <SidebarGroup>
-                      <SidebarGroupLabel>Ferramentas</SidebarGroupLabel>
-                      <SidebarGroupContent>
-                        <SidebarMenu>
-                          <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/summarize"><FileText/> Sumarizador</Link></SidebarMenuButton></SidebarMenuItem>
-                        </SidebarMenu>
-                      </SidebarGroupContent>
-                    </SidebarGroup>
                   </>
                 )}
 
@@ -154,14 +138,6 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/services/profile"><Wrench/> Perfil do Prestador</Link></SidebarMenuButton></SidebarMenuItem>
                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/billing"><CreditCard/> Faturamento</Link></SidebarMenuButton></SidebarMenuItem>
                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/services/reports"><BarChart2/> Relatórios</Link></SidebarMenuButton></SidebarMenuItem>
-                        </SidebarMenu>
-                      </SidebarGroupContent>
-                    </SidebarGroup>
-                    <SidebarGroup>
-                      <SidebarGroupLabel>Ferramentas</SidebarGroupLabel>
-                      <SidebarGroupContent>
-                        <SidebarMenu>
-                          <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/summarize"><FileText/> Sumarizador</Link></SidebarMenuButton></SidebarMenuItem>
                         </SidebarMenu>
                       </SidebarGroupContent>
                     </SidebarGroup>
