@@ -43,12 +43,34 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
   }, []);
 
   React.useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return; // Wait for auth to be ready
+
+    if (!user) {
       router.push('/login');
+      return;
     }
-    // Redirect admin to admin panel from generic dashboard
-    if (!loading && userProfile?.role === 'admin' && window.location.pathname === '/dashboard') {
-        router.push('/admin');
+
+    // Role-based redirection logic
+    if (userProfile) {
+      const currentPath = window.location.pathname;
+
+      // Only perform redirection if the user lands on the generic /dashboard page
+      if (currentPath === '/dashboard') {
+        switch (userProfile.role) {
+          case 'admin':
+            router.push('/admin');
+            break;
+          case 'fleet':
+            router.push('/fleet');
+            break;
+          case 'provider':
+            router.push('/services');
+            break;
+          // 'driver' role correctly stays on '/dashboard'
+          default:
+            break;
+        }
+      }
     }
   }, [user, userProfile, loading, router]);
   
