@@ -72,21 +72,20 @@ export async function updateUserByAdmin(userId: string, data: z.infer<typeof adm
         }
         
         const userRef = adminDB.collection('users').doc(userId);
-        
+        const { name, ...restOfValues } = validation.data;
+
         const updateData: Partial<UserProfile> = {
-            ...validation.data,
+            ...restOfValues,
         };
         
         const userDoc = await userRef.get();
         const existingData = userDoc.data();
 
         if (existingData?.personType === 'pj') {
-            updateData.nomeFantasia = validation.data.name;
-            delete (updateData as any).name;
+            updateData.nomeFantasia = name;
         } else {
-            updateData.name = validation.data.name;
+            updateData.name = name;
         }
-
 
         await userRef.update(updateData);
 

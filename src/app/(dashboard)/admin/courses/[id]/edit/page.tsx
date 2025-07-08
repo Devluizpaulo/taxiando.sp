@@ -339,7 +339,7 @@ function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQu
                         <FormLabel>Opções de Resposta (marque a correta)</FormLabel>
                         <FormControl>
                             <RadioGroup 
-                                onValueChange={(value) => { const newOptions = form.getValues(optionsPath).map((opt, idx: number) => ({ ...opt, isCorrect: idx === parseInt(value) })); form.setValue(optionsPath, newOptions, { shouldValidate: true }); }}
+                                onValueChange={(value) => { const newOptions = form.getValues(optionsPath).map((opt: any, idx: number) => ({ ...opt, isCorrect: idx === parseInt(value) })); form.setValue(optionsPath, newOptions, { shouldValidate: true }); }}
                                 value={optionFields.findIndex(opt => opt.isCorrect).toString()}
                                 disabled={isEditingDisabled}
                             >
