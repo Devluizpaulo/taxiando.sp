@@ -7,7 +7,7 @@ import { Button } from "../ui/button";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, Home, UserPlus, Map, Car, Wrench, Newspaper, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPublicSettings } from "@/app/actions/admin-actions";
 import { Skeleton } from "../ui/skeleton";
@@ -21,13 +21,13 @@ export function PublicHeader() {
   }, []);
 
   const navLinks = [
-    { href: "/", label: "Início" },
-    { href: "/how-to-become-a-taxi-driver", label: "Seja um Taxista" },
-    { href: "/events", label: "Guia SP" },
-    { href: "/rentals", label: "Alugar Veículo" },
-    { href: "/services/marketplace", label: "Serviços" },
-    { href: "/blog", label: "Guias & Notícias" },
-    { href: "/contact", label: "Contato" },
+    { href: "/", label: "Início", icon: Home },
+    { href: "/how-to-become-a-taxi-driver", label: "Seja um Taxista", icon: UserPlus },
+    { href: "/events", label: "Guia SP", icon: Map },
+    { href: "/rentals", label: "Alugar Veículo", icon: Car },
+    { href: "/services/marketplace", label: "Serviços", icon: Wrench },
+    { href: "/blog", label: "Guias & Notícias", icon: Newspaper },
+    { href: "/contact", label: "Contato", icon: Mail },
   ];
 
   return (
@@ -76,18 +76,22 @@ export function PublicHeader() {
                 <SheetDescription>Navegação principal do site.</SheetDescription>
               </SheetHeader>
               <nav className="grid gap-6 text-lg font-medium mt-10">
-                 {navLinks.map((link) => (
-                    <Link 
-                        key={link.href} 
-                        href={link.href}
-                        className={cn(
-                            "transition-colors hover:text-primary",
-                            pathname === link.href ? "text-primary font-semibold" : "text-muted-foreground"
-                        )}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
+                 {navLinks.map((link) => {
+                    const Icon = link.icon;
+                    return (
+                        <Link 
+                            key={link.href} 
+                            href={link.href}
+                            className={cn(
+                                "flex items-center gap-4 transition-colors hover:text-primary",
+                                pathname === link.href ? "text-primary font-semibold" : "text-muted-foreground"
+                            )}
+                        >
+                          <Icon className="h-5 w-5" />
+                          <span>{link.label}</span>
+                        </Link>
+                    )
+                  })}
                   <div className="flex flex-col gap-4 pt-6">
                      <Button asChild variant="ghost" size="lg">
                         <Link href="/login">Login</Link>

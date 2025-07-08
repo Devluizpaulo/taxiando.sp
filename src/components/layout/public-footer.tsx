@@ -17,8 +17,8 @@ export async function PublicFooter() {
   return (
     <footer className="border-t bg-muted/40">
       <div className="container mx-auto px-4 py-12 md:px-6">
-        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
-            <div className="col-span-full mb-4 lg:col-span-2 lg:mb-0">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
+            <div className="col-span-1 md:col-span-2 lg:col-span-1">
                  <Link href="/" className="mb-4 inline-block">
                     <Image src="/logo.png" alt="Táxiando SP Logo" width={150} height={142} className="h-16 w-auto rounded-lg shadow-md" />
                  </Link>
@@ -48,19 +48,18 @@ export async function PublicFooter() {
                 <div className="grid gap-2">
                     <Link href="/how-to-become-a-taxi-driver" className="text-sm text-muted-foreground transition-colors hover:text-primary">Seja um Taxista</Link>
                     <Link href="/rentals" className="text-sm text-muted-foreground transition-colors hover:text-primary">Alugar Veículo</Link>
-                    <Link href="/events" className="text-sm text-muted-foreground transition-colors hover:text-primary">Agenda Cultural</Link>
-                    <Link href="/#features" className="text-sm text-muted-foreground transition-colors hover:text-primary">Recursos</Link>
+                    <Link href="/events" className="text-sm text-muted-foreground transition-colors hover:text-primary">Guia SP</Link>
+                    <Link href="/services/marketplace" className="text-sm text-muted-foreground transition-colors hover:text-primary">Serviços</Link>
                     <Link href="/blog" className="text-sm text-muted-foreground transition-colors hover:text-primary">Guias & Notícias</Link>
-                    <Link href="/#quiz" className="text-sm text-muted-foreground transition-colors hover:text-primary">Quiz</Link>
                 </div>
             </div>
             <div className="space-y-4">
-                <h4 className="font-headline font-semibold">Legal</h4>
+                <h4 className="font-headline font-semibold">Suporte</h4>
                 <div className="grid gap-2">
+                    <Link href="/contact" className="text-sm text-muted-foreground transition-colors hover:text-primary">Contato</Link>
+                    <Link href="/faq" className="text-sm text-muted-foreground transition-colors hover:text-primary">FAQ</Link>
                     <Link href="/terms" className="text-sm text-muted-foreground transition-colors hover:text-primary">Termos de Serviço</Link>
                     <Link href="/privacy" className="text-sm text-muted-foreground transition-colors hover:text-primary">Política de Privacidade</Link>
-                    <Link href="/faq" className="text-sm text-muted-foreground transition-colors hover:text-primary">FAQ</Link>
-                    <Link href="/contact" className="text-sm text-muted-foreground transition-colors hover:text-primary">Contato</Link>
                 </div>
             </div>
             <div className="space-y-4">
