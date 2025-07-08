@@ -1,3 +1,4 @@
+'use client';
 
 import Link from "next/link";
 import Image from "next/image";
@@ -6,13 +7,69 @@ import { Input } from "../ui/input";
 import { FacebookIcon } from "../icons/facebook-icon";
 import { Instagram, MessageSquare, MoveRight } from "lucide-react";
 import { getGlobalSettings } from "@/app/actions/admin-actions";
+import { useEffect, useState } from "react";
+import { type GlobalSettings } from "@/lib/types";
+import { Skeleton } from "../ui/skeleton";
 
 
-export async function PublicFooter() {
-  const version = process.env.APP_VERSION || '0.0.0';
-  
-  const settings = await getGlobalSettings();
-  const socialMedia = settings.socialMedia;
+export function PublicFooter() {
+  const version = process.env.APP_VERSION || '0.1.0';
+  const [settings, setSettings] = useState<GlobalSettings | null>(null);
+
+  useEffect(() => {
+    getGlobalSettings().then(setSettings);
+  }, []);
+
+  if (!settings) {
+    return (
+        <footer className="border-t bg-muted/40">
+            <div className="container mx-auto px-4 py-12 md:px-6">
+                 <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
+                     <div className="col-span-1 md:col-span-2 lg:col-span-1 space-y-4">
+                         <Skeleton className="h-16 w-36 rounded-lg" />
+                         <Skeleton className="h-4 w-full" />
+                         <Skeleton className="h-4 w-3/4" />
+                         <div className="flex gap-4 pt-2">
+                             <Skeleton className="h-6 w-6 rounded-full" />
+                             <Skeleton className="h-6 w-6 rounded-full" />
+                             <Skeleton className="h-6 w-6 rounded-full" />
+                         </div>
+                     </div>
+                      <div className="space-y-4">
+                         <Skeleton className="h-5 w-24" />
+                         <div className="grid gap-2">
+                             <Skeleton className="h-4 w-32" />
+                             <Skeleton className="h-4 w-28" />
+                             <Skeleton className="h-4 w-24" />
+                         </div>
+                     </div>
+                      <div className="space-y-4">
+                         <Skeleton className="h-5 w-24" />
+                         <div className="grid gap-2">
+                             <Skeleton className="h-4 w-32" />
+                             <Skeleton className="h-4 w-28" />
+                             <Skeleton className="h-4 w-24" />
+                         </div>
+                     </div>
+                      <div className="space-y-4">
+                         <Skeleton className="h-5 w-24" />
+                          <Skeleton className="h-4 w-full" />
+                         <div className="flex gap-2">
+                             <Skeleton className="h-10 flex-1" />
+                             <Skeleton className="h-10 w-10" />
+                         </div>
+                     </div>
+                 </div>
+                 <div className="mt-12 border-t pt-8 text-center space-y-2">
+                     <Skeleton className="h-4 w-1/2 mx-auto" />
+                     <Skeleton className="h-3 w-1/3 mx-auto" />
+                 </div>
+            </div>
+        </footer>
+    );
+  }
+
+  const socialMedia = settings?.socialMedia;
 
   return (
     <footer className="border-t bg-muted/40">
