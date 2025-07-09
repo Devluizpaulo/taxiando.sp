@@ -24,7 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { StarRating } from '@/components/ui/star-rating';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Eye, Smartphone, MessageCircle, Briefcase, Star, Car, Fuel, GitCommitHorizontal, ArrowLeft, Check, X, CheckCircle, Award } from 'lucide-react';
+import { Loader2, Eye, Smartphone, MessageCircle, Briefcase, Star, Car, Fuel, GitCommitHorizontal, ArrowLeft, Check, X, CheckCircle, Award, Users } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';

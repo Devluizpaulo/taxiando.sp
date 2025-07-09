@@ -304,7 +304,7 @@ export default function FleetPage() {
                                             <TableCell className="text-right">
                                                 <div className="flex gap-2 justify-end">
                                                     <Button variant="outline" size="sm" asChild>
-                                                        <Link href={`/fleet/matches/${vehicle.id}`}><Search className="mr-2 h-4 w-4"/>Buscar Matches</Link>
+                                                        <Link href={`/fleet/matches/${vehicle.id}`}><Search className="mr-2 h-4 w-4"/>Buscar Motoristas Compatíveis</Link>
                                                     </Button>
                                                     <Button variant="ghost" size="icon" title="Editar" onClick={() => handleEditVehicle(vehicle)}><FilePen className="h-4 w-4" /></Button>
                                                     <Button variant="ghost" size="icon" title="Remover" className="text-destructive hover:text-destructive-foreground focus:text-destructive-foreground" onClick={() => handleDeleteVehicle(vehicle)}><Trash2 className="h-4 w-4" /></Button>
