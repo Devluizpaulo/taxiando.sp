@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, User, FileText, HeartHandshake, Check, ArrowLeft, ArrowRight, Car, Languages, FilePlus, BadgeInfo } from 'lucide-react';
+import { Loader2, Camera, User, FileText, HeartHandshake, Check, ArrowLeft, ArrowRight, Car, Languages, FilePlus, BadgeInfo, CreditCard } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DatePicker } from '@/components/ui/datepicker';
@@ -639,7 +639,13 @@ export default function CompleteProfilePage() {
                                             <CardContent className="space-y-4 p-4 pt-0">
                                                 <FormField control={form.control} name="hasCreditCardForDeposit" render={({ field }) => (
                                                     <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                                        <div className="space-y-1 leading-none"><FormLabel>Possui Cartão de Crédito para a Locação (caução)?</FormLabel><FormDescription>Muitas frotas exigem um cartão com limite para a caução ou para o pagamento da locação.</FormDescription><FormMessage /></div>
+                                                        <div className="space-y-1 leading-none">
+                                                            <FormLabel>Você possui cartão de crédito para a locação?</FormLabel>
+                                                            <FormDescription className="text-muted-foreground">
+                                                                Atenção: não pedimos os dados do seu cartão. Esta é apenas uma confirmação para aumentar suas chances. Frotas de alta qualidade costumam usar o cartão como garantia, e motoristas com essa opção têm preferência na aprovação. Nosso objetivo é te colocar no melhor carro o mais rápido possível para você levar o sustento para casa.
+                                                            </FormDescription>
+                                                            <FormMessage />
+                                                        </div>
                                                     </FormItem>
                                                 )}/>
                                             </CardContent>
