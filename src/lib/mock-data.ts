@@ -1,5 +1,4 @@
 
-
 import { type Vehicle, type VehicleApplication, type Course, type ServiceListing, type Testimonial } from './types';
 
 export const mockVehicles: (Omit<Vehicle, 'fleetId' | 'createdAt'>)[] = [
