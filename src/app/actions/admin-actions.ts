@@ -515,8 +515,7 @@ export async function getAdminReportsData() {
         
         // Financial reports
         const packages = creditPackagesSnapshot.docs.map(doc => doc.data() as CreditPackage);
-        const coupons = couponsSnapshot.docs.map(doc => doc.data() as Coupon);
-        const topUsedCoupons = coupons.sort((a, b) => (b.uses || 0) - (a.uses || 0)).slice(0, 5);
+        const topUsedCoupons = couponsSnapshot.docs.map(doc => doc.data() as Coupon).sort((a, b) => (b.uses || 0) - (a.uses || 0)).slice(0, 5);
 
         // Engagement reports
         const courses = coursesSnapshot.docs.map(doc => doc.data() as Course);
