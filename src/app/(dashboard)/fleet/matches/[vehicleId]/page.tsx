@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -24,7 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { StarRating } from '@/components/ui/star-rating';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Eye, Smartphone, MessageCircle, Briefcase, Star, Car, Fuel, GitCommitHorizontal, ArrowLeft, Check, X, CheckCircle, Award, Users } from 'lucide-react';
+import { Loader2, Eye, Smartphone, MessageCircle, Briefcase, Star, Car, Fuel, GitCommitHorizontal, ArrowLeft, Check, X, CheckCircle, Award, Users, CreditCard } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -40,6 +41,7 @@ function MatchCard({ match, onViewProfile }: { match: MatchResult; onViewProfile
         { label: 'Preço', matched: details.price },
         { label: 'Perfil Completo', matched: details.profileCompleteness },
         { label: 'Boa Avaliação', matched: details.rating },
+        { label: 'Cartão para Caução', matched: details.creditCard },
     ];
     
     return (
@@ -129,6 +131,15 @@ function DriverProfileModal({ user, reviews, isLoading, isOpen, onOpenChange }: 
                                     ) : (
                                         <p className="text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
                                     )}
+                                </CardContent>
+                            </Card>
+                             <Card className="w-full text-left">
+                                <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><CreditCard/> Segurança Financeira</CardTitle></CardHeader>
+                                <CardContent>
+                                     <div className={cn("flex items-center gap-2 text-sm", user.hasCreditCardForDeposit ? "text-green-600" : "text-muted-foreground")}>
+                                        {user.hasCreditCardForDeposit ? <CheckCircle className="h-4 w-4"/> : <XCircle className="h-4 w-4"/>}
+                                        <span>Cartão para caução</span>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </div>

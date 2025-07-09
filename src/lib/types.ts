@@ -70,6 +70,7 @@ export interface UserProfile {
         phone: string;
     };
 
+    hasCreditCardForDeposit?: boolean;
     financialConsent?: boolean;
     
     personType?: 'pf' | 'pj';
@@ -507,6 +508,7 @@ export interface MatchDetails {
   price: boolean;
   profileCompleteness: boolean;
   rating: boolean;
+  creditCard: boolean;
 }
 
 export interface MatchResult {
