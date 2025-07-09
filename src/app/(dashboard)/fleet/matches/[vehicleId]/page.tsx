@@ -41,7 +41,7 @@ function MatchCard({ match, onViewProfile }: { match: MatchResult; onViewProfile
         { label: 'Preço', matched: details.price },
         { label: 'Perfil Completo', matched: details.profileCompleteness },
         { label: 'Boa Avaliação', matched: details.rating },
-        { label: 'Cartão para Caução', matched: details.creditCard },
+        { label: 'Cartão p/ Locação (Caução)', matched: details.creditCard },
     ];
     
     return (
@@ -138,7 +138,7 @@ function DriverProfileModal({ user, reviews, isLoading, isOpen, onOpenChange }: 
                                 <CardContent>
                                      <div className={cn("flex items-center gap-2 text-sm", user.hasCreditCardForDeposit ? "text-green-600" : "text-muted-foreground")}>
                                         {user.hasCreditCardForDeposit ? <CheckCircle className="h-4 w-4"/> : <XCircle className="h-4 w-4"/>}
-                                        <span>Cartão para caução</span>
+                                        <span>Cartão p/ Locação (Caução)</span>
                                     </div>
                                 </CardContent>
                             </Card>

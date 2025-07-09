@@ -15,7 +15,7 @@ import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -90,6 +90,7 @@ const profileFormSchema = z.object({
   financialConsent: z.boolean().refine(val => val === true, {
     message: 'Você deve concordar com a análise financeira.',
   }),
+  hasCreditCardForDeposit: z.boolean().default(false),
 }).superRefine((data, ctx) => {
     if (data.workMode === 'owner') {
         if (!data.vehicleLicensePlate || data.vehicleLicensePlate.trim().length < 7) {
@@ -136,7 +137,7 @@ const steps = [
     { id: 2, name: 'Documentos', fields: ['cpf', 'cnhNumber', 'cnhCategory', 'cnhExpiration', 'cnhPoints', 'condutaxNumber', 'condutaxExpiration'] },
     { id: 3, name: 'Modo de Trabalho', fields: ['workMode', 'vehicleLicensePlate', 'alvaraExpiration'] },
     { id: 4, name: 'Preferências', fields: ['rentalPreferences'] },
-    { id: 5, name: 'Qualificações e Referências', fields: ['specializedCourses', 'languageLevel', 'otherCourses', 'referenceName', 'referenceRelationship', 'referencePhone', 'financialConsent'] },
+    { id: 5, name: 'Qualificações e Referências', fields: ['specializedCourses', 'languageLevel', 'otherCourses', 'referenceName', 'referenceRelationship', 'referencePhone', 'financialConsent', 'hasCreditCardForDeposit'] },
 ];
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
@@ -251,6 +252,7 @@ export default function CompleteProfilePage() {
             referenceRelationship: '',
             referencePhone: '',
             financialConsent: false,
+            hasCreditCardForDeposit: false,
         },
     });
     
@@ -308,6 +310,7 @@ export default function CompleteProfilePage() {
                 referenceRelationship: userProfile.reference?.relationship || '',
                 referencePhone: userProfile.reference?.phone || '',
                 financialConsent: userProfile.financialConsent || false,
+                hasCreditCardForDeposit: userProfile.hasCreditCardForDeposit || false,
             });
             setPreviewUrl(userProfile.photoUrl || null);
         }
@@ -618,7 +621,7 @@ export default function CompleteProfilePage() {
                                     </CardContent>
                                 </Card>
                                 <Card>
-                                    <CardHeader><CardTitle>Contato de Referência e Termos</CardTitle><CardDescription>Informações finais para completar seu perfil.</CardDescription></CardHeader>
+                                    <CardHeader><CardTitle>Referências e Termos</CardTitle><CardDescription>Informações finais para completar seu perfil.</CardDescription></CardHeader>
                                     <CardContent className="space-y-6">
                                         <div className="rounded-lg border bg-blue-500/5 border-blue-500/20 p-4">
                                             <div className="flex items-start gap-3">
@@ -631,6 +634,16 @@ export default function CompleteProfilePage() {
                                             <FormField control={form.control} name="referenceRelationship" render={({ field }) => (<FormItem><FormLabel>Parentesco/Relação</FormLabel><FormControl><Input placeholder="Ex: Pai, Amigo, etc." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
                                             <FormField control={form.control} name="referencePhone" render={({ field }) => (<FormItem><FormLabel>Telefone do Contato</FormLabel><FormControl><Input placeholder="(11) 9..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
                                         </div>
+                                        <Card>
+                                            <CardHeader className="p-4"><CardTitle className="text-base">Segurança Financeira</CardTitle></CardHeader>
+                                            <CardContent className="space-y-4 p-4 pt-0">
+                                                <FormField control={form.control} name="hasCreditCardForDeposit" render={({ field }) => (
+                                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                        <div className="space-y-1 leading-none"><FormLabel>Possui Cartão de Crédito para a Locação (caução)?</FormLabel><FormDescription>Muitas frotas exigem um cartão com limite para a caução ou para o pagamento da locação.</FormDescription><FormMessage /></div>
+                                                    </FormItem>
+                                                )}/>
+                                            </CardContent>
+                                        </Card>
                                         <FormField control={form.control} name="financialConsent" render={({ field }) => (
                                             <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                                 <div className="space-y-1 leading-none"><FormLabel>Autorização para Análise Financeira</FormLabel><p className="text-sm text-muted-foreground">Autorizo a plataforma a realizar uma análise simplificada do meu histórico financeiro para compartilhar com as frotas.</p><FormMessage /></div>
