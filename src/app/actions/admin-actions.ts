@@ -47,6 +47,7 @@ export async function getUserProfileById(userId: string): Promise<AdminUser | nu
             condutaxExpiration: toISO(data.condutaxExpiration),
             alvaraExpiration: toISO(data.alvaraExpiration),
             lastNotificationCheck: toISO(data.lastNotificationCheck),
+            lastSeekingRentalsCheck: toISO(data.lastSeekingRentalsCheck),
         } as AdminUser;
 
     } catch (error) {
@@ -416,6 +417,7 @@ export async function getAdminDashboardData() {
                 condutaxExpiration: toISO(data.condutaxExpiration),
                 alvaraExpiration: toISO(data.alvaraExpiration),
                 lastNotificationCheck: toISO(data.lastNotificationCheck),
+                lastSeekingRentalsCheck: toISO(data.lastSeekingRentalsCheck),
             } as AdminUser;
         });
 
