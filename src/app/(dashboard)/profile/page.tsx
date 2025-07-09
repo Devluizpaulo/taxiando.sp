@@ -2,7 +2,8 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import 'react-image-crop/dist/ReactCrop.css';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,10 +11,11 @@ import { doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -29,6 +31,8 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { partialUpdateUserProfile } from '@/app/actions/user-actions';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -152,6 +156,41 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
     );
 };
 
+function getCroppedImg(image: HTMLImageElement, crop: PixelCrop): Promise<Blob> {
+    const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    canvas.width = crop.width;
+    canvas.height = crop.height;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+        return Promise.reject(new Error('Canvas context not available'));
+    }
+
+    ctx.drawImage(
+        image,
+        crop.x * scaleX,
+        crop.y * scaleY,
+        crop.width * scaleX,
+        crop.height * scaleY,
+        0,
+        0,
+        crop.width,
+        crop.height
+    );
+
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => {
+            if (!blob) {
+                reject(new Error('Canvas is empty'));
+                return;
+            }
+            resolve(blob);
+        }, 'image/png', 1);
+    });
+}
+
 
 export default function CompleteProfilePage() {
     const { user, userProfile, loading } = useAuth();
@@ -159,7 +198,15 @@ export default function CompleteProfilePage() {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSavingStep, setIsSavingStep] = useState(false);
+    
+    // State for image cropping
+    const [imgSrc, setImgSrc] = useState('');
+    const [crop, setCrop] = useState<Crop>();
+    const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+    const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+    const imgRef = useRef<HTMLImageElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
     const [currentStep, setCurrentStep] = useState(1);
     const totalSteps = steps.length;
 
@@ -222,6 +269,7 @@ export default function CompleteProfilePage() {
                 referencePhone: userProfile.reference?.phone || '',
                 financialConsent: userProfile.financialConsent || false,
             });
+            setPreviewUrl(userProfile.photoUrl || null);
         }
     }, [userProfile, loading, form]);
     
@@ -231,6 +279,39 @@ export default function CompleteProfilePage() {
 
     if (loading) return <LoadingScreen />;
     if (!user) { router.push('/login'); return null; }
+
+    const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setCrop(undefined); // Makes crop preview update between images.
+            const reader = new FileReader();
+            reader.addEventListener('load', () => setImgSrc(reader.result?.toString() || ''));
+            reader.readAsDataURL(e.target.files[0]);
+            setIsCropModalOpen(true);
+            e.target.value = ''; // Allow re-selecting the same file
+        }
+    };
+
+    const handleCropImage = async () => {
+        if (!completedCrop || !imgRef.current) {
+            toast({ variant: 'destructive', title: 'Erro', description: 'Nenhuma área de corte selecionada.' });
+            return;
+        }
+        
+        try {
+            const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
+            const croppedFile = new File([croppedBlob], `profile_${user.uid}.png`, { type: 'image/png' });
+
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+
+            setPreviewUrl(URL.createObjectURL(croppedFile));
+            form.setValue('photoFile', croppedFile, { shouldValidate: true, shouldDirty: true });
+            toast({ title: 'Foto cortada!', description: 'A nova foto está pronta para ser salva.' });
+            setIsCropModalOpen(false);
+        } catch (e) {
+            console.error(e);
+            toast({ variant: 'destructive', title: 'Erro ao cortar imagem', description: 'Tente novamente.' });
+        }
+    };
 
     const onSubmit = async (values: ProfileFormValues) => {
         setIsSubmitting(true);
@@ -354,19 +435,12 @@ export default function CompleteProfilePage() {
                         <Card>
                             <CardHeader><CardTitle>Perfil e Contato</CardTitle><CardDescription>Apresente-se à comunidade. Uma boa foto e um resumo aumentam suas chances.</CardDescription></CardHeader>
                             <CardContent className="space-y-6">
-                                <FormField control={form.control} name="photoFile" render={({ field }) => (
-                                    <FormItem><FormLabel>Foto de Perfil</FormLabel>
-                                        <div className="flex items-center gap-6">
-                                            <Avatar className="h-24 w-24"><AvatarImage src={previewUrl || form.watch('photoUrl') || undefined} alt={form.watch('name')} /><AvatarFallback><Camera className="h-8 w-8 text-muted-foreground"/></AvatarFallback></Avatar>
-                                            <FormControl><Input type="file" accept="image/*" className="max-w-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                field.onChange(file);
-                                                if (file) { if (previewUrl) URL.revokeObjectURL(previewUrl); setPreviewUrl(URL.createObjectURL(file)); } 
-                                                else { setPreviewUrl(null); }
-                                            }}/></FormControl>
-                                        </div>
-                                    <FormMessage /></FormItem>
-                                )}/>
+                                <FormItem><FormLabel>Foto de Perfil</FormLabel>
+                                    <div className="flex items-center gap-6">
+                                        <Avatar className="h-24 w-24"><AvatarImage src={previewUrl || undefined} alt={form.watch('name')} /><AvatarFallback><Camera className="h-8 w-8 text-muted-foreground"/></AvatarFallback></Avatar>
+                                        <FormControl><Input type="file" accept="image/*" className="max-w-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" onChange={onSelectFile}/></FormControl>
+                                    </div>
+                                <FormMessage /></FormItem>
                                 <FormField control={form.control} name="bio" render={({ field }) => (<FormItem><FormLabel>Breve Resumo Sobre Você</FormLabel><FormControl><Textarea placeholder="Fale um pouco sobre sua experiência como motorista, seus objetivos e o que você busca." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
                                 <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -512,6 +586,33 @@ export default function CompleteProfilePage() {
                     </div>
                 </form>
             </Form>
+
+            <Dialog open={isCropModalOpen} onOpenChange={setIsCropModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Cortar Imagem</DialogTitle>
+                        <DialogDescription>
+                            Ajuste a imagem para o seu perfil. Use uma proporção quadrada.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {imgSrc && (
+                        <ReactCrop
+                            crop={crop}
+                            onChange={(_, percentCrop) => setCrop(percentCrop)}
+                            onComplete={(c) => setCompletedCrop(c)}
+                            aspect={1}
+                            minHeight={100}
+                        >
+                            <img ref={imgRef} alt="Crop me" src={imgSrc} style={{ maxHeight: '70vh' }}/>
+                        </ReactCrop>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsCropModalOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleCropImage}>Salvar Foto</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 }
