@@ -57,6 +57,9 @@ export interface UserProfile {
       fuelTypes?: string[];
       maxDailyRate?: number;
     };
+    
+    isSeekingRentals?: boolean;
+    lastSeekingRentalsCheck?: Timestamp | string;
 
     reference?: {
         name: string;
@@ -381,12 +384,13 @@ export interface QuizData {
     createdAt: Timestamp | string;
 }
 
-export type AdminUser = Omit<UserProfile, 'createdAt' | 'cnhExpiration' | 'condutaxExpiration' | 'alvaraExpiration' | 'lastNotificationCheck'> & {
+export type AdminUser = Omit<UserProfile, 'createdAt' | 'cnhExpiration' | 'condutaxExpiration' | 'alvaraExpiration' | 'lastNotificationCheck' | 'lastSeekingRentalsCheck'> & {
     createdAt: string;
     cnhExpiration?: string;
     condutaxExpiration?: string;
     alvaraExpiration?: string;
     lastNotificationCheck?: string;
+    lastSeekingRentalsCheck?: string;
     vehicleCount?: number;
     serviceCount?: number;
 };

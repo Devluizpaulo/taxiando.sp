@@ -199,6 +199,7 @@ export async function getDriverProfile(driverId: string): Promise<AdminUser | nu
             condutaxExpiration: toISO(data.condutaxExpiration),
             alvaraExpiration: toISO(data.alvaraExpiration),
             lastNotificationCheck: toISO(data.lastNotificationCheck),
+            lastSeekingRentalsCheck: toISO(data.lastSeekingRentalsCheck),
         } as AdminUser;
 
     } catch (error) {
@@ -409,6 +410,7 @@ export async function getDriversSeekingRentals(): Promise<AdminUser[]> {
         const snapshot = await adminDB.collection('users')
             .where('role', '==', 'driver')
             .where('profileStatus', '==', 'approved')
+            .where('isSeekingRentals', '==', true)
             .orderBy('createdAt', 'desc')
             .get();
             
@@ -424,11 +426,11 @@ export async function getDriversSeekingRentals(): Promise<AdminUser[]> {
                 condutaxExpiration: toISO(data.condutaxExpiration),
                 alvaraExpiration: toISO(data.alvaraExpiration),
                 lastNotificationCheck: toISO(data.lastNotificationCheck),
+                lastSeekingRentalsCheck: toISO(data.lastSeekingRentalsCheck),
             } as AdminUser;
         });
         
-        // Filter in code for drivers who have set preferences
-        return drivers.filter(d => d.rentalPreferences && Object.keys(d.rentalPreferences).length > 0);
+        return drivers;
 
     } catch (error) {
         console.error("Error fetching drivers seeking rentals:", error);

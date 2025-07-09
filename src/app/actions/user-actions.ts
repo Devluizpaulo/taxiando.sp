@@ -1,8 +1,10 @@
+
 'use server';
 
 import { adminDB } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type UserProfile } from '@/lib/types';
+import { revalidatePath } from 'next/cache';
 
 export async function partialUpdateUserProfile(userId: string, data: Partial<Omit<UserProfile, 'uid' | 'createdAt'>>) {
     if (!userId) {
@@ -29,6 +31,26 @@ export async function partialUpdateUserProfile(userId: string, data: Partial<Omi
         return { success: true };
     } catch (error) {
         console.error("Error partially updating user profile:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function updateSeekingRentalsStatus(userId: string, isSeeking: boolean) {
+    if (!userId) {
+        return { success: false, error: 'User ID not provided.' };
+    }
+
+    try {
+        const userRef = adminDB.collection('users').doc(userId);
+        
+        await userRef.update({
+            isSeekingRentals: isSeeking,
+            lastSeekingRentalsCheck: Timestamp.now(),
+        });
+
+        revalidatePath('/fleet/find-drivers');
+        return { success: true };
+    } catch (error) {
         return { success: false, error: (error as Error).message };
     }
 }

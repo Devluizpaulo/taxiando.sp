@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -149,6 +150,11 @@ export default function RegisterPage() {
             profileStatus: role === 'admin' ? 'approved' : 'incomplete',
             credits: settings?.user?.defaultNewUserCredits || 0,
         };
+
+        if (role === 'driver') {
+            userData.isSeekingRentals = true;
+            userData.lastSeekingRentalsCheck = Timestamp.now();
+        }
 
         if (name && name.trim()) userData.name = name.trim();
         if (cleanCpf) userData.cpf = cleanCpf;

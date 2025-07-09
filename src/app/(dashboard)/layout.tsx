@@ -1,4 +1,5 @@
 
+
 "use client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
@@ -29,17 +30,46 @@ import { LoadingScreen } from "@/components/loading-screen";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NotificationBell } from "@/components/notification-bell";
 import { getPublicSettings } from "../actions/admin-actions";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { subDays } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { updateSeekingRentalsStatus } from "../actions/user-actions";
 
 
 function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const { isMobile, setOpenMobile } = useSidebar();
   const [siteSettings, setSiteSettings] = useState<{siteName: string, logoUrl: string} | null>(null);
+  const [showSeekingModal, setShowSeekingModal] = useState(false);
 
   useEffect(() => {
     getPublicSettings().then(setSiteSettings);
   }, []);
+
+  useEffect(() => {
+    if (loading || !userProfile || userProfile.role !== 'driver') return;
+    
+    const lastCheck = userProfile.lastSeekingRentalsCheck;
+    const sevenDaysAgo = subDays(new Date(), 7);
+
+    if (!lastCheck || new Date(lastCheck as string) < sevenDaysAgo) {
+      setShowSeekingModal(true);
+    }
+  }, [userProfile, loading]);
+
+  const handleUpdateSeekingStatus = async (isSeeking: boolean) => {
+    if (!user) return;
+    const result = await updateSeekingRentalsStatus(user.uid, isSeeking);
+    if (result.success) {
+      toast({ title: "Status Atualizado!", description: "Sua preferência de busca foi salva." });
+    } else {
+      toast({ variant: 'destructive', title: "Erro", description: "Não foi possível atualizar seu status." });
+    }
+    setShowSeekingModal(false);
+  };
+
 
   React.useEffect(() => {
     if (loading) return; // Wait for auth to be ready
@@ -285,6 +315,21 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
             {userProfile ? children : <LoadingScreen />}
         </main>
       </SidebarInset>
+      
+      <AlertDialog open={showSeekingModal} onOpenChange={setShowSeekingModal}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Olá, {userProfile?.name?.split(' ')[0]}! Tudo certo por aí?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Só para confirmar, você ainda está buscando ativamente por oportunidades de aluguel de veículo?
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => handleUpdateSeekingStatus(false)}>Não, por enquanto</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleUpdateSeekingStatus(true)}>Sim, continuo buscando</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
