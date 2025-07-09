@@ -1,6 +1,5 @@
 
 
-
 "use client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
@@ -19,7 +18,7 @@ import {
   SidebarTrigger,
   useSidebar
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star, LifeBuoy, Headset, ImageIcon, Library, Car, Users, MapPin, BarChart2, Search } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star, LifeBuoy, Headset, ImageIcon, Library, Car, Users, MapPin, BarChart2, Search, Map } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -119,6 +118,15 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/library"><Library/> Biblioteca</Link></SidebarMenuButton></SidebarMenuItem>
                         </SidebarMenu>
                       </SidebarGroupContent>
+                    </SidebarGroup>
+                     <SidebarGroup>
+                        <SidebarGroupLabel>Explorar</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/events"><Map/> Guia SP & Eventos</Link></SidebarMenuButton></SidebarMenuItem>
+                                <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/blog"><Newspaper/> Guias & Notícias</Link></SidebarMenuButton></SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
                     </SidebarGroup>
                     <SidebarGroup>
                       <SidebarGroupLabel>Meu Perfil</SidebarGroupLabel>
