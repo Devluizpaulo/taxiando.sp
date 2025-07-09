@@ -9,14 +9,12 @@ import remarkGfm from 'remark-gfm';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-import { type BlogPost, type CityTip } from "@/lib/types";
+import { type BlogPost } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Newspaper, BookHeart, Compass, Link as LinkIcon } from "lucide-react";
+import { Newspaper, Link as LinkIcon } from "lucide-react";
 import { ShareButtons } from '@/components/share-buttons';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CityTipCard } from '@/components/city-tip-card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -103,7 +101,7 @@ function BlogPostCard({ post }: { post: BlogPost }) {
 }
 
 
-export function BlogListClient({ initialPosts, initialTips }: { initialPosts: BlogPost[], initialTips: CityTip[] }) {
+export function BlogListClient({ initialPosts }: { initialPosts: BlogPost[]}) {
     const [postCategoryFilter, setPostCategoryFilter] = useState('Todas');
     
     const postCategories = useMemo(() => ['Todas', ...Array.from(new Set(initialPosts.map(p => p.category)))], [initialPosts]);
@@ -113,100 +111,46 @@ export function BlogListClient({ initialPosts, initialTips }: { initialPosts: Bl
         return initialPosts.filter(p => p.category === postCategoryFilter);
     }, [initialPosts, postCategoryFilter]);
 
-    const driverTips = useMemo(() => initialTips.filter(t => t.target === 'driver'), [initialTips]);
-    const clientTips = useMemo(() => initialTips.filter(t => t.target === 'client'), [initialTips]);
-
-
     return (
         <div className="container mx-auto px-4 py-12 md:px-6 md:py-16">
             <div className="mb-12 text-center">
                 <h1 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">Guias & Notícias</h1>
                 <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-                    Fique por dentro de tudo que acontece no mundo do transporte em São Paulo e explore as melhores dicas da cidade.
+                    Fique por dentro de tudo que acontece no mundo do transporte em São Paulo.
                 </p>
             </div>
-
-            <Tabs defaultValue="blog" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="blog"><Newspaper className="mr-2"/>Blog & Notícias</TabsTrigger>
-                    <TabsTrigger value="guides"><Compass className="mr-2"/>Guias da Cidade</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="blog" className="mt-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Filtros do Blog</CardTitle>
-                            <CardDescription>Filtre por categoria para encontrar o que mais te interessa.</CardDescription>
-                            <div className="pt-4">
-                                 <Select value={postCategoryFilter} onValueChange={setPostCategoryFilter}>
-                                    <SelectTrigger className="w-full md:w-[280px]">
-                                        <SelectValue placeholder="Filtrar por categoria..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {postCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                             {filteredPosts.length > 0 ? (
-                                <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-                                    {filteredPosts.map(post => (
-                                        <BlogPostCard key={post.id} post={post} />
-                                    ))}
-                                </div>
-                            ) : (
-                                <Card className="py-16 text-center">
-                                    <CardHeader>
-                                        <Newspaper className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                                        <CardTitle>Nenhum post encontrado</CardTitle>
-                                        <CardDescription>Não há posts nesta categoria ainda. Tente outro filtro.</CardDescription>
-                                    </CardHeader>
-                                </Card>
-                            )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="guides" className="mt-8">
-                    <Tabs defaultValue="driver_tips" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                             <TabsTrigger value="driver_tips">Para Motoristas</TabsTrigger>
-                             <TabsTrigger value="client_tips">Para Passageiros</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="driver_tips" className="mt-6">
-                            {driverTips.length > 0 ? (
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                    {driverTips.map(tip => <CityTipCard key={tip.id} tip={tip} />)}
-                                </div>
-                            ) : (
-                                 <Card className="py-16 text-center">
-                                    <CardHeader>
-                                        <Compass className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                                        <CardTitle>Nenhuma Dica Cadastrada</CardTitle>
-                                        <CardDescription>Estamos preparando as melhores dicas para você. Volte em breve!</CardDescription>
-                                    </CardHeader>
-                                </Card>
-                            )}
-                        </TabsContent>
-                        <TabsContent value="client_tips" className="mt-6">
-                            {clientTips.length > 0 ? (
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                    {clientTips.map(tip => <CityTipCard key={tip.id} tip={tip} />)}
-                                </div>
-                            ) : (
-                                 <Card className="py-16 text-center">
-                                    <CardHeader>
-                                        <Compass className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                                        <CardTitle>Nenhuma Dica Cadastrada</CardTitle>
-                                        <CardDescription>Estamos preparando as melhores sugestões para seus clientes. Volte em breve!</CardDescription>
-                                    </CardHeader>
-                                </Card>
-                            )}
-                        </TabsContent>
-                    </Tabs>
-                </TabsContent>
-            </Tabs>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Filtre por Categoria</CardTitle>
+                    <div className="pt-4">
+                         <Select value={postCategoryFilter} onValueChange={setPostCategoryFilter}>
+                            <SelectTrigger className="w-full md:w-[280px]">
+                                <SelectValue placeholder="Filtrar por categoria..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {postCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                     {filteredPosts.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                            {filteredPosts.map(post => (
+                                <BlogPostCard key={post.id} post={post} />
+                            ))}
+                        </div>
+                    ) : (
+                        <Card className="py-16 text-center">
+                            <CardHeader>
+                                <Newspaper className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                                <CardTitle>Nenhum post encontrado</CardTitle>
+                                <CardDescription>Não há posts nesta categoria ainda. Tente outro filtro.</CardDescription>
+                            </CardHeader>
+                        </Card>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     )
 }
