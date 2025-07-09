@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, User, FileText, HeartHandshake, Check, ArrowLeft, ArrowRight, Car, Languages, FilePlus, BadgeInfo, CreditCard } from 'lucide-react';
+import { Loader2, Camera, User, FileText, HeartHandshake, Check, ArrowLeft, ArrowRight, Car, Languages, FilePlus, BadgeInfo, CreditCard, HomeIcon } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DatePicker } from '@/components/ui/datepicker';
@@ -57,6 +57,10 @@ const profileFormSchema = z.object({
   // Contato
   phone: z.string().min(10, { message: 'Insira um telefone válido com DDD.' }),
   hasWhatsApp: z.boolean().default(false),
+
+  // Residência
+  address: z.string().min(10, { message: "O endereço completo é obrigatório."}),
+  garageInfo: z.enum(['covered', 'uncovered', 'building_garage', 'none'], { required_error: 'Por favor, informe onde o veículo será guardado.'}),
 
   // Documentos
   cpf: z.string().optional().refine(val => !val || val.replace(/\D/g, '').length === 11, { message: 'Se preenchido, o CPF deve ter 11 dígitos.' }),
@@ -134,9 +138,9 @@ const fuelTypeOptions = [
 
 const steps = [
     { id: 1, name: 'Perfil e Contato', fields: ['name', 'photoFile', 'bio', 'phone', 'hasWhatsApp'] },
-    { id: 2, name: 'Documentos', fields: ['cpf', 'cnhNumber', 'cnhCategory', 'cnhExpiration', 'cnhPoints', 'condutaxNumber', 'condutaxExpiration'] },
-    { id: 3, name: 'Modo de Trabalho', fields: ['workMode', 'vehicleLicensePlate', 'alvaraExpiration'] },
-    { id: 4, name: 'Preferências', fields: ['rentalPreferences'] },
+    { id: 2, name: 'Residência e Veículo', fields: ['address', 'garageInfo', 'workMode', 'vehicleLicensePlate', 'alvaraExpiration'] },
+    { id: 3, name: 'Documentos', fields: ['cpf', 'cnhNumber', 'cnhCategory', 'cnhExpiration', 'cnhPoints', 'condutaxNumber', 'condutaxExpiration'] },
+    { id: 4, name: 'Preferências de Locação', fields: ['rentalPreferences'] },
     { id: 5, name: 'Qualificações e Referências', fields: ['specializedCourses', 'languageLevel', 'otherCourses', 'referenceName', 'referenceRelationship', 'referencePhone', 'financialConsent', 'hasCreditCardForDeposit'] },
 ];
 
@@ -229,6 +233,8 @@ export default function CompleteProfilePage() {
             hasWhatsApp: false,
             photoUrl: '',
             bio: '',
+            address: '',
+            garageInfo: undefined,
             cpf: '',
             cnhNumber: '',
             cnhCategory: undefined,
@@ -292,6 +298,8 @@ export default function CompleteProfilePage() {
                 hasWhatsApp: userProfile.hasWhatsApp || false,
                 photoUrl: userProfile.photoUrl || '',
                 bio: userProfile.bio || '',
+                address: userProfile.address || '',
+                garageInfo: userProfile.garageInfo || undefined,
                 cpf: userProfile.cpf || '',
                 cnhNumber: userProfile.cnhNumber || '',
                 cnhCategory: userProfile.cnhCategory,
@@ -511,33 +519,34 @@ export default function CompleteProfilePage() {
                                 </Card>
                             </div>
 
-                            {/* STEP 2: DOCUMENTOS */}
-                            <div className={cn(currentStep !== 2 && "hidden")}>
+                             {/* STEP 2: RESIDÊNCIA E VEÍCULO */}
+                             <div className={cn(currentStep !== 2 && "hidden")}>
                                 <Card>
-                                    <CardHeader><CardTitle>Habilitação e Documentos</CardTitle><CardDescription>Mantenha seus documentos em dia para acessar as melhores oportunidades.</CardDescription></CardHeader>
+                                     <CardHeader>
+                                        <CardTitle>Residência e Veículo</CardTitle>
+                                        <CardDescription>Informações sobre sua moradia e modo de trabalho.</CardDescription>
+                                    </CardHeader>
                                     <CardContent className="space-y-6">
-                                        <FormField control={form.control} name="cpf" render={({ field }) => (<FormItem><FormLabel>CPF</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="000.000.000-00" /></FormControl><FormMessage /></FormItem>)}/>
-                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-                                            <FormField control={form.control} name="cnhNumber" render={({ field }) => (<FormItem><FormLabel>Nº da CNH</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
-                                            <FormField control={form.control} name="cnhCategory" render={({ field }) => (<FormItem><FormLabel>Categoria CNH</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl><SelectContent>{['A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE'].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                                            <FormField control={form.control} name="cnhExpiration" render={({ field }) => (<FormItem><FormLabel>Vencimento da CNH</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
-                                            <FormField control={form.control} name="cnhPoints" render={({ field }) => (<FormItem><FormLabel>Pontos na CNH</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>)}/>
-                                        </div>
-                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                            <FormField control={form.control} name="condutaxNumber" render={({ field }) => (<FormItem><FormLabel>Nº do Condutax (Opcional)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
-                                            <FormField control={form.control} name="condutaxExpiration" render={({ field }) => (<FormItem><FormLabel>Vencimento do Condutax</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
+                                         <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Endereço Completo</FormLabel><FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade - SP" {...field} /></FormControl><FormDescription>Seu endereço não será público, mas é usado pelas frotas em suas análises.</FormDescription><FormMessage /></FormItem>)}/>
+                                        
+                                        <FormField control={form.control} name="garageInfo" render={({ field }) => (
+                                            <FormItem className="space-y-3 rounded-lg border p-4">
+                                                <FormLabel>Onde o veículo ficará guardado durante a noite?</FormLabel>
+                                                <FormDescription>Frotas sérias se preocupam com a segurança do veículo. Informar que você tem um local seguro aumenta muito suas chances de aprovação.</FormDescription>
+                                                <FormControl>
+                                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                                        <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="covered" /></FormControl><FormLabel className="font-normal">Garagem Coberta</FormLabel></FormItem>
+                                                        <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="uncovered" /></FormControl><FormLabel className="font-normal">Garagem Descoberta</FormLabel></FormItem>
+                                                        <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="building_garage" /></FormControl><FormLabel className="font-normal">Garagem de Condomínio/Prédio</FormLabel></FormItem>
+                                                        <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="none" /></FormControl><FormLabel className="font-normal">Na Rua</FormLabel></FormItem>
+                                                    </RadioGroup>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}/>
 
-                            {/* STEP 3: MODO DE TRABALHO */}
-                            <div className={cn(currentStep !== 3 && "hidden")}>
-                                <Card>
-                                    <CardHeader><CardTitle>Modo de Trabalho</CardTitle><CardDescription>Como você pretende trabalhar? Isso nos ajuda a encontrar as melhores oportunidades para você.</CardDescription></CardHeader>
-                                    <CardContent className="space-y-6">
                                         <FormField control={form.control} name="workMode" render={({ field }) => (
-                                            <FormItem className="space-y-3"><FormLabel>Qual seu modo de trabalho principal?</FormLabel><FormControl>
+                                            <FormItem className="space-y-3 pt-6 border-t"><FormLabel>Qual seu modo de trabalho principal?</FormLabel><FormControl>
                                                 <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <Label htmlFor="rental" className="flex flex-col p-4 border rounded-md cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5"><RadioGroupItem value="rental" id="rental" className="sr-only"/><span className="font-bold text-lg">Alugo carro de Frota</span><span className="text-sm text-muted-foreground">Busco oportunidades e não preciso me preocupar com a documentação do veículo.</span></Label>
                                                     <Label htmlFor="owner" className="flex flex-col p-4 border rounded-md cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5"><RadioGroupItem value="owner" id="owner" className="sr-only"/><span className="font-bold text-lg">Tenho meu próprio veículo</span><span className="text-sm text-muted-foreground">Sou proprietário(a) e quero usar a plataforma para gerenciar meus documentos.</span></Label>
@@ -553,6 +562,27 @@ export default function CompleteProfilePage() {
                                                 </div>
                                             </div>
                                         )}
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+
+                            {/* STEP 3: DOCUMENTOS */}
+                            <div className={cn(currentStep !== 3 && "hidden")}>
+                                <Card>
+                                    <CardHeader><CardTitle>Habilitação e Documentos</CardTitle><CardDescription>Mantenha seus documentos em dia para acessar as melhores oportunidades.</CardDescription></CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <FormField control={form.control} name="cpf" render={({ field }) => (<FormItem><FormLabel>CPF</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="000.000.000-00" /></FormControl><FormMessage /></FormItem>)}/>
+                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                                            <FormField control={form.control} name="cnhNumber" render={({ field }) => (<FormItem><FormLabel>Nº da CNH</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="cnhCategory" render={({ field }) => (<FormItem><FormLabel>Categoria CNH</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl><SelectContent>{['A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE'].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="cnhExpiration" render={({ field }) => (<FormItem><FormLabel>Vencimento da CNH</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="cnhPoints" render={({ field }) => (<FormItem><FormLabel>Pontos na CNH</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>)}/>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                            <FormField control={form.control} name="condutaxNumber" render={({ field }) => (<FormItem><FormLabel>Nº do Condutax (Opcional)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="condutaxExpiration" render={({ field }) => (<FormItem><FormLabel>Vencimento do Condutax</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </div>

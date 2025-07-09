@@ -44,6 +44,9 @@ export interface UserProfile {
     condutaxExpiration?: Timestamp;
     cnhPoints?: number;
 
+    address?: string;
+    garageInfo?: 'covered' | 'uncovered' | 'building_garage' | 'none';
+
     workMode?: 'owner' | 'rental';
     alvaraExpiration?: Timestamp;
     vehicleLicensePlate?: string;
@@ -78,7 +81,6 @@ export interface UserProfile {
     razaoSocial?: string;
     nomeFantasia?: string;
     companyDescription?: string;
-    address?: string;
     amenities?: FleetAmenity[];
     socialMedia?: {
         instagram?: string;
