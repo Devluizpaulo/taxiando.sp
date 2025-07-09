@@ -28,6 +28,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { partialUpdateUserProfile } from '@/app/actions/user-actions';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -157,6 +158,7 @@ export default function CompleteProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSavingStep, setIsSavingStep] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [currentStep, setCurrentStep] = useState(1);
     const totalSteps = steps.length;
@@ -245,12 +247,12 @@ export default function CompleteProfilePage() {
             }
             
             const userDocRef = doc(db, 'users', user.uid);
-            const { cnhPoints, photoFile, ...restOfValues } = values;
+            const { cnhPoints, photoFile, referenceName, referenceRelationship, referencePhone, ...restOfValues } = values;
             const dataToSave = {
                 ...restOfValues,
                 photoUrl: finalPhotoUrl,
                 cnhPoints: cnhPoints === null ? undefined : cnhPoints,
-                profileStatus: 'pending_review',
+                profileStatus: 'pending_review' as const,
                 cnhExpiration: values.cnhExpiration ? Timestamp.fromDate(values.cnhExpiration) : null,
                 condutaxExpiration: values.condutaxExpiration ? Timestamp.fromDate(values.condutaxExpiration) : null,
                 alvaraExpiration: values.workMode === 'owner' && values.alvaraExpiration ? Timestamp.fromDate(values.alvaraExpiration) : null,
@@ -275,17 +277,58 @@ export default function CompleteProfilePage() {
 
     const handleNextStep = async () => {
         let fieldsToValidate: (keyof ProfileFormValues)[] = [];
-        if (currentStep === 1) fieldsToValidate = ['name', 'phone'];
+        if (currentStep === 1) fieldsToValidate = ['name', 'phone', 'bio'];
         if (currentStep === 2) fieldsToValidate = ['cnhNumber', 'cnhCategory', 'cnhExpiration', 'cnhPoints', 'condutaxNumber', 'condutaxExpiration'];
         if (currentStep === 3) fieldsToValidate = ['workMode', 'vehicleLicensePlate', 'alvaraExpiration'];
         if (currentStep === 4) fieldsToValidate = ['rentalPreferences'];
-        if (currentStep === 5) fieldsToValidate = ['referenceName', 'referenceRelationship', 'referencePhone', 'financialConsent'];
 
-        const isValid = await form.trigger(fieldsToValidate as any); // Use 'as any' to bypass complex type checking for dynamic validation
-        if (isValid && currentStep < totalSteps) {
-            setCurrentStep(prev => prev + 1);
+        const isValid = await form.trigger(fieldsToValidate as any, { shouldFocus: true });
+        if (!isValid) {
+            toast({
+                variant: 'destructive',
+                title: 'Campos Incompletos',
+                description: 'Por favor, preencha todos os campos obrigatórios corretamente antes de avançar.',
+            });
+            return;
+        }
+
+        if (currentStep < totalSteps) {
+            setIsSavingStep(true);
+            try {
+                if (!user) throw new Error("Usuário não encontrado.");
+                
+                const values = form.getValues();
+                const { photoFile, referenceName, referenceRelationship, referencePhone, ...rest } = values;
+                
+                const dataToSave = {
+                    ...rest,
+                    reference: {
+                        name: referenceName,
+                        relationship: referenceRelationship,
+                        phone: referencePhone,
+                    },
+                };
+
+                const result = await partialUpdateUserProfile(user.uid, dataToSave);
+
+                if (result.success) {
+                    toast({ title: 'Progresso Salvo!' });
+                    setCurrentStep(prev => prev + 1);
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Erro ao Salvar',
+                    description: (error as Error).message || 'Não foi possível salvar seu progresso.',
+                });
+            } finally {
+                setIsSavingStep(false);
+            }
         }
     };
+
 
     const handlePrevStep = () => {
         if (currentStep > 1) {
@@ -454,8 +497,17 @@ export default function CompleteProfilePage() {
                             {currentStep > 1 && (<Button type="button" variant="ghost" onClick={handlePrevStep}><ArrowLeft /> Voltar</Button>)}
                         </div>
                         <div>
-                            {currentStep < totalSteps && (<Button type="button" onClick={handleNextStep}>Próximo <ArrowRight /></Button>)}
-                            {currentStep === totalSteps && (<Button type="submit" size="lg" disabled={isSubmitting} className="w-full md:w-auto">{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <><Check className="mr-2"/>Salvar e Enviar para Análise</>}</Button>)}
+                            {currentStep < totalSteps ? (
+                                <Button type="button" onClick={handleNextStep} disabled={isSavingStep}>
+                                    {isSavingStep && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Próximo <ArrowRight />
+                                </Button>
+                            ) : (
+                                <Button type="submit" size="lg" disabled={isSubmitting} className="w-full md:w-auto">
+                                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2"/>}
+                                    Salvar e Enviar para Análise
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </form>
