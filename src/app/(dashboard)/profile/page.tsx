@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, User, FileText, HeartHandshake, Check, ArrowLeft, ArrowRight, Car } from 'lucide-react';
+import { Loader2, Camera, User, FileText, HeartHandshake, Check, ArrowLeft, ArrowRight, Car, Languages, FilePlus, BadgeInfo } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DatePicker } from '@/components/ui/datepicker';
@@ -59,6 +59,7 @@ const profileFormSchema = z.object({
   hasWhatsApp: z.boolean().default(false),
 
   // Documentos
+  cpf: z.string().optional().refine(val => !val || val.replace(/\D/g, '').length === 11, { message: 'Se preenchido, o CPF deve ter 11 dígitos.' }),
   cnhNumber: z.string().min(5, "Número da CNH inválido.").optional().or(z.literal('')),
   cnhCategory: z.enum(['A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE']).optional(),
   cnhExpiration: z.date().optional(),
@@ -76,11 +77,14 @@ const profileFormSchema = z.object({
   
   // Qualificações
   specializedCourses: z.array(z.string()).optional(),
+  languageLevel: z.string().optional(),
+  otherCourses: z.string().optional(),
+
 
   // Referência
-  referenceName: z.string().min(3, { message: 'O nome da referência é obrigatório.' }),
-  referenceRelationship: z.string().min(3, { message: 'O parentesco/relação é obrigatório.' }),
-  referencePhone: z.string().min(10, { message: 'Insira um telefone de referência válido com DDD.' }),
+  referenceName: z.string().optional().or(z.literal('')),
+  referenceRelationship: z.string().optional().or(z.literal('')),
+  referencePhone: z.string().optional().or(z.literal('')),
   
   // Termos
   financialConsent: z.boolean().refine(val => val === true, {
@@ -95,16 +99,21 @@ const profileFormSchema = z.object({
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'O vencimento do alvará é obrigatório para proprietários.', path: ['alvaraExpiration']});
         }
     }
+    if (data.specializedCourses?.includes('idiomas') && !data.languageLevel) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Por favor, especifique seu nível no idioma.', path: ['languageLevel']});
+    }
 });
 
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const specializedCourseOptions = [
+    { id: 'condutax', label: 'Curso CONDUTAX' },
     { id: 'coletivo', label: 'Transporte Coletivo de Passageiros' },
     { id: 'escolar', label: 'Transporte Escolar' },
     { id: 'emergencia', label: 'Veículos de Emergência' },
     { id: 'mopp', label: 'MOPP (Cargas Perigosas)' },
+    { id: 'idiomas', label: 'Idiomas' },
 ];
 
 const vehicleTypeOptions = [
@@ -124,10 +133,10 @@ const fuelTypeOptions = [
 
 const steps = [
     { id: 1, name: 'Perfil e Contato', fields: ['name', 'photoFile', 'bio', 'phone', 'hasWhatsApp'] },
-    { id: 2, name: 'Documentos', fields: ['cnhNumber', 'cnhCategory', 'cnhExpiration', 'cnhPoints', 'condutaxNumber', 'condutaxExpiration'] },
+    { id: 2, name: 'Documentos', fields: ['cpf', 'cnhNumber', 'cnhCategory', 'cnhExpiration', 'cnhPoints', 'condutaxNumber', 'condutaxExpiration'] },
     { id: 3, name: 'Modo de Trabalho', fields: ['workMode', 'vehicleLicensePlate', 'alvaraExpiration'] },
     { id: 4, name: 'Preferências', fields: ['rentalPreferences'] },
-    { id: 5, name: 'Qualificações e Termos', fields: ['specializedCourses', 'referenceName', 'referenceRelationship', 'referencePhone', 'financialConsent'] },
+    { id: 5, name: 'Qualificações e Referências', fields: ['specializedCourses', 'languageLevel', 'otherCourses', 'referenceName', 'referenceRelationship', 'referencePhone', 'financialConsent'] },
 ];
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
@@ -219,6 +228,7 @@ export default function CompleteProfilePage() {
             hasWhatsApp: false,
             photoUrl: '',
             bio: '',
+            cpf: '',
             cnhNumber: '',
             cnhCategory: undefined,
             cnhExpiration: undefined,
@@ -229,6 +239,8 @@ export default function CompleteProfilePage() {
             vehicleLicensePlate: '',
             alvaraExpiration: undefined,
             specializedCourses: [],
+            languageLevel: '',
+            otherCourses: '',
             rentalPreferences: {
                 vehicleTypes: [],
                 transmission: 'indifferent',
@@ -243,6 +255,7 @@ export default function CompleteProfilePage() {
     });
     
     const workMode = form.watch('workMode');
+    const coursesWatch = form.watch('specializedCourses');
     
     // Check which step the user should be on based on their profile data
     const lastCompletedStep = useMemo(() => {
@@ -277,6 +290,7 @@ export default function CompleteProfilePage() {
                 hasWhatsApp: userProfile.hasWhatsApp || false,
                 photoUrl: userProfile.photoUrl || '',
                 bio: userProfile.bio || '',
+                cpf: userProfile.cpf || '',
                 cnhNumber: userProfile.cnhNumber || '',
                 cnhCategory: userProfile.cnhCategory,
                 cnhExpiration: toDate(userProfile.cnhExpiration),
@@ -287,6 +301,8 @@ export default function CompleteProfilePage() {
                 vehicleLicensePlate: userProfile.vehicleLicensePlate || '',
                 alvaraExpiration: toDate(userProfile.alvaraExpiration),
                 specializedCourses: userProfile.specializedCourses || [],
+                languageLevel: userProfile.languageLevel || '',
+                otherCourses: userProfile.otherCourses || '',
                 rentalPreferences: userProfile.rentalPreferences || { vehicleTypes: [], transmission: 'indifferent', fuelTypes: [], maxDailyRate: 150 },
                 referenceName: userProfile.reference?.name || '',
                 referenceRelationship: userProfile.reference?.relationship || '',
@@ -404,15 +420,18 @@ export default function CompleteProfilePage() {
                 const values = form.getValues();
                 const { photoFile, referenceName, referenceRelationship, referencePhone, ...rest } = values;
                 
-                const dataToSave = {
+                const dataToSave: Partial<UserProfile> = {
                     ...rest,
+                    cnhExpiration: values.cnhExpiration ? Timestamp.fromDate(values.cnhExpiration) : undefined,
+                    condutaxExpiration: values.condutaxExpiration ? Timestamp.fromDate(values.condutaxExpiration) : undefined,
+                    alvaraExpiration: values.alvaraExpiration ? Timestamp.fromDate(values.alvaraExpiration) : undefined,
                     reference: {
-                        name: referenceName,
-                        relationship: referenceRelationship,
-                        phone: referencePhone,
+                        name: referenceName || '',
+                        relationship: referenceRelationship || '',
+                        phone: referencePhone || '',
                     },
                 };
-
+                
                 const result = await partialUpdateUserProfile(user.uid, dataToSave);
 
                 if (result.success) {
@@ -494,6 +513,7 @@ export default function CompleteProfilePage() {
                                 <Card>
                                     <CardHeader><CardTitle>Habilitação e Documentos</CardTitle><CardDescription>Mantenha seus documentos em dia para acessar as melhores oportunidades.</CardDescription></CardHeader>
                                     <CardContent className="space-y-6">
+                                        <FormField control={form.control} name="cpf" render={({ field }) => (<FormItem><FormLabel>CPF</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="000.000.000-00" /></FormControl><FormMessage /></FormItem>)}/>
                                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
                                             <FormField control={form.control} name="cnhNumber" render={({ field }) => (<FormItem><FormLabel>Nº da CNH</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
                                             <FormField control={form.control} name="cnhCategory" render={({ field }) => (<FormItem><FormLabel>Categoria CNH</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl><SelectContent>{['A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE'].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
@@ -571,29 +591,45 @@ export default function CompleteProfilePage() {
                                 </Card>
                             </div>
 
-                            {/* STEP 5: QUALIFICAÇÕES E TERMOS */}
-                            <div className={cn(currentStep !== 5 && "hidden")}>
+                            {/* STEP 5: QUALIFICAÇÕES E REFERÊNCIAS */}
+                             <div className={cn(currentStep !== 5 && "hidden")}>
                                 <Card>
-                                    <CardHeader><CardTitle>Cursos e Qualificações</CardTitle><CardDescription>Marque os cursos especializados que você já concluiu.</CardDescription></CardHeader>
-                                    <CardContent>
+                                    <CardHeader><CardTitle>Qualificações Adicionais</CardTitle><CardDescription>Destaque seus diferenciais para as frotas.</CardDescription></CardHeader>
+                                    <CardContent className="space-y-6">
                                         <FormField control={form.control} name="specializedCourses" render={() => (
-                                            <FormItem className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                            <FormItem><FormLabel>Cursos Especializados Concluídos</FormLabel>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pt-2">
                                                 {specializedCourseOptions.map((item) => (<FormField key={item.id} control={form.control} name="specializedCourses" render={({ field }) => (<FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
                                                     <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => {return checked ? field.onChange([...(field.value || []), item.id]) : field.onChange(field.value?.filter((value) => value !== item.id))}}/></FormControl>
-                                                    <FormLabel className="font-normal">{item.label}</FormLabel></FormItem>)}/>
+                                                    <FormLabel className="font-normal flex items-center gap-2">{item.id === 'idiomas' && <Languages/>} {item.label}</FormLabel></FormItem>)}/>
                                                 ))}
-                                            <FormMessage />
-                                            </FormItem>
+                                            </div>
+                                            <FormMessage /></FormItem>
+                                        )}/>
+                                        {coursesWatch?.includes('idiomas') && (
+                                            <FormField control={form.control} name="languageLevel" render={({ field }) => (<FormItem><FormLabel>Nível de Idioma</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Selecione o nível..." /></SelectTrigger></FormControl>
+                                                <SelectContent><SelectItem value="Básico">Básico</SelectItem><SelectItem value="Intermediário">Intermediário</SelectItem><SelectItem value="Avançado">Avançado</SelectItem><SelectItem value="Fluente">Fluente</SelectItem></SelectContent>
+                                            </Select><FormMessage /></FormItem>)}/>
+                                        )}
+                                        <FormField control={form.control} name="otherCourses" render={({ field }) => (
+                                            <FormItem><FormLabel className="flex items-center gap-2"><FilePlus/> Outros Cursos e Certificações</FormLabel><FormControl><Textarea placeholder="Liste outros cursos relevantes, separados por vírgula." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                         )}/>
                                     </CardContent>
                                 </Card>
                                 <Card>
                                     <CardHeader><CardTitle>Contato de Referência e Termos</CardTitle><CardDescription>Informações finais para completar seu perfil.</CardDescription></CardHeader>
                                     <CardContent className="space-y-6">
+                                        <div className="rounded-lg border bg-blue-500/5 border-blue-500/20 p-4">
+                                            <div className="flex items-start gap-3">
+                                                <BadgeInfo className="h-5 w-5 text-blue-600 mt-0.5"/>
+                                                <p className="text-sm text-blue-800">Esta informação não é obrigatória, mas aumenta significativamente a confiança e as chances de aprovação do seu perfil.</p>
+                                            </div>
+                                        </div>
                                         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                                            <FormField control={form.control} name="referenceName" render={({ field }) => (<FormItem><FormLabel>Nome do Contato</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                            <FormField control={form.control} name="referenceRelationship" render={({ field }) => (<FormItem><FormLabel>Parentesco/Relação</FormLabel><FormControl><Input placeholder="Ex: Pai, Amigo, etc." {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                            <FormField control={form.control} name="referencePhone" render={({ field }) => (<FormItem><FormLabel>Telefone do Contato</FormLabel><FormControl><Input placeholder="(11) 9..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="referenceName" render={({ field }) => (<FormItem><FormLabel>Nome do Contato</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="referenceRelationship" render={({ field }) => (<FormItem><FormLabel>Parentesco/Relação</FormLabel><FormControl><Input placeholder="Ex: Pai, Amigo, etc." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="referencePhone" render={({ field }) => (<FormItem><FormLabel>Telefone do Contato</FormLabel><FormControl><Input placeholder="(11) 9..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
                                         </div>
                                         <FormField control={form.control} name="financialConsent" render={({ field }) => (
                                             <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>

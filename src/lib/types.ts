@@ -36,6 +36,7 @@ export interface UserProfile {
     bio?: string;
     photoUrl?: string;
 
+    cpf?: string;
     cnhNumber?: string;
     cnhCategory?: 'A' | 'B' | 'C' | 'D' | 'E' | 'AB' | 'AC' | 'AD' | 'AE';
     cnhExpiration?: Timestamp;
@@ -48,6 +49,8 @@ export interface UserProfile {
     vehicleLicensePlate?: string;
 
     specializedCourses?: string[];
+    languageLevel?: string;
+    otherCourses?: string;
     
     earnedBadges?: Badge[];
 
@@ -70,7 +73,6 @@ export interface UserProfile {
     financialConsent?: boolean;
     
     personType?: 'pf' | 'pj';
-    cpf?: string;
     cnpj?: string;
     razaoSocial?: string;
     nomeFantasia?: string;

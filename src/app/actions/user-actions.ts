@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { adminDB } from '@/lib/firebase-admin';
@@ -23,6 +24,8 @@ export async function partialUpdateUserProfile(userId: string, data: Partial<Omi
             const value = data[field];
             if (value && (value instanceof Date || typeof value === 'string')) {
                  dataToSave[field] = Timestamp.fromDate(new Date(value as any));
+            } else if (value === null) {
+                dataToSave[field] = null;
             }
         }
         

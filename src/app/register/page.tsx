@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -30,7 +31,7 @@ const registerFormSchema = z.object({
     password: passwordSchema,
     confirmPassword: passwordSchema,
     name: z.string().optional(),
-    cpf: z.string().optional(),
+    cpf: z.string().optional().refine(val => !val || val.replace(/\D/g, '').length === 11, { message: 'Se preenchido, o CPF deve ter 11 dígitos.' }),
     personType: z.enum(['pf', 'pj']).optional(),
     nomeFantasia: z.string().optional(),
     cnpj: z.string().optional(),
