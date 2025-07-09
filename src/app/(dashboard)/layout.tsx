@@ -43,6 +43,8 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
   const { isMobile, setOpenMobile } = useSidebar();
   const [siteSettings, setSiteSettings] = useState<{siteName: string, logoUrl: string} | null>(null);
   const [showSeekingModal, setShowSeekingModal] = useState(false);
+  const [modalType, setModalType] = useState<'onboarding' | 'periodic'>('periodic');
+
 
   useEffect(() => {
     getPublicSettings().then(setSiteSettings);
@@ -52,18 +54,24 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
     if (loading || !userProfile || userProfile.role !== 'driver') return;
     
     const lastCheck = userProfile.lastSeekingRentalsCheck;
-    const sevenDaysAgo = subDays(new Date(), 7);
 
-    if (!lastCheck || new Date(lastCheck as string) < sevenDaysAgo) {
-      setShowSeekingModal(true);
+    if (!lastCheck) { // First-time login for this feature
+        setModalType('onboarding');
+        setShowSeekingModal(true);
+    } else { // Periodic check for users already seeking
+        const sevenDaysAgo = subDays(new Date(), 7);
+        if (userProfile.isSeekingRentals && new Date(lastCheck as string) < sevenDaysAgo) {
+            setModalType('periodic');
+            setShowSeekingModal(true);
+        }
     }
-  }, [userProfile, loading]);
+}, [userProfile, loading]);
 
   const handleUpdateSeekingStatus = async (isSeeking: boolean) => {
     if (!user) return;
     const result = await updateSeekingRentalsStatus(user.uid, isSeeking);
     if (result.success) {
-      toast({ title: "Status Atualizado!", description: "Sua preferência de busca foi salva." });
+      toast({ title: "Status Atualizado!", description: "Sua preferência de busca por vagas foi salva." });
     } else {
       toast({ variant: 'destructive', title: "Erro", description: "Não foi possível atualizar seu status." });
     }
@@ -318,16 +326,33 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
       
       <AlertDialog open={showSeekingModal} onOpenChange={setShowSeekingModal}>
           <AlertDialogContent>
-              <AlertDialogHeader>
-                  <AlertDialogTitle>Olá, {userProfile?.name?.split(' ')[0]}! Tudo certo por aí?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                      Só para confirmar, você ainda está buscando ativamente por oportunidades de aluguel de veículo?
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => handleUpdateSeekingStatus(false)}>Não, por enquanto</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => handleUpdateSeekingStatus(true)}>Sim, continuo buscando</AlertDialogAction>
-              </AlertDialogFooter>
+              {modalType === 'onboarding' ? (
+                  <>
+                      <AlertDialogHeader>
+                          <AlertDialogTitle>Quer encontrar o carro ideal? 🚗</AlertDialogTitle>
+                          <AlertDialogDescription>
+                              Ative seu "Perfil de Candidato" para que as melhores frotas te encontrem. Seu perfil completo, cursos e reputação ficam visíveis para elas, aumentando suas chances. Você pode desativar isso a qualquer momento no seu perfil.
+                          </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => handleUpdateSeekingStatus(false)}>Agora Não</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleUpdateSeekingStatus(true)}>Ativar meu Perfil</AlertDialogAction>
+                      </AlertDialogFooter>
+                  </>
+              ) : (
+                  <>
+                      <AlertDialogHeader>
+                          <AlertDialogTitle>Olá, {userProfile?.name?.split(' ')[0]}! Tudo certo por aí?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                              Só para confirmar, você ainda está buscando ativamente por oportunidades de aluguel de veículo?
+                          </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => handleUpdateSeekingStatus(false)}>Não, por enquanto</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleUpdateSeekingStatus(true)}>Sim, continuo buscando</AlertDialogAction>
+                      </AlertDialogFooter>
+                  </>
+              )}
           </AlertDialogContent>
       </AlertDialog>
     </>

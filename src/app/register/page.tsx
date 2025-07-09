@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -152,8 +151,7 @@ export default function RegisterPage() {
         };
 
         if (role === 'driver') {
-            userData.isSeekingRentals = true;
-            userData.lastSeekingRentalsCheck = Timestamp.now();
+            userData.isSeekingRentals = false; // Default to false, user opts-in later
         }
 
         if (name && name.trim()) userData.name = name.trim();
