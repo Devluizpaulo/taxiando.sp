@@ -83,6 +83,13 @@ export default function DashboardPage() {
     const profileCompleteness = useMemo(() => calculateProfileCompleteness(userProfile), [userProfile]);
     const vehicleStatus = useMemo(() => getVehicleStatus(userProfile), [userProfile]);
 
+    const progressColor = useMemo(() => {
+        if (profileCompleteness < 50) return 'bg-red-500';
+        if (profileCompleteness < 90) return 'bg-yellow-500';
+        return 'bg-green-500';
+    }, [profileCompleteness]);
+
+
     useEffect(() => {
         if (!user) return;
 
@@ -212,7 +219,7 @@ export default function DashboardPage() {
                             <CardDescription>Um perfil completo aumenta suas chances em até 40%.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <Progress value={profileCompleteness} />
+                            <Progress value={profileCompleteness} indicatorClassName={progressColor} />
                             <p className="text-sm text-muted-foreground">{profileCompleteness}% completo</p>
                             {profileCompleteness < 100 && (
                                 <Button asChild className="w-full">

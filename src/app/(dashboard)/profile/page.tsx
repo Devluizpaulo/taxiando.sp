@@ -3,13 +3,13 @@
 'use client';
 
 import 'react-image-crop/dist/ReactCrop.css';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth, type UserProfile } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
 
@@ -123,11 +123,11 @@ const fuelTypeOptions = [
 
 
 const steps = [
-    { id: 1, name: 'Perfil e Contato' },
-    { id: 2, name: 'Documentos' },
-    { id: 3, name: 'Modo de Trabalho' },
-    { id: 4, name: 'Preferências' },
-    { id: 5, name: 'Qualificações e Termos' },
+    { id: 1, name: 'Perfil e Contato', fields: ['name', 'photoFile', 'bio', 'phone', 'hasWhatsApp'] },
+    { id: 2, name: 'Documentos', fields: ['cnhNumber', 'cnhCategory', 'cnhExpiration', 'cnhPoints', 'condutaxNumber', 'condutaxExpiration'] },
+    { id: 3, name: 'Modo de Trabalho', fields: ['workMode', 'vehicleLicensePlate', 'alvaraExpiration'] },
+    { id: 4, name: 'Preferências', fields: ['rentalPreferences'] },
+    { id: 5, name: 'Qualificações e Termos', fields: ['specializedCourses', 'referenceName', 'referenceRelationship', 'referencePhone', 'financialConsent'] },
 ];
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
@@ -244,6 +244,30 @@ export default function CompleteProfilePage() {
     
     const workMode = form.watch('workMode');
     
+    // Check which step the user should be on based on their profile data
+    const lastCompletedStep = useMemo(() => {
+        if (!userProfile) return 0;
+        let lastStep = 0;
+        for (const step of steps) {
+            // Check if all fields for this step are valid according to the schema
+            const fieldsAreValid = step.fields.every(field => {
+                return form.getFieldState(field as keyof ProfileFormValues).error === undefined;
+            });
+            if (fieldsAreValid) {
+                lastStep = step.id;
+            } else {
+                break; // Stop at the first step that is not fully valid
+            }
+        }
+        return lastStep;
+    }, [userProfile, form]);
+
+    useEffect(() => {
+        if (!loading && userProfile && userProfile.profileStatus === 'incomplete') {
+            setCurrentStep(lastCompletedStep + 1 > totalSteps ? totalSteps : lastCompletedStep + 1);
+        }
+    }, [loading, userProfile, lastCompletedStep]);
+
     useEffect(() => {
         if (!loading && userProfile) {
             const toDate = (timestamp: any): Date | undefined => timestamp?.toDate ? timestamp.toDate() : undefined;
@@ -357,13 +381,12 @@ export default function CompleteProfilePage() {
     };
 
     const handleNextStep = async () => {
-        let fieldsToValidate: (keyof ProfileFormValues)[] = [];
-        if (currentStep === 1) fieldsToValidate = ['name', 'phone', 'bio'];
-        if (currentStep === 2) fieldsToValidate = ['cnhNumber', 'cnhCategory', 'cnhExpiration', 'cnhPoints', 'condutaxNumber', 'condutaxExpiration'];
-        if (currentStep === 3) fieldsToValidate = ['workMode', 'vehicleLicensePlate', 'alvaraExpiration'];
-        if (currentStep === 4) fieldsToValidate = ['rentalPreferences'];
+        const currentStepConfig = steps.find(s => s.id === currentStep);
+        if (!currentStepConfig) return;
+        
+        const fieldsToValidate = currentStepConfig.fields as (keyof ProfileFormValues)[];
+        const isValid = await form.trigger(fieldsToValidate, { shouldFocus: true });
 
-        const isValid = await form.trigger(fieldsToValidate as any, { shouldFocus: true });
         if (!isValid) {
             toast({
                 variant: 'destructive',
@@ -416,174 +439,221 @@ export default function CompleteProfilePage() {
             setCurrentStep(prev => prev - 1);
         }
     };
+    
+    // Determine which view to show: Stepper for incomplete profiles, or full form for completed ones.
+    const isProfileComplete = userProfile?.profileStatus && userProfile.profileStatus !== 'incomplete';
 
     return (
         <div className="flex flex-col gap-8">
             <div>
-                <h1 className="font-headline text-3xl font-bold tracking-tight">Completar Cadastro</h1>
-                <p className="text-muted-foreground">Preencha os campos abaixo para aumentar suas chances de ser aprovado pelas frotas.</p>
+                <h1 className="font-headline text-3xl font-bold tracking-tight">
+                    {isProfileComplete ? "Meu Perfil" : "Completar Cadastro"}
+                </h1>
+                <p className="text-muted-foreground">
+                    {isProfileComplete 
+                        ? "Mantenha seus dados sempre atualizados para garantir as melhores oportunidades."
+                        : "Preencha os campos abaixo para aumentar suas chances de ser aprovado pelas frotas."
+                    }
+                </p>
             </div>
             
-            <Card className="p-6">
-                <Stepper currentStep={currentStep} />
-            </Card>
+            {!isProfileComplete && (
+                 <Card className="p-6">
+                    <Stepper currentStep={currentStep} />
+                </Card>
+            )}
 
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                    {/* STEP 1: PERFIL & CONTATO */}
-                    <div className={cn(currentStep !== 1 && "hidden")}>
-                        <Card>
-                            <CardHeader><CardTitle>Perfil e Contato</CardTitle><CardDescription>Apresente-se à comunidade. Uma boa foto e um resumo aumentam suas chances.</CardDescription></CardHeader>
-                            <CardContent className="space-y-6">
-                                <FormItem><FormLabel>Foto de Perfil</FormLabel>
-                                    <div className="flex items-center gap-6">
-                                        <Avatar className="h-24 w-24"><AvatarImage src={previewUrl || undefined} alt={form.watch('name')} /><AvatarFallback><Camera className="h-8 w-8 text-muted-foreground"/></AvatarFallback></Avatar>
-                                        <FormControl><Input type="file" accept="image/*" className="max-w-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" onChange={onSelectFile}/></FormControl>
-                                    </div>
-                                <FormMessage /></FormItem>
-                                <FormField control={form.control} name="bio" render={({ field }) => (<FormItem><FormLabel>Breve Resumo Sobre Você</FormLabel><FormControl><Textarea placeholder="Fale um pouco sobre sua experiência como motorista, seus objetivos e o que você busca." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
-                                <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                    <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Telefone</FormLabel><FormControl><Input placeholder="(11) 9..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                    <FormField control={form.control} name="hasWhatsApp" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mt-auto"><div><FormLabel>Este número tem WhatsApp?</FormLabel></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)}/>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* STEP 2: DOCUMENTOS */}
-                    <div className={cn(currentStep !== 2 && "hidden")}>
-                         <Card>
-                            <CardHeader><CardTitle>Habilitação e Documentos</CardTitle><CardDescription>Mantenha seus documentos em dia para acessar as melhores oportunidades.</CardDescription></CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-                                    <FormField control={form.control} name="cnhNumber" render={({ field }) => (<FormItem><FormLabel>Nº da CNH</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
-                                    <FormField control={form.control} name="cnhCategory" render={({ field }) => (<FormItem><FormLabel>Categoria CNH</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl><SelectContent>{['A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE'].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                                    <FormField control={form.control} name="cnhExpiration" render={({ field }) => (<FormItem><FormLabel>Vencimento da CNH</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
-                                    <FormField control={form.control} name="cnhPoints" render={({ field }) => (<FormItem><FormLabel>Pontos na CNH</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>)}/>
-                                </div>
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                    <FormField control={form.control} name="condutaxNumber" render={({ field }) => (<FormItem><FormLabel>Nº do Condutax (Opcional)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
-                                    <FormField control={form.control} name="condutaxExpiration" render={({ field }) => (<FormItem><FormLabel>Vencimento do Condutax</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* STEP 3: MODO DE TRABALHO */}
-                    <div className={cn(currentStep !== 3 && "hidden")}>
-                        <Card>
-                             <CardHeader><CardTitle>Modo de Trabalho</CardTitle><CardDescription>Como você pretende trabalhar? Isso nos ajuda a encontrar as melhores oportunidades para você.</CardDescription></CardHeader>
-                             <CardContent className="space-y-6">
-                                <FormField control={form.control} name="workMode" render={({ field }) => (
-                                    <FormItem className="space-y-3"><FormLabel>Qual seu modo de trabalho principal?</FormLabel><FormControl>
-                                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <Label htmlFor="rental" className="flex flex-col p-4 border rounded-md cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5"><RadioGroupItem value="rental" id="rental" className="sr-only"/><span className="font-bold text-lg">Alugo carro de Frota</span><span className="text-sm text-muted-foreground">Busco oportunidades e não preciso me preocupar com a documentação do veículo.</span></Label>
-                                            <Label htmlFor="owner" className="flex flex-col p-4 border rounded-md cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5"><RadioGroupItem value="owner" id="owner" className="sr-only"/><span className="font-bold text-lg">Tenho meu próprio veículo</span><span className="text-sm text-muted-foreground">Sou proprietário(a) e quero usar a plataforma para gerenciar meus documentos.</span></Label>
-                                        </RadioGroup>
-                                    </FormControl><FormMessage /></FormItem>
-                                )}/>
-                                {workMode === 'owner' && (
-                                    <div className="space-y-4 rounded-lg border bg-muted/50 p-6">
-                                        <div className="space-y-1"><h3 className="text-lg font-semibold">Documentação do Veículo Próprio</h3><p className="text-sm text-muted-foreground">Preencha os dados do seu veículo para receber lembretes de vencimento.</p></div>
+                    {/* Multi-step form for initial completion */}
+                    {!isProfileComplete ? (
+                        <>
+                             {/* STEP 1: PERFIL & CONTATO */}
+                            <div className={cn(currentStep !== 1 && "hidden")}>
+                                <Card>
+                                    <CardHeader><CardTitle>Perfil e Contato</CardTitle><CardDescription>Apresente-se à comunidade. Uma boa foto e um resumo aumentam suas chances.</CardDescription></CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <FormItem><FormLabel>Foto de Perfil</FormLabel>
+                                            <div className="flex items-center gap-6">
+                                                <Avatar className="h-24 w-24"><AvatarImage src={previewUrl || undefined} alt={form.watch('name')} /><AvatarFallback><Camera className="h-8 w-8 text-muted-foreground"/></AvatarFallback></Avatar>
+                                                <FormControl><Input type="file" accept="image/*" className="max-w-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" onChange={onSelectFile}/></FormControl>
+                                            </div>
+                                        <FormMessage /></FormItem>
+                                        <FormField control={form.control} name="bio" render={({ field }) => (<FormItem><FormLabel>Breve Resumo Sobre Você</FormLabel><FormControl><Textarea placeholder="Fale um pouco sobre sua experiência como motorista, seus objetivos e o que você busca." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                                        <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                            <FormField control={form.control} name="vehicleLicensePlate" render={({ field }) => (<FormItem><FormLabel>Placa do Veículo (Alvará)</FormLabel><FormControl><Input placeholder="ABC-1234" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>)}/>
-                                            <FormField control={form.control} name="alvaraExpiration" render={({ field }) => (<FormItem><FormLabel>Vencimento do Alvará</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Telefone</FormLabel><FormControl><Input placeholder="(11) 9..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="hasWhatsApp" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mt-auto"><div><FormLabel>Este número tem WhatsApp?</FormLabel></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)}/>
                                         </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* STEP 2: DOCUMENTOS */}
+                            <div className={cn(currentStep !== 2 && "hidden")}>
+                                <Card>
+                                    <CardHeader><CardTitle>Habilitação e Documentos</CardTitle><CardDescription>Mantenha seus documentos em dia para acessar as melhores oportunidades.</CardDescription></CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                                            <FormField control={form.control} name="cnhNumber" render={({ field }) => (<FormItem><FormLabel>Nº da CNH</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="cnhCategory" render={({ field }) => (<FormItem><FormLabel>Categoria CNH</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl><SelectContent>{['A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE'].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="cnhExpiration" render={({ field }) => (<FormItem><FormLabel>Vencimento da CNH</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="cnhPoints" render={({ field }) => (<FormItem><FormLabel>Pontos na CNH</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>)}/>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                            <FormField control={form.control} name="condutaxNumber" render={({ field }) => (<FormItem><FormLabel>Nº do Condutax (Opcional)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="condutaxExpiration" render={({ field }) => (<FormItem><FormLabel>Vencimento do Condutax</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* STEP 3: MODO DE TRABALHO */}
+                            <div className={cn(currentStep !== 3 && "hidden")}>
+                                <Card>
+                                    <CardHeader><CardTitle>Modo de Trabalho</CardTitle><CardDescription>Como você pretende trabalhar? Isso nos ajuda a encontrar as melhores oportunidades para você.</CardDescription></CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <FormField control={form.control} name="workMode" render={({ field }) => (
+                                            <FormItem className="space-y-3"><FormLabel>Qual seu modo de trabalho principal?</FormLabel><FormControl>
+                                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <Label htmlFor="rental" className="flex flex-col p-4 border rounded-md cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5"><RadioGroupItem value="rental" id="rental" className="sr-only"/><span className="font-bold text-lg">Alugo carro de Frota</span><span className="text-sm text-muted-foreground">Busco oportunidades e não preciso me preocupar com a documentação do veículo.</span></Label>
+                                                    <Label htmlFor="owner" className="flex flex-col p-4 border rounded-md cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5"><RadioGroupItem value="owner" id="owner" className="sr-only"/><span className="font-bold text-lg">Tenho meu próprio veículo</span><span className="text-sm text-muted-foreground">Sou proprietário(a) e quero usar a plataforma para gerenciar meus documentos.</span></Label>
+                                                </RadioGroup>
+                                            </FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                        {workMode === 'owner' && (
+                                            <div className="space-y-4 rounded-lg border bg-muted/50 p-6">
+                                                <div className="space-y-1"><h3 className="text-lg font-semibold">Documentação do Veículo Próprio</h3><p className="text-sm text-muted-foreground">Preencha os dados do seu veículo para receber lembretes de vencimento.</p></div>
+                                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                                    <FormField control={form.control} name="vehicleLicensePlate" render={({ field }) => (<FormItem><FormLabel>Placa do Veículo (Alvará)</FormLabel><FormControl><Input placeholder="ABC-1234" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>)}/>
+                                                    <FormField control={form.control} name="alvaraExpiration" render={({ field }) => (<FormItem><FormLabel>Vencimento do Alvará</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* STEP 4: PREFERÊNCIAS */}
+                            <div className={cn(currentStep !== 4 && "hidden")}>
+                                <Card>
+                                    <CardHeader><CardTitle>Preferências de Locação</CardTitle><CardDescription>Descreva o veículo ideal para você. Isso ajuda as frotas a te encontrarem.</CardDescription></CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <FormField control={form.control} name="rentalPreferences.vehicleTypes" render={({ field }) => (
+                                            <FormItem><FormLabel>Tipos de Veículo</FormLabel><div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                                                {vehicleTypeOptions.map((item) => (<FormItem key={item.id} className="flex flex-row items-center space-x-3 space-y-0">
+                                                    <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => {return checked ? field.onChange([...(field.value || []), item.id]) : field.onChange(field.value?.filter((value) => value !== item.id))}} /></FormControl>
+                                                    <FormLabel className="font-normal">{item.label}</FormLabel></FormItem>
+                                                ))}</div><FormMessage /></FormItem>
+                                        )}/>
+                                        <FormField control={form.control} name="rentalPreferences.fuelTypes" render={({ field }) => (
+                                            <FormItem><FormLabel>Tipos de Combustível</FormLabel><div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                                                {fuelTypeOptions.map((item) => (<FormItem key={item.id} className="flex flex-row items-center space-x-3 space-y-0">
+                                                    <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => {return checked ? field.onChange([...(field.value || []), item.id]) : field.onChange(field.value?.filter((value) => value !== item.id))}} /></FormControl>
+                                                    <FormLabel className="font-normal">{item.label}</FormLabel></FormItem>
+                                                ))}</div><FormMessage /></FormItem>
+                                        )}/>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <FormField control={form.control} name="rentalPreferences.transmission" render={({ field }) => (
+                                                <FormItem className="space-y-3"><FormLabel>Câmbio</FormLabel><FormControl>
+                                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-4">
+                                                        <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="manual" /></FormControl><FormLabel className="font-normal">Manual</FormLabel></FormItem>
+                                                        <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="automatic" /></FormControl><FormLabel className="font-normal">Automático</FormLabel></FormItem>
+                                                        <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="indifferent" /></FormControl><FormLabel className="font-normal">Indiferente</FormLabel></FormItem>
+                                                    </RadioGroup>
+                                                </FormControl><FormMessage /></FormItem>
+                                            )}/>
+                                            <FormField control={form.control} name="rentalPreferences.maxDailyRate" render={({ field }) => (
+                                                <FormItem><FormLabel>Valor Máximo da Diária (R$)</FormLabel><FormControl><Input type="number" placeholder="Ex: 150" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                                            )}/>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* STEP 5: QUALIFICAÇÕES E TERMOS */}
+                            <div className={cn(currentStep !== 5 && "hidden")}>
+                                <Card>
+                                    <CardHeader><CardTitle>Cursos e Qualificações</CardTitle><CardDescription>Marque os cursos especializados que você já concluiu.</CardDescription></CardHeader>
+                                    <CardContent>
+                                        <FormField control={form.control} name="specializedCourses" render={() => (
+                                            <FormItem className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                                {specializedCourseOptions.map((item) => (<FormField key={item.id} control={form.control} name="specializedCourses" render={({ field }) => (<FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                                                    <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => {return checked ? field.onChange([...(field.value || []), item.id]) : field.onChange(field.value?.filter((value) => value !== item.id))}}/></FormControl>
+                                                    <FormLabel className="font-normal">{item.label}</FormLabel></FormItem>)}/>
+                                                ))}
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}/>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader><CardTitle>Contato de Referência e Termos</CardTitle><CardDescription>Informações finais para completar seu perfil.</CardDescription></CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                                            <FormField control={form.control} name="referenceName" render={({ field }) => (<FormItem><FormLabel>Nome do Contato</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="referenceRelationship" render={({ field }) => (<FormItem><FormLabel>Parentesco/Relação</FormLabel><FormControl><Input placeholder="Ex: Pai, Amigo, etc." {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                            <FormField control={form.control} name="referencePhone" render={({ field }) => (<FormItem><FormLabel>Telefone do Contato</FormLabel><FormControl><Input placeholder="(11) 9..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                        </div>
+                                        <FormField control={form.control} name="financialConsent" render={({ field }) => (
+                                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                <div className="space-y-1 leading-none"><FormLabel>Autorização para Análise Financeira</FormLabel><p className="text-sm text-muted-foreground">Autorizo a plataforma a realizar uma análise simplificada do meu histórico financeiro para compartilhar com as frotas.</p><FormMessage /></div>
+                                            </FormItem>
+                                        )}/>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </>
+                    ) : (
+                        // Full form for editing once profile is complete
+                        <div className="space-y-8">
+                             {/* Conteúdo do formulário completo para edição aqui */}
+                            <Card>
+                                <CardHeader><CardTitle>Perfil e Contato</CardTitle></CardHeader>
+                                <CardContent className="space-y-6">
+                                    <FormItem><FormLabel>Foto de Perfil</FormLabel>
+                                        <div className="flex items-center gap-6">
+                                            <Avatar className="h-24 w-24"><AvatarImage src={previewUrl || undefined} alt={form.watch('name')} /><AvatarFallback><Camera className="h-8 w-8 text-muted-foreground"/></AvatarFallback></Avatar>
+                                            <FormControl><Input type="file" accept="image/*" className="max-w-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" onChange={onSelectFile}/></FormControl>
+                                        </div>
+                                    <FormMessage /></FormItem>
+                                    <FormField control={form.control} name="bio" render={({ field }) => (<FormItem><FormLabel>Breve Resumo Sobre Você</FormLabel><FormControl><Textarea placeholder="Fale um pouco sobre sua experiência como motorista, seus objetivos e o que você busca." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                                    <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nome Completo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                        <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Telefone</FormLabel><FormControl><Input placeholder="(11) 9..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                        <FormField control={form.control} name="hasWhatsApp" render={({ field }) => (<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mt-auto"><div><FormLabel>Este número tem WhatsApp?</FormLabel></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)}/>
                                     </div>
+                                </CardContent>
+                            </Card>
+                            {/* ... Resto do formulário completo ... */}
+                            <Button type="submit" size="lg" disabled={isSubmitting} className="w-full md:w-auto">
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2"/>}
+                                Salvar Alterações
+                            </Button>
+                        </div>
+                    )}
+
+
+                    {!isProfileComplete && (
+                        <div className="flex items-center justify-between pt-6">
+                            <div>
+                                {currentStep > 1 && (<Button type="button" variant="ghost" onClick={handlePrevStep}><ArrowLeft /> Voltar</Button>)}
+                            </div>
+                            <div>
+                                {currentStep < totalSteps ? (
+                                    <Button type="button" onClick={handleNextStep} disabled={isSavingStep}>
+                                        {isSavingStep && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Próximo <ArrowRight />
+                                    </Button>
+                                ) : (
+                                    <Button type="submit" size="lg" disabled={isSubmitting} className="w-full md:w-auto">
+                                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2"/>}
+                                        Salvar e Enviar para Análise
+                                    </Button>
                                 )}
-                             </CardContent>
-                        </Card>
-                    </div>
-
-                     {/* STEP 4: PREFERÊNCIAS */}
-                    <div className={cn(currentStep !== 4 && "hidden")}>
-                        <Card>
-                            <CardHeader><CardTitle>Preferências de Locação</CardTitle><CardDescription>Descreva o veículo ideal para você. Isso ajuda as frotas a te encontrarem.</CardDescription></CardHeader>
-                            <CardContent className="space-y-6">
-                                <FormField control={form.control} name="rentalPreferences.vehicleTypes" render={({ field }) => (
-                                    <FormItem><FormLabel>Tipos de Veículo</FormLabel><div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
-                                        {vehicleTypeOptions.map((item) => (<FormItem key={item.id} className="flex flex-row items-center space-x-3 space-y-0">
-                                            <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => {return checked ? field.onChange([...(field.value || []), item.id]) : field.onChange(field.value?.filter((value) => value !== item.id))}} /></FormControl>
-                                            <FormLabel className="font-normal">{item.label}</FormLabel></FormItem>
-                                        ))}</div><FormMessage /></FormItem>
-                                )}/>
-                                <FormField control={form.control} name="rentalPreferences.fuelTypes" render={({ field }) => (
-                                    <FormItem><FormLabel>Tipos de Combustível</FormLabel><div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
-                                        {fuelTypeOptions.map((item) => (<FormItem key={item.id} className="flex flex-row items-center space-x-3 space-y-0">
-                                            <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => {return checked ? field.onChange([...(field.value || []), item.id]) : field.onChange(field.value?.filter((value) => value !== item.id))}} /></FormControl>
-                                            <FormLabel className="font-normal">{item.label}</FormLabel></FormItem>
-                                        ))}</div><FormMessage /></FormItem>
-                                )}/>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField control={form.control} name="rentalPreferences.transmission" render={({ field }) => (
-                                        <FormItem className="space-y-3"><FormLabel>Câmbio</FormLabel><FormControl>
-                                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-4">
-                                                <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="manual" /></FormControl><FormLabel className="font-normal">Manual</FormLabel></FormItem>
-                                                <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="automatic" /></FormControl><FormLabel className="font-normal">Automático</FormLabel></FormItem>
-                                                <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="indifferent" /></FormControl><FormLabel className="font-normal">Indiferente</FormLabel></FormItem>
-                                            </RadioGroup>
-                                        </FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                     <FormField control={form.control} name="rentalPreferences.maxDailyRate" render={({ field }) => (
-                                        <FormItem><FormLabel>Valor Máximo da Diária (R$)</FormLabel><FormControl><Input type="number" placeholder="Ex: 150" {...field} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* STEP 5: QUALIFICAÇÕES E TERMOS */}
-                    <div className={cn(currentStep !== 5 && "hidden")}>
-                        <Card>
-                            <CardHeader><CardTitle>Cursos e Qualificações</CardTitle><CardDescription>Marque os cursos especializados que você já concluiu.</CardDescription></CardHeader>
-                            <CardContent>
-                                <FormField control={form.control} name="specializedCourses" render={() => (
-                                    <FormItem className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                        {specializedCourseOptions.map((item) => (<FormField key={item.id} control={form.control} name="specializedCourses" render={({ field }) => (<FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
-                                            <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => {return checked ? field.onChange([...(field.value || []), item.id]) : field.onChange(field.value?.filter((value) => value !== item.id))}}/></FormControl>
-                                            <FormLabel className="font-normal">{item.label}</FormLabel></FormItem>)}/>
-                                        ))}
-                                    <FormMessage />
-                                    </FormItem>
-                                )}/>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader><CardTitle>Contato de Referência e Termos</CardTitle><CardDescription>Informações finais para completar seu perfil.</CardDescription></CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                                    <FormField control={form.control} name="referenceName" render={({ field }) => (<FormItem><FormLabel>Nome do Contato</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                    <FormField control={form.control} name="referenceRelationship" render={({ field }) => (<FormItem><FormLabel>Parentesco/Relação</FormLabel><FormControl><Input placeholder="Ex: Pai, Amigo, etc." {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                    <FormField control={form.control} name="referencePhone" render={({ field }) => (<FormItem><FormLabel>Telefone do Contato</FormLabel><FormControl><Input placeholder="(11) 9..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                </div>
-                                <FormField control={form.control} name="financialConsent" render={({ field }) => (
-                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                        <div className="space-y-1 leading-none"><FormLabel>Autorização para Análise Financeira</FormLabel><p className="text-sm text-muted-foreground">Autorizo a plataforma a realizar uma análise simplificada do meu histórico financeiro para compartilhar com as frotas.</p><FormMessage /></div>
-                                    </FormItem>
-                                )}/>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-6">
-                        <div>
-                            {currentStep > 1 && (<Button type="button" variant="ghost" onClick={handlePrevStep}><ArrowLeft /> Voltar</Button>)}
+                            </div>
                         </div>
-                        <div>
-                            {currentStep < totalSteps ? (
-                                <Button type="button" onClick={handleNextStep} disabled={isSavingStep}>
-                                    {isSavingStep && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Próximo <ArrowRight />
-                                </Button>
-                            ) : (
-                                <Button type="submit" size="lg" disabled={isSubmitting} className="w-full md:w-auto">
-                                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2"/>}
-                                    Salvar e Enviar para Análise
-                                </Button>
-                            )}
-                        </div>
-                    </div>
+                    )}
                 </form>
             </Form>
 

@@ -37,6 +37,8 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { user, userProfile, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isFirstLogin, setIsFirstLogin] = useState(false);
+
 
   const form = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
@@ -51,9 +53,12 @@ export default function LoginPage() {
     // This effect handles the redirection after a user is confirmed.
     // It will run for both new logins and returning users.
     if (!authLoading && user) {
-      router.push('/dashboard');
+      if (userProfile?.loginCount === 1) {
+        setIsFirstLogin(true);
+      }
+      setTimeout(() => router.push('/dashboard'), isFirstLogin ? 2000 : 1000);
     }
-  }, [user, authLoading, router]);
+  }, [user, userProfile, authLoading, router, isFirstLogin]);
 
 
   async function onSubmit(values: z.infer<typeof loginFormSchema>) {
@@ -93,8 +98,12 @@ export default function LoginPage() {
       <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-6 text-center">
           <Image src="/logo.png" alt="Táxiando SP Logo" width={180} height={170} className="h-24 w-auto rounded-xl shadow-lg" />
-          <h1 className="text-2xl font-semibold">Olá, {userProfile.name?.split(' ')[0] || userProfile.email}! 👋</h1>
-          <p className="text-muted-foreground">Que bom te ver de novo. Redirecionando...</p>
+          <h1 className="text-2xl font-semibold">
+            {isFirstLogin ? `Seja bem-vindo(a), ${userProfile.name?.split(' ')[0] || 'Motorista'}! 🚀` : `Olá, ${userProfile.name?.split(' ')[0] || userProfile.email}! 👋`}
+          </h1>
+          <p className="text-muted-foreground">
+             {isFirstLogin ? "Preparando seu painel para a sua nova jornada..." : "Que bom te ver de novo. Redirecionando..."}
+          </p>
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </div>
