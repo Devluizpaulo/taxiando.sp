@@ -35,7 +35,7 @@ const loginFormSchema = z.object({
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
+  const { user, userProfile, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof loginFormSchema>>({
@@ -48,6 +48,8 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
+    // This effect handles the redirection after a user is confirmed.
+    // It will run for both new logins and returning users.
     if (!authLoading && user) {
       router.push('/dashboard');
     }
@@ -65,10 +67,7 @@ export default function LoginPage() {
       // Fire-and-forget analytics. Don't block the UI for this.
       trackLogin(userCredential.user.uid);
 
-      // The AuthProvider will handle fetching the profile and the 
-      // DashboardLayout will handle the role-based redirect.
-      // Just push to a generic authenticated route to make the login feel faster.
-      router.push('/dashboard');
+      // The redirection will be handled by the useEffect above once the auth state changes.
 
     } catch (error: any) {
       console.error('Login failed:', error);
@@ -82,10 +81,27 @@ export default function LoginPage() {
     }
   }
 
-  if (authLoading || user) {
+  // While Firebase is checking the auth state, show a generic loader.
+  if (authLoading) {
     return <LoadingScreen />;
   }
 
+  // If auth state is checked and a user exists, it means they are a returning user.
+  // Show a personalized welcome message while the redirect happens.
+  if (user && userProfile) {
+     return (
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-6 text-center">
+          <Image src="/logo.png" alt="Táxiando SP Logo" width={180} height={170} className="h-24 w-auto rounded-xl shadow-lg" />
+          <h1 className="text-2xl font-semibold">Olá, {userProfile.name?.split(' ')[0] || userProfile.email}! 👋</h1>
+          <p className="text-muted-foreground">Que bom te ver de novo. Redirecionando...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  // If not loading and no user, show the full login page.
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <PublicHeader />
