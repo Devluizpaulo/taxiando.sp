@@ -4,19 +4,14 @@ import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig: FirebaseOptions = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyCAzvyYFdJKjGKJ-eSP4gbfS6UwFGVc0O4",
+  authDomain: "taxiandosp.firebaseapp.com",
+  projectId: "taxiandosp",
+  storageBucket: "taxiandosp.appspot.com",
+  messagingSenderId: "614329407359",
+  appId: "1:614329407359:web:0221716ee53e58fd47ec4a",
+  measurementId: "G-PLH7F2J30E"
 };
-
-// This check helps developers diagnose a misconfigured .env.local file.
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey.length < 10) {
-    throw new Error('Your NEXT_PUBLIC_FIREBASE_API_KEY is not set or is too short. Please check your .env.local file. Refer to .env.example for the full list of required variables.');
-}
-
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();

@@ -23,7 +23,7 @@ if (admin.apps.length > 0) {
             const serviceAccount = JSON.parse(serviceAccountJson);
             const app = admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount),
-                storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+                storageBucket: "taxiandosp.appspot.com"
             });
 
             adminDB = getFirestore(app);
