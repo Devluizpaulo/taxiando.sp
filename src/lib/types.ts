@@ -307,7 +307,7 @@ export interface ServiceListing {
   description: string;
   price: string;
   status: 'Ativo' | 'Pausado' | 'Pendente' | 'Rejeitado';
-  imageUrl?: string;
+  imageUrls: string[];
   createdAt: Timestamp | string;
 }
 

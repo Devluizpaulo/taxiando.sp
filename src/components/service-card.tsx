@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -15,7 +16,7 @@ export function ServiceCard({ service, showProvider = true }: { service: Service
             <Link href={`/services/${service.id}`} className="block">
                 <CardHeader className="p-0">
                     <Image 
-                        src={service.imageUrl || 'https://placehold.co/600x400.png'} 
+                        src={service.imageUrls?.[0] || 'https://placehold.co/600x400.png'} 
                         alt={service.title} 
                         width={600} height={400} 
                         className="w-full object-cover aspect-video" 

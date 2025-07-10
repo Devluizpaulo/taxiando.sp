@@ -1,4 +1,8 @@
 
+
+'use client'
+
+import { useState, useEffect } from 'react';
 import { getServiceAndProviderDetails } from "@/app/actions/service-actions";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
@@ -9,16 +13,56 @@ import { Instagram, MessageSquare, Phone, MapPin, Building } from "lucide-react"
 import { FacebookIcon } from "@/components/icons/facebook-icon";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter, useParams } from 'next/navigation';
 import { notFound } from "next/navigation";
+import { LoadingScreen } from '@/components/loading-screen';
+import { type ServiceListing, type UserProfile } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
-export default async function ServiceDetailsPage({ params }: { params: { id: string } }) {
-    const result = await getServiceAndProviderDetails(params.id);
+export default function ServiceDetailsPage() {
+    const params = useParams();
+    const serviceId = params.id as string;
+    const router = useRouter();
+    const { toast } = useToast();
 
-    if (!result.success || !result.service) {
-        notFound();
+    const [service, setService] = useState<ServiceListing | null>(null);
+    const [provider, setProvider] = useState<UserProfile | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [mainImage, setMainImage] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!serviceId) {
+            router.push('/services/marketplace');
+            return;
+        }
+
+        const fetchDetails = async () => {
+            setLoading(true);
+            const result = await getServiceAndProviderDetails(serviceId);
+            if (result.success && result.service) {
+                setService(result.service);
+                setProvider(result.provider);
+                if (result.service.imageUrls && result.service.imageUrls.length > 0) {
+                    setMainImage(result.service.imageUrls[0]);
+                }
+            } else {
+                toast({ variant: 'destructive', title: 'Erro', description: result.error || 'Serviço não encontrado.' });
+                notFound();
+            }
+            setLoading(false);
+        };
+
+        fetchDetails();
+    }, [serviceId, router, toast]);
+
+    if (loading) {
+        return <LoadingScreen />;
     }
 
-    const { service, provider } = result;
+    if (!service) {
+        return null; // or a not found component
+    }
 
     return (
         <div className="flex min-h-screen flex-col bg-muted/40">
@@ -34,7 +78,18 @@ export default async function ServiceDetailsPage({ params }: { params: { id: str
                             <h1 className="font-headline text-4xl font-bold tracking-tight">{service.title}</h1>
                         </div>
                         
-                        <Image src={service.imageUrl || 'https://placehold.co/800x600.png'} alt={service.title} width={800} height={600} className="w-full rounded-xl object-cover aspect-video" data-ai-hint="tools workshop services"/>
+                        <div className="space-y-4">
+                            <Image src={mainImage || 'https://placehold.co/800x600.png'} alt={service.title} width={800} height={600} className="w-full rounded-xl object-cover aspect-video" data-ai-hint="tools workshop services"/>
+                            {service.imageUrls && service.imageUrls.length > 1 && (
+                                <div className="grid grid-cols-4 gap-2">
+                                    {service.imageUrls.map((url, index) => (
+                                        <button key={index} onClick={() => setMainImage(url)} className={cn("relative aspect-video rounded-md overflow-hidden transition-opacity hover:opacity-80 focus:ring-2 focus:ring-ring ring-offset-2", mainImage === url && "ring-2 ring-ring")}>
+                                            <Image src={url} alt={`Thumbnail ${index + 1}`} fill className="object-cover" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
                         <Card>
                             <CardHeader><CardTitle>Descrição do Serviço</CardTitle></CardHeader>

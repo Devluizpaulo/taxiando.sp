@@ -8,6 +8,8 @@ import type { ServiceListing, UserProfile } from '@/lib/types';
 import { nanoid } from 'nanoid';
 import { serviceFormSchema, type ServiceFormValues } from '@/lib/service-schemas';
 import { auth } from '@/lib/firebase';
+import { uploadFile } from './storage-actions';
+import { uploadToGallery } from './gallery-actions';
 
 export async function createService(data: ServiceFormValues, providerId: string, providerName: string) {
     if (!providerId) return { success: false, error: "ID do prestador não fornecido." };
@@ -17,20 +19,45 @@ export async function createService(data: ServiceFormValues, providerId: string,
         if (!validation.success) {
             return { success: false, error: 'Dados inválidos.' };
         }
+        
+        const { imageFiles, ...restOfData } = validation.data;
+        let finalImageUrls = restOfData.imageUrls?.map(img => img.url) || [];
+
+        if (imageFiles && imageFiles.length > 0) {
+            for (const file of Array.from(imageFiles)) {
+                const formData = new FormData();
+                formData.append('file', file);
+                const uploadResult = await uploadFile(formData, providerId);
+                if (uploadResult.success && uploadResult.url) {
+                    finalImageUrls.push(uploadResult.url);
+                    await uploadToGallery({
+                        url: uploadResult.url,
+                        name: file.name || `Serviço ${data.title}`,
+                        category: 'Serviços',
+                        ownerId: providerId,
+                        ownerName: providerName,
+                    }, false);
+                } else {
+                    throw new Error(uploadResult.error || `Falha no upload da imagem ${file.name}`);
+                }
+            }
+        }
+
+        if (finalImageUrls.length === 0) {
+            return { success: false, error: 'Pelo menos uma imagem é obrigatória.' };
+        }
 
         const serviceId = nanoid();
-        const serviceData: Omit<ServiceListing, 'id' | 'createdAt' | 'status'> = {
-            ...validation.data,
+        const serviceData = {
+            ...restOfData,
+            imageUrls: finalImageUrls,
             providerId,
             provider: providerName,
-        };
-        
-        await adminDB.collection('services').doc(serviceId).set({
-            ...serviceData,
-            id: serviceId,
             status: 'Pendente',
             createdAt: Timestamp.now(),
-        });
+        };
+        
+        await adminDB.collection('services').doc(serviceId).set(serviceData);
         
         revalidatePath('/services');
         revalidatePath('/admin');
@@ -67,10 +94,34 @@ export async function updateService(serviceId: string, data: ServiceFormValues) 
         if (!validation.success) {
             return { success: false, error: 'Dados inválidos.' };
         }
+        
+        const { currentUser } = auth;
+        if (!currentUser) return { success: false, error: "Usuário não autenticado." };
+        
+        const { imageFiles, ...restOfData } = validation.data;
+        let finalImageUrls = restOfData.imageUrls?.map(img => img.url) || [];
+
+        if (imageFiles && imageFiles.length > 0) {
+            for (const file of Array.from(imageFiles)) {
+                const formData = new FormData();
+                formData.append('file', file);
+                const uploadResult = await uploadFile(formData, currentUser.uid);
+                if (uploadResult.success && uploadResult.url) {
+                    finalImageUrls.push(uploadResult.url);
+                } else {
+                    throw new Error(uploadResult.error || `Falha no upload da imagem ${file.name}`);
+                }
+            }
+        }
+        
+        if (finalImageUrls.length === 0) {
+            return { success: false, error: 'Pelo menos uma imagem é obrigatória.' };
+        }
 
         const serviceRef = adminDB.collection('services').doc(serviceId);
         await serviceRef.update({
-            ...validation.data,
+            ...restOfData,
+            imageUrls: finalImageUrls,
             status: 'Pendente',
             updatedAt: Timestamp.now(),
         });
