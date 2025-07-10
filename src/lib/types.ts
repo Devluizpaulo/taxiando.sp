@@ -52,7 +52,15 @@ export interface UserProfile {
     condutaxExpiration?: Timestamp;
     cnhPoints?: number;
 
+    // Structured Address
     address?: string;
+    addressNumber?: string;
+    addressComplement?: string;
+    neighborhood?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+
     garageInfo?: 'covered' | 'uncovered' | 'building_garage' | 'none';
 
     workMode?: 'owner' | 'rental';

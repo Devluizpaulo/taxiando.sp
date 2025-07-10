@@ -24,7 +24,16 @@ import { Label } from '@/components/ui/label';
 
 const fleetProfileSchema = z.object({
   companyDescription: z.string().min(20, "A descrição deve ter no mínimo 20 caracteres.").max(500, "A descrição deve ter no máximo 500 caracteres."),
-  address: z.string().min(10, "O endereço é obrigatório."),
+  
+  // New structured address
+  zipCode: z.string().min(8, "O CEP deve ter 8 dígitos."),
+  address: z.string().min(3, "A rua é obrigatória."),
+  addressNumber: z.string().min(1, "O número é obrigatório."),
+  addressComplement: z.string().optional(),
+  neighborhood: z.string().min(3, "O bairro é obrigatório."),
+  city: z.string().min(3, "A cidade é obrigatória."),
+  state: z.string().min(2, "O estado é obrigatório.").max(2),
+
   contactPhone: z.string().min(10, "O telefone é obrigatório."),
   contactEmail: z.string().email("Email de contato inválido."),
   socialMedia: z.object({
@@ -42,12 +51,19 @@ export default function FleetProfilePage() {
     const { user, userProfile, loading } = useAuthProtection({ requiredRoles: ['fleet', 'admin'] });
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isFetchingCep, setIsFetchingCep] = useState(false);
 
     const form = useForm<FleetProfileValues>({
         resolver: zodResolver(fleetProfileSchema),
         defaultValues: {
             companyDescription: '',
+            zipCode: '',
             address: '',
+            addressNumber: '',
+            addressComplement: '',
+            neighborhood: '',
+            city: '',
+            state: 'SP',
             contactPhone: '',
             contactEmail: '',
             socialMedia: { instagram: '', facebook: '', whatsapp: '' },
@@ -60,7 +76,13 @@ export default function FleetProfilePage() {
         if (!loading && userProfile) {
             form.reset({
                 companyDescription: userProfile.companyDescription || '',
+                zipCode: userProfile.zipCode || '',
                 address: userProfile.address || '',
+                addressNumber: userProfile.addressNumber || '',
+                addressComplement: userProfile.addressComplement || '',
+                neighborhood: userProfile.neighborhood || '',
+                city: userProfile.city || '',
+                state: userProfile.state || 'SP',
                 contactPhone: userProfile.phone || '',
                 contactEmail: userProfile.email || '',
                 socialMedia: userProfile.socialMedia || { instagram: '', facebook: '', whatsapp: '' },
@@ -69,6 +91,35 @@ export default function FleetProfilePage() {
             });
         }
     }, [userProfile, loading, form]);
+
+    const handleCepSearch = async () => {
+        const cep = form.getValues('zipCode').replace(/\D/g, '');
+        if (cep.length !== 8) {
+            toast({ variant: 'destructive', title: 'CEP Inválido', description: 'Por favor, digite um CEP com 8 dígitos.' });
+            return;
+        }
+
+        setIsFetchingCep(true);
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+            if (!response.ok) throw new Error('CEP não encontrado.');
+            
+            const data = await response.json();
+            if (data.erro) throw new Error('CEP não encontrado.');
+
+            form.setValue('address', data.logradouro, { shouldValidate: true });
+            form.setValue('neighborhood', data.bairro, { shouldValidate: true });
+            form.setValue('city', data.localidade, { shouldValidate: true });
+            form.setValue('state', data.uf, { shouldValidate: true });
+            form.setFocus('addressNumber'); // Move focus to the number field
+            toast({ title: 'Endereço encontrado!', description: 'Complete com o número e complemento.' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Erro ao buscar CEP', description: (error as Error).message });
+        } finally {
+            setIsFetchingCep(false);
+        }
+    };
+
 
      if (loading || !userProfile) {
         return <LoadingScreen />;
@@ -124,13 +175,38 @@ export default function FleetProfilePage() {
                             )}/>
                             <FormItem>
                                 <FormLabel>Endereço da Garagem/Sede</FormLabel>
-                                <div className="flex items-center gap-2">
-                                     <FormField control={form.control} name="address" render={({ field }) => (
-                                         <FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade - SP" {...field} className="flex-1" /></FormControl>
-                                     )}/>
-                                    <Button type="button" variant="secondary" disabled><Search className="mr-2"/>Buscar CEP</Button>
+                                <div className="space-y-4 rounded-lg border p-4">
+                                     <div className="flex items-end gap-2">
+                                        <FormField control={form.control} name="zipCode" render={({ field }) => (
+                                            <FormItem className="w-full max-w-xs"><FormLabel>CEP</FormLabel><FormControl><Input placeholder="00000-000" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                        <Button type="button" variant="outline" onClick={handleCepSearch} disabled={isFetchingCep}>
+                                            {isFetchingCep ? <Loader2 className="animate-spin" /> : <Search />} Buscar
+                                        </Button>
+                                    </div>
+                                    <FormField control={form.control} name="address" render={({ field }) => (
+                                        <FormItem><FormLabel>Rua / Logradouro</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <FormField control={form.control} name="addressNumber" render={({ field }) => (
+                                            <FormItem><FormLabel>Número</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                        <FormField control={form.control} name="addressComplement" render={({ field }) => (
+                                            <FormItem className="md:col-span-2"><FormLabel>Complemento (Opcional)</FormLabel><FormControl><Input placeholder="Apto, Bloco, etc." {...field} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                         <FormField control={form.control} name="neighborhood" render={({ field }) => (
+                                            <FormItem><FormLabel>Bairro</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                        <FormField control={form.control} name="city" render={({ field }) => (
+                                            <FormItem><FormLabel>Cidade</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                        <FormField control={form.control} name="state" render={({ field }) => (
+                                            <FormItem><FormLabel>Estado</FormLabel><FormControl><Input {...field} maxLength={2} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                    </div>
                                 </div>
-                                <FormMessage />
                             </FormItem>
                         </CardContent>
                     </Card>
@@ -222,8 +298,8 @@ export default function FleetProfilePage() {
 
                     
                     <div className="flex justify-end">
-                        <Button type="submit" size="lg" disabled={isSubmitting} className="w-full md:w-auto">
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Button type="submit" size="lg" disabled={isSubmitting || isFetchingCep} className="w-full md:w-auto">
+                            {(isSubmitting || isFetchingCep) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Salvar Perfil da Frota
                         </Button>
                     </div>
