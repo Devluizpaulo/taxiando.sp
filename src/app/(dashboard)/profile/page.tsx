@@ -142,7 +142,7 @@ const vehicleTypeOptions = [
 const fuelTypeOptions = [
     { id: 'flex', label: 'Flex (Gasolina/Álcool)' },
     { id: 'gnv', label: 'GNV' },
-    { id: 'diesel', label: 'Diesel' },
+    { id: 'hybrid', label: 'Híbrido' },
     { id: 'eletrico', label: 'Elétrico' },
 ];
 

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -113,15 +114,12 @@ export default function FleetPage() {
             form.reset(selectedVehicle ? {
                 ...selectedVehicle,
                 plate: selectedVehicle.plate.toUpperCase(),
-                paymentTerms: selectedVehicle.paymentInfo.terms,
-                paymentMethods: selectedVehicle.paymentInfo.methods,
                 perks: selectedVehicle.perks.map(p => p.id),
             } : { 
                 status: 'Disponível', 
                 imageUrl: 'https://placehold.co/600x400.png', 
                 year: new Date().getFullYear(),
                 perks: [],
-                paymentMethods: [],
                 plate: '',
                 make: '',
                 model: '',
@@ -450,7 +448,7 @@ export default function FleetPage() {
                                         <FormItem><FormLabel className="flex items-center gap-2"><Fuel/>Combustível</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
-                                                <SelectContent><SelectItem value="flex">Flex</SelectItem><SelectItem value="gnv">GNV</SelectItem><SelectItem value="diesel">Diesel</SelectItem><SelectItem value="electric">Elétrico</SelectItem></SelectContent>
+                                                <SelectContent><SelectItem value="flex">Flex</SelectItem><SelectItem value="gnv">GNV</SelectItem><SelectItem value="hybrid">Híbrido</SelectItem><SelectItem value="electric">Elétrico</SelectItem></SelectContent>
                                             </Select>
                                         <FormMessage /></FormItem>
                                     )}/>

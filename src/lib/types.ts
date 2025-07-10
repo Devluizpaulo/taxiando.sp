@@ -226,7 +226,7 @@ export interface Vehicle {
   type: 'hatch' | 'sedan' | 'suv' | 'minivan' | 'other';
   condition: string;
   transmission: 'automatic' | 'manual';
-  fuelType: 'flex' | 'gnv' | 'diesel' | 'electric';
+  fuelType: 'flex' | 'gnv' | 'hybrid' | 'electric';
   description: string;
   status: 'Disponível' | 'Alugado' | 'Em Manutenção';
   moderationStatus?: 'Pendente' | 'Aprovado' | 'Rejeitado';

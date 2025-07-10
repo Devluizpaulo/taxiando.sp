@@ -1,4 +1,5 @@
 
+
 import * as z from 'zod';
 
 export const vehicleFormSchema = z.object({
@@ -12,7 +13,7 @@ export const vehicleFormSchema = z.object({
   imageUrl: z.string().url("URL da imagem inválida.").optional().or(z.literal('')),
   condition: z.string().min(1, "A condição é obrigatória."),
   transmission: z.enum(['automatic', 'manual'], { required_error: "O tipo de câmbio é obrigatório."}),
-  fuelType: z.enum(['flex', 'gnv', 'diesel', 'electric'], { required_error: "O tipo de combustível é obrigatório."}),
+  fuelType: z.enum(['flex', 'gnv', 'hybrid', 'electric'], { required_error: "O tipo de combustível é obrigatório."}),
   description: z.string().min(20, "A descrição deve ter pelo menos 20 caracteres.").max(500, "Limite de 500 caracteres."),
   paymentTerms: z.string().min(3, "As condições são obrigatórias."),
   paymentMethods: z.array(z.string()).optional(),
