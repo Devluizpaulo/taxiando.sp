@@ -76,6 +76,9 @@ export interface UserProfile {
     
     isSeekingRentals?: boolean;
     lastSeekingRentalsCheck?: Timestamp | string;
+    
+    isCurrentlyWorking?: boolean;
+    hasParkingLot?: boolean;
 
     reference?: {
         name: string;
@@ -232,6 +235,8 @@ export interface Vehicle {
   paymentInfo: PaymentInfo;
   perks: VehiclePerk[];
   createdAt: Timestamp | string;
+  hasParkingLot?: boolean;
+  parkingLotAddress?: string;
 }
 
 export interface FleetAmenity {

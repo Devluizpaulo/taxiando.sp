@@ -17,6 +17,17 @@ export const vehicleFormSchema = z.object({
   paymentTerms: z.string().min(3, "As condições são obrigatórias."),
   paymentMethods: z.array(z.string()).optional(),
   perks: z.array(z.string()).optional(),
+  hasParkingLot: z.boolean().default(false).optional(),
+  parkingLotAddress: z.string().optional(),
+}).superRefine((data, ctx) => {
+    if (data.hasParkingLot && (!data.parkingLotAddress || data.parkingLotAddress.length < 5)) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['parkingLotAddress'],
+            message: 'O endereço do ponto é obrigatório se a opção for selecionada.'
+        });
+    }
 });
+
 
 export type VehicleFormValues = z.infer<typeof vehicleFormSchema>;

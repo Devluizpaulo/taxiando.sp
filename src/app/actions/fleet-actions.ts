@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -62,23 +61,9 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, ve
             .filter(Boolean) as VehiclePerk[];
 
         const vehicleData = {
+            ...data,
             plate: data.plate.toUpperCase(),
-            make: data.make,
-            model: data.model,
-            year: data.year,
-            type: data.type,
-            status: data.status,
-            dailyRate: data.dailyRate,
-            imageUrl: data.imageUrl,
-            condition: data.condition,
-            transmission: data.transmission,
-            fuelType: data.fuelType,
-            description: data.description,
             fleetId,
-            paymentInfo: {
-                terms: data.paymentTerms,
-                methods: data.paymentMethods || [],
-            },
             perks: perksToSave,
             moderationStatus: 'Pendente' as const,
             updatedAt: Timestamp.now(),
@@ -489,11 +474,12 @@ export async function getDriverMatchesForVehicle(vehicleId: string): Promise<Mat
             price: false,
             profileCompleteness: false,
             rating: false,
+            creditCard: false,
         };
 
         // --- Vehicle Preferences (60 points) ---
         if (prefs.vehicleTypes?.includes(vehicle.type)) {
-            score += 25;
+            score += 20;
             details.vehicleType = true;
         }
         if (prefs.transmission === 'indifferent' || prefs.transmission === vehicle.transmission) {
@@ -508,6 +494,11 @@ export async function getDriverMatchesForVehicle(vehicleId: string): Promise<Mat
             score += 10;
             details.price = true;
         }
+         if (driver.hasCreditCardForDeposit) {
+            score += 5;
+            details.creditCard = true;
+        }
+
 
         // --- Driver Quality (40 points) ---
         const completeness = calculateProfileCompleteness(driver);

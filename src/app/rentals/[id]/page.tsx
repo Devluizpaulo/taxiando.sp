@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { Instagram, MessageSquare, Car, Building, Sparkles, User, ShieldCheck, Fuel, Calendar, Wrench, CreditCard, Loader2, Phone } from "lucide-react";
+import { Instagram, MessageSquare, Car, Building, Sparkles, User, ShieldCheck, Fuel, Calendar, Wrench, CreditCard, Loader2, Phone, MapPin } from "lucide-react";
 import { vehiclePerks as allVehiclePerks, fleetAmenities } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 import { ToastAction } from '@/components/ui/toast';
@@ -104,6 +104,14 @@ export default function RentalDetailsPage({ params }: { params: { id: string } }
                             <CardHeader><CardTitle>Descrição do Veículo</CardTitle></CardHeader>
                             <CardContent><p className="text-muted-foreground">{vehicle.description}</p></CardContent>
                         </Card>
+                        
+                        {vehicle.hasParkingLot && vehicle.parkingLotAddress && (
+                             <Card>
+                                <CardHeader><CardTitle className="flex items-center gap-2"><MapPin/> Ponto Fixo Vinculado</CardTitle></CardHeader>
+                                <CardContent><p className="text-muted-foreground">Este veículo possui um ponto de estacionamento fixo no endereço: <strong>{vehicle.parkingLotAddress}</strong>. Uma grande vantagem para sua operação diária.</p></CardContent>
+                            </Card>
+                        )}
+
 
                         <Card>
                             <CardHeader><CardTitle>Vantagens e Benefícios Inclusos</CardTitle></CardHeader>

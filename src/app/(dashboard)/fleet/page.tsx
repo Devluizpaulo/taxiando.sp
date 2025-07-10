@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -25,7 +24,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle, StarHalf, Search, GitCommitHorizontal, Fuel, ShieldCheck } from "lucide-react";
+import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle, StarHalf, Search, GitCommitHorizontal, Fuel, ShieldCheck, MapPin } from "lucide-react";
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -33,6 +32,7 @@ import { vehiclePerks } from '@/lib/data';
 import { LoadingScreen } from '@/components/loading-screen';
 import { ReviewForm } from '@/components/review-form';
 import { StarRating } from '@/components/ui/star-rating';
+import { Switch } from '@/components/ui/switch';
 
 
 const getVehicleStatusVariant = (status: Vehicle['status']): "default" | "secondary" | "destructive" | "outline" => {
@@ -131,10 +131,13 @@ export default function FleetPage() {
                 description: '',
                 paymentTerms: '',
                 type: 'sedan',
+                hasParkingLot: false,
+                parkingLotAddress: '',
             });
         }
     }, [isVehicleDialogOpen, selectedVehicle, form]);
 
+    const watchHasParkingLot = form.watch("hasParkingLot");
 
     const handleAddNewVehicle = () => {
         setSelectedVehicle(null);
@@ -477,48 +480,61 @@ export default function FleetPage() {
                                     <FormField control={form.control} name="paymentTerms" render={({ field }) => (
                                         <FormItem><FormLabel>Condições de Pagamento</FormLabel><FormControl><Input {...field} placeholder="Ex: Semanal, Segunda a Sábado" /></FormControl><FormMessage /></FormItem>
                                     )}/>
-                                     <FormField
-                                        control={form.control}
-                                        name="perks"
-                                        render={() => (
-                                            <FormItem>
-                                            <div className="mb-4"><FormLabel>Brindes e Vantagens</FormLabel><FormDescription>Selecione os benefícios inclusos na locação.</FormDescription></div>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                {vehiclePerks.map((item) => (
-                                                    <FormField
-                                                    key={item.id}
-                                                    control={form.control}
-                                                    name="perks"
-                                                    render={({ field }) => {
-                                                        return (
-                                                        <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
-                                                            <FormControl>
-                                                                <Checkbox
-                                                                    checked={field.value?.includes(item.id)}
-                                                                    onCheckedChange={(checked) => {
-                                                                    return checked
-                                                                        ? field.onChange([...(field.value || []), item.id])
-                                                                        : field.onChange(
-                                                                            field.value?.filter(
-                                                                            (value) => value !== item.id
-                                                                            )
-                                                                        )
-                                                                    }}
-                                                                />
-                                                            </FormControl>
-                                                            <FormLabel className="font-normal">{item.label}</FormLabel>
-                                                        </FormItem>
-                                                        )
-                                                    }}
-                                                    />
-                                                ))}
-                                            </div>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                        />
+                                     <FormField control={form.control} name="hasParkingLot" render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                            <div className="space-y-0.5"><FormLabel className="flex items-center gap-2"><MapPin/> Possui Ponto Fixo?</FormLabel><FormDescription>Este veículo está vinculado a um ponto fixo?</FormDescription></div>
+                                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                        </FormItem>
+                                     )}/>
+                                    {watchHasParkingLot && (
+                                         <FormField control={form.control} name="parkingLotAddress" render={({ field }) => (
+                                            <FormItem><FormLabel>Endereço do Ponto</FormLabel><FormControl><Input {...field} placeholder="Ex: Ponto do Aeroporto de Congonhas" /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                    )}
                                 </div>
                              </div>
+                              <div className="col-span-1 md:col-span-2">
+                                <FormField
+                                  control={form.control}
+                                  name="perks"
+                                  render={() => (
+                                      <FormItem>
+                                      <div className="mb-4 pt-4 border-t"><FormLabel>Brindes e Vantagens</FormLabel><FormDescription>Selecione os benefícios inclusos na locação.</FormDescription></div>
+                                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                          {vehiclePerks.map((item) => (
+                                              <FormField
+                                              key={item.id}
+                                              control={form.control}
+                                              name="perks"
+                                              render={({ field }) => {
+                                                  return (
+                                                  <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                                                      <FormControl>
+                                                          <Checkbox
+                                                              checked={field.value?.includes(item.id)}
+                                                              onCheckedChange={(checked) => {
+                                                              return checked
+                                                                  ? field.onChange([...(field.value || []), item.id])
+                                                                  : field.onChange(
+                                                                      field.value?.filter(
+                                                                      (value) => value !== item.id
+                                                                      )
+                                                                  )
+                                                              }}
+                                                          />
+                                                      </FormControl>
+                                                      <FormLabel className="font-normal">{item.label}</FormLabel>
+                                                  </FormItem>
+                                                  )
+                                              }}
+                                              />
+                                          ))}
+                                      </div>
+                                      <FormMessage />
+                                      </FormItem>
+                                  )}
+                                  />
+                              </div>
                             
                             <DialogFooter>
                                 <DialogClose asChild><Button type="button" variant="secondary">Cancelar</Button></DialogClose>
