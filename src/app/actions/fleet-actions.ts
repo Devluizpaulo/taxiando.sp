@@ -41,7 +41,7 @@ export async function getFleetData(fleetId: string) {
                 return {
                     ...data,
                     id: doc.id,
-                    appliedAt: (data.appliedAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+                    appliedAt: (data.appliedAt as Timestamp)?.toDate().toISOString(),
                 } as VehicleApplication;
             });
         }
@@ -63,6 +63,7 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, fl
             .map(perkId => vehiclePerks.find(p => p.id === perkId)!)
             .filter(Boolean) as VehiclePerk[];
         
+        // Handle file uploads for new images and add to gallery
         const uploadedImageUrls: string[] = [];
         if (data.imageFiles && data.imageFiles.length > 0) {
             for (const file of Array.from(data.imageFiles)) {
@@ -77,13 +78,14 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, fl
                         category: 'Veículos',
                         ownerId: fleetId,
                         ownerName: fleetName,
-                    }, false);
+                    }, false); // Fleet images are not public by default
                 } else {
                      throw new Error(uploadResult.error || `Falha no upload do arquivo ${file.name}`);
                 }
             }
         }
         
+        // Combine existing URLs with newly uploaded ones
         const finalImageUrls = [...(data.imageUrls || []), ...uploadedImageUrls];
         if (finalImageUrls.length === 0) {
             return { success: false, error: 'Pelo menos uma imagem do veículo é obrigatória.' };
