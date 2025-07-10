@@ -10,8 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+import { doc, runTransaction } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+
 import { LoadingScreen } from '@/components/loading-screen';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
@@ -19,9 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { StarRating } from '@/components/ui/star-rating';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Loader2, Eye, Smartphone, MessageCircle, Briefcase, Star, Car, Fuel, GitCommitHorizontal } from 'lucide-react';
-import { doc, runTransaction } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { Search, Loader2, Eye, Smartphone, MessageCircle, Briefcase, Star, Car, Fuel, GitCommitHorizontal, Users, CreditCard, ShieldCheck } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -130,6 +131,19 @@ function DriverProfileModal({ user, reviews, isLoading, isOpen, onOpenChange }: 
                                     <CardContent><p className="text-sm text-muted-foreground">{user.bio}</p></CardContent>
                                 </Card>
                             )}
+                             <Card>
+                                <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><ShieldCheck/> Segurança</CardTitle></CardHeader>
+                                <CardContent className="space-y-4">
+                                     <div className="flex items-center justify-between rounded-lg border p-3 text-sm">
+                                        <span>CPF Verificado:</span>
+                                        <Button size="sm" variant="outline" disabled>Consultar (Em Breve)</Button>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-lg border p-3 text-sm">
+                                        <span>Possui Cartão p/ Locação:</span>
+                                        <Badge variant={user.hasCreditCardForDeposit ? "default" : "secondary"}>{user.hasCreditCardForDeposit ? "Sim" : "Não"}</Badge>
+                                    </div>
+                                </CardContent>
+                            </Card>
                             <Card>
                                 <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Briefcase/> Documentação</CardTitle></CardHeader>
                                 <CardContent className="grid grid-cols-2 gap-4 text-sm">
@@ -259,8 +273,8 @@ export default function FindDriversPage() {
             toast({
                 variant: 'destructive',
                 title: 'Créditos Insuficientes',
-                description: 'Você não tem créditos suficientes para ver este perfil. Por favor, compre mais créditos.',
-                action: <Button onClick={() => window.location.href='/billing'}>Comprar</Button>
+                description: 'Você precisa de créditos para ver o perfil completo dos motoristas.',
+                action: <Button onClick={() => window.location.href='/billing'}>Comprar Créditos</Button>
             });
             return;
         }
@@ -321,9 +335,9 @@ export default function FindDriversPage() {
              <AlertDialog open={!!confirmViewProfile} onOpenChange={(open) => !open && setConfirmViewProfile(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirmar Ação</AlertDialogTitle>
+                        <AlertDialogTitle className="flex items-center gap-2"><CreditCard/> Usar 1 Crédito para Contratar?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Para ver o perfil completo de {confirmViewProfile?.name}, será utilizado 1 crédito do seu saldo. Seu saldo atual é de {userProfile?.credits ?? 0} créditos. Deseja continuar?
+                            Para ver o perfil completo e os contatos de {confirmViewProfile?.name}, será utilizado 1 crédito do seu saldo. Seu saldo atual é de {userProfile?.credits ?? 0} créditos. Esta ação é o primeiro passo para uma contratação segura. Deseja continuar?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -337,4 +351,3 @@ export default function FindDriversPage() {
         </div>
     );
 }
-

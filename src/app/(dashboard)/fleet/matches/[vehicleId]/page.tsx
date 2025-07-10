@@ -25,7 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { StarRating } from '@/components/ui/star-rating';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Eye, Smartphone, MessageCircle, Briefcase, Star, Car, Fuel, GitCommitHorizontal, ArrowLeft, Check, X, CheckCircle, Award, Users, CreditCard } from 'lucide-react';
+import { Loader2, Eye, Smartphone, MessageCircle, Briefcase, Star, Car, Fuel, GitCommitHorizontal, ArrowLeft, Check, X, CheckCircle, Award, Users, CreditCard, ShieldCheck, XCircle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -41,7 +41,7 @@ function MatchCard({ match, onViewProfile }: { match: MatchResult; onViewProfile
         { label: 'Preço', matched: details.price },
         { label: 'Perfil Completo', matched: details.profileCompleteness },
         { label: 'Boa Avaliação', matched: details.rating },
-        { label: 'Cartão p/ Locação (Caução)', matched: details.creditCard },
+        { label: 'Cartão p/ Locação', matched: details.creditCard },
     ];
     
     return (
@@ -136,9 +136,9 @@ function DriverProfileModal({ user, reviews, isLoading, isOpen, onOpenChange }: 
                              <Card className="w-full text-left">
                                 <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><CreditCard/> Segurança Financeira</CardTitle></CardHeader>
                                 <CardContent>
-                                     <div className={cn("flex items-center gap-2 text-sm", user.hasCreditCardForDeposit ? "text-green-600" : "text-muted-foreground")}>
-                                        {user.hasCreditCardForDeposit ? <CheckCircle className="h-4 w-4"/> : <XCircle className="h-4 w-4"/>}
-                                        <span>Cartão p/ Locação (Caução)</span>
+                                     <div className="flex items-center justify-between text-sm">
+                                        <span>Cartão p/ Locação:</span>
+                                        <Badge variant={user.hasCreditCardForDeposit ? "default" : "secondary"}>{user.hasCreditCardForDeposit ? "Sim" : "Não"}</Badge>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -285,8 +285,8 @@ export default function MatchesPage() {
             toast({
                 variant: 'destructive',
                 title: 'Créditos Insuficientes',
-                description: 'Você não tem créditos suficientes para ver este perfil. Por favor, compre mais créditos.',
-                action: <Button onClick={() => router.push('/billing')}>Comprar</Button>
+                description: 'Você precisa de créditos para ver o perfil completo dos motoristas.',
+                action: <Button onClick={() => router.push('/billing')}>Comprar Créditos</Button>
             });
             return;
         }
@@ -333,9 +333,9 @@ export default function MatchesPage() {
              <AlertDialog open={!!confirmViewProfile} onOpenChange={(open) => !open && setConfirmViewProfile(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirmar Ação</AlertDialogTitle>
+                        <AlertDialogTitle className="flex items-center gap-2"><CreditCard/> Usar 1 Crédito para Contratar?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Para ver o perfil completo de {confirmViewProfile?.name}, será utilizado 1 crédito do seu saldo. Seu saldo atual é de {userProfile?.credits ?? 0} créditos. Deseja continuar?
+                            Para ver o perfil completo e os contatos de {confirmViewProfile?.name}, será utilizado 1 crédito do seu saldo. Seu saldo atual é de {userProfile?.credits ?? 0} créditos. Esta ação é o primeiro passo para uma contratação segura. Deseja continuar?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
