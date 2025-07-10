@@ -2,10 +2,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuthProtection } from '@/hooks/use-auth';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -102,6 +104,10 @@ export default function SettingsPage() {
         control: form.control,
         name: "themes",
     });
+
+    const watchedTerms = form.watch('legal.termsOfService');
+    const watchedPrivacy = form.watch('legal.privacyPolicy');
+
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -376,13 +382,13 @@ export default function SettingsPage() {
 
                     <TabsContent value="legal" className="mt-6">
                         <Card>
-                            <CardHeader><CardTitle>Conteúdo Legal</CardTitle><CardDescription>Edite o conteúdo das páginas de Termos de Serviço e Política de Privacidade.</CardDescription></CardHeader>
+                            <CardHeader><CardTitle>Conteúdo Legal</CardTitle><CardDescription>Edite o conteúdo das páginas de Termos de Serviço e Política de Privacidade. O editor suporta Markdown para formatação.</CardDescription></CardHeader>
                             <CardContent className="space-y-6">
                                  <FormField control={form.control} name="legal.termsOfService" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Termos de Serviço</FormLabel>
                                         <FormControl><Textarea {...field} placeholder="Escreva os termos de serviço aqui..." rows={15} /></FormControl>
-                                        <FormDescription>Este conteúdo será exibido na página <a href="/terms" target="_blank" className="underline">/terms</a>. Suporta Markdown.</FormDescription>
+                                        <FormDescription>Este conteúdo será exibido na página <a href="/terms" target="_blank" className="underline">/terms</a>.</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}/>
@@ -390,7 +396,7 @@ export default function SettingsPage() {
                                     <FormItem>
                                         <FormLabel>Política de Privacidade</FormLabel>
                                         <FormControl><Textarea {...field} placeholder="Escreva a política de privacidade aqui..." rows={15} /></FormControl>
-                                        <FormDescription>Este conteúdo será exibido na página <a href="/privacy" target="_blank" className="underline">/privacy</a>. Suporta Markdown.</FormDescription>
+                                        <FormDescription>Este conteúdo será exibido na página <a href="/privacy" target="_blank" className="underline">/privacy</a>.</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}/>

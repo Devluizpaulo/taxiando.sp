@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import Image from 'next/image';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -19,7 +19,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, Pen, Save, Sparkles, Link as LinkIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { createBlogPost, updateBlogPost } from '@/app/actions/blog-actions';
@@ -248,33 +247,28 @@ export function BlogPostForm({ post }: { post?: BlogPost }) {
                         <Card>
                             <CardHeader><CardTitle>Conteúdo do Post</CardTitle></CardHeader>
                             <CardContent>
-                                <Tabs defaultValue="edit" className="w-full">
-                                    <TabsList className="grid w-full grid-cols-2">
-                                        <TabsTrigger value="edit"><Pen className="mr-2"/> Editar</TabsTrigger>
-                                        <TabsTrigger value="preview"><Eye className="mr-2"/> Preview</TabsTrigger>
-                                    </TabsList>
-                                    <TabsContent value="edit" className="mt-4">
-                                        <FormField control={form.control} name="content" render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="sr-only">Conteúdo (suporta Markdown)</FormLabel>
-                                                <FormControl>
-                                                    <Textarea {...field} placeholder="Escreva sua matéria aqui..." rows={20} />
-                                                </FormControl>
-                                                <FormDescription>Dica: Use `#` para títulos, `**negrito**` para ênfase, e `-` para listas.</FormDescription>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}/>
-                                    </TabsContent>
-                                    <TabsContent value="preview" className="mt-4">
-                                        <div className="prose dark:prose-invert max-w-none rounded-md border p-4 min-h-[480px]">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <FormField control={form.control} name="content" render={({ field }) => (
+                                        <FormItem className="md:col-span-1">
+                                            <FormLabel>Conteúdo (suporta Markdown)</FormLabel>
+                                            <FormControl>
+                                                <Textarea {...field} placeholder="Escreva sua matéria aqui..." rows={20} />
+                                            </FormControl>
+                                            <FormDescription>Dica: Use `#` para títulos, `**negrito**` para ênfase, e `-` para listas.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}/>
+                                    <div className="md:col-span-1 space-y-2">
+                                        <Label>Preview</Label>
+                                        <div className="prose dark:prose-invert max-w-none rounded-md border bg-background p-4 min-h-[480px]">
                                             {watchedContent ? (
                                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{watchedContent}</ReactMarkdown>
                                             ) : (
-                                                <p className="text-muted-foreground">A pré-visualização do seu post aparecerá aqui.</p>
+                                                <p className="text-sm text-muted-foreground">A pré-visualização aparecerá aqui.</p>
                                             )}
                                         </div>
-                                    </TabsContent>
-                                </Tabs>
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                         <Card>
