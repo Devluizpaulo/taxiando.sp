@@ -31,17 +31,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (user) {
         user.getIdTokenResult(true).then(idTokenResult => {
-            const authTime = new Date(idTokenResult.authTime);
+            const authTime = new Date(idTokenResult.authTime).getTime();
             
             const userDocRef = doc(db, 'users', user.uid);
             
             unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
               if (docSnap.exists()) {
                 const profile = docSnap.data() as UserProfile;
-                const sessionValidSince = profile.sessionValidSince?.toDate();
+                const sessionValidSince = profile.sessionValidSince?.toDate().getTime();
 
-                if (sessionValidSince && authTime < sessionValidSince) {
-                    console.warn("Stale session detected. Signing out.");
+                // Check if the current token is older than the last valid session timestamp.
+                // Add a small grace period (e.g., 5 seconds) to prevent race conditions where
+                // the token is issued just before the new session timestamp is written.
+                if (sessionValidSince && authTime < (sessionValidSince - 5000)) {
+                    console.warn("Stale session detected. Signing out.", { authTime, sessionValidSince });
                     toast({
                       variant: "destructive",
                       title: "Sessão Expirada",
