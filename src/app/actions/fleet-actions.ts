@@ -86,7 +86,8 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, fl
         }
         
         // Combine existing URLs with newly uploaded ones
-        const finalImageUrls = [...(data.imageUrls || []), ...uploadedImageUrls];
+        const finalImageUrls = [...(data.imageUrls || []), ...uploadedImageUrls].map(img => typeof img === 'string' ? img : img.url);
+
         if (finalImageUrls.length === 0) {
             return { success: false, error: 'Pelo menos uma imagem do veículo é obrigatória.' };
         }

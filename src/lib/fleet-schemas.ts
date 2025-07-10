@@ -14,7 +14,7 @@ export const vehicleFormSchema = z.object({
   type: z.enum(['hatch', 'sedan', 'suv', 'minivan', 'other'], { required_error: "O tipo de veículo é obrigatório."}),
   status: z.enum(['Disponível', 'Alugado', 'Em Manutenção'], { required_error: "O status é obrigatório."}),
   dailyRate: z.coerce.number().min(1, "O valor da diária é obrigatório."),
-  imageUrls: z.array(z.string().url()).default([]),
+  imageUrls: z.array(z.object({url: z.string()})).default([]),
   imageFiles: z.any()
     .refine((files) => !files || files.length <= 4, `Você pode enviar no máximo 4 imagens.`)
     .optional(),

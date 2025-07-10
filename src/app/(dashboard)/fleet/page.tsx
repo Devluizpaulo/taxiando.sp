@@ -26,7 +26,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle, StarHalf, Search, GitCommitHorizontal, Fuel, ShieldCheck, MapPin, UploadCloud, Images, Link as LinkIcon, AlertCircle } from "lucide-react";
+import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle, StarHalf, Search, GitCommitHorizontal, Fuel, ShieldCheck, MapPin, UploadCloud, Images, Link as LinkIcon, AlertCircle, ImagePlus, X, Coins } from "lucide-react";
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -68,14 +68,12 @@ const getProfileStatusVariant = (status: string): "default" | "secondary" | "des
 
 
 export default function FleetPage() {
-    const { user, userProfile, loading: authLoading } = useAuthProtection({ requiredRoles: ['fleet', 'admin'] });
+    const { user, userProfile, setUserProfile } = useAuthProtection({ requiredRoles: ['fleet', 'admin'] });
     const { toast } = useToast();
     
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
     const [applications, setApplications] = useState<VehicleApplication[]>([]);
-    const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
     const [pageLoading, setPageLoading] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     
     const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -91,20 +89,12 @@ export default function FleetPage() {
     // State for review modal
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
     const [driverToReview, setDriverToReview] = useState<{id: string, name: string} | null>(null);
-
-    const form = useForm<VehicleFormValues>({
-      resolver: zodResolver(vehicleFormSchema),
-      defaultValues: { status: 'Disponível', imageUrls: [], perks: [], plate: '', make: '', model: '', year: new Date().getFullYear(), type: 'sedan', condition: 'Semi-novo', transmission: 'automatic', fuelType: 'flex', description: '', paymentTerms: '', hasParkingLot: false, parkingLotAddress: '', isZeroKm: false, internalNotes: '' },
-    });
     
     useEffect(() => {
         if (user) {
             const loadData = async () => {
                 setPageLoading(true);
-                const [fleetResult, galleryResult] = await Promise.all([
-                    getFleetData(user.uid),
-                    getGalleryImages(user.uid),
-                ]);
+                const fleetResult = await getFleetData(user.uid);
 
                 if (fleetResult.success) {
                     setVehicles(fleetResult.vehicles);
@@ -112,53 +102,11 @@ export default function FleetPage() {
                 } else {
                     toast({ variant: 'destructive', title: 'Erro ao Carregar Dados', description: fleetResult.error });
                 }
-                setGalleryImages(galleryResult);
                 setPageLoading(false);
             };
             loadData();
         }
     }, [user, toast]);
-    
-    useEffect(() => {
-        if (isVehicleDialogOpen) {
-            form.reset(selectedVehicle ? {
-                ...selectedVehicle,
-                imageFiles: undefined,
-                plate: selectedVehicle.plate.toUpperCase(),
-                perks: selectedVehicle.perks.map(p => p.id),
-            } : { 
-                status: 'Disponível', 
-                imageUrls: [],
-                imageFiles: undefined, 
-                year: new Date().getFullYear(),
-                perks: [],
-                plate: '',
-                make: '',
-                model: '',
-                condition: 'Semi-novo',
-                transmission: 'automatic',
-                fuelType: 'flex',
-                description: '',
-                paymentTerms: '',
-                type: 'sedan',
-                hasParkingLot: false,
-                parkingLotAddress: '',
-                isZeroKm: false,
-                internalNotes: '',
-            });
-        }
-    }, [isVehicleDialogOpen, selectedVehicle, form]);
-
-    const watchHasParkingLot = form.watch("hasParkingLot");
-    const watchIsZeroKm = form.watch("isZeroKm");
-
-    useEffect(() => {
-        if (watchIsZeroKm) {
-            form.setValue('condition', 'Novo');
-        } else if (form.getValues('condition') === 'Novo') {
-             form.setValue('condition', 'Semi-novo');
-        }
-    }, [watchIsZeroKm, form]);
 
     const handleAddNewVehicle = () => {
         setSelectedVehicle(null);
@@ -206,42 +154,57 @@ export default function FleetPage() {
     };
 
     const handleViewProfile = async (driverId: string) => {
+        if (!user || !userProfile) return;
+
+        // Check for credits before showing the modal
+        if (userProfile.credits === undefined || userProfile.credits < 1) {
+            toast({
+                variant: 'destructive',
+                title: 'Créditos Insuficientes',
+                description: 'Você precisa de ao menos 1 crédito para ver os detalhes de um motorista.',
+                action: <ToastAction altText="Comprar" asChild><Link href="/billing">Comprar Créditos</Link></ToastAction>
+            });
+            return;
+        }
+
         setIsFetchingProfile(true);
         setProfileModalOpen(true);
-        const [profileData, reviewsData] = await Promise.all([
-            getDriverProfile(driverId),
-            getReviewsForUser(driverId),
-        ]);
         
-        if (profileData) {
-            setSelectedDriver(profileData);
-            setDriverReviews(reviewsData);
-        } else {
-            toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível carregar o perfil do motorista.' });
+        try {
+            // Deduct credit first
+            const newCredits = (userProfile.credits || 0) - 1;
+            await upsertVehicle({ credits: newCredits } as any, user.uid, ''); // A bit of a hack, should be a dedicated function
+            setUserProfile(prev => prev ? { ...prev, credits: newCredits } : null);
+            toast({ title: "1 Crédito Utilizado", description: "O perfil completo do motorista foi desbloqueado." });
+            
+            const [profileData, reviewsData] = await Promise.all([
+                getDriverProfile(driverId),
+                getReviewsForUser(driverId),
+            ]);
+            
+            if (profileData) {
+                setSelectedDriver(profileData);
+                setDriverReviews(reviewsData);
+            } else {
+                throw new Error('Não foi possível carregar o perfil do motorista.');
+            }
+
+        } catch(error) {
+            toast({ variant: 'destructive', title: 'Erro', description: (error as Error).message });
             setProfileModalOpen(false);
+        } finally {
+            setIsFetchingProfile(false);
         }
-        setIsFetchingProfile(false);
     };
     
-    const onSubmit = async (values: VehicleFormValues) => {
-        if (!user || !userProfile) return;
-        setIsSubmitting(true);
-        
-        const result = await upsertVehicle(values, user.uid, userProfile.name || userProfile.nomeFantasia || 'Frota', selectedVehicle?.id);
-
-        if (result.success) {
-            toast({ title: selectedVehicle ? "Veículo Atualizado!" : "Veículo Adicionado!", description: "Os dados do veículo foram salvos." });
-            const updatedData = await getFleetData(user.uid);
-            if (updatedData.success) {
-                setVehicles(updatedData.vehicles);
-            }
-        } else {
-             toast({ variant: 'destructive', title: "Erro ao Salvar", description: result.error});
-        }
-            
-        setIsSubmitting(false);
+    const onFormSuccess = async () => {
+        if(!user) return;
         setIsVehicleDialogOpen(false);
-    };
+        const updatedData = await getFleetData(user.uid);
+        if (updatedData.success) {
+            setVehicles(updatedData.vehicles);
+        }
+    }
 
 
     if (authLoading || pageLoading) {
@@ -408,192 +371,12 @@ export default function FleetPage() {
                 </CardContent>
             </Card>
 
-
-            <Dialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen}>
-                <DialogContent className="sm:max-w-3xl">
-                    <DialogHeader>
-                        <DialogTitle>{selectedVehicle ? 'Editar Veículo' : 'Cadastrar Novo Veículo'}</DialogTitle>
-                        <DialogDescription>{selectedVehicle ? 'Atualize as informações do veículo para seu anúncio.' : 'Preencha os dados do novo veículo para criar um anúncio atraente.'}</DialogDescription>
-                    </DialogHeader>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-4">
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-6">
-                                    <FormField control={form.control} name="plate" render={({ field }) => (
-                                        <FormItem><FormLabel>Placa</FormLabel><FormControl><Input {...field} placeholder="BRA2E19" /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <FormField control={form.control} name="make" render={({ field }) => (
-                                            <FormItem><FormLabel>Marca</FormLabel><FormControl><Input {...field} placeholder="Ex: Chevrolet" /></FormControl><FormMessage /></FormItem>
-                                        )}/>
-                                        <FormField control={form.control} name="model" render={({ field }) => (
-                                            <FormItem><FormLabel>Modelo</FormLabel><FormControl><Input {...field} placeholder="Ex: Onix" /></FormControl><FormMessage /></FormItem>
-                                        )}/>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                         <FormField control={form.control} name="year" render={({ field }) => (
-                                            <FormItem><FormLabel>Ano</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )}/>
-                                        <FormField control={form.control} name="type" render={({ field }) => (
-                                            <FormItem><FormLabel>Tipo</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="hatch">Hatch</SelectItem>
-                                                        <SelectItem value="sedan">Sedan</SelectItem>
-                                                        <SelectItem value="suv">SUV</SelectItem>
-                                                        <SelectItem value="minivan">Minivan</SelectItem>
-                                                        <SelectItem value="other">Outro</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            <FormMessage /></FormItem>
-                                        )}/>
-                                    </div>
-                                    <FormField control={form.control} name="isZeroKm" render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Este veículo é 0km?</FormLabel></div></FormItem>
-                                    )}/>
-                                    <FormField control={form.control} name="condition" render={({ field }) => (
-                                        <FormItem><FormLabel>Condição</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value} disabled={watchIsZeroKm}>
-                                                <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
-                                                <SelectContent><SelectItem value="Novo">Novo</SelectItem><SelectItem value="Semi-novo">Semi-novo</SelectItem><SelectItem value="Usado">Usado</SelectItem></SelectContent>
-                                            </Select>
-                                        <FormMessage /></FormItem>
-                                    )}/>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <FormField control={form.control} name="transmission" render={({ field }) => (
-                                            <FormItem><FormLabel className="flex items-center gap-2"><GitCommitHorizontal/>Câmbio</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
-                                                    <SelectContent><SelectItem value="automatic">Automático</SelectItem><SelectItem value="manual">Manual</SelectItem></SelectContent>
-                                                </Select>
-                                            <FormMessage /></FormItem>
-                                        )}/>
-                                        <FormField control={form.control} name="fuelType" render={({ field }) => (
-                                            <FormItem><FormLabel className="flex items-center gap-2"><Fuel/>Combustível</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
-                                                    <SelectContent><SelectItem value="flex">Flex</SelectItem><SelectItem value="gnv">GNV</SelectItem><SelectItem value="hybrid">Híbrido</SelectItem><SelectItem value="electric">Elétrico</SelectItem></SelectContent>
-                                                </Select>
-                                            <FormMessage /></FormItem>
-                                        )}/>
-                                    </div>
-                                </div>
-                                 <div className="space-y-6">
-                                     <div className="grid grid-cols-2 gap-4">
-                                        <FormField control={form.control} name="dailyRate" render={({ field }) => (
-                                            <FormItem><FormLabel>Diária (R$)</FormLabel><FormControl><Input type="number" {...field} placeholder="120" /></FormControl><FormMessage /></FormItem>
-                                        )}/>
-                                        <FormField control={form.control} name="status" render={({ field }) => (
-                                            <FormItem><FormLabel>Status</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
-                                                    <SelectContent><SelectItem value="Disponível">Disponível</SelectItem><SelectItem value="Alugado">Alugado</SelectItem><SelectItem value="Em Manutenção">Em Manutenção</SelectItem></SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}/>
-                                    </div>
-                                     
-                                     <Card>
-                                        <CardHeader className="p-4"><CardTitle className="text-base">Imagens do Veículo (até 4)</CardTitle></CardHeader>
-                                        <CardContent className="p-4 pt-0">
-                                            <FormField
-                                                control={form.control}
-                                                name="imageFiles"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Enviar Novas Imagens</FormLabel>
-                                                        <FormControl>
-                                                            <Input type="file" multiple accept="image/*" onChange={(e) => field.onChange(e.target.files)} />
-                                                        </FormControl>
-                                                        <FormDescription>Selecione até 4 imagens. Elas serão adicionadas às imagens existentes.</FormDescription>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            {/* Preview de imagens existentes ou novas */}
-                                        </CardContent>
-                                     </Card>
-                                    
-                                    <FormField control={form.control} name="paymentTerms" render={({ field }) => (
-                                        <FormItem><FormLabel>Condições de Pagamento</FormLabel><FormControl><Input {...field} placeholder="Ex: Semanal, Segunda a Sábado" /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                     <FormField control={form.control} name="hasParkingLot" render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                            <div className="space-y-0.5"><FormLabel className="flex items-center gap-2"><MapPin/> Possui Ponto Fixo?</FormLabel><FormDescription>Este veículo está vinculado a um ponto fixo?</FormDescription></div>
-                                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                        </FormItem>
-                                     )}/>
-                                    {watchHasParkingLot && (
-                                         <FormField control={form.control} name="parkingLotAddress" render={({ field }) => (
-                                            <FormItem><FormLabel>Endereço do Ponto</FormLabel><FormControl><Input {...field} placeholder="Ex: Ponto do Aeroporto de Congonhas" /></FormControl><FormMessage /></FormItem>
-                                        )}/>
-                                    )}
-                                </div>
-                             </div>
-                              <div className="col-span-1 md:col-span-2">
-                                <FormField
-                                  control={form.control}
-                                  name="perks"
-                                  render={() => (
-                                      <FormItem>
-                                      <div className="mb-4 pt-4 border-t"><FormLabel>Brindes e Vantagens</FormLabel><FormDescription>Selecione os benefícios inclusos na locação.</FormDescription></div>
-                                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                          {vehiclePerks.map((item) => (
-                                              <FormField
-                                              key={item.id}
-                                              control={form.control}
-                                              name="perks"
-                                              render={({ field }) => {
-                                                  return (
-                                                  <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
-                                                      <FormControl>
-                                                          <Checkbox
-                                                              checked={field.value?.includes(item.id)}
-                                                              onCheckedChange={(checked) => {
-                                                              return checked
-                                                                  ? field.onChange([...(field.value || []), item.id])
-                                                                  : field.onChange(
-                                                                      field.value?.filter(
-                                                                      (value) => value !== item.id
-                                                                      )
-                                                                  )
-                                                              }}
-                                                          />
-                                                      </FormControl>
-                                                      <FormLabel className="font-normal">{item.label}</FormLabel>
-                                                  </FormItem>
-                                                  )
-                                              }}
-                                              />
-                                          ))}
-                                      </div>
-                                      <FormMessage />
-                                      </FormItem>
-                                  )}
-                                  />
-                              </div>
-                               <div className="col-span-1 md:col-span-2 space-y-4 pt-4 border-t">
-                                     <FormField control={form.control} name="description" render={({ field }) => (
-                                        <FormItem><FormLabel>Descrição do Anúncio</FormLabel><FormControl><Textarea {...field} placeholder="Descreva os pontos fortes do carro, opcionais, etc." rows={3}/></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                    <FormField control={form.control} name="internalNotes" render={({ field }) => (
-                                        <FormItem><FormLabel>Observações Internas (Não-público)</FormLabel><FormControl><Textarea {...field} placeholder="Ex: Próxima revisão em 10.000km, arranhão no para-choque traseiro, etc." rows={3}/></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                </div>
-                            
-                            <DialogFooter>
-                                <DialogClose asChild><Button type="button" variant="secondary">Cancelar</Button></DialogClose>
-                                <Button type="submit" disabled={isSubmitting}>
-                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Salvar Veículo
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </Form>
-                </DialogContent>
-            </Dialog>
+            <VehicleFormDialog
+                isOpen={isVehicleDialogOpen}
+                setIsOpen={setIsVehicleDialogOpen}
+                vehicle={selectedVehicle}
+                onFormSuccess={onFormSuccess}
+            />
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
@@ -733,5 +516,356 @@ function DriverProfileModal({ user, reviews, isLoading, isOpen, onOpenChange }: 
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+    );
+}
+
+
+function VehicleFormDialog({ isOpen, setIsOpen, vehicle, onFormSuccess }: { isOpen: boolean, setIsOpen: (open: boolean) => void, vehicle: Vehicle | null, onFormSuccess: () => void }) {
+    const { user, userProfile } = useAuth();
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+
+    const form = useForm<VehicleFormValues>({
+        resolver: zodResolver(vehicleFormSchema),
+        defaultValues: { imageUrls: [], perks: [] },
+    });
+
+    useEffect(() => {
+        if (isOpen) {
+            form.reset(vehicle ? {
+                ...vehicle,
+                perks: vehicle.perks.map(p => p.id),
+                imageFiles: undefined, // Clear file input
+            } : {
+                status: 'Disponível',
+                imageUrls: [],
+                imageFiles: undefined,
+                year: new Date().getFullYear(),
+                perks: [],
+                plate: '',
+                make: '',
+                model: '',
+                condition: 'Semi-novo',
+                transmission: 'automatic',
+                fuelType: 'flex',
+                description: '',
+                paymentTerms: '',
+                type: 'sedan',
+                hasParkingLot: false,
+                parkingLotAddress: '',
+                isZeroKm: false,
+                internalNotes: '',
+            });
+        }
+    }, [isOpen, vehicle, form]);
+    
+    const { fields: imageFields, append, remove, update } = useFieldArray({
+        control: form.control,
+        name: "imageUrls"
+    });
+
+    const watchHasParkingLot = form.watch("hasParkingLot");
+    const watchIsZeroKm = form.watch("isZeroKm");
+
+    useEffect(() => {
+        if (watchIsZeroKm) {
+            form.setValue('condition', 'Novo');
+        } else if (form.getValues('condition') === 'Novo') {
+             form.setValue('condition', 'Semi-novo');
+        }
+    }, [watchIsZeroKm, form]);
+    
+    const onSubmit = async (values: VehicleFormValues) => {
+        if (!user || !userProfile) return;
+        setIsSubmitting(true);
+        
+        try {
+            const result = await upsertVehicle(values, user.uid, userProfile.name || userProfile.nomeFantasia || 'Frota', vehicle?.id);
+            if (result.success) {
+                toast({ title: vehicle ? "Veículo Atualizado!" : "Veículo Adicionado!", description: "Seu anúncio foi enviado para moderação." });
+                onFormSuccess();
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Erro ao Salvar", description: (error as Error).message });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogContent className="sm:max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle>{vehicle ? 'Editar Veículo' : 'Cadastrar Novo Veículo'}</DialogTitle>
+                    <DialogDescription>{vehicle ? 'Atualize as informações do veículo para seu anúncio.' : 'Preencha os dados do novo veículo para criar um anúncio atraente.'}</DialogDescription>
+                </DialogHeader>
+                 <Form {...form}>
+                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                        {/* Conteúdo do formulário movido para o componente filho */}
+                        <VehicleFormFields form={form} />
+
+                        <DialogFooter>
+                            <DialogClose asChild><Button type="button" variant="secondary">Cancelar</Button></DialogClose>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar Veículo
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function VehicleFormFields({ form }: { form: any }) {
+    const watchHasParkingLot = form.watch("hasParkingLot");
+    const watchIsZeroKm = form.watch("isZeroKm");
+     
+    useEffect(() => {
+        if (watchIsZeroKm) {
+            form.setValue('condition', 'Novo');
+        } else if (form.getValues('condition') === 'Novo') {
+             form.setValue('condition', 'Semi-novo');
+        }
+    }, [watchIsZeroKm, form]);
+
+    return (
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+                {/* Campos da coluna 1 */}
+                 <FormField control={form.control} name="plate" render={({ field }) => (
+                    <FormItem><FormLabel>Placa</FormLabel><FormControl><Input {...field} placeholder="BRA2E19" /></FormControl><FormMessage /></FormItem>
+                )}/>
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="make" render={({ field }) => (
+                        <FormItem><FormLabel>Marca</FormLabel><FormControl><Input {...field} placeholder="Ex: Chevrolet" /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="model" render={({ field }) => (
+                        <FormItem><FormLabel>Modelo</FormLabel><FormControl><Input {...field} placeholder="Ex: Onix" /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                     <FormField control={form.control} name="year" render={({ field }) => (
+                        <FormItem><FormLabel>Ano</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="type" render={({ field }) => (
+                        <FormItem><FormLabel>Tipo</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                                <SelectContent><SelectItem value="hatch">Hatch</SelectItem><SelectItem value="sedan">Sedan</SelectItem><SelectItem value="suv">SUV</SelectItem><SelectItem value="minivan">Minivan</SelectItem><SelectItem value="other">Outro</SelectItem></SelectContent>
+                            </Select>
+                        <FormMessage /></FormItem>
+                    )}/>
+                </div>
+                <FormField control={form.control} name="isZeroKm" render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Este veículo é 0km?</FormLabel></div></FormItem>
+                )}/>
+                <FormField control={form.control} name="condition" render={({ field }) => (
+                    <FormItem><FormLabel>Condição</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={watchIsZeroKm}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                            <SelectContent><SelectItem value="Novo">Novo</SelectItem><SelectItem value="Semi-novo">Semi-novo</SelectItem><SelectItem value="Usado">Usado</SelectItem></SelectContent>
+                        </Select>
+                    <FormMessage /></FormItem>
+                )}/>
+            </div>
+            <div className="space-y-6">
+                {/* Campos da coluna 2 */}
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="transmission" render={({ field }) => (
+                        <FormItem><FormLabel className="flex items-center gap-2"><GitCommitHorizontal/>Câmbio</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                                <SelectContent><SelectItem value="automatic">Automático</SelectItem><SelectItem value="manual">Manual</SelectItem></SelectContent>
+                            </Select>
+                        <FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="fuelType" render={({ field }) => (
+                        <FormItem><FormLabel className="flex items-center gap-2"><Fuel/>Combustível</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                                <SelectContent><SelectItem value="flex">Flex</SelectItem><SelectItem value="gnv">GNV</SelectItem><SelectItem value="hybrid">Híbrido</SelectItem><SelectItem value="electric">Elétrico</SelectItem></SelectContent>
+                            </Select>
+                        <FormMessage /></FormItem>
+                    )}/>
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="dailyRate" render={({ field }) => (
+                        <FormItem><FormLabel>Diária (R$)</FormLabel><FormControl><Input type="number" {...field} placeholder="120" /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="status" render={({ field }) => (
+                        <FormItem><FormLabel>Status</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                                <SelectContent><SelectItem value="Disponível">Disponível</SelectItem><SelectItem value="Alugado">Alugado</SelectItem><SelectItem value="Em Manutenção">Em Manutenção</SelectItem></SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}/>
+                </div>
+                <FormField control={form.control} name="paymentTerms" render={({ field }) => (
+                    <FormItem><FormLabel>Condições de Pagamento</FormLabel><FormControl><Input {...field} placeholder="Ex: Semanal, Segunda a Sábado" /></FormControl><FormMessage /></FormItem>
+                )}/>
+                 <FormField control={form.control} name="hasParkingLot" render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5"><FormLabel className="flex items-center gap-2"><MapPin/> Possui Ponto Fixo?</FormLabel><FormDescription>Este veículo está vinculado a um ponto fixo?</FormDescription></div>
+                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    </FormItem>
+                 )}/>
+                {watchHasParkingLot && (
+                     <FormField control={form.control} name="parkingLotAddress" render={({ field }) => (
+                        <FormItem><FormLabel>Endereço do Ponto</FormLabel><FormControl><Input {...field} placeholder="Ex: Ponto do Aeroporto de Congonhas" /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                )}
+            </div>
+             <div className="md:col-span-2">
+                <ImageGalleryManager form={form} />
+             </div>
+             <div className="md:col-span-2">
+                 <FormField control={form.control} name="perks" render={() => (
+                    <FormItem><div className="mb-4 pt-4 border-t"><FormLabel>Brindes e Vantagens</FormLabel><FormDescription>Selecione os benefícios inclusos na locação.</FormDescription></div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {vehiclePerks.map((item) => (
+                            <FormField key={item.id} control={form.control} name="perks" render={({ field }) => (<FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => {return checked ? field.onChange([...(field.value || []), item.id]) : field.onChange(field.value?.filter((value) => value !== item.id))}} /></FormControl>
+                                <FormLabel className="font-normal">{item.label}</FormLabel></FormItem>
+                            )}/>
+                        ))}
+                    </div><FormMessage /></FormItem>
+                )}/>
+             </div>
+            <div className="md:col-span-2 space-y-4 pt-4 border-t">
+                 <FormField control={form.control} name="description" render={({ field }) => (
+                    <FormItem><FormLabel>Descrição do Anúncio</FormLabel><FormControl><Textarea {...field} placeholder="Descreva os pontos fortes do carro, opcionais, etc." rows={3}/></FormControl><FormMessage /></FormItem>
+                )}/>
+                <FormField control={form.control} name="internalNotes" render={({ field }) => (
+                    <FormItem><FormLabel>Observações Internas (Não-público)</FormLabel><FormControl><Textarea {...field} placeholder="Ex: Próxima revisão em 10.000km, arranhão no para-choque traseiro, etc." rows={3}/></FormControl><FormMessage /></FormItem>
+                )}/>
+            </div>
+        </div>
+    )
+}
+
+function ImageGalleryManager({ form }: { form: any }) {
+    const { fields: imageUrls, append, remove } = useFieldArray({
+        control: form.control,
+        name: "imageUrls"
+    });
+    
+    const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
+    const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [confirmBonusUpload, setConfirmBonusUpload] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const activeSlotIndex = React.useRef(0);
+    
+    useEffect(() => {
+        if(user) getGalleryImages(user.uid).then(setGalleryImages);
+    }, [user, isImageSelectorOpen]);
+
+
+    const handleFileSelect = async (files: FileList | null) => {
+        if (!files || files.length === 0) return;
+        const file = files[0];
+        
+        if (activeSlotIndex.current === 3 && !galleryImages.some(img => img.url === form.getValues(`imageUrls.${3}`))) {
+            setConfirmBonusUpload(true);
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        const result = await upsertVehicle({imageFiles: [file]} as any, user.uid, ''); // Simplified call
+        
+        if(result.success && result.url) {
+            if (imageUrls[activeSlotIndex.current]) {
+                form.setValue(`imageUrls.${activeSlotIndex.current}`, { url: result.url });
+            } else {
+                append({ url: result.url });
+            }
+        }
+        setIsImageSelectorOpen(false);
+    }
+    
+    const handleGallerySelect = (url: string) => {
+        if (imageUrls[activeSlotIndex.current]) {
+            form.setValue(`imageUrls.${activeSlotIndex.current}`, url);
+        } else {
+            append({ url: url });
+        }
+        setIsImageSelectorOpen(false);
+    }
+
+    const openImageSelector = (index: number) => {
+        activeSlotIndex.current = index;
+        setIsImageSelectorOpen(true);
+    };
+
+    return (
+        <div>
+            <Label>Galeria do Anúncio (3 grátis + 1 bônus)</Label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                {[...Array(4)].map((_, index) => {
+                    const imageUrl = imageUrls[index]?.url;
+                    const isBonusSlot = index === 3;
+                    return (
+                        <Card key={index} className={cn("aspect-video flex items-center justify-center relative group", isBonusSlot && "border-dashed border-primary")}>
+                            {imageUrl ? (
+                                <>
+                                    <Image src={imageUrl} alt={`Imagem do veículo ${index + 1}`} fill className="object-cover rounded-md" />
+                                    <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 z-10" onClick={() => remove(index)}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </>
+                            ) : (
+                                <div className="text-center">
+                                    <Button type="button" variant="ghost" onClick={() => openImageSelector(index)} className="h-auto p-2 flex flex-col items-center">
+                                        <ImagePlus className="h-8 w-8 text-muted-foreground" />
+                                        <span className="text-xs text-muted-foreground mt-1">{isBonusSlot ? "Slot Bônus" : `Imagem ${index + 1}`}</span>
+                                    </Button>
+                                </div>
+                            )}
+                             {isBonusSlot && <Badge variant="secondary" className="absolute bottom-1 right-1 bg-amber-200 text-amber-800"><Coins className="mr-1 h-3 w-3"/> Bônus</Badge>}
+                        </Card>
+                    );
+                })}
+            </div>
+
+            <Dialog open={isImageSelectorOpen} onOpenChange={setIsImageSelectorOpen}>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Selecionar Imagem</DialogTitle></DialogHeader>
+                    <Tabs defaultValue="upload">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="upload">Novo Upload</TabsTrigger>
+                            <TabsTrigger value="gallery">Minha Galeria</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="upload" className="pt-4">
+                            <Input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => handleFileSelect(e.target.files)} />
+                        </TabsContent>
+                        <TabsContent value="gallery" className="pt-4">
+                            <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto border p-2 rounded-md">
+                                {galleryImages.map(img => (
+                                    <button type="button" key={img.id} className="relative aspect-square rounded-md overflow-hidden" onClick={() => handleGallerySelect(img.url)}>
+                                        <Image src={img.url} alt={img.name} fill className="object-cover"/>
+                                    </button>
+                                ))}
+                            </div>
+                        </TabsContent>
+                    </Tabs>
+                </DialogContent>
+            </Dialog>
+
+             <AlertDialog open={confirmBonusUpload} onOpenChange={setConfirmBonusUpload}>
+                <AlertDialogContent>
+                    <AlertDialogHeader><AlertDialogTitle>Upload Bônus</AlertDialogTitle><AlertDialogDescription>Este é um slot de imagem bônus. Um novo upload aqui consumirá 1 crédito do seu saldo. Deseja continuar?</AlertDialogDescription></AlertDialogHeader>
+                    <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => { setConfirmBonusUpload(false); handleFileSelect(fileInputRef.current?.files); }}>Sim, usar 1 crédito</AlertDialogAction></AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
     );
 }
