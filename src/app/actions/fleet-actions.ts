@@ -8,6 +8,8 @@ import { vehiclePerks } from '@/lib/data';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type VehicleFormValues } from '@/lib/fleet-schemas';
 import { auth } from '@/lib/firebase';
+import { uploadToGallery } from './gallery-actions';
+import { uploadFile } from './storage-actions';
 
 // Get all data for a fleet's dashboard
 export async function getFleetData(fleetId: string) {
@@ -52,16 +54,46 @@ export async function getFleetData(fleetId: string) {
 
 
 // Create or Update a vehicle
-export async function upsertVehicle(data: VehicleFormValues, fleetId: string, vehicleId?: string) {
+export async function upsertVehicle(data: VehicleFormValues, fleetId: string, fleetName: string, vehicleId?: string) {
     if (!fleetId) return { success: false, error: 'ID da frota não fornecido.' };
 
     try {
         const perksToSave = (data.perks || [])
             .map(perkId => vehiclePerks.find(p => p.id === perkId)!)
             .filter(Boolean) as VehiclePerk[];
+        
+        let finalImageUrl = data.imageUrl;
+
+        // If a new file is uploaded, process it
+        if (data.imageFile) {
+            const formData = new FormData();
+            formData.append('file', data.imageFile);
+            const uploadResult = await uploadFile(formData, fleetId);
+
+            if (uploadResult.success && uploadResult.url) {
+                finalImageUrl = uploadResult.url;
+                // Automatically add the new image to the fleet's gallery
+                await uploadToGallery({
+                    url: finalImageUrl,
+                    name: data.imageFile.name || `Veículo ${data.plate}`,
+                    category: 'Veículos',
+                    ownerId: fleetId,
+                    ownerName: fleetName,
+                }, false); // Fleet images are not public by default
+            } else {
+                throw new Error(uploadResult.error || 'Falha no upload da imagem do veículo.');
+            }
+        }
+        
+        if (!finalImageUrl) {
+            return { success: false, error: 'A imagem do veículo é obrigatória.' };
+        }
+
+        const { imageFile, ...vehicleDataToSave } = data;
 
         const vehicleData = {
-            ...data,
+            ...vehicleDataToSave,
+            imageUrl: finalImageUrl,
             plate: data.plate.toUpperCase(),
             fleetId,
             perks: perksToSave,

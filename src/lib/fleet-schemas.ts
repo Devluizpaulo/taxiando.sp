@@ -2,6 +2,9 @@
 
 import * as z from 'zod';
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
 export const vehicleFormSchema = z.object({
   plate: z.string().min(7, "A placa deve ter 7 caracteres.").max(8, "Formato de placa inválido."),
   make: z.string().min(2, "A marca é obrigatória."),
@@ -11,6 +14,10 @@ export const vehicleFormSchema = z.object({
   status: z.enum(['Disponível', 'Alugado', 'Em Manutenção'], { required_error: "O status é obrigatório."}),
   dailyRate: z.coerce.number().min(1, "O valor da diária é obrigatório."),
   imageUrl: z.string().url("URL da imagem inválida.").optional().or(z.literal('')),
+  imageFile: z.any()
+    .refine((file) => !file || file.size <= MAX_FILE_SIZE, `O tamanho máximo do arquivo é 5MB.`)
+    .refine((file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type), "Apenas os formatos .jpg, .jpeg, .png e .webp são aceitos.")
+    .optional(),
   condition: z.string().min(1, "A condição é obrigatória."),
   transmission: z.enum(['automatic', 'manual'], { required_error: "O tipo de câmbio é obrigatório."}),
   fuelType: z.enum(['flex', 'gnv', 'hybrid', 'electric'], { required_error: "O tipo de combustível é obrigatório."}),
@@ -28,6 +35,11 @@ export const vehicleFormSchema = z.object({
             message: 'O endereço do ponto é obrigatório se a opção for selecionada.'
         });
     }
+}).refine(data => {
+    return !!data.imageUrl || !!data.imageFile;
+}, {
+    message: "Uma imagem (URL, upload ou galeria) é obrigatória.",
+    path: ["imageUrl"],
 });
 
 

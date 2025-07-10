@@ -3,13 +3,14 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth, useAuthProtection } from '@/hooks/use-auth';
 import type { Vehicle, VehicleApplication, UserProfile, AdminUser, Review, GalleryImage } from '@/lib/types';
 import { vehicleFormSchema, type VehicleFormValues } from '@/lib/fleet-schemas';
 import { getFleetData, upsertVehicle, deleteVehicle, updateApplicationStatus, getDriverProfile } from '@/app/actions/fleet-actions';
 import { getReviewsForUser } from '@/app/actions/review-actions';
+import { getGalleryImages } from '@/app/actions/gallery-actions';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -24,7 +25,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle, StarHalf, Search, GitCommitHorizontal, Fuel, ShieldCheck, MapPin } from "lucide-react";
+import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle, StarHalf, Search, GitCommitHorizontal, Fuel, ShieldCheck, MapPin, UploadCloud, Images, Link as LinkIcon, AlertCircle } from "lucide-react";
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -33,6 +34,9 @@ import { LoadingScreen } from '@/components/loading-screen';
 import { ReviewForm } from '@/components/review-form';
 import { StarRating } from '@/components/ui/star-rating';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 
 
 const getVehicleStatusVariant = (status: Vehicle['status']): "default" | "secondary" | "destructive" | "outline" => {
@@ -68,6 +72,7 @@ export default function FleetPage() {
     
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
     const [applications, setApplications] = useState<VehicleApplication[]>([]);
+    const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
     const [pageLoading, setPageLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     
@@ -88,20 +93,25 @@ export default function FleetPage() {
 
     const form = useForm<VehicleFormValues>({
       resolver: zodResolver(vehicleFormSchema),
-      defaultValues: { status: 'Disponível', imageUrl: 'https://placehold.co/600x400.png' },
+      defaultValues: { status: 'Disponível', imageUrl: '', perks: [], plate: '', make: '', model: '', year: new Date().getFullYear(), type: 'sedan', condition: 'Semi-novo', transmission: 'automatic', fuelType: 'flex', description: '', paymentTerms: '', hasParkingLot: false, parkingLotAddress: '' },
     });
     
     useEffect(() => {
         if (user) {
             const loadData = async () => {
                 setPageLoading(true);
-                const result = await getFleetData(user.uid);
-                if (result.success) {
-                    setVehicles(result.vehicles);
-                    setApplications(result.applications);
+                const [fleetResult, galleryResult] = await Promise.all([
+                    getFleetData(user.uid),
+                    getGalleryImages(user.uid),
+                ]);
+
+                if (fleetResult.success) {
+                    setVehicles(fleetResult.vehicles);
+                    setApplications(fleetResult.applications);
                 } else {
-                    toast({ variant: 'destructive', title: 'Erro ao Carregar Dados', description: result.error });
+                    toast({ variant: 'destructive', title: 'Erro ao Carregar Dados', description: fleetResult.error });
                 }
+                setGalleryImages(galleryResult);
                 setPageLoading(false);
             };
             loadData();
@@ -112,11 +122,13 @@ export default function FleetPage() {
         if (isVehicleDialogOpen) {
             form.reset(selectedVehicle ? {
                 ...selectedVehicle,
+                imageFile: undefined,
                 plate: selectedVehicle.plate.toUpperCase(),
                 perks: selectedVehicle.perks.map(p => p.id),
             } : { 
                 status: 'Disponível', 
-                imageUrl: 'https://placehold.co/600x400.png', 
+                imageUrl: '',
+                imageFile: undefined, 
                 year: new Date().getFullYear(),
                 perks: [],
                 plate: '',
@@ -200,10 +212,10 @@ export default function FleetPage() {
     };
     
     const onSubmit = async (values: VehicleFormValues) => {
-        if (!user) return;
+        if (!user || !userProfile) return;
         setIsSubmitting(true);
         
-        const result = await upsertVehicle(values, user.uid, selectedVehicle?.id);
+        const result = await upsertVehicle(values, user.uid, userProfile.name || userProfile.nomeFantasia || 'Frota', selectedVehicle?.id);
 
         if (result.success) {
             toast({ title: selectedVehicle ? "Veículo Atualizado!" : "Veículo Adicionado!", description: "Os dados do veículo foram salvos." });
@@ -408,7 +420,7 @@ export default function FleetPage() {
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                          <FormField control={form.control} name="year" render={({ field }) => (
-                                            <FormItem><FormLabel>Ano</FormLabel><FormControl><Input type="number" {...field} placeholder="Ex: 2023" /></FormControl><FormMessage /></FormItem>
+                                            <FormItem><FormLabel>Ano</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                         )}/>
                                         <FormField control={form.control} name="type" render={({ field }) => (
                                             <FormItem><FormLabel>Tipo</FormLabel>
@@ -470,9 +482,43 @@ export default function FleetPage() {
                                             </FormItem>
                                         )}/>
                                     </div>
-                                     <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                                        <FormItem><FormLabel>URL da Imagem</FormLabel><FormControl><Input {...field} placeholder="https://..." /></FormControl><FormMessage /></FormItem>
-                                    )}/>
+                                     
+                                     <Card>
+                                        <CardHeader className="p-4"><CardTitle className="text-base">Imagem do Anúncio</CardTitle></CardHeader>
+                                        <CardContent className="p-4 pt-0">
+                                            <Tabs defaultValue="upload">
+                                                <TabsList className="grid w-full grid-cols-3">
+                                                    <TabsTrigger value="upload"><UploadCloud/> Upload</TabsTrigger>
+                                                    <TabsTrigger value="gallery"><Images/> Galeria</TabsTrigger>
+                                                    <TabsTrigger value="url"><LinkIcon/> URL</TabsTrigger>
+                                                </TabsList>
+                                                <TabsContent value="upload" className="pt-4">
+                                                    <FormField control={form.control} name="imageFile" render={({ field }) => (
+                                                        <FormItem><FormControl><Input type="file" accept="image/*" onChange={(e) => field.onChange(e.target.files?.[0])}/></FormControl><FormMessage /></FormItem>
+                                                    )}/>
+                                                </TabsContent>
+                                                <TabsContent value="gallery" className="pt-4">
+                                                    {galleryImages.length === 0 ? (
+                                                        <div className="text-center text-muted-foreground p-4 border rounded-md">Sua galeria está vazia. Faça upload de novas imagens.</div>
+                                                    ) : (
+                                                        <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto border p-2 rounded-md">
+                                                            {galleryImages.map(img => (
+                                                                <button type="button" key={img.id} className={cn("relative aspect-square rounded-md overflow-hidden focus:ring-2 focus:ring-ring ring-offset-2", form.getValues('imageUrl') === img.url && "ring-2 ring-ring")} onClick={() => form.setValue('imageUrl', img.url)}>
+                                                                    <Image src={img.url} alt={img.name} fill className="object-cover"/>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </TabsContent>
+                                                <TabsContent value="url" className="pt-4">
+                                                     <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                                                        <FormItem><FormLabel>URL da Imagem</FormLabel><FormControl><Input {...field} placeholder="https://..." /></FormControl><FormMessage /></FormItem>
+                                                    )}/>
+                                                </TabsContent>
+                                            </Tabs>
+                                            <FormMessage>{form.formState.errors.imageUrl?.message}</FormMessage>
+                                        </CardContent>
+                                     </Card>
                                     
                                     <FormField control={form.control} name="paymentTerms" render={({ field }) => (
                                         <FormItem><FormLabel>Condições de Pagamento</FormLabel><FormControl><Input {...field} placeholder="Ex: Semanal, Segunda a Sábado" /></FormControl><FormMessage /></FormItem>
