@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -93,7 +94,7 @@ export default function FleetPage() {
 
     const form = useForm<VehicleFormValues>({
       resolver: zodResolver(vehicleFormSchema),
-      defaultValues: { status: 'Disponível', imageUrl: '', perks: [], plate: '', make: '', model: '', year: new Date().getFullYear(), type: 'sedan', condition: 'Semi-novo', transmission: 'automatic', fuelType: 'flex', description: '', paymentTerms: '', hasParkingLot: false, parkingLotAddress: '' },
+      defaultValues: { status: 'Disponível', imageUrl: '', perks: [], plate: '', make: '', model: '', year: new Date().getFullYear(), type: 'sedan', condition: 'Semi-novo', transmission: 'automatic', fuelType: 'flex', description: '', paymentTerms: '', hasParkingLot: false, parkingLotAddress: '', isZeroKm: false, internalNotes: '' },
     });
     
     useEffect(() => {
@@ -142,11 +143,22 @@ export default function FleetPage() {
                 type: 'sedan',
                 hasParkingLot: false,
                 parkingLotAddress: '',
+                isZeroKm: false,
+                internalNotes: '',
             });
         }
     }, [isVehicleDialogOpen, selectedVehicle, form]);
 
     const watchHasParkingLot = form.watch("hasParkingLot");
+    const watchIsZeroKm = form.watch("isZeroKm");
+
+    useEffect(() => {
+        if (watchIsZeroKm) {
+            form.setValue('condition', 'Novo');
+        } else if (form.getValues('condition') === 'Novo') {
+             form.setValue('condition', 'Semi-novo');
+        }
+    }, [watchIsZeroKm, form]);
 
     const handleAddNewVehicle = () => {
         setSelectedVehicle(null);
@@ -437,15 +449,18 @@ export default function FleetPage() {
                                             <FormMessage /></FormItem>
                                         )}/>
                                     </div>
+                                    <FormField control={form.control} name="isZeroKm" render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Este veículo é 0km?</FormLabel></div></FormItem>
+                                    )}/>
+                                    <FormField control={form.control} name="condition" render={({ field }) => (
+                                        <FormItem><FormLabel>Condição</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value} disabled={watchIsZeroKm}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                                                <SelectContent><SelectItem value="Novo">Novo</SelectItem><SelectItem value="Semi-novo">Semi-novo</SelectItem><SelectItem value="Usado">Usado</SelectItem></SelectContent>
+                                            </Select>
+                                        <FormMessage /></FormItem>
+                                    )}/>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <FormField control={form.control} name="condition" render={({ field }) => (
-                                            <FormItem><FormLabel>Condição</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
-                                                    <SelectContent><SelectItem value="Novo">Novo (0km)</SelectItem><SelectItem value="Semi-novo">Semi-novo</SelectItem><SelectItem value="Usado">Usado</SelectItem></SelectContent>
-                                                </Select>
-                                            <FormMessage /></FormItem>
-                                        )}/>
                                         <FormField control={form.control} name="transmission" render={({ field }) => (
                                             <FormItem><FormLabel className="flex items-center gap-2"><GitCommitHorizontal/>Câmbio</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -454,18 +469,15 @@ export default function FleetPage() {
                                                 </Select>
                                             <FormMessage /></FormItem>
                                         )}/>
+                                        <FormField control={form.control} name="fuelType" render={({ field }) => (
+                                            <FormItem><FormLabel className="flex items-center gap-2"><Fuel/>Combustível</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
+                                                    <SelectContent><SelectItem value="flex">Flex</SelectItem><SelectItem value="gnv">GNV</SelectItem><SelectItem value="hybrid">Híbrido</SelectItem><SelectItem value="electric">Elétrico</SelectItem></SelectContent>
+                                                </Select>
+                                            <FormMessage /></FormItem>
+                                        )}/>
                                     </div>
-                                    <FormField control={form.control} name="fuelType" render={({ field }) => (
-                                        <FormItem><FormLabel className="flex items-center gap-2"><Fuel/>Combustível</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger></FormControl>
-                                                <SelectContent><SelectItem value="flex">Flex</SelectItem><SelectItem value="gnv">GNV</SelectItem><SelectItem value="hybrid">Híbrido</SelectItem><SelectItem value="electric">Elétrico</SelectItem></SelectContent>
-                                            </Select>
-                                        <FormMessage /></FormItem>
-                                    )}/>
-                                     <FormField control={form.control} name="description" render={({ field }) => (
-                                        <FormItem><FormLabel>Descrição do Anúncio</FormLabel><FormControl><Textarea {...field} placeholder="Descreva os pontos fortes do carro, opcionais, etc." rows={3}/></FormControl><FormMessage /></FormItem>
-                                    )}/>
                                 </div>
                                  <div className="space-y-6">
                                      <div className="grid grid-cols-2 gap-4">
@@ -578,6 +590,14 @@ export default function FleetPage() {
                                   )}
                                   />
                               </div>
+                               <div className="col-span-1 md:col-span-2 space-y-4 pt-4 border-t">
+                                     <FormField control={form.control} name="description" render={({ field }) => (
+                                        <FormItem><FormLabel>Descrição do Anúncio</FormLabel><FormControl><Textarea {...field} placeholder="Descreva os pontos fortes do carro, opcionais, etc." rows={3}/></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                    <FormField control={form.control} name="internalNotes" render={({ field }) => (
+                                        <FormItem><FormLabel>Observações Internas (Não-público)</FormLabel><FormControl><Textarea {...field} placeholder="Ex: Próxima revisão em 10.000km, arranhão no para-choque traseiro, etc." rows={3}/></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                </div>
                             
                             <DialogFooter>
                                 <DialogClose asChild><Button type="button" variant="secondary">Cancelar</Button></DialogClose>

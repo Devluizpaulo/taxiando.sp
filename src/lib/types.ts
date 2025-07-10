@@ -234,11 +234,13 @@ export interface Vehicle {
   make: string;
   model: string;
   year: number;
+  isZeroKm?: boolean;
   type: 'hatch' | 'sedan' | 'suv' | 'minivan' | 'other';
   condition: string;
   transmission: 'automatic' | 'manual';
   fuelType: 'flex' | 'gnv' | 'hybrid' | 'electric';
   description: string;
+  internalNotes?: string;
   status: 'Disponível' | 'Alugado' | 'Em Manutenção';
   moderationStatus?: 'Pendente' | 'Aprovado' | 'Rejeitado';
   dailyRate: number;
