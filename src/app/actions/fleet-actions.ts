@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -523,4 +522,68 @@ export async function getDriverMatchesForVehicle(vehicleId: string): Promise<Mat
     }
 
     return results.sort((a, b) => b.score - a.score);
+}
+
+// --- Report Actions ---
+export async function getFleetReportData(fleetId: string) {
+    if (!fleetId) {
+        return { success: false, error: 'ID da frota não fornecido' };
+    }
+    
+    try {
+        const vehiclesSnapshot = await adminDB.collection('vehicles').where('fleetId', '==', fleetId).get();
+        const vehicles = vehiclesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
+        
+        if (vehicles.length === 0) {
+            return {
+                success: true,
+                totalVehicles: 0,
+                totalApplications: 0,
+                approvalRate: 0,
+                applicationStatusData: [],
+                vehiclePerformance: []
+            };
+        }
+        
+        const vehicleIds = vehicles.map(v => v.id);
+        const applicationsSnapshot = await adminDB.collection('applications').where('vehicleId', 'in', vehicleIds).get();
+        const applications = applicationsSnapshot.docs.map(doc => doc.data() as VehicleApplication);
+        
+        const totalApplications = applications.length;
+        const approvedCount = applications.filter(app => app.status === 'Aprovado').length;
+        const pendingCount = applications.filter(app => app.status === 'Pendente').length;
+        const rejectedCount = applications.filter(app => app.status === 'Rejeitado').length;
+
+        const approvalRate = totalApplications > 0 ? (approvedCount / totalApplications) * 100 : 0;
+
+        const applicationStatusData = [
+            { name: 'Pendentes', value: pendingCount },
+            { name: 'Aprovadas', value: approvedCount },
+            { name: 'Rejeitadas', value: rejectedCount },
+        ];
+        
+        const vehiclePerformance = vehicles.map(vehicle => {
+            const vehicleApps = applications.filter(app => app.vehicleId === vehicle.id);
+            return {
+                id: vehicle.id,
+                name: `${vehicle.make} ${vehicle.model} (${vehicle.plate})`,
+                totalApplications: vehicleApps.length,
+                pendingApplications: vehicleApps.filter(app => app.status === 'Pendente').length,
+                approvedApplications: vehicleApps.filter(app => app.status === 'Aprovado').length,
+            };
+        }).sort((a, b) => b.totalApplications - a.totalApplications);
+
+        return {
+            success: true,
+            totalVehicles: vehicles.length,
+            totalApplications,
+            approvalRate,
+            applicationStatusData,
+            vehiclePerformance,
+        };
+
+    } catch (error) {
+        console.error("Error fetching fleet report data:", error);
+        return { success: false, error: (error as Error).message };
+    }
 }

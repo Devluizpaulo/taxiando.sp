@@ -1,23 +1,23 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Construction } from 'lucide-react';
+import { getFleetReportData } from '@/app/actions/fleet-actions';
+import { useAuth } from '@/hooks/use-auth';
+import { FleetReportsClientPage } from './reports-client-page';
+import { auth } from '@/lib/firebase';
+import { redirect } from 'next/navigation';
 
-export default function FleetReportsPage() {
-    return (
-        <div className="flex flex-col gap-8">
-            <div>
-                <h1 className="font-headline text-3xl font-bold tracking-tight">Relatórios da Frota</h1>
-                <p className="text-muted-foreground">Analise o desempenho dos seus veículos e candidaturas.</p>
-            </div>
-            <Card className="flex flex-col items-center justify-center p-12 text-center">
-                <CardHeader>
-                    <Construction className="h-16 w-16 mx-auto text-primary" />
-                    <CardTitle className="mt-4">Página em Construção</CardTitle>
-                    <CardDescription>
-                        Estamos trabalhando para trazer relatórios detalhados para você gerenciar sua frota com ainda mais eficiência.
-                    </CardDescription>
-                </CardHeader>
-            </Card>
-        </div>
-    );
+
+export default async function FleetReportsPage() {
+    // This is a server component, so we can't use the useAuth hook directly.
+    // We get the current user session from the auth object provided by firebase-admin.
+    // For this to work in local dev, you must be logged in. In production, it uses the session cookie.
+    const user = auth.currentUser;
+
+    if (!user) {
+        // This should be handled by middleware or layout protection, but as a fallback:
+        redirect('/login');
+    }
+
+    const reportData = await getFleetReportData(user.uid);
+    
+    return <FleetReportsClientPage initialReportData={reportData} />;
 }
