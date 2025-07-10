@@ -1,6 +1,7 @@
 
+
 'use server';
-import { adminDB } from '@/lib/firebase-admin';
+import { adminDB, adminAuth, Timestamp } from '@/lib/firebase-admin';
 import admin from 'firebase-admin';
 
 export async function trackPageView(page: string) {
@@ -23,9 +24,16 @@ export async function trackLogin(userId: string) {
         const userRef = adminDB.collection('users').doc(userId);
         const analyticsRef = adminDB.collection('analytics').doc('logins');
         
-        // Increment on both user profile and central analytics doc
+        // Revoke any previous sessions to ensure single-session login
+        await adminAuth.revokeRefreshTokens(userId);
+        const sessionValidSince = Timestamp.now();
+        
+        // Increment login count and set the session valid time
         await Promise.all([
-            userRef.set({ loginCount: admin.firestore.FieldValue.increment(1) }, { merge: true }),
+            userRef.set({ 
+                loginCount: admin.firestore.FieldValue.increment(1),
+                sessionValidSince: sessionValidSince,
+            }, { merge: true }),
             analyticsRef.set({ total: admin.firestore.FieldValue.increment(1) }, { merge: true })
         ]);
 

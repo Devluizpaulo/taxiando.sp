@@ -104,6 +104,7 @@ export interface UserProfile {
     credits?: number;
     loginCount?: number;
     lastNotificationCheck?: Timestamp;
+    sessionValidSince?: Timestamp;
 
     averageRating?: number;
     reviewCount?: number;

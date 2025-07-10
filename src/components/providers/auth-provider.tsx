@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, SetStateAction, createContext, ReactNode } from 'react';
@@ -29,27 +30,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let unsubscribeProfile: (() => void) | undefined;
 
       if (user) {
-        setUser(user);
-        const userDocRef = doc(db, 'users', user.uid);
-        
-        unsubscribeProfile = onSnapshot(userDocRef, (doc) => {
-          if (doc.exists()) {
-            setUserProfile(doc.data() as UserProfile);
-          } else {
-            console.error("User exists in Auth, but not in Firestore. Signing out.");
-            toast({
-              variant: "destructive",
-              title: "Falha no Cadastro",
-              description: "Não encontramos seu perfil. Por favor, tente se cadastrar novamente."
+        user.getIdTokenResult(true).then(idTokenResult => {
+            const authTime = new Date(idTokenResult.authTime);
+            
+            const userDocRef = doc(db, 'users', user.uid);
+            
+            unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
+              if (docSnap.exists()) {
+                const profile = docSnap.data() as UserProfile;
+                const sessionValidSince = profile.sessionValidSince?.toDate();
+
+                if (sessionValidSince && authTime < sessionValidSince) {
+                    console.warn("Stale session detected. Signing out.");
+                    toast({
+                      variant: "destructive",
+                      title: "Sessão Expirada",
+                      description: "Você fez login em outro dispositivo. Esta sessão foi encerrada por segurança.",
+                      duration: 8000
+                    });
+                    signOut(auth);
+                } else {
+                    setUser(user);
+                    setUserProfile(profile);
+                }
+              } else {
+                console.error("User exists in Auth, but not in Firestore. Signing out.");
+                toast({
+                  variant: "destructive",
+                  title: "Falha no Cadastro",
+                  description: "Não encontramos seu perfil. Por favor, tente se cadastrar novamente."
+                });
+                signOut(auth);
+              }
+               if (loading) setLoading(false);
+            }, (error) => {
+                console.error("Error listening to user profile:", error);
+                setUser(null);
+                setUserProfile(null);
+                if (loading) setLoading(false);
             });
+        }).catch(error => {
+            console.error("Error getting ID token:", error);
             signOut(auth);
-          }
-           if (loading) setLoading(false);
-        }, (error) => {
-            console.error("Error listening to user profile:", error);
-            setUser(null);
-            setUserProfile(null);
-            if (loading) setLoading(false);
+            if(loading) setLoading(false);
         });
 
       } else {
