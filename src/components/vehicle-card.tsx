@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -16,7 +17,7 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
             <CardHeader className="p-0 relative">
                 <Link href={`/rentals/${vehicle.id}`}>
                     <Image 
-                        src={vehicle.imageUrl || 'https://placehold.co/600x400.png'} 
+                        src={vehicle.imageUrls[0] || 'https://placehold.co/600x400.png'} 
                         alt={`${vehicle.make} ${vehicle.model}`} 
                         width={600} height={400} 
                         className="w-full object-cover aspect-video" 

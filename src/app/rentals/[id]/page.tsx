@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { useState, useEffect } from 'react';
@@ -18,6 +19,7 @@ import { FacebookIcon } from '@/components/icons/facebook-icon';
 import { LoadingScreen } from '@/components/loading-screen';
 import { getVehicleDetails, createApplication } from '@/app/actions/fleet-actions';
 import { type Vehicle, type UserProfile } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 
 export default function RentalDetailsPage({ params }: { params: { id: string } }) {
@@ -29,6 +31,7 @@ export default function RentalDetailsPage({ params }: { params: { id: string } }
     const [fleet, setFleet] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [isApplying, setIsApplying] = useState(false);
+    const [mainImage, setMainImage] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -37,6 +40,9 @@ export default function RentalDetailsPage({ params }: { params: { id: string } }
             if (result.success && result.vehicle && result.fleet) {
                 setVehicle(result.vehicle);
                 setFleet(result.fleet);
+                if (result.vehicle.imageUrls && result.vehicle.imageUrls.length > 0) {
+                    setMainImage(result.vehicle.imageUrls[0]);
+                }
             } else {
                 toast({ variant: "destructive", title: "Erro", description: result.error || "Não foi possível carregar os detalhes do veículo." });
                 router.push('/rentals');
@@ -98,7 +104,18 @@ export default function RentalDetailsPage({ params }: { params: { id: string } }
                             <h1 className="font-headline text-4xl font-bold tracking-tight">{vehicle.make} {vehicle.model} <span className="text-muted-foreground font-normal">({vehicle.year})</span></h1>
                         </div>
                         
-                        <Image src={vehicle.imageUrl} alt={`${vehicle.make} ${vehicle.model}`} width={800} height={600} className="w-full rounded-xl object-cover aspect-video" data-ai-hint="car front view"/>
+                        <div className="space-y-4">
+                            <Image src={mainImage || 'https://placehold.co/800x600.png'} alt={`${vehicle.make} ${vehicle.model}`} width={800} height={600} className="w-full rounded-xl object-cover aspect-video" data-ai-hint="car front view"/>
+                            {vehicle.imageUrls.length > 1 && (
+                                <div className="grid grid-cols-4 gap-2">
+                                    {vehicle.imageUrls.map((url, index) => (
+                                        <button key={index} onClick={() => setMainImage(url)} className={cn("relative aspect-video rounded-md overflow-hidden transition-opacity hover:opacity-80 focus:ring-2 focus:ring-ring ring-offset-2", mainImage === url && "ring-2 ring-ring")}>
+                                            <Image src={url} alt={`Thumbnail ${index + 1}`} fill className="object-cover" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
                         <Card>
                             <CardHeader><CardTitle>Descrição do Veículo</CardTitle></CardHeader>
@@ -193,7 +210,7 @@ export default function RentalDetailsPage({ params }: { params: { id: string } }
 
                                 {fleet.socialMedia && (
                                         <div className="border-t pt-4">
-                                            <h4 className="font-semibold mb-2">Redes Sociais e Contato</h4>
+                                            <h4 className="font-semibold mb-2 text-card-foreground">Redes Sociais e Contato</h4>
                                             <div className="flex gap-3">
                                                 {fleet.socialMedia.instagram && <Button asChild variant="outline" size="icon"><Link href={`https://instagram.com/${fleet.socialMedia.instagram.replace('@','')}`} target="_blank"><Instagram /></Link></Button>}
                                                 {fleet.socialMedia.facebook && <Button asChild variant="outline" size="icon"><Link href={`https://facebook.com${fleet.socialMedia.facebook}`} target="_blank"><FacebookIcon /></Link></Button>}

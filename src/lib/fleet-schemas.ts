@@ -14,10 +14,9 @@ export const vehicleFormSchema = z.object({
   type: z.enum(['hatch', 'sedan', 'suv', 'minivan', 'other'], { required_error: "O tipo de veículo é obrigatório."}),
   status: z.enum(['Disponível', 'Alugado', 'Em Manutenção'], { required_error: "O status é obrigatório."}),
   dailyRate: z.coerce.number().min(1, "O valor da diária é obrigatório."),
-  imageUrl: z.string().url("URL da imagem inválida.").optional().or(z.literal('')),
-  imageFile: z.any()
-    .refine((file) => !file || file.size <= MAX_FILE_SIZE, `O tamanho máximo do arquivo é 5MB.`)
-    .refine((file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type), "Apenas os formatos .jpg, .jpeg, .png e .webp são aceitos.")
+  imageUrls: z.array(z.string().url()).default([]),
+  imageFiles: z.any()
+    .refine((files) => !files || files.length <= 4, `Você pode enviar no máximo 4 imagens.`)
     .optional(),
   condition: z.string().min(1, "A condição é obrigatória."),
   transmission: z.enum(['automatic', 'manual'], { required_error: "O tipo de câmbio é obrigatório."}),
@@ -38,10 +37,10 @@ export const vehicleFormSchema = z.object({
         });
     }
 }).refine(data => {
-    return !!data.imageUrl || !!data.imageFile;
+    return data.imageUrls.length > 0 || (data.imageFiles && data.imageFiles.length > 0);
 }, {
-    message: "Uma imagem (URL, upload ou galeria) é obrigatória.",
-    path: ["imageUrl"],
+    message: "Pelo menos uma imagem é obrigatória.",
+    path: ["imageFiles"],
 });
 
 

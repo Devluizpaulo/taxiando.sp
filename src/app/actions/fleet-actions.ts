@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -62,38 +63,41 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, fl
             .map(perkId => vehiclePerks.find(p => p.id === perkId)!)
             .filter(Boolean) as VehiclePerk[];
         
-        let finalImageUrl = data.imageUrl;
-
-        // If a new file is uploaded, process it
-        if (data.imageFile) {
-            const formData = new FormData();
-            formData.append('file', data.imageFile);
-            const uploadResult = await uploadFile(formData, fleetId);
-
-            if (uploadResult.success && uploadResult.url) {
-                finalImageUrl = uploadResult.url;
-                // Automatically add the new image to the fleet's gallery
-                await uploadToGallery({
-                    url: finalImageUrl,
-                    name: data.imageFile.name || `Veículo ${data.plate}`,
-                    category: 'Veículos',
-                    ownerId: fleetId,
-                    ownerName: fleetName,
-                }, false); // Fleet images are not public by default
-            } else {
-                throw new Error(uploadResult.error || 'Falha no upload da imagem do veículo.');
+        const uploadedImageUrls: string[] = [];
+        if (data.imageFiles && data.imageFiles.length > 0) {
+            for (const file of Array.from(data.imageFiles)) {
+                const formData = new FormData();
+                formData.append('file', file);
+                const uploadResult = await uploadFile(formData, fleetId);
+                if (uploadResult.success && uploadResult.url) {
+                    uploadedImageUrls.push(uploadResult.url);
+                     await uploadToGallery({
+                        url: uploadResult.url,
+                        name: file.name || `Veículo ${data.plate}`,
+                        category: 'Veículos',
+                        ownerId: fleetId,
+                        ownerName: fleetName,
+                    }, false);
+                } else {
+                     throw new Error(uploadResult.error || `Falha no upload do arquivo ${file.name}`);
+                }
             }
         }
         
-        if (!finalImageUrl) {
-            return { success: false, error: 'A imagem do veículo é obrigatória.' };
+        const finalImageUrls = [...(data.imageUrls || []), ...uploadedImageUrls];
+        if (finalImageUrls.length === 0) {
+            return { success: false, error: 'Pelo menos uma imagem do veículo é obrigatória.' };
         }
+        if (finalImageUrls.length > 4) {
+            return { success: false, error: 'Você pode adicionar no máximo 4 imagens por veículo.' };
+        }
+        
 
-        const { imageFile, ...vehicleDataToSave } = data;
+        const { imageFiles, ...vehicleDataToSave } = data;
 
         const vehicleData = {
             ...vehicleDataToSave,
-            imageUrl: finalImageUrl,
+            imageUrls: finalImageUrls,
             plate: data.plate.toUpperCase(),
             fleetId,
             perks: perksToSave,

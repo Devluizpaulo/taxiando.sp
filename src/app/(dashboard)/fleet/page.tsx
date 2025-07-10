@@ -94,7 +94,7 @@ export default function FleetPage() {
 
     const form = useForm<VehicleFormValues>({
       resolver: zodResolver(vehicleFormSchema),
-      defaultValues: { status: 'Disponível', imageUrl: '', perks: [], plate: '', make: '', model: '', year: new Date().getFullYear(), type: 'sedan', condition: 'Semi-novo', transmission: 'automatic', fuelType: 'flex', description: '', paymentTerms: '', hasParkingLot: false, parkingLotAddress: '', isZeroKm: false, internalNotes: '' },
+      defaultValues: { status: 'Disponível', imageUrls: [], perks: [], plate: '', make: '', model: '', year: new Date().getFullYear(), type: 'sedan', condition: 'Semi-novo', transmission: 'automatic', fuelType: 'flex', description: '', paymentTerms: '', hasParkingLot: false, parkingLotAddress: '', isZeroKm: false, internalNotes: '' },
     });
     
     useEffect(() => {
@@ -123,13 +123,13 @@ export default function FleetPage() {
         if (isVehicleDialogOpen) {
             form.reset(selectedVehicle ? {
                 ...selectedVehicle,
-                imageFile: undefined,
+                imageFiles: undefined,
                 plate: selectedVehicle.plate.toUpperCase(),
                 perks: selectedVehicle.perks.map(p => p.id),
             } : { 
                 status: 'Disponível', 
-                imageUrl: '',
-                imageFile: undefined, 
+                imageUrls: [],
+                imageFiles: undefined, 
                 year: new Date().getFullYear(),
                 perks: [],
                 plate: '',
@@ -317,7 +317,7 @@ export default function FleetPage() {
                                         <TableRow key={vehicle.id}>
                                             <TableCell>
                                                 <div className="flex items-center gap-4">
-                                                    <Image src={vehicle.imageUrl || 'https://placehold.co/120x80.png'} alt={vehicle.model} width={80} height={50} className="rounded-md object-cover aspect-video" data-ai-hint="car side view"/>
+                                                    <Image src={vehicle.imageUrls[0] || 'https://placehold.co/120x80.png'} alt={vehicle.model} width={80} height={50} className="rounded-md object-cover aspect-video" data-ai-hint="car side view"/>
                                                     <div>
                                                         <div className="font-medium">{vehicle.plate}</div>
                                                         <div className="text-sm text-muted-foreground">{vehicle.make} {vehicle.model} ({vehicle.year})</div>
@@ -496,39 +496,23 @@ export default function FleetPage() {
                                     </div>
                                      
                                      <Card>
-                                        <CardHeader className="p-4"><CardTitle className="text-base">Imagem do Anúncio</CardTitle></CardHeader>
+                                        <CardHeader className="p-4"><CardTitle className="text-base">Imagens do Veículo (até 4)</CardTitle></CardHeader>
                                         <CardContent className="p-4 pt-0">
-                                            <Tabs defaultValue="upload">
-                                                <TabsList className="grid w-full grid-cols-3">
-                                                    <TabsTrigger value="upload"><UploadCloud/> Upload</TabsTrigger>
-                                                    <TabsTrigger value="gallery"><Images/> Galeria</TabsTrigger>
-                                                    <TabsTrigger value="url"><LinkIcon/> URL</TabsTrigger>
-                                                </TabsList>
-                                                <TabsContent value="upload" className="pt-4">
-                                                    <FormField control={form.control} name="imageFile" render={({ field }) => (
-                                                        <FormItem><FormControl><Input type="file" accept="image/*" onChange={(e) => field.onChange(e.target.files?.[0])}/></FormControl><FormMessage /></FormItem>
-                                                    )}/>
-                                                </TabsContent>
-                                                <TabsContent value="gallery" className="pt-4">
-                                                    {galleryImages.length === 0 ? (
-                                                        <div className="text-center text-muted-foreground p-4 border rounded-md">Sua galeria está vazia. Faça upload de novas imagens.</div>
-                                                    ) : (
-                                                        <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto border p-2 rounded-md">
-                                                            {galleryImages.map(img => (
-                                                                <button type="button" key={img.id} className={cn("relative aspect-square rounded-md overflow-hidden focus:ring-2 focus:ring-ring ring-offset-2", form.getValues('imageUrl') === img.url && "ring-2 ring-ring")} onClick={() => form.setValue('imageUrl', img.url)}>
-                                                                    <Image src={img.url} alt={img.name} fill className="object-cover"/>
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </TabsContent>
-                                                <TabsContent value="url" className="pt-4">
-                                                     <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                                                        <FormItem><FormLabel>URL da Imagem</FormLabel><FormControl><Input {...field} placeholder="https://..." /></FormControl><FormMessage /></FormItem>
-                                                    )}/>
-                                                </TabsContent>
-                                            </Tabs>
-                                            <FormMessage>{form.formState.errors.imageUrl?.message}</FormMessage>
+                                            <FormField
+                                                control={form.control}
+                                                name="imageFiles"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Enviar Novas Imagens</FormLabel>
+                                                        <FormControl>
+                                                            <Input type="file" multiple accept="image/*" onChange={(e) => field.onChange(e.target.files)} />
+                                                        </FormControl>
+                                                        <FormDescription>Selecione até 4 imagens. Elas serão adicionadas às imagens existentes.</FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            {/* Preview de imagens existentes ou novas */}
                                         </CardContent>
                                      </Card>
                                     

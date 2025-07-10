@@ -244,7 +244,7 @@ export interface Vehicle {
   status: 'Disponível' | 'Alugado' | 'Em Manutenção';
   moderationStatus?: 'Pendente' | 'Aprovado' | 'Rejeitado';
   dailyRate: number;
-  imageUrl: string;
+  imageUrls: string[];
   paymentInfo: PaymentInfo;
   perks: VehiclePerk[];
   createdAt: Timestamp | string;
