@@ -1,13 +1,12 @@
 
-
 'use client';
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth, useAuthProtection } from '@/hooks/use-auth';
-import type { Vehicle, VehicleApplication, UserProfile, AdminUser, Review } from '@/lib/types';
+import type { Vehicle, VehicleApplication, UserProfile, AdminUser, Review, GalleryImage } from '@/lib/types';
 import { vehicleFormSchema, type VehicleFormValues } from '@/lib/fleet-schemas';
 import { getFleetData, upsertVehicle, deleteVehicle, updateApplicationStatus, getDriverProfile } from '@/app/actions/fleet-actions';
 import { getReviewsForUser } from '@/app/actions/review-actions';

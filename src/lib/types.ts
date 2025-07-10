@@ -104,6 +104,7 @@ export interface UserProfile {
     companyDescription?: string;
     amenities?: FleetAmenity[];
     otherAmenities?: string;
+    galleryImages?: GalleryImage[];
     socialMedia?: {
         instagram?: string;
         facebook?: string;
