@@ -317,6 +317,7 @@ function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPub
 
 function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, removeLesson: (index: number) => void, isEditingDisabled: boolean }) {
     const lessonType = useWatch({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.type` });
+    const watchedContent = useWatch({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.content` });
 
     return (
         <Card className="p-4 bg-muted/50">
@@ -338,10 +339,22 @@ function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDi
                     )}/>)}
                     {lessonType === 'text' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (<FormItem className="md:col-span-1"><FormLabel>Conteúdo da Aula</FormLabel><FormControl><Textarea {...field} placeholder="Escreva o conteúdo da aula aqui..." rows={8} disabled={isEditingDisabled} /></FormControl><FormMessage /></FormItem>)}/>
+                             <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (
+                                <FormItem className="md:col-span-1">
+                                    <FormLabel>Conteúdo da Aula (Markdown)</FormLabel>
+                                    <FormControl><Textarea {...field} placeholder="Escreva o conteúdo da aula aqui..." rows={12} disabled={isEditingDisabled} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                             )}/>
                             <div className="md:col-span-1 space-y-2">
-                                <FormLabel>&nbsp;</FormLabel>
-                                <MarkdownGuide/>
+                                <FormLabel>Preview</FormLabel>
+                                <div className="prose dark:prose-invert max-w-none rounded-md border bg-background p-4 min-h-[256px]">
+                                    {watchedContent ? (
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{watchedContent}</ReactMarkdown>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">A pré-visualização aparecerá aqui.</p>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
