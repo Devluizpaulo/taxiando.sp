@@ -2,10 +2,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useFieldArray, useForm, useWatch } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { nanoid } from 'nanoid';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 import { type Course } from '@/lib/types';
 import { getCourseById, updateCourse } from '@/app/actions/course-actions';
@@ -21,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic, DollarSign, Copyright, Gavel, CreditCard, BarChart, Trophy, BrainCircuit, Info } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 const lessonTypeIcons: { [key: string]: React.ReactNode } = {
@@ -30,6 +32,43 @@ const lessonTypeIcons: { [key: string]: React.ReactNode } = {
     quiz: <ClipboardCheck className="h-4 w-4" />,
     audio: <Mic className="h-4 w-4" />,
 };
+
+const markdownGuideText = `
+**Títulos:**
+\`# Título Principal\`
+\`## Subtítulo\`
+
+**Listas:**
+\`- Item 1\`
+\`- Item 2\`
+
+**Imagens:**
+\`![Descrição da Imagem](URL_DA_IMAGEM)\`
+
+**Exemplo Completo:**
+\`## Mantenha a Calma no Trânsito\`
+\`Manter a calma é essencial. Veja a imagem abaixo:\`
+\`![Motorista Calmo](https://placehold.co/600x400.png)\`
+\`Lembre-se sempre de:\`
+\`- Respirar fundo.\`
+\`- Manter distância segura.\`
+`;
+
+const MarkdownGuide = () => {
+    return (
+        <Card className="bg-muted/50">
+            <CardHeader className="flex-row items-center gap-3 space-y-0">
+                <Info className="h-5 w-5 text-muted-foreground"/>
+                <CardTitle className="text-base">Guia Rápido de Formatação (Markdown)</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdownGuideText}</ReactMarkdown>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
 
 export default function EditCoursePage({ params }: { params: { id: string }}) {
     const router = useRouter();
@@ -42,7 +81,17 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
 
     const form = useForm<CourseFormValues>({
         resolver: zodResolver(courseFormSchema),
-        defaultValues: { title: '', description: '', category: '', modules: [] },
+        defaultValues: { 
+            title: '', 
+            description: '', 
+            category: '', 
+            modules: [],
+            difficulty: 'Iniciante',
+            investmentCost: 0,
+            priceInCredits: 0,
+            authorInfo: '',
+            legalNotice: '',
+        },
     });
 
     useEffect(() => {
@@ -134,6 +183,67 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                     </CardContent>
                 </Card>
 
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Informações Financeiras, Legais e de Nível</CardTitle>
+                        <CardDescription>Gerencie custos, direitos autorais e a dificuldade do curso.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                         <FormField control={form.control} name="difficulty" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="flex items-center gap-2"><Trophy /> Nível de Dificuldade</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione o nível..." /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Iniciante"><div className="flex items-center gap-2"><BarChart/> Iniciante</div></SelectItem>
+                                        <SelectItem value="Intermediário"><div className="flex items-center gap-2"><BrainCircuit/> Intermediário</div></SelectItem>
+                                        <SelectItem value="Avançado"><div className="flex items-center gap-2"><Trophy/> Avançado</div></SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormDescription>Isso ajuda os motoristas a escolherem o curso certo.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                         )}/>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+                            <FormField control={form.control} name="investmentCost" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="flex items-center gap-2"><DollarSign /> Custo de Investimento (R$)</FormLabel>
+                                    <FormControl><Input type="number" {...field} placeholder="Ex: 500.00" /></FormControl>
+                                    <FormDescription>Valor gasto na produção ou compra deste curso.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}/>
+                             <FormField control={form.control} name="priceInCredits" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="flex items-center gap-2"><CreditCard /> Preço em Créditos</FormLabel>
+                                    <FormControl><Input type="number" {...field} placeholder="Ex: 10" /></FormControl>
+                                    <FormDescription>Custo para o usuário comprar o curso. Deixe 0 para gratuito.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}/>
+                        </div>
+                        <div className="border-t pt-6 space-y-6">
+                          <FormField control={form.control} name="authorInfo" render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel className="flex items-center gap-2"><Copyright /> Informações de Direitos Autorais</FormLabel>
+                                  <FormControl><Input {...field} placeholder="Ex: © 2024 Nome do Produtor Terceirizado" /></FormControl>
+                                  <FormDescription>Caso o conteúdo seja de terceiros, informe aqui.</FormDescription>
+                                  <FormMessage />
+                              </FormItem>
+                          )}/>
+                          <FormField control={form.control} name="legalNotice" render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel className="flex items-center gap-2"><Gavel /> Aviso Legal sobre Reprodução</FormLabel>
+                                  <FormControl><Textarea {...field} placeholder="Ex: A reprodução deste conteúdo é proibida..." rows={3}/></FormControl>
+                                  <FormDescription>Este aviso será exibido aos alunos ao acessarem as aulas.</FormDescription>
+                                  <FormMessage />
+                              </FormItem>
+                          )}/>
+                        </div>
+                    </CardContent>
+                </Card>
+
+
                 <div>
                     <h2 className="text-2xl font-bold font-headline">Estrutura do Curso</h2>
                     <p className="text-muted-foreground">Adicione ou edite módulos e aulas para montar o conteúdo.</p>
@@ -163,7 +273,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
     );
 }
 
-function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPublished }: { moduleIndex: number, removeModule: (index: number) => void, form: any, isEditingDisabled: boolean, isPublished: boolean }) {
+function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPublished }: { moduleIndex: number, removeModule: (index: number) => void, form: UseFormReturn<CourseFormValues>, isEditingDisabled: boolean, isPublished: boolean }) {
     const { fields: lessonFields, append: appendLesson, remove: removeLesson } = useFieldArray({
         control: form.control, name: `modules.${moduleIndex}.lessons`,
     });
@@ -205,7 +315,7 @@ function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPub
     );
 }
 
-function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDisabled }: { form: any, moduleIndex: number, lessonIndex: number, removeLesson: (index: number) => void, isEditingDisabled: boolean }) {
+function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, removeLesson: (index: number) => void, isEditingDisabled: boolean }) {
     const lessonType = useWatch({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.type` });
 
     return (
@@ -226,7 +336,15 @@ function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDi
                             <FormDescription>Se já houver um áudio salvo, o envio de um novo irá substituí-lo.</FormDescription>
                         <FormMessage /></FormItem>
                     )}/>)}
-                    {lessonType === 'text' && (<FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (<FormItem><FormLabel>Conteúdo da Aula</FormLabel><FormControl><Textarea {...field} placeholder="Escreva o conteúdo da aula aqui." rows={8} disabled={isEditingDisabled} /></FormControl><FormDescription>Dica: Use Markdown para adicionar **negrito**, *itálico*, listas e mais.</FormDescription><FormMessage /></FormItem>)}/>)}
+                    {lessonType === 'text' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (<FormItem className="md:col-span-1"><FormLabel>Conteúdo da Aula</FormLabel><FormControl><Textarea {...field} placeholder="Escreva o conteúdo da aula aqui..." rows={8} disabled={isEditingDisabled} /></FormControl><FormMessage /></FormItem>)}/>
+                            <div className="md:col-span-1 space-y-2">
+                                <FormLabel>&nbsp;</FormLabel>
+                                <MarkdownGuide/>
+                            </div>
+                        </div>
+                    )}
                     {lessonType === 'quiz' ? (<QuizBuilder form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />) : (<MaterialField form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />)}
                 </div>
                 <Button type="button" variant="ghost" size="icon" onClick={() => removeLesson(lessonIndex)} disabled={isEditingDisabled} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
@@ -235,7 +353,7 @@ function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDi
     );
 }
 
-function MaterialField({ form, moduleIndex, lessonIndex, isEditingDisabled }: { form: any, moduleIndex: number, lessonIndex: number, isEditingDisabled: boolean }) {
+function MaterialField({ form, moduleIndex, lessonIndex, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, isEditingDisabled: boolean }) {
     const { fields: materialFields, append: appendMaterial, remove: removeMaterial } = useFieldArray({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.materials` });
     return (
         <div className="space-y-3 pt-3 border-t border-dashed">
@@ -255,7 +373,7 @@ function MaterialField({ form, moduleIndex, lessonIndex, isEditingDisabled }: { 
     );
 }
 
-function QuizBuilder({ form, moduleIndex, lessonIndex, isEditingDisabled }: { form: any, moduleIndex: number, lessonIndex: number, isEditingDisabled: boolean }) {
+function QuizBuilder({ form, moduleIndex, lessonIndex, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, isEditingDisabled: boolean }) {
     const { fields: questionFields, append: appendQuestion, remove: removeQuestion } = useFieldArray({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.questions` });
     return (
         <div className="space-y-4 pt-3 border-t border-dashed">
@@ -272,7 +390,7 @@ function QuizBuilder({ form, moduleIndex, lessonIndex, isEditingDisabled }: { fo
     );
 }
 
-function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQuestion, isEditingDisabled }: { form: any, moduleIndex: number, lessonIndex: number, questionIndex: number, removeQuestion: (index: number) => void, isEditingDisabled: boolean }) {
+function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQuestion, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, questionIndex: number, removeQuestion: (index: number) => void, isEditingDisabled: boolean }) {
     const { fields: optionFields, append: appendOption, remove: removeOption } = useFieldArray({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.options` });
     const optionsPath = `modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.options`;
 
