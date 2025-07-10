@@ -30,10 +30,10 @@ const HowToBeDriverSection = () => (
             <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
               Quer se tornar um taxista profissional em SP?
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mt-4 text-lg text-muted-foreground md:text-justify">
               Preparamos um guia completo com o passo a passo, desde a documentação necessária até encontrar o veículo ideal para você começar com o pé direito.
             </p>
-            <p className="mt-4 text-muted-foreground">
+            <p className="mt-4 text-muted-foreground md:text-justify">
               Desmistificamos todo o processo para você focar no que realmente importa: dirigir com segurança e profissionalismo.
             </p>
             <Button asChild size="lg" className="mt-8">
@@ -260,7 +260,7 @@ const RentVehiclePrompt = () => (
             <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">
               Precisa de um carro pra rodar?
             </h2>
-            <p className="mt-4 text-lg text-accent-foreground/80">
+            <p className="mt-4 text-lg text-accent-foreground/80 md:text-justify">
               Não fique a pé. Na Táxiando SP você encontra veículos de frotas e "porta branca" verificados, prontos para você começar a trabalhar hoje mesmo.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center md:justify-start">
@@ -295,7 +295,7 @@ export default async function Home() {
                 <h1 className="font-headline text-4xl font-bold tracking-tighter text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
                   O ecossistema completo para o profissional do volante.
                 </h1>
-                <p className="mx-auto max-w-xl text-lg text-muted-foreground md:mx-0 md:text-xl">
+                <p className="mx-auto max-w-xl text-lg text-muted-foreground md:mx-0 md:text-xl md:text-justify">
                   Mais que uma plataforma, uma comunidade. Encontre veículos, qualifique-se com cursos exclusivos e descubra os melhores roteiros da cidade com nosso Guia SP.
                 </p>
                 <div className="flex flex-col gap-4 sm:flex-row sm:justify-center md:justify-start">
@@ -411,7 +411,7 @@ export default async function Home() {
               <h2 className="font-headline text-3xl font-bold tracking-tighter text-primary-foreground sm:text-4xl">
                 Pronto para dar o próximo passo?
               </h2>
-              <p className="mx-auto mt-4 max-w-xl text-lg text-primary-foreground/90">
+              <p className="mx-auto mt-4 max-w-xl text-lg text-primary-foreground/90 md:text-justify">
                 Junte-se a milhares de profissionais que estão transformando suas carreiras com a Táxiando SP.
               </p>
               <Button asChild size="lg" variant="secondary" className="mt-8 bg-accent text-accent-foreground hover:bg-accent/90">
