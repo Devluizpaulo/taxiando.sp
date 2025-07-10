@@ -11,10 +11,11 @@ export const vehiclePerks = [
 ];
 
 export const fleetAmenities = [
+    { id: 'mechanic', label: 'Mecânica Própria', icon: Wrench },
+    { id: 'body_shop', label: 'Funilaria Própria', icon: CarIcon },
     { id: 'coffee', label: 'Espaço para café', icon: Coffee },
     { id: 'wifi', label: 'Wi-Fi para motoristas', icon: Wifi },
     { id: 'lounge', label: 'Sala de descanso', icon: Users },
     { id: 'legal', label: 'Suporte Jurídico', icon: Handshake },
     { id: 'tow_truck', label: 'Guincho 24 horas', icon: Wrench },
-    { id: 'other', label: 'Outros benefícios', icon: Sparkles },
 ];

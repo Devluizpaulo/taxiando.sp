@@ -113,6 +113,12 @@ export default async function FleetProfilePage({ params }: { params: { id: strin
                                                     </div>
                                                 )
                                             })}
+                                            {fleet.otherAmenities && (
+                                                <div className="flex items-center gap-3 text-sm">
+                                                    <Sparkles className="h-5 w-5 text-primary" />
+                                                    <span className="text-muted-foreground">{fleet.otherAmenities}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="border-t pt-6">

@@ -15,7 +15,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Instagram, MessageSquare } from 'lucide-react';
+import { Loader2, Instagram, MessageSquare, Search } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { fleetAmenities } from '@/lib/data';
 import { FacebookIcon } from '@/components/icons/facebook-icon';
@@ -33,6 +33,7 @@ const fleetProfileSchema = z.object({
     whatsapp: z.string().optional(),
   }),
   amenities: z.array(z.string()).optional(),
+  otherAmenities: z.string().optional(),
 });
 
 type FleetProfileValues = z.infer<typeof fleetProfileSchema>;
@@ -51,6 +52,7 @@ export default function FleetProfilePage() {
             contactEmail: '',
             socialMedia: { instagram: '', facebook: '', whatsapp: '' },
             amenities: [],
+            otherAmenities: '',
         },
     });
 
@@ -63,6 +65,7 @@ export default function FleetProfilePage() {
                 contactEmail: userProfile.email || '',
                 socialMedia: userProfile.socialMedia || { instagram: '', facebook: '', whatsapp: '' },
                 amenities: userProfile.amenities?.map(a => a.id) || [],
+                otherAmenities: userProfile.otherAmenities || '',
             });
         }
     }, [userProfile, loading, form]);
@@ -119,9 +122,16 @@ export default function FleetProfilePage() {
                              <FormField control={form.control} name="companyDescription" render={({ field }) => (
                                 <FormItem><FormLabel>Descrição da Frota</FormLabel><FormControl><Textarea placeholder="Fale sobre a sua frota, seus valores, diferenciais e o que você busca em um motorista parceiro." {...field} rows={5} /></FormControl><FormMessage /></FormItem>
                             )}/>
-                            <FormField control={form.control} name="address" render={({ field }) => (
-                                <FormItem><FormLabel>Endereço da Garagem/Sede</FormLabel><FormControl><Input placeholder="Rua, Número, Bairro, Cidade - SP" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
+                            <FormItem>
+                                <FormLabel>Endereço da Garagem/Sede</FormLabel>
+                                <div className="flex items-center gap-2">
+                                     <FormField control={form.control} name="address" render={({ field }) => (
+                                         <FormControl><Input placeholder="Rua, Número, Bairro, CEP, Cidade - SP" {...field} className="flex-1" /></FormControl>
+                                     )}/>
+                                    <Button type="button" variant="secondary" disabled><Search className="mr-2"/>Buscar CEP</Button>
+                                </div>
+                                <FormMessage />
+                            </FormItem>
                         </CardContent>
                     </Card>
 
@@ -130,7 +140,7 @@ export default function FleetProfilePage() {
                             <CardTitle>Comodidades e Diferenciais</CardTitle>
                             <CardDescription>Marque os benefícios que sua frota oferece aos motoristas.</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="space-y-6">
                              <FormField
                                 control={form.control}
                                 name="amenities"
@@ -166,6 +176,16 @@ export default function FleetProfilePage() {
                                     </FormItem>
                                 )}
                                 />
+                             <FormField control={form.control} name="otherAmenities" render={({ field }) => (
+                                <FormItem className="col-span-full">
+                                    <FormLabel>Outros Benefícios</FormLabel>
+                                    <FormControl>
+                                        <Textarea placeholder="Ex: Convênio com posto de gasolina, bonificação por desempenho, etc." {...field} />
+                                    </FormControl>
+                                    <FormDescription>Liste aqui outras vantagens não mencionadas acima.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}/>
                         </CardContent>
                     </Card>
 

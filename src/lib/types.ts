@@ -95,6 +95,7 @@ export interface UserProfile {
     nomeFantasia?: string;
     companyDescription?: string;
     amenities?: FleetAmenity[];
+    otherAmenities?: string;
     socialMedia?: {
         instagram?: string;
         facebook?: string;
