@@ -74,7 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
         }).catch(error => {
             console.error("Error getting ID token:", error);
-            signOut(auth);
+            // This is where the user-token-expired error can manifest.
+            // We can handle it silently by forcing a token refresh.
+            if (error.code === 'auth/user-token-expired') {
+                console.log("Token expired, forcing refresh...");
+                user.getIdToken(true); // Silently refresh the token in the background
+            } else {
+                signOut(auth);
+            }
             if(loading) setLoading(false);
         });
 
