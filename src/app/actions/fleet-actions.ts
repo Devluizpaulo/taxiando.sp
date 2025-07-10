@@ -11,6 +11,7 @@ import { type VehicleFormValues } from '@/lib/fleet-schemas';
 import { auth } from '@/lib/firebase';
 import { uploadToGallery } from './gallery-actions';
 import { uploadFile } from './storage-actions';
+import admin from 'firebase-admin';
 
 // Get all data for a fleet's dashboard
 export async function getFleetData(fleetId: string) {
@@ -205,32 +206,52 @@ export async function updateApplicationStatus(applicationId: string, newStatus: 
 }
 
 // Get a driver's full profile for a fleet to review
-export async function getDriverProfile(driverId: string): Promise<AdminUser | null> {
-    if (!driverId) return null;
+export async function getDriverProfile(driverId: string, fleetUserId: string): Promise<{success: boolean; profile?: AdminUser | null; error?: string}> {
+    if (!driverId || !fleetUserId) {
+        return { success: false, error: "Dados inválidos." };
+    }
+
+    const userRef = adminDB.collection('users').doc(fleetUserId);
+    const driverRef = adminDB.collection('users').doc(driverId);
+    
     try {
-        const userDoc = await adminDB.collection('users').doc(driverId).get();
-        if (!userDoc.exists) return null;
+        const result = await adminDB.runTransaction(async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists) throw new Error("Usuário da frota não encontrado.");
+            
+            const currentCredits = userDoc.data()?.credits || 0;
+            if (currentCredits < 1) throw new Error("Créditos insuficientes para ver o perfil.");
+            
+            transaction.update(userRef, { credits: admin.firestore.FieldValue.increment(-1) });
 
-        const data = userDoc.data() as UserProfile;
-        
-        const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
+            const driverDoc = await transaction.get(driverRef);
+            if (!driverDoc.exists) throw new Error("Perfil do motorista não encontrado.");
 
-        return {
-            ...data,
-            uid: userDoc.id,
-            createdAt: toISO(data.createdAt) || new Date().toISOString(),
-            cnhExpiration: toISO(data.cnhExpiration),
-            condutaxExpiration: toISO(data.condutaxExpiration),
-            alvaraExpiration: toISO(data.alvaraExpiration),
-            lastNotificationCheck: toISO(data.lastNotificationCheck),
-            lastSeekingRentalsCheck: toISO(data.lastSeekingRentalsCheck),
-        } as AdminUser;
+            const data = driverDoc.data() as UserProfile;
+            const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
+
+            const profile = {
+                ...data,
+                uid: driverDoc.id,
+                createdAt: toISO(data.createdAt) || new Date().toISOString(),
+                cnhExpiration: toISO(data.cnhExpiration),
+                condutaxExpiration: toISO(data.condutaxExpiration),
+                alvaraExpiration: toISO(data.alvaraExpiration),
+                lastNotificationCheck: toISO(data.lastNotificationCheck),
+                lastSeekingRentalsCheck: toISO(data.lastSeekingRentalsCheck),
+            } as AdminUser;
+            
+            return { success: true, profile };
+        });
+
+        revalidatePath('/fleet'); // Revalidate fleet dashboard to show updated credits
+        return result;
 
     } catch (error) {
-        console.error("Error fetching driver profile:", error);
-        return null;
+        return { success: false, error: (error as Error).message };
     }
 }
+
 
 // --- Functions for Rentals Marketplace ---
 
