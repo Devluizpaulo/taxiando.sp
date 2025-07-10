@@ -23,6 +23,14 @@ export interface Review {
   createdAt: Timestamp | string;
 }
 
+export interface WorkHistoryItem {
+  id?: string;
+  fleetName: string;
+  period: string;
+  reasonForLeaving?: string;
+  hasOutstandingDebt?: boolean;
+}
+
 export interface UserProfile {
     uid: string;
     email: string;
@@ -50,6 +58,8 @@ export interface UserProfile {
     workMode?: 'owner' | 'rental';
     alvaraExpiration?: Timestamp;
     vehicleLicensePlate?: string;
+    
+    workHistory?: WorkHistoryItem[];
 
     specializedCourses?: string[];
     languageLevel?: string;

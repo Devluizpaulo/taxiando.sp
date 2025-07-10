@@ -4,7 +4,7 @@
 
 import 'react-image-crop/dist/ReactCrop.css';
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { doc, updateDoc, Timestamp } from 'firebase/firestore';
@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, User, FileText, HeartHandshake, Check, ArrowLeft, ArrowRight, Car, Languages, FilePlus, BadgeInfo, CreditCard, HomeIcon } from 'lucide-react';
+import { Loader2, Camera, User, FileText, HeartHandshake, Check, ArrowLeft, ArrowRight, Car, Languages, FilePlus, BadgeInfo, CreditCard, HomeIcon, Briefcase, PlusCircle, Trash2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DatePicker } from '@/components/ui/datepicker';
@@ -42,6 +42,14 @@ const rentalPreferencesSchema = z.object({
     transmission: z.enum(['automatic', 'manual', 'indifferent']).optional(),
     fuelTypes: z.array(z.string()).optional(),
     maxDailyRate: z.coerce.number().min(0).optional(),
+});
+
+const workHistorySchema = z.object({
+    id: z.string().optional(),
+    fleetName: z.string().min(3, "Nome da frota é obrigatório."),
+    period: z.string().min(3, "Período é obrigatório."),
+    reasonForLeaving: z.string().optional(),
+    hasOutstandingDebt: z.boolean().default(false),
 });
 
 const profileFormSchema = z.object({
@@ -75,6 +83,9 @@ const profileFormSchema = z.object({
   workMode: z.enum(['owner', 'rental'], { required_error: 'Selecione seu modo de trabalho.' }),
   vehicleLicensePlate: z.string().optional(),
   alvaraExpiration: z.date().optional(),
+
+  // Experiência
+  workHistory: z.array(workHistorySchema).optional(),
 
   // Preferências de Locação
   rentalPreferences: rentalPreferencesSchema.optional(),
@@ -140,8 +151,9 @@ const steps = [
     { id: 1, name: 'Perfil e Contato', fields: ['name', 'photoFile', 'bio', 'phone', 'hasWhatsApp'] },
     { id: 2, name: 'Residência e Veículo', fields: ['address', 'garageInfo', 'workMode', 'vehicleLicensePlate', 'alvaraExpiration'] },
     { id: 3, name: 'Documentos', fields: ['cpf', 'cnhNumber', 'cnhCategory', 'cnhExpiration', 'cnhPoints', 'condutaxNumber', 'condutaxExpiration'] },
-    { id: 4, name: 'Preferências de Locação', fields: ['rentalPreferences'] },
-    { id: 5, name: 'Qualificações e Referências', fields: ['specializedCourses', 'languageLevel', 'otherCourses', 'referenceName', 'referenceRelationship', 'referencePhone', 'financialConsent', 'hasCreditCardForDeposit'] },
+    { id: 4, name: 'Experiência Profissional', fields: ['workHistory'] },
+    { id: 5, name: 'Preferências de Locação', fields: ['rentalPreferences'] },
+    { id: 6, name: 'Qualificações e Referências', fields: ['specializedCourses', 'languageLevel', 'otherCourses', 'referenceName', 'referenceRelationship', 'referencePhone', 'financialConsent', 'hasCreditCardForDeposit'] },
 ];
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
@@ -245,6 +257,7 @@ export default function CompleteProfilePage() {
             workMode: 'rental',
             vehicleLicensePlate: '',
             alvaraExpiration: undefined,
+            workHistory: [],
             specializedCourses: [],
             languageLevel: '',
             otherCourses: '',
@@ -262,6 +275,11 @@ export default function CompleteProfilePage() {
         },
     });
     
+    const { fields: historyFields, append: appendHistory, remove: removeHistory } = useFieldArray({
+        control: form.control,
+        name: "workHistory",
+    });
+
     const workMode = form.watch('workMode');
     const coursesWatch = form.watch('specializedCourses');
     
@@ -310,6 +328,7 @@ export default function CompleteProfilePage() {
                 workMode: userProfile.workMode || 'rental',
                 vehicleLicensePlate: userProfile.vehicleLicensePlate || '',
                 alvaraExpiration: toDate(userProfile.alvaraExpiration),
+                workHistory: userProfile.workHistory || [],
                 specializedCourses: userProfile.specializedCourses || [],
                 languageLevel: userProfile.languageLevel || '',
                 otherCourses: userProfile.otherCourses || '',
@@ -412,6 +431,24 @@ export default function CompleteProfilePage() {
         if (!currentStepConfig) return;
         
         const fieldsToValidate = currentStepConfig.fields as (keyof ProfileFormValues)[];
+        // Allow step 4 (work history) to be skipped even if empty, as it's optional.
+        if (currentStep === 4) {
+             setIsSavingStep(true);
+            try {
+                 if (!user) throw new Error("Usuário não encontrado.");
+                const values = form.getValues();
+                const result = await partialUpdateUserProfile(user.uid, { workHistory: values.workHistory });
+                if (!result.success) throw new Error(result.error);
+                toast({ title: 'Progresso Salvo!' });
+                setCurrentStep(prev => prev + 1);
+            } catch(e) {
+                 toast({ variant: 'destructive', title: 'Erro ao Salvar', description: (e as Error).message });
+            } finally {
+                setIsSavingStep(false);
+            }
+            return;
+        }
+
         const isValid = await form.trigger(fieldsToValidate, { shouldFocus: true });
 
         if (!isValid) {
@@ -586,9 +623,39 @@ export default function CompleteProfilePage() {
                                     </CardContent>
                                 </Card>
                             </div>
+                            
+                            {/* STEP 4: WORK HISTORY */}
+                             <div className={cn(currentStep !== 4 && "hidden")}>
+                                <Card>
+                                     <CardHeader>
+                                        <CardTitle>Experiência Profissional</CardTitle>
+                                        <CardDescription className="text-base text-amber-800 bg-amber-500/10 p-4 rounded-lg border border-amber-500/20">A gente sabe, preencher formulário é chato, né? Mas esta parte é super importante! Conte pra gente suas experiências anteriores. Frotas que conhecem seu histórico conseguem aprovar seu cadastro muito mais rápido. Fique tranquilo, o objetivo aqui é te ajudar a conseguir o melhor carro o mais rápido possível!</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        {historyFields.map((field, index) => (
+                                            <Card key={field.id} className="p-4 bg-muted/50">
+                                                 <div className="flex justify-end mb-2">
+                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeHistory(index)} className="h-7 w-7"><Trash2 className="h-4 w-4 text-muted-foreground"/></Button>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <FormField control={form.control} name={`workHistory.${index}.fleetName`} render={({ field }) => (<FormItem><FormLabel>Nome da Frota</FormLabel><FormControl><Input {...field} placeholder="Ex: Frota Central" /></FormControl><FormMessage /></FormItem>)}/>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <FormField control={form.control} name={`workHistory.${index}.period`} render={({ field }) => (<FormItem><FormLabel>Período</FormLabel><FormControl><Input {...field} placeholder="Ex: 2021 - 2023" /></FormControl><FormMessage /></FormItem>)}/>
+                                                        <FormField control={form.control} name={`workHistory.${index}.reasonForLeaving`} render={({ field }) => (<FormItem><FormLabel>Motivo da Saída (Opcional)</FormLabel><FormControl><Input {...field} placeholder="Ex: Fim de contrato" /></FormControl><FormMessage /></FormItem>)}/>
+                                                    </div>
+                                                    <FormField control={form.control} name={`workHistory.${index}.hasOutstandingDebt`} render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Deixou alguma pendência (dívida) nesta frota?</FormLabel></div></FormItem>)}/>
+                                                </div>
+                                            </Card>
+                                        ))}
+                                         <Button type="button" variant="outline" size="sm" onClick={() => appendHistory({ fleetName: '', period: '', reasonForLeaving: '', hasOutstandingDebt: false })}>
+                                            <PlusCircle /> Adicionar Experiência
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            </div>
 
-                            {/* STEP 4: PREFERÊNCIAS */}
-                            <div className={cn(currentStep !== 4 && "hidden")}>
+                            {/* STEP 5: PREFERÊNCIAS */}
+                            <div className={cn(currentStep !== 5 && "hidden")}>
                                 <Card>
                                     <CardHeader><CardTitle>Preferências de Locação</CardTitle><CardDescription>Descreva o veículo ideal para você. Isso ajuda as frotas a te encontrarem.</CardDescription></CardHeader>
                                     <CardContent className="space-y-6">
@@ -624,8 +691,8 @@ export default function CompleteProfilePage() {
                                 </Card>
                             </div>
 
-                            {/* STEP 5: QUALIFICAÇÕES E REFERÊNCIAS */}
-                             <div className={cn(currentStep !== 5 && "hidden")}>
+                            {/* STEP 6: QUALIFICAÇÕES E REFERÊNCIAS */}
+                             <div className={cn(currentStep !== 6 && "hidden")}>
                                 <Card>
                                     <CardHeader><CardTitle>Qualificações Adicionais</CardTitle><CardDescription>Destaque seus diferenciais para as frotas.</CardDescription></CardHeader>
                                     <CardContent className="space-y-6">
