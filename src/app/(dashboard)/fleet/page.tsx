@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -22,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -280,7 +279,7 @@ export default function FleetPage() {
                                         <TableRow key={vehicle.id}>
                                             <TableCell>
                                                 <div className="flex items-center gap-4">
-                                                    <Image src={vehicle.imageUrls[0] || 'https://placehold.co/120x80.png'} alt={vehicle.model} width={80} height={50} className="rounded-md object-cover aspect-video" data-ai-hint="car side view"/>
+                                                    <Image src={vehicle.imageUrls?.[0] || 'https://placehold.co/120x80.png'} alt={vehicle.model} width={80} height={50} className="rounded-md object-cover aspect-video" data-ai-hint="car side view"/>
                                                     <div>
                                                         <div className="font-medium">{vehicle.plate}</div>
                                                         <div className="text-sm text-muted-foreground">{vehicle.make} {vehicle.model} ({vehicle.year})</div>
@@ -527,7 +526,7 @@ function VehicleFormDialog({ isOpen, setIsOpen, vehicle, onFormSuccess }: { isOp
     
     const form = useForm<VehicleFormValues>({
         resolver: zodResolver(vehicleFormSchema),
-        defaultValues: { imageUrls: [], perks: [] },
+        defaultValues: { imageUrls: [], imageFiles: [], perks: [] },
     });
 
     useEffect(() => {
@@ -536,11 +535,11 @@ function VehicleFormDialog({ isOpen, setIsOpen, vehicle, onFormSuccess }: { isOp
                 ...vehicle,
                 perks: vehicle.perks.map(p => p.id),
                 imageUrls: vehicle.imageUrls.map(url => ({url})),
-                imageFiles: undefined, // Clear file input
+                imageFiles: [],
             } : {
                 status: 'Disponível',
                 imageUrls: [],
-                imageFiles: undefined,
+                imageFiles: [],
                 year: new Date().getFullYear(),
                 perks: [],
                 plate: '',
@@ -754,9 +753,10 @@ function ImageGalleryManager({ form }: { form: any }) {
     const activeSlotIndex = useRef(0);
     
     useEffect(() => {
-        if(user) getGalleryImages(user.uid).then(setGalleryImages);
+        if(user && isImageSelectorOpen) {
+            getGalleryImages(user.uid).then(setGalleryImages);
+        }
     }, [user, isImageSelectorOpen]);
-
 
     const handleFileSelect = async (files: FileList | null) => {
         if (!files || files.length === 0 || !userProfile) return;

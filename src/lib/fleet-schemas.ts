@@ -1,5 +1,4 @@
 
-
 import * as z from 'zod';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -15,7 +14,7 @@ export const vehicleFormSchema = z.object({
   status: z.enum(['Disponível', 'Alugado', 'Em Manutenção'], { required_error: "O status é obrigatório."}),
   dailyRate: z.coerce.number().min(1, "O valor da diária é obrigatório."),
   imageUrls: z.array(z.object({url: z.string()})).default([]),
-  imageFiles: z.any()
+  imageFiles: z.array(z.any())
     .refine((files) => !files || files.length <= 4, `Você pode enviar no máximo 4 imagens.`)
     .optional(),
   condition: z.string().min(1, "A condição é obrigatória."),

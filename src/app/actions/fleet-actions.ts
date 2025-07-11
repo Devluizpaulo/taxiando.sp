@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -86,9 +85,9 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, fl
             }
         }
         
-        // Combine existing URLs with newly uploaded ones
-        const finalImageUrls = [...(data.imageUrls || []), ...uploadedImageUrls].map(img => typeof img === 'string' ? img : img.url);
-
+        const existingUrls = data.imageUrls?.map(img => img.url) || [];
+        const finalImageUrls = [...existingUrls, ...uploadedImageUrls];
+       
         if (finalImageUrls.length === 0) {
             return { success: false, error: 'Pelo menos uma imagem do veículo é obrigatória.' };
         }
@@ -96,8 +95,7 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, fl
             return { success: false, error: 'Você pode adicionar no máximo 4 imagens por veículo.' };
         }
         
-
-        const { imageFiles, ...vehicleDataToSave } = data;
+        const { imageFiles, imageUrls, ...vehicleDataToSave } = data;
 
         const vehicleData = {
             ...vehicleDataToSave,
@@ -217,7 +215,7 @@ export async function getDriverProfile(driverId: string, fleetUserId: string): P
     try {
         const result = await adminDB.runTransaction(async (transaction) => {
             const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists) throw new Error("Usuário da frota não encontrado.");
+            if (!userDoc.exists()) throw new Error("Usuário da frota não encontrado.");
             
             const currentCredits = userDoc.data()?.credits || 0;
             if (currentCredits < 1) throw new Error("Créditos insuficientes para ver o perfil.");
@@ -225,7 +223,7 @@ export async function getDriverProfile(driverId: string, fleetUserId: string): P
             transaction.update(userRef, { credits: admin.firestore.FieldValue.increment(-1) });
 
             const driverDoc = await transaction.get(driverRef);
-            if (!driverDoc.exists) throw new Error("Perfil do motorista não encontrado.");
+            if (!driverDoc.exists()) throw new Error("Perfil do motorista não encontrado.");
 
             const data = driverDoc.data() as UserProfile;
             const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
