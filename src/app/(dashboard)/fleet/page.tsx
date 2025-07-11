@@ -2,9 +2,9 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth, useAuthProtection } from '@/hooks/use-auth';
 import type { Vehicle, VehicleApplication, UserProfile, AdminUser, Review, GalleryImage } from '@/lib/types';
@@ -68,7 +68,7 @@ const getProfileStatusVariant = (status: string): "default" | "secondary" | "des
 
 
 export default function FleetPage() {
-    const { user, userProfile, setUserProfile, loading: authLoading } = useAuthProtection({ requiredRoles: ['fleet', 'admin'] });
+    const { user, userProfile, setUserProfile, loading } = useAuthProtection({ requiredRoles: ['fleet', 'admin'] });
     const { toast } = useToast();
     
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -81,7 +81,7 @@ export default function FleetPage() {
     const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
 
     // State for driver profile modal
-    const [isProfileModalOpen, setProfileModalOpen] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [isFetchingProfile, setIsFetchingProfile] = useState(false);
     const [selectedDriver, setSelectedDriver] = useState<AdminUser | null>(null);
     const [driverReviews, setDriverReviews] = useState<Review[]>([]);
@@ -207,7 +207,7 @@ export default function FleetPage() {
     }
 
 
-    if (authLoading || pageLoading) {
+    if (loading || pageLoading) {
         return <LoadingScreen />;
     }
 
@@ -524,8 +524,7 @@ function VehicleFormDialog({ isOpen, setIsOpen, vehicle, onFormSuccess }: { isOp
     const { user, userProfile } = useAuth();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
-
+    
     const form = useForm<VehicleFormValues>({
         resolver: zodResolver(vehicleFormSchema),
         defaultValues: { imageUrls: [], perks: [] },
@@ -566,17 +565,6 @@ function VehicleFormDialog({ isOpen, setIsOpen, vehicle, onFormSuccess }: { isOp
         name: "imageUrls"
     });
 
-    const watchHasParkingLot = form.watch("hasParkingLot");
-    const watchIsZeroKm = form.watch("isZeroKm");
-
-    useEffect(() => {
-        if (watchIsZeroKm) {
-            form.setValue('condition', 'Novo');
-        } else if (form.getValues('condition') === 'Novo') {
-             form.setValue('condition', 'Semi-novo');
-        }
-    }, [watchIsZeroKm, form]);
-    
     const onSubmit = async (values: VehicleFormValues) => {
         if (!user || !userProfile) return;
         setIsSubmitting(true);
@@ -762,8 +750,8 @@ function ImageGalleryManager({ form }: { form: any }) {
     const { user, userProfile } = useAuth();
     const { toast } = useToast();
     const [confirmBonusUpload, setConfirmBonusUpload] = useState(false);
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
-    const activeSlotIndex = React.useRef(0);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const activeSlotIndex = useRef(0);
     
     useEffect(() => {
         if(user) getGalleryImages(user.uid).then(setGalleryImages);
