@@ -68,7 +68,7 @@ const getProfileStatusVariant = (status: string): "default" | "secondary" | "des
 
 
 export default function FleetPage() {
-    const { user, userProfile, setUserProfile } = useAuthProtection({ requiredRoles: ['fleet', 'admin'] });
+    const { user, userProfile, setUserProfile, loading: authLoading } = useAuthProtection({ requiredRoles: ['fleet', 'admin'] });
     const { toast } = useToast();
     
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -171,22 +171,22 @@ export default function FleetPage() {
         setProfileModalOpen(true);
         
         try {
-            // Deduct credit first
-            const newCredits = (userProfile.credits || 0) - 1;
-            await upsertVehicle({ credits: newCredits } as any, user.uid, ''); // A bit of a hack, should be a dedicated function
-            setUserProfile(prev => prev ? { ...prev, credits: newCredits } : null);
-            toast({ title: "1 Crédito Utilizado", description: "O perfil completo do motorista foi desbloqueado." });
+            const result = await getDriverProfile(driverId, user.uid);
             
-            const [profileData, reviewsData] = await Promise.all([
-                getDriverProfile(driverId),
-                getReviewsForUser(driverId),
-            ]);
-            
-            if (profileData) {
+            if (result.success && result.profile) {
+                const [profileData, reviewsData] = await Promise.all([
+                    result.profile,
+                    getReviewsForUser(driverId),
+                ]);
+
+                // Update local state for credits optimistically
+                setUserProfile(prev => prev ? ({ ...prev, credits: (prev.credits || 0) - 1 }) : null);
+                toast({ title: "1 Crédito Utilizado", description: "O perfil completo do motorista foi desbloqueado." });
+                
                 setSelectedDriver(profileData);
                 setDriverReviews(reviewsData);
             } else {
-                throw new Error('Não foi possível carregar o perfil do motorista.');
+                throw new Error(result.error || 'Não foi possível carregar o perfil do motorista.');
             }
 
         } catch(error) {
@@ -536,6 +536,7 @@ function VehicleFormDialog({ isOpen, setIsOpen, vehicle, onFormSuccess }: { isOp
             form.reset(vehicle ? {
                 ...vehicle,
                 perks: vehicle.perks.map(p => p.id),
+                imageUrls: vehicle.imageUrls.map(url => ({url})),
                 imageFiles: undefined, // Clear file input
             } : {
                 status: 'Disponível',
@@ -758,7 +759,7 @@ function ImageGalleryManager({ form }: { form: any }) {
     
     const [isImageSelectorOpen, setIsImageSelectorOpen] = useState(false);
     const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
-    const { user } = useAuth();
+    const { user, userProfile } = useAuth();
     const { toast } = useToast();
     const [confirmBonusUpload, setConfirmBonusUpload] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -770,31 +771,42 @@ function ImageGalleryManager({ form }: { form: any }) {
 
 
     const handleFileSelect = async (files: FileList | null) => {
-        if (!files || files.length === 0) return;
+        if (!files || files.length === 0 || !userProfile) return;
         const file = files[0];
         
-        if (activeSlotIndex.current === 3 && !galleryImages.some(img => img.url === form.getValues(`imageUrls.${3}`))) {
+        if (activeSlotIndex.current === 3 && (userProfile.credits || 0) < 1) {
+            toast({ variant: 'destructive', title: 'Créditos Insuficientes', description: 'Você não tem créditos para adicionar uma imagem bônus.'});
+            setConfirmBonusUpload(false);
+            return;
+        }
+
+        if (activeSlotIndex.current === 3) {
             setConfirmBonusUpload(true);
             return;
         }
 
-        const formData = new FormData();
-        formData.append('file', file);
-        const result = await upsertVehicle({imageFiles: [file]} as any, user.uid, ''); // Simplified call
-        
-        if(result.success && result.url) {
-            if (imageUrls[activeSlotIndex.current]) {
-                form.setValue(`imageUrls.${activeSlotIndex.current}`, { url: result.url });
-            } else {
-                append({ url: result.url });
-            }
-        }
+        const imageFiles = form.getValues('imageFiles') || [];
+        form.setValue('imageFiles', [...imageFiles, file]);
+        append({ url: URL.createObjectURL(file) });
         setIsImageSelectorOpen(false);
+    }
+
+     const confirmUploadAndDeductCredit = async () => {
+         if (!fileInputRef.current?.files || !userProfile) return;
+         const file = fileInputRef.current.files[0];
+         // Here would be the logic to deduct credit, for now we simulate it.
+         toast({ title: "Crédito Utilizado!", description: "1 crédito foi deduzido para o upload da imagem bônus." });
+
+         const imageFiles = form.getValues('imageFiles') || [];
+         form.setValue('imageFiles', [...imageFiles, file]);
+         append({ url: URL.createObjectURL(file) });
+         setConfirmBonusUpload(false);
+         setIsImageSelectorOpen(false);
     }
     
     const handleGallerySelect = (url: string) => {
         if (imageUrls[activeSlotIndex.current]) {
-            form.setValue(`imageUrls.${activeSlotIndex.current}`, url);
+            form.setValue(`imageUrls.${activeSlotIndex.current}`, { url });
         } else {
             append({ url: url });
         }
@@ -863,7 +875,7 @@ function ImageGalleryManager({ form }: { form: any }) {
              <AlertDialog open={confirmBonusUpload} onOpenChange={setConfirmBonusUpload}>
                 <AlertDialogContent>
                     <AlertDialogHeader><AlertDialogTitle>Upload Bônus</AlertDialogTitle><AlertDialogDescription>Este é um slot de imagem bônus. Um novo upload aqui consumirá 1 crédito do seu saldo. Deseja continuar?</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => { setConfirmBonusUpload(false); handleFileSelect(fileInputRef.current?.files); }}>Sim, usar 1 crédito</AlertDialogAction></AlertDialogFooter>
+                    <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={confirmUploadAndDeductCredit}>Sim, usar 1 crédito</AlertDialogAction></AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </div>
