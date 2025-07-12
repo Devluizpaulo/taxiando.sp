@@ -18,7 +18,7 @@ import {
   SidebarTrigger,
   useSidebar
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star, LifeBuoy, Headset, ImageIcon, Library, Car, Users, MapPin, BarChart2, Search, Map } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star, LifeBuoy, Headset, ImageIcon, Library, Car, Users, MapPin, BarChart2, Search, Map, Eye } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -205,9 +205,27 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                         <SidebarMenu>
                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/services/profile"><Wrench/> Perfil do Prestador</Link></SidebarMenuButton></SidebarMenuItem>
                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/billing"><CreditCard/> Faturamento</Link></SidebarMenuButton></SidebarMenuItem>
-                          <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/services/reports"><BarChart2/> Relatórios</Link></SidebarMenuButton></SidebarMenuItem>
                         </SidebarMenu>
                       </SidebarGroupContent>
+                    </SidebarGroup>
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Gestão e Vendas</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/services/marketplace"><Eye/> Ver Anúncios Públicos</Link></SidebarMenuButton></SidebarMenuItem>
+                                <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/services/reviews"><Star/> Minhas Avaliações</Link></SidebarMenuButton></SidebarMenuItem>
+                                <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/services/reports"><BarChart2/> Relatórios</Link></SidebarMenuButton></SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Suporte</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/faq"><LifeBuoy/> Central de Ajuda (FAQ)</Link></SidebarMenuButton></SidebarMenuItem>
+                                <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/contact"><Mail/> Fale Conosco</Link></SidebarMenuButton></SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
                     </SidebarGroup>
                   </>
                 )}
