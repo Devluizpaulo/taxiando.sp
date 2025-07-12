@@ -10,6 +10,7 @@ import { serviceFormSchema, type ServiceFormValues } from '@/lib/service-schemas
 import { auth } from '@/lib/firebase';
 import { uploadFile } from './storage-actions';
 import { uploadToGallery } from './gallery-actions';
+import admin from 'firebase-admin';
 
 export async function createService(data: ServiceFormValues, providerId: string, providerName: string) {
     if (!providerId) return { success: false, error: "ID do prestador não fornecido." };
@@ -325,6 +326,22 @@ export async function getProviderPublicProfile(providerId: string) {
         return { success: true, provider: providerProfile, services: activeServices };
 
     } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export async function trackProviderProfileView(providerId: string) {
+    if (!providerId) return { success: false, error: 'ID do prestador não fornecido.' };
+
+    try {
+        const providerRef = adminDB.collection('users').doc(providerId);
+        await providerRef.update({
+            profileViewCount: admin.firestore.FieldValue.increment(1)
+        });
+        return { success: true };
+    } catch (error) {
+        // Fail silently so it doesn't break the page load
+        console.error(`Error tracking profile view for provider ${providerId}:`, (error as Error).message);
         return { success: false, error: (error as Error).message };
     }
 }

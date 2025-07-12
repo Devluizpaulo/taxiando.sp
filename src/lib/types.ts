@@ -118,6 +118,7 @@ export interface UserProfile {
 
     averageRating?: number;
     reviewCount?: number;
+    profileViewCount?: number;
 }
 
 export interface Enrollment {

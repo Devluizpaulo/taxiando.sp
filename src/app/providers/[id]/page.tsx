@@ -2,11 +2,11 @@
 
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import { getProviderPublicProfile } from '@/app/actions/service-actions';
+import { getProviderPublicProfile, trackProviderProfileView } from '@/app/actions/service-actions';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { PublicHeader } from '@/components/layout/public-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, MapPin, Phone, Instagram, MessageSquare, Building, Star } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Mail, MapPin, Phone, Instagram, MessageSquare, Building, Star, GalleryVertical } from 'lucide-react';
 import { FacebookIcon } from '@/components/icons/facebook-icon';
 import { ServiceCard } from '@/components/service-card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,10 @@ export default async function ProviderProfilePage({ params }: { params: { id: st
         notFound();
     }
     
-    const reviews = await getReviewsForUser(provider.uid);
+    // Fire-and-forget the tracking action. No need to await.
+    trackProviderProfileView(params.id);
+    
+    const reviews = await getReviewsForUser(params.id);
 
     return (
         <div className="flex min-h-screen flex-col bg-muted/40">
@@ -60,6 +63,20 @@ export default async function ProviderProfilePage({ params }: { params: { id: st
                                 </CardContent>
                             </Card>
 
+                             {provider.galleryImages && provider.galleryImages.length > 0 && (
+                                <Card>
+                                    <CardHeader><CardTitle className="flex items-center gap-2"><GalleryVertical/> Galeria de Fotos</CardTitle></CardHeader>
+                                    <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                        {provider.galleryImages.map((image, index) => (
+                                            <div key={index} className="relative aspect-video">
+                                                <Image src={image.url} alt={`Foto da galeria ${index + 1}`} fill className="object-cover rounded-md" />
+                                            </div>
+                                        ))}
+                                    </CardContent>
+                                </Card>
+                            )}
+
+
                             <Card>
                                 <CardHeader><CardTitle>Nossos Serviços Oferecidos</CardTitle></CardHeader>
                                 <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -71,7 +88,7 @@ export default async function ProviderProfilePage({ params }: { params: { id: st
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                             <Card>
                                 <CardHeader><CardTitle>Avaliações de Clientes ({reviews.length})</CardTitle></CardHeader>
                                 <CardContent className="space-y-6">
                                     {reviews.length > 0 ? (
@@ -97,7 +114,6 @@ export default async function ProviderProfilePage({ params }: { params: { id: st
                                     )}
                                 </CardContent>
                             </Card>
-
                         </div>
                         <div className="lg:col-span-1">
                              <Card className="sticky top-24">

@@ -76,6 +76,7 @@ export default function ServicesPage() {
 
     const activeServicesCount = services.filter(s => s.status === 'Ativo').length;
     const pausedServicesCount = services.filter(s => s.status === 'Pausado' || s.status === 'Rejeitado').length;
+    const totalServicesCount = services.length;
 
 
     if (authLoading || pageLoading) {
@@ -90,6 +91,13 @@ export default function ServicesPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total de Anúncios</CardTitle>
+                        <Wrench className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent><div className="text-2xl font-bold">{totalServicesCount}</div></CardContent>
+                </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Anúncios Ativos</CardTitle>
@@ -99,30 +107,17 @@ export default function ServicesPage() {
                 </Card>
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Anúncios Inativos</CardTitle>
+                        <CardTitle className="text-sm font-medium">Anúncios Pausados</CardTitle>
                         <Archive className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent><div className="text-2xl font-bold">{pausedServicesCount}</div></CardContent>
                 </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Minha Avaliação</CardTitle>
-                        <Star className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                         <div className="text-2xl font-bold flex items-center gap-2">
-                             {(userProfile?.averageRating || 0).toFixed(1)}
-                            <StarRating rating={userProfile?.averageRating || 0} size={20} readOnly/>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Baseado em {userProfile?.reviewCount || 0} avaliações</p>
-                    </CardContent>
-                </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Visitas ao Perfil (Mês)</CardTitle>
+                        <CardTitle className="text-sm font-medium">Visitas ao Perfil</CardTitle>
                         <Eye className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">482</div></CardContent>
+                    <CardContent><div className="text-2xl font-bold">{userProfile?.profileViewCount || 0}</div></CardContent>
                 </Card>
             </div>
 
