@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth, useAuthProtection } from '@/hooks/use-auth';
 import Link from 'next/link';
 import {
   AlertDialog,
@@ -13,7 +13,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,10 +24,11 @@ import { LoadingScreen } from '@/components/loading-screen';
 import { useToast } from '@/hooks/use-toast';
 import { getServicesByProvider, updateServiceStatus, deleteService } from '@/app/actions/service-actions';
 import { type ServiceListing } from '@/lib/types';
+import { StarRating } from '@/components/ui/star-rating';
 
 
 export default function ServicesPage() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, userProfile, loading: authLoading } = useAuthProtection({ requiredRoles: ['provider', 'admin'] });
     const { toast } = useToast();
     const [services, setServices] = useState<ServiceListing[]>([]);
     const [pageLoading, setPageLoading] = useState(true);
@@ -43,8 +43,10 @@ export default function ServicesPage() {
                 setPageLoading(false);
             };
             fetchServices();
+        } else if (!authLoading) {
+            setPageLoading(false);
         }
-    }, [user]);
+    }, [user, authLoading]);
 
     const handleStatusToggle = async (service: ServiceListing) => {
         setUpdatingId(service.id);
@@ -73,7 +75,7 @@ export default function ServicesPage() {
     };
 
     const activeServicesCount = services.filter(s => s.status === 'Ativo').length;
-    const pausedServicesCount = services.filter(s => s.status === 'Pausado').length;
+    const pausedServicesCount = services.filter(s => s.status === 'Pausado' || s.status === 'Rejeitado').length;
 
 
     if (authLoading || pageLoading) {
@@ -87,15 +89,8 @@ export default function ServicesPage() {
                 <p className="text-muted-foreground">Gerencie seus serviços, anúncios e visualize seu desempenho.</p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total de Anúncios</CardTitle>
-                        <Wrench className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{services.length}</div></CardContent>
-                </Card>
-                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Anúncios Ativos</CardTitle>
                         <Power className="h-4 w-4 text-green-500" />
@@ -104,10 +99,30 @@ export default function ServicesPage() {
                 </Card>
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Anúncios Pausados</CardTitle>
+                        <CardTitle className="text-sm font-medium">Anúncios Inativos</CardTitle>
                         <Archive className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent><div className="text-2xl font-bold">{pausedServicesCount}</div></CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Minha Avaliação</CardTitle>
+                        <Star className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                         <div className="text-2xl font-bold flex items-center gap-2">
+                             {(userProfile?.averageRating || 0).toFixed(1)}
+                            <StarRating rating={userProfile?.averageRating || 0} size={20} readOnly/>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Baseado em {userProfile?.reviewCount || 0} avaliações</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Visitas ao Perfil (Mês)</CardTitle>
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent><div className="text-2xl font-bold">482</div></CardContent>
                 </Card>
             </div>
 
