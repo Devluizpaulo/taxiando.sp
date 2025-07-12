@@ -20,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Eye, Star, Wrench, Tag, DollarSign, FilePen, ChevronRight, Loader2, Trash2, Power, PowerOff } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Eye, Star, Wrench, Tag, DollarSign, FilePen, ChevronRight, Loader2, Trash2, Power, PowerOff, Archive } from 'lucide-react';
 import { LoadingScreen } from '@/components/loading-screen';
 import { useToast } from '@/hooks/use-toast';
 import { getServicesByProvider, updateServiceStatus, deleteService } from '@/app/actions/service-actions';
@@ -72,6 +72,9 @@ export default function ServicesPage() {
         }
     };
 
+    const activeServicesCount = services.filter(s => s.status === 'Ativo').length;
+    const pausedServicesCount = services.filter(s => s.status === 'Pausado').length;
+
 
     if (authLoading || pageLoading) {
         return <LoadingScreen />;
@@ -87,24 +90,24 @@ export default function ServicesPage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Serviços Ativos</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total de Anúncios</CardTitle>
                         <Wrench className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">{services.filter(s => s.status === 'Ativo').length}</div></CardContent>
+                    <CardContent><div className="text-2xl font-bold">{services.length}</div></CardContent>
                 </Card>
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Leads (Mês)</CardTitle>
-                        <Eye className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium">Anúncios Ativos</CardTitle>
+                        <Power className="h-4 w-4 text-green-500" />
                     </CardHeader>
-                    <CardContent><div className="text-2xl font-bold">42</div></CardContent>
+                    <CardContent><div className="text-2xl font-bold">{activeServicesCount}</div></CardContent>
                 </Card>
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Avaliação Média</CardTitle>
-                        <Star className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium">Anúncios Pausados</CardTitle>
+                        <Archive className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent><div className="text-2xl font-bold flex items-center">4.9 <span className="text-xs text-muted-foreground ml-1">/ 5</span></div></CardContent>
+                    <CardContent><div className="text-2xl font-bold">{pausedServicesCount}</div></CardContent>
                 </Card>
             </div>
 
