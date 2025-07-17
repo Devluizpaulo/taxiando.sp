@@ -26,8 +26,8 @@ export async function POST(req: NextRequest) {
         },
       ],
       mode: 'payment',
-      success_url: 'https://seusite.com/sucesso', // Troque para sua URL real
-      cancel_url: 'https://seusite.com/cancelado', // Troque para sua URL real
+      success_url: 'https://taxiandosp.vercel.app/pagamento/sucesso',
+      cancel_url: 'https://taxiandosp.vercel.app/pagamento/cancelado',
     });
 
     return NextResponse.json({ url: session.url });
