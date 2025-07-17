@@ -236,7 +236,9 @@ export async function getDriverProfile(driverId: string, fleetUserId: string): P
                 condutaxExpiration: toISO(data.condutaxExpiration),
                 alvaraExpiration: toISO(data.alvaraExpiration),
                 lastNotificationCheck: toISO(data.lastNotificationCheck),
-                lastSeekingRentalsCheck: (typeof data.lastSeekingRentalsCheck === 'object' && data.lastSeekingRentalsCheck !== null && typeof (data.lastSeekingRentalsCheck as any).toDate === 'function') ? toISO(data.lastSeekingRentalsCheck as Timestamp) : undefined,
+                lastSeekingRentalsCheck: typeof data.lastSeekingRentalsCheck === "string"
+  ? data.lastSeekingRentalsCheck
+  : toISO(data.lastSeekingRentalsCheck),
             } as AdminUser;
             
             return { success: true, profile };
@@ -467,9 +469,9 @@ export async function getDriversSeekingRentals(): Promise<AdminUser[]> {
                 createdAt: toISO(data.createdAt) || new Date().toISOString(),
                 cnhExpiration: toISO(data.cnhExpiration),
                 condutaxExpiration: toISO(data.condutaxExpiration),
-                alvaraExpiration: toISO(data.alvaraExpiration),
-                lastNotificationCheck: toISO(data.lastNotificationCheck),
-                lastSeekingRentalsCheck: toISO(data.lastSeekingRentalsCheck),
+                alvaraExpiration: toISO(data.alvaraExpiration as Timestamp | undefined),
+                lastNotificationCheck: toISO(data.lastNotificationCheck as Timestamp | undefined),
+                lastSeekingRentalsCheck: toISO(data.lastSeekingRentalsCheck as Timestamp | undefined),
             } as AdminUser;
         });
         

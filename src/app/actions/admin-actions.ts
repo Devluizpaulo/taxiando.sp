@@ -329,6 +329,32 @@ export async function getPaymentSettings(): Promise<PaymentGatewaySettings> {
     }
 }
 
+/**
+ * Atualiza apenas as configurações de pagamento no Firestore.
+ */
+export async function updatePaymentSettings(data: {
+  activeGateway: string;
+  mercadoPagoPublicKey: string;
+  mercadoPagoAccessToken: string;
+  stripePublicKey: string;
+  stripeSecretKey: string;
+}) {
+  try {
+    const docRef = adminDB.collection('settings').doc('global');
+    await docRef.set({
+      activeGateway: data.activeGateway,
+      mercadoPagoPublicKey: data.mercadoPagoPublicKey,
+      mercadoPagoAccessToken: data.mercadoPagoAccessToken,
+      stripePublicKey: data.stripePublicKey,
+      stripeSecretKey: data.stripeSecretKey,
+    }, { merge: true });
+    revalidatePath('/admin/settings/payments');
+    return { success: true, message: 'Configurações de pagamento salvas com sucesso!' };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+}
+
 
 export async function ensureInitialData() {
     try {
@@ -418,6 +444,7 @@ export async function getAdminDashboardData() {
                 alvaraExpiration: toISO(data.alvaraExpiration),
                 lastNotificationCheck: toISO(data.lastNotificationCheck),
                 lastSeekingRentalsCheck: typeof data.lastSeekingRentalsCheck === 'object' && data.lastSeekingRentalsCheck !== null && typeof (data.lastSeekingRentalsCheck as any).toDate === 'function' ? toISO(data.lastSeekingRentalsCheck) : undefined,
+                sessionValidSince: typeof data.sessionValidSince === 'object' && data.sessionValidSince !== null && typeof (data.sessionValidSince as any).toDate === 'function' ? toISO(data.sessionValidSince) : (typeof data.sessionValidSince === 'string' ? data.sessionValidSince : undefined),
             } as AdminUser;
         });
 

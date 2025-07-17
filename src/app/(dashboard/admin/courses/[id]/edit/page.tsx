@@ -417,7 +417,7 @@ function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQu
                         <FormControl>
                             <RadioGroup 
                                 onValueChange={(value) => {
-                                  const newOptions = form.getValues(optionsPath).map((opt: any, idx: number) => ({ ...opt, isCorrect: idx === parseInt(value) }));
+                                  const newOptions = form.getValues(optionsPath as any).map((opt: any, idx: number) => ({ ...opt, isCorrect: idx === parseInt(value) }));
                                   form.setValue(optionsPath as any, newOptions, { shouldValidate: true });
                                 }}
                                 value={optionFields.findIndex(opt => opt.isCorrect).toString()}
