@@ -9,6 +9,9 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as z from 'zod';
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
+import { getPaymentSettings } from '@/app/actions/admin-actions';
 
 
 export async function updateUserProfileStatus(userId: string, newStatus: 'Aprovado' | 'Rejeitado' | 'Pendente') {
