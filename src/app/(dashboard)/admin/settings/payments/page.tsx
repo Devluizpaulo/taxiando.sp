@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -63,15 +63,19 @@ export default function PaymentsSettingsPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div>
             <label className="block font-medium mb-1">Gateway Ativo</label>
-            <Select {...form.register("activeGateway")}
-              defaultValue={form.getValues("activeGateway")}
-              onValueChange={v => form.setValue("activeGateway", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="mercadoPago">MercadoPago</SelectItem>
-                <SelectItem value="stripe">Stripe</SelectItem>
-              </SelectContent>
-            </Select>
+            <Controller
+              control={form.control}
+              name="activeGateway"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange} disabled={loading}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mercadoPago">MercadoPago</SelectItem>
+                    <SelectItem value="stripe">Stripe</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
           <div>
             <label className="block font-medium mb-1">MercadoPago Public Key</label>
