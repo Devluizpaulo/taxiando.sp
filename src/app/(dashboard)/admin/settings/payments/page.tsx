@@ -41,13 +41,17 @@ export default function PaymentsSettingsPage() {
   const onSubmit = async (values: typeof defaultValues) => {
     setLoading(true);
     try {
+      console.log('Enviando valores para updatePaymentSettings:', values);
       const result = await updatePaymentSettings(values);
+      console.log('Resposta do backend:', result);
       if (result.success) {
         toast({ title: "Configurações salvas com sucesso!" });
       } else {
+        toast({ variant: "destructive", title: "Erro ao salvar", description: result.error || 'Erro desconhecido.' });
         throw new Error(result.error);
       }
     } catch (error) {
+      console.error('Erro no submit do painel de pagamentos:', error);
       toast({ variant: "destructive", title: "Erro ao salvar", description: (error as Error).message });
     } finally {
       setLoading(false);
