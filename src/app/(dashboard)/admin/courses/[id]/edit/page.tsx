@@ -402,7 +402,34 @@ function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDi
         <FormMessage />
       </FormItem>
     )}/>
-    {/* Preview opcional pode ser adicionado aqui */}
+    <div className="md:col-span-1 space-y-2">
+      <FormLabel>Preview</FormLabel>
+      <div className="prose dark:prose-invert max-w-none rounded-md border bg-background p-4 min-h-[256px] overflow-x-auto">
+        {((form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.contentBlocks`) as import('@/lib/types').ContentBlock[]) ?? []).length === 0 ? (
+          <p className="text-sm text-muted-foreground">A pré-visualização aparecerá aqui.</p>
+        ) : (
+          (form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.contentBlocks`) as import('@/lib/types').ContentBlock[]).map((block, idx) => {
+            if (block.type === 'heading') {
+              const Tag = `h${block.level}` as keyof JSX.IntrinsicElements;
+              return <Tag key={idx} className="mt-4 mb-2">{block.text}</Tag>;
+            }
+            if (block.type === 'paragraph') {
+              return <ReactMarkdown key={idx} remarkPlugins={[remarkGfm]}>{block.text || ''}</ReactMarkdown>;
+            }
+            if (block.type === 'list') {
+              if (block.style === 'numbered') {
+                return <ol key={idx} className="list-decimal ml-6">{(block.items || []).map((item, i) => <li key={i}>{item}</li>)}</ol>;
+              }
+              return <ul key={idx} className="list-disc ml-6">{(block.items || []).map((item, i) => <li key={i}>{item}</li>)}</ul>;
+            }
+            if (block.type === 'image') {
+              return <div key={idx} className="my-4"><img src={block.url} alt={block.alt || ''} className="max-w-full rounded shadow" /><div className="text-xs text-center text-muted-foreground">{block.alt}</div></div>;
+            }
+            return null;
+          })
+        )}
+      </div>
+    </div>
   </div>
 )}
                     {lessonType === 'quiz' ? (<QuizBuilder form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />) : (<MaterialField form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />)}
