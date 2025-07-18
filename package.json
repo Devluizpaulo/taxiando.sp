@@ -61,6 +61,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@opentelemetry/exporter-jaeger": "^2.0.1",
     "@types/mercadopago": "^1.5.11",
     "@types/node": "^20",
     "@types/react": "^18",
