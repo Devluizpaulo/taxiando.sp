@@ -108,6 +108,8 @@ export default function SettingsPage() {
     const watchedTerms = form.watch('legal.termsOfService');
     const watchedPrivacy = form.watch('legal.privacyPolicy');
 
+    const logoInputRef = useRef<HTMLInputElement>(null);
+
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -209,7 +211,7 @@ export default function SettingsPage() {
                                                 type="file"
                                                 accept="image/*"
                                                 style={{ display: 'none' }}
-                                                ref={el => (window.__logoInput = el)}
+                                                ref={logoInputRef}
                                                 onChange={async (e) => {
                                                     const file = e.target.files?.[0];
                                                     if (!file) return;
@@ -225,7 +227,7 @@ export default function SettingsPage() {
                                                     }
                                                 }}
                                             />
-                                            <Button type="button" variant="outline" onClick={() => window.__logoInput?.click()}>Upload</Button>
+                                            <Button type="button" variant="outline" onClick={() => logoInputRef.current?.click()}>Upload</Button>
                                         </div>
                                         <FormDescription>Use um caminho local (ex: /logo.png), uma URL completa ou faça upload de uma imagem.</FormDescription>
                                         {field.value && (
