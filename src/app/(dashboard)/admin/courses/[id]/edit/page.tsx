@@ -396,7 +396,7 @@ function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDi
           control={form.control}
           name={`modules.${moduleIndex}.lessons.${lessonIndex}.contentBlocks`}
           render={({ field }) => (
-            <ContentBlocksEditor value={field.value || []} onChange={field.onChange} />
+            <ContentBlocksEditor value={(field.value as import('@/lib/types').ContentBlock[]) ?? []} onChange={field.onChange} />
           )}
         />
         <FormMessage />
