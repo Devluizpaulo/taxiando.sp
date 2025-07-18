@@ -307,15 +307,36 @@ export function BlogPostForm({ post }: { post?: BlogPost }) {
                                         <FormDescription>Posts em rascunho não são visíveis publicamente.</FormDescription>
                                     <FormMessage /></FormItem>
                                 )}/>
-                                 <FormField control={form.control} name="imageUrls" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>URLs das Imagens de Capa</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} placeholder="https://..." />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}/>
+                                 <FormField control={form.control} name="imageUrls" render={() => (
+    <FormItem>
+        <FormLabel>URLs das Imagens de Capa</FormLabel>
+        <FormDescription>Adicione uma ou mais URLs de imagens. A primeira será usada como capa principal.</FormDescription>
+        {form.watch('imageUrls').map((url, idx) => (
+            <div key={idx} className="flex items-center gap-2 mb-2">
+                <Input
+                    value={url}
+                    placeholder="https://..."
+                    onChange={e => {
+                        const urls = [...form.getValues('imageUrls')];
+                        urls[idx] = e.target.value;
+                        form.setValue('imageUrls', urls);
+                    }}
+                />
+                <Button type="button" variant="ghost" size="icon" onClick={() => {
+                    const urls = [...form.getValues('imageUrls')];
+                    urls.splice(idx, 1);
+                    form.setValue('imageUrls', urls);
+                }} disabled={form.watch('imageUrls').length === 1}>
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            </div>
+        ))}
+        <Button type="button" variant="outline" size="sm" onClick={() => form.setValue('imageUrls', [...form.getValues('imageUrls'), ''])}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar URL
+        </Button>
+        <FormMessage />
+    </FormItem>
+)}/>
                                 <div className="relative flex items-center justify-center text-sm text-muted-foreground before:flex-1 before:border-b before:border-border after:flex-1 after:border-b after:border-border">
                                     <span className="px-2">OU</span>
                                 </div>

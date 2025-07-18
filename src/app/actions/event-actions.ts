@@ -20,7 +20,6 @@ export async function getAdminEvents(): Promise<Event[]> {
             const data = doc.data();
             const startDate = (data.startDate as Timestamp)?.toDate();
             const createdAt = (data.createdAt as Timestamp)?.toDate();
-
             return {
                 ...data,
                 id: doc.id,
@@ -50,10 +49,12 @@ export async function getUpcomingEvents(): Promise<Event[]> {
     return querySnapshot.docs.map(doc => {
         const data = doc.data();
         const startDate = (data.startDate as Timestamp)?.toDate();
+        const createdAt = (data.createdAt as Timestamp)?.toDate();
         return { 
             id: doc.id,
             ...data,
             startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
+            createdAt: createdAt ? createdAt.toISOString() : new Date().toISOString(),
         } as Event;
     });
   } catch (error) {
@@ -100,12 +101,13 @@ export async function getEventById(eventId: string): Promise<Event | null> {
             return null;
         }
         const data = eventDoc.data()!;
-        
+        const startDate = (data.startDate as Timestamp)?.toDate();
+        const createdAt = (data.createdAt as Timestamp)?.toDate();
         return {
             ...data,
             id: eventDoc.id,
-            startDate: (data.startDate as Timestamp).toDate().toISOString(),
-            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+            startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
+            createdAt: createdAt ? createdAt.toISOString() : new Date().toISOString(),
         } as Event;
 
     } catch (error) {
