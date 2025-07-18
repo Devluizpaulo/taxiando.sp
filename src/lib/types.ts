@@ -151,16 +151,24 @@ export interface QuizQuestion {
   correctOptionId?: string; // Correct Option ID is used in the Marketing Quiz, while isCorrect is used in the Course Quiz. Both can coexist.
 }
 
+// Novo tipo para blocos de conteúdo de aula
+export type ContentBlock =
+  | { type: 'heading'; level: 1 | 2 | 3 | 4; text: string }
+  | { type: 'paragraph'; text: string }
+  | { type: 'list'; style: 'bullet' | 'numbered'; items: string[] }
+  | { type: 'image'; url: string; alt?: string };
+
 export interface Lesson {
   id: string;
   title: string;
   type: 'video' | 'text' | 'quiz' | 'audio';
-  duration: number; 
-  content?: string;
-  audioFile?: any; 
+  duration: number;
+  content?: string; // compatibilidade antiga
+  contentBlocks?: ContentBlock[]; // novo modelo
+  audioFile?: any;
   materials?: SupportingMaterial[];
   questions?: QuizQuestion[];
-  passingScore?: number; 
+  passingScore?: number;
 }
 
 

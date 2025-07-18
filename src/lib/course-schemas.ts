@@ -28,6 +28,15 @@ export const lessonSchema = z.object({
   type: z.enum(['video', 'text', 'quiz', 'audio'], { required_error: "Selecione o tipo de aula."}),
   duration: z.coerce.number().min(1, "A duração deve ser de pelo menos 1 minuto."),
   content: z.string().optional(),
+  contentBlocks: z.array(z.object({
+    type: z.enum(['heading', 'paragraph', 'list', 'image']),
+    level: z.number().optional(),
+    text: z.string().optional(),
+    style: z.enum(['bullet', 'numbered']).optional(),
+    items: z.array(z.string()).optional(),
+    url: z.string().optional(),
+    alt: z.string().optional(),
+  })).optional(),
   audioFile: z.any().optional(),
   materials: z.array(supportingMaterialSchema).optional(),
   questions: z.array(quizQuestionSchema).optional(),
@@ -39,8 +48,8 @@ export const lessonSchema = z.object({
         }
     }
     if (data.type === 'text') {
-        if (!data.content || data.content.length < 50) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "O conteúdo do texto deve ter pelo menos 50 caracteres.", path: ['content'] });
+        if ((!data.contentBlocks || data.contentBlocks.length === 0) && (!data.content || data.content.length < 50)) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "A aula deve ter pelo menos um bloco de conteúdo ou 50 caracteres de texto.", path: ['contentBlocks'] });
         }
     }
      if (data.type === 'audio') {

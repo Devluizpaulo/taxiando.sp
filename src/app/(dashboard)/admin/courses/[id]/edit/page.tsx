@@ -26,6 +26,8 @@ import { useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { ContentBlocksEditor } from '@/components/course/ContentBlocksEditor';
+import { Controller } from 'react-hook-form';
 
 const lessonTypeIcons: { [key: string]: React.ReactNode } = {
     video: <Video className="h-4 w-4" />,
@@ -387,29 +389,20 @@ function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDi
                     )}/>)}
                     {lessonType === 'text' && (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (
+    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.contentBlocks`} render={({ field }) => (
       <FormItem className="md:col-span-1">
-        <FormLabel>Conteúdo da Aula (Markdown)</FormLabel>
-        <div className="flex gap-2 mb-2">
-          <MarkdownAdvancedGuideModal />
-          <InsertImageButton onInsert={markdown => field.onChange(field.value + (field.value ? '\n' : '') + markdown)} />
-        </div>
-        <FormControl>
-          <Textarea {...field} placeholder="Escreva o conteúdo da aula aqui..." rows={12} disabled={isEditingDisabled} />
-        </FormControl>
+        <FormLabel>Conteúdo da Aula (Blocos)</FormLabel>
+        <Controller
+          control={form.control}
+          name={`modules.${moduleIndex}.lessons.${lessonIndex}.contentBlocks`}
+          render={({ field }) => (
+            <ContentBlocksEditor value={field.value || []} onChange={field.onChange} />
+          )}
+        />
         <FormMessage />
       </FormItem>
     )}/>
-    <div className="md:col-span-1 space-y-2">
-      <FormLabel>Preview</FormLabel>
-      <div className="prose dark:prose-invert max-w-none rounded-md border bg-background p-4 min-h-[256px] overflow-x-auto">
-        {watchedContent ? (
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{watchedContent}</ReactMarkdown>
-        ) : (
-          <p className="text-sm text-muted-foreground">A pré-visualização aparecerá aqui.</p>
-        )}
-      </div>
-    </div>
+    {/* Preview opcional pode ser adicionado aqui */}
   </div>
 )}
                     {lessonType === 'quiz' ? (<QuizBuilder form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />) : (<MaterialField form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />)}
