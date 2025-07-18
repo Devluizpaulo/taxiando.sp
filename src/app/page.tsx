@@ -270,7 +270,7 @@ const RentVehiclePrompt = () => (
             </div>
           </div>
           <div className="relative h-80 w-full order-first md:order-last">
-            <Image src="https://placehold.co/600x400.png" alt="Chave de carro sendo entregue" layout="fill" objectFit="cover" className="rounded-lg shadow-xl" data-ai-hint="handing car keys" />
+            <Image src="/bannerhome.png" alt="Chave de carro sendo entregue" layout="fill" objectFit="cover" className="rounded-lg shadow-xl" data-ai-hint="handing car keys" />
           </div>
         </div>
       </div>
