@@ -547,7 +547,16 @@ export async function getAdminReportsData() {
         const topUsedCoupons = couponsSnapshot.docs.map(doc => doc.data() as Coupon).sort((a, b) => (b.uses || 0) - (a.uses || 0)).slice(0, 5);
 
         // Engagement reports
-        const courses = coursesSnapshot.docs.map(doc => doc.data() as Course);
+        const courses = coursesSnapshot.docs.map(doc => {
+            const data = doc.data() as Course;
+            return {
+                ...data,
+                id: doc.id,
+                createdAt: (typeof data.createdAt === 'object' && data.createdAt !== null && typeof (data.createdAt as any).toDate === 'function')
+                  ? (data.createdAt as any).toDate().toISOString()
+                  : (typeof data.createdAt === 'string' ? data.createdAt : undefined),
+            } as Course;
+        });
         const topCourses = courses.sort((a, b) => (b.students || 0) - (a.students || 0)).slice(0, 5);
         
         const vehicles = vehiclesSnapshot.docs.map(doc => doc.data() as Vehicle);
