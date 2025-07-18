@@ -26,7 +26,6 @@ import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck,
 import { useAuth } from '@/hooks/use-auth';
 import { useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
-import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
