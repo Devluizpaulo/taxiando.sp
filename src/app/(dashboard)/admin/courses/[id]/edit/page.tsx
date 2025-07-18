@@ -24,6 +24,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic, DollarSign, Copyright, Gavel, CreditCard, BarChart, Trophy, BrainCircuit } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
+import { useRef } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
+import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const lessonTypeIcons: { [key: string]: React.ReactNode } = {
     video: <Video className="h-4 w-4" />,
@@ -31,6 +36,84 @@ const lessonTypeIcons: { [key: string]: React.ReactNode } = {
     quiz: <ClipboardCheck className="h-4 w-4" />,
     audio: <Mic className="h-4 w-4" />,
 };
+
+// Guia de Markdown Avançado
+const advancedMarkdownGuide = `
+# Título Principal
+## Subtítulo
+
+**Negrito**, *itálico*, ~~riscado~~, [link](https://taxiandosp.vercel.app)
+
+- Lista não ordenada
+- Outro item
+
+1. Lista ordenada
+2. Segundo item
+
+> Citação de destaque
+
+| Tabela | Exemplo |
+| ------ | ------- |
+| Celula | Celula  |
+
+![Imagem Exemplo](https://placehold.co/400x200)
+
+<p align="center">Alinhamento centralizado (simulado com HTML)</p>
+`;
+
+function MarkdownAdvancedGuideModal() {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button type="button" variant="outline" className="mb-2">Guia de Markdown Avançado</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Guia de Markdown Avançado</DialogTitle>
+          <DialogDescription>
+            Exemplos de formatação, listas, imagens, tabelas, citações e alinhamento.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="prose dark:prose-invert max-w-none">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{advancedMarkdownGuide}</ReactMarkdown>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="secondary">Fechar</Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function InsertImageButton({ onInsert }: { onInsert: (markdown: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [url, setUrl] = useState('');
+  const [desc, setDesc] = useState('');
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button type="button" variant="outline" className="mb-2 ml-2">Inserir Imagem</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Inserir Imagem</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Input placeholder="URL da imagem" value={url} onChange={e => setUrl(e.target.value)} />
+          <Input placeholder="Descrição (alt)" value={desc} onChange={e => setDesc(e.target.value)} />
+        </div>
+        <DialogFooter>
+          <Button onClick={() => { onInsert(`![${desc}](${url})`); setOpen(false); setUrl(''); setDesc(''); }} disabled={!url}>Inserir</Button>
+          <DialogClose asChild>
+            <Button variant="secondary">Cancelar</Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function EditCoursePage({ params }: { params: { id: string }}) {
     const router = useRouter();
@@ -285,6 +368,7 @@ function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPub
 
 function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, removeLesson: (index: number) => void, isEditingDisabled: boolean }) {
     const lessonType = useWatch({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.type` });
+    const watchedContent = useWatch({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.content` });
 
     return (
         <Card className="p-4 bg-muted/50">
@@ -304,7 +388,33 @@ function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDi
                             <FormDescription>Se já houver um áudio salvo, o envio de um novo irá substituí-lo.</FormDescription>
                         <FormMessage /></FormItem>
                     )}/>)}
-                    {lessonType === 'text' && (<FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (<FormItem><FormLabel>Conteúdo da Aula</FormLabel><FormControl><Textarea {...field} placeholder="Escreva o conteúdo da aula aqui." rows={8} disabled={isEditingDisabled} /></FormControl><FormDescription>Dica: Use Markdown para adicionar **negrito**, *itálico*, listas e mais.</FormDescription><FormMessage /></FormItem>)}/>)}
+                    {lessonType === 'text' && (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (
+      <FormItem className="md:col-span-1">
+        <FormLabel>Conteúdo da Aula (Markdown)</FormLabel>
+        <div className="flex gap-2 mb-2">
+          <MarkdownAdvancedGuideModal />
+          <InsertImageButton onInsert={markdown => field.onChange(field.value + (field.value ? '\n' : '') + markdown)} />
+        </div>
+        <FormControl>
+          <Textarea {...field} placeholder="Escreva o conteúdo da aula aqui..." rows={12} disabled={isEditingDisabled} />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}/>
+    <div className="md:col-span-1 space-y-2">
+      <FormLabel>Preview</FormLabel>
+      <div className="prose dark:prose-invert max-w-none rounded-md border bg-background p-4 min-h-[256px] overflow-x-auto">
+        {watchedContent ? (
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{watchedContent}</ReactMarkdown>
+        ) : (
+          <p className="text-sm text-muted-foreground">A pré-visualização aparecerá aqui.</p>
+        )}
+      </div>
+    </div>
+  </div>
+)}
                     {lessonType === 'quiz' ? (<QuizBuilder form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />) : (<MaterialField form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />)}
                 </div>
                 <Button type="button" variant="ghost" size="icon" onClick={() => removeLesson(lessonIndex)} disabled={isEditingDisabled} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
