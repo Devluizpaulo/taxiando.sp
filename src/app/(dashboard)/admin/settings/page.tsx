@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -201,7 +201,38 @@ export default function SettingsPage() {
                                     <FormItem><FormLabel>Nome do Site</FormLabel><FormControl><Input {...field} placeholder="Táxiando SP" /></FormControl><FormMessage /></FormItem>
                                 )}/>
                                  <FormField control={form.control} name="logoUrl" render={({ field }) => (
-                                    <FormItem><FormLabel>URL do Logo</FormLabel><FormControl><Input {...field} placeholder="/logo.png" /></FormControl><FormDescription>Use um caminho local (ex: /logo.png) ou uma URL completa.</FormDescription><FormMessage /></FormItem>
+                                    <FormItem>
+                                        <FormLabel>URL do Logo</FormLabel>
+                                        <div className="flex gap-2 items-center">
+                                            <Input {...field} placeholder="/logo.png" />
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                style={{ display: 'none' }}
+                                                ref={el => (window.__logoInput = el)}
+                                                onChange={async (e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (!file) return;
+                                                    const formData = new FormData();
+                                                    formData.append('file', file);
+                                                    const res = await fetch('/api/upload/logo', { method: 'POST', body: formData });
+                                                    const data = await res.json();
+                                                    if (data.url) {
+                                                        field.onChange(data.url);
+                                                        toast({ title: 'Logo enviado!', description: 'A URL foi preenchida automaticamente.' });
+                                                    } else {
+                                                        toast({ variant: 'destructive', title: 'Erro ao enviar logo', description: data.error || 'Erro desconhecido.' });
+                                                    }
+                                                }}
+                                            />
+                                            <Button type="button" variant="outline" onClick={() => window.__logoInput?.click()}>Upload</Button>
+                                        </div>
+                                        <FormDescription>Use um caminho local (ex: /logo.png), uma URL completa ou faça upload de uma imagem.</FormDescription>
+                                        {field.value && (
+                                            <div className="mt-2"><img src={field.value} alt="Logo preview" className="h-16 max-w-xs rounded border" /></div>
+                                        )}
+                                        <FormMessage />
+                                    </FormItem>
                                 )}/>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
                                      <FormField control={form.control} name="contactEmail" render={({ field }) => (
