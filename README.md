@@ -89,7 +89,13 @@ Abra [http://localhost:9002](http://localhost:9002) no seu navegador para ver o 
 
 ## ⚠️ Solução de Problemas: Erro de "Credenciais não definidas"
 
-Se você encontrar um erro dizendo `Firebase Admin SDK not initialized`, significa que a aplicação não encontrou as "chaves secretas" para se conectar ao seu banco de dados no servidor.
+Se você encontrar um erro dizendo `Firebase Admin SDK not initialized` ou mensagens como:
+
+```
+Set the 'FIREBASE_SERVICE_ACCOUNT_JSON' environment variable.
+```
+
+significa que a aplicação não encontrou as "chaves secretas" para se conectar ao seu banco de dados no servidor.
 
 **Como Resolver:**
 
@@ -99,8 +105,17 @@ Se você encontrar um erro dizendo `Firebase Admin SDK not initialized`, signifi
     *   Clique em **"Gerar nova chave privada"**. Isso fará o download de um arquivo JSON.
 
 2.  **Configure a Variável de Ambiente:**
-    *   No seu arquivo `.env.local`, encontre a linha `FIREBASE_SERVICE_ACCOUNT_JSON=''`.
-    *   Copie o **conteúdo completo** do seu arquivo JSON e cole dentro das aspas simples.
+    *   **Em desenvolvimento local:**
+        *   No seu arquivo `.env.local`, encontre a linha `FIREBASE_SERVICE_ACCOUNT_JSON=''`.
+        *   Copie o **conteúdo completo** do seu arquivo JSON e cole dentro das aspas simples.
+    *   **Em produção (Vercel):**
+        *   Acesse o painel do seu projeto na [Vercel](https://vercel.com/).
+        *   Vá em **Settings > Environment Variables**.
+        *   Adicione uma nova variável:
+            - **Name:** `FIREBASE_SERVICE_ACCOUNT_JSON`
+            - **Value:** Cole TODO o conteúdo do arquivo JSON baixado.
+            - **Dica:** Se o campo não aceitar múltiplas linhas, coloque o JSON em uma linha só e troque as quebras de linha do `private_key` por `\\n` (duas barras e um n minúsculo).
+        *   Salve e faça o redeploy do projeto.
 
 Após configurar `FIREBASE_SERVICE_ACCOUNT_JSON` e as outras chaves do `.env.example`, o erro desaparecerá.
 
