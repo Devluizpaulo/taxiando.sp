@@ -161,7 +161,7 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                         <SidebarGroupContent>
                             <SidebarMenu>
                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/events"><Map/> Guia SP & Eventos</Link></SidebarMenuButton></SidebarMenuItem>
-                                <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/blog"><Newspaper/> Guias & Notícias</Link></SidebarMenuButton></SidebarMenuItem>
+                                <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/blog"><Newspaper/> Blog & Notícias</Link></SidebarMenuButton></SidebarMenuItem>
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>

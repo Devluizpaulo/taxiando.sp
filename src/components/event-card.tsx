@@ -39,27 +39,53 @@ export const EventCard = ({ event }: { event: Event }) => {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Card id={`event-${event.id}`} className="group w-full overflow-hidden rounded-xl border-2 border-transparent bg-card shadow-lg transition-all duration-300 ease-in-out hover:border-primary hover:shadow-2xl hover:-translate-y-1 cursor-pointer">
-                    <div className="flex h-36">
-                        <div className="flex w-24 flex-shrink-0 flex-col items-center justify-center bg-muted/50 p-2 text-center">
-                            <Image src="/logo.png" alt="Logo" width={24} height={24} className="mb-2 rounded-md" />
-                            <p className="text-3xl font-bold font-headline text-primary">{day}</p>
-                            <p className="font-semibold uppercase text-muted-foreground">{month}</p>
-                        </div>
-                        <div className="flex flex-1 flex-col justify-between p-4">
-                            <div>
-                                <CardTitle className="font-headline text-lg leading-tight line-clamp-2">{event.title}</CardTitle>
-                                <CardDescription className="mt-1 text-xs text-muted-foreground flex items-center gap-1.5">
-                                    <MapPin className="h-3 w-3" /> {event.location}
-                                </CardDescription>
-                                <CardDescription className="mt-1 text-xs text-muted-foreground flex items-center gap-1.5">
-                                    <Clock className="h-3 w-3" /> Início às {time}h
-                                </CardDescription>
-                            </div>
-                            <div className="text-right text-sm font-semibold text-primary flex items-center justify-end gap-1 mt-2">
-                                Saiba Mais <MoveRight className="h-4 w-4" />
+                <Card id={`event-${event.id}`} className="group overflow-hidden rounded-xl border-2 border-transparent bg-card shadow-lg transition-all duration-300 ease-in-out hover:border-primary hover:shadow-2xl hover:-translate-y-1 cursor-pointer h-96">
+                    <div className="relative h-full">
+                        {/* Background gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-background/80"></div>
+                        
+                        {/* Date badge */}
+                        <div className="absolute top-4 left-4 z-10">
+                            <div className="bg-primary text-primary-foreground rounded-lg px-3 py-2 text-center shadow-lg">
+                                <div className="text-2xl font-bold">{day}</div>
+                                <div className="text-xs font-semibold uppercase">{month}</div>
                             </div>
                         </div>
+                        
+                        {/* Time badge */}
+                        <div className="absolute top-4 right-4 z-10">
+                            <div className="bg-background/90 backdrop-blur-sm text-foreground rounded-lg px-3 py-2 text-center shadow-lg border">
+                                <div className="text-sm font-semibold">{time}h</div>
+                            </div>
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="relative z-10 h-full flex flex-col justify-end p-6">
+                            <div className="space-y-3">
+                                <CardTitle className="font-headline text-xl leading-tight line-clamp-2 text-foreground drop-shadow-sm">
+                                    {event.title}
+                                </CardTitle>
+                                
+                                <CardDescription className="text-sm text-muted-foreground flex items-center gap-1.5 drop-shadow-sm">
+                                    <MapPin className="h-4 w-4" /> 
+                                    <span className="line-clamp-1">{event.location}</span>
+                                </CardDescription>
+                                
+                                <div className="flex items-center justify-between pt-2">
+                                    <div className="text-sm font-semibold text-primary flex items-center gap-1">
+                                        Saiba Mais <MoveRight className="h-4 w-4" />
+                                    </div>
+                                    
+                                    {/* Logo */}
+                                    <div className="bg-background/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
+                                        <Image src="/logo.png" alt="Logo" width={20} height={20} className="rounded-md" />
+                                    </div>
+                            </div>
+                            </div>
+                        </div>
+                        
+                        {/* Hover effect overlay */}
+                        <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300"></div>
                     </div>
                 </Card>
             </DialogTrigger>

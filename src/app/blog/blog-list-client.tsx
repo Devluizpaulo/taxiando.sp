@@ -115,7 +115,7 @@ export function BlogListClient({ initialPosts }: { initialPosts: BlogPost[]}) {
     return (
         <div className="container mx-auto px-4 py-12 md:px-6 md:py-16">
             <div className="mb-12 text-center">
-                <h1 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">Guias & Notícias</h1>
+                <h1 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">Blog & Notícias</h1>
                 <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
                     Fique por dentro de tudo que acontece no mundo do transporte em São Paulo.
                 </p>
