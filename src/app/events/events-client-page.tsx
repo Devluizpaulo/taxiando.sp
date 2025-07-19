@@ -147,7 +147,7 @@ export default function EventsPageClient({ events, tips }: { events: Event[], ti
                 <div className="container mx-auto px-4 py-12 md:px-6 md:py-16">
                     <div className="mb-12 text-center slide-in">
                         <h1 className="font-headline text-4xl font-bold tracking-tight sm:text-5xl gradient-text mb-4">
-                            Guia & Eventos - SP
+                            Eventos
                         </h1>
                         <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600 leading-relaxed">
                             Explore os principais eventos, dicas de gastronomia e lazer para aproveitar São Paulo ao máximo.
@@ -679,8 +679,7 @@ function EnhancedEventCard({ event, index, onOpenModal }: { event: Event, index:
     );
 }
 
-// Componente Modal do Evento
-function EventModal({ event, onClose }: { event: Event, onClose: () => void }) {
+export function EventModal({ event, onClose }: { event: Event, onClose: () => void }) {
     const [showShareOptions, setShowShareOptions] = useState(false);
     const startDate = new Date(event.startDate as string);
     const time = format(startDate, 'HH:mm');

@@ -105,7 +105,7 @@ export function PublicFooter() {
                 <div className="grid gap-2">
                     <Link href="/how-to-become-a-taxi-driver" className="text-sm text-muted-foreground transition-colors hover:text-primary">Seja um Taxista</Link>
                     <Link href="/rentals" className="text-sm text-muted-foreground transition-colors hover:text-primary">Alugar Veículo</Link>
-                    <Link href="/events" className="text-sm text-muted-foreground transition-colors hover:text-primary">Guia & Eventos - SP</Link>
+                    <Link href="/events" className="text-sm text-muted-foreground transition-colors hover:text-primary">Eventos</Link>
                     <Link href="/services/marketplace" className="text-sm text-muted-foreground transition-colors hover:text-primary">Serviços</Link>
                     <Link href="/blog" className="text-sm text-muted-foreground transition-colors hover:text-primary">Blog & Notícias</Link>
                 </div>

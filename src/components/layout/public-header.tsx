@@ -23,7 +23,8 @@ export function PublicHeader() {
   const navLinks = [
     { href: "/", label: "Início", icon: Home },
     { href: "/how-to-become-a-taxi-driver", label: "Seja um Taxista", icon: UserPlus },
-    { href: "/events", label: "Guia & Eventos - SP", icon: Map },
+    { href: "/events", label: "Eventos", icon: Map },
+    { href: "/spdicas", label: "Dicas", icon: Newspaper },
     { href: "/rentals", label: "Alugar Veículo", icon: Car },
     { href: "/services/marketplace", label: "Serviços", icon: Wrench },
     { href: "/blog", label: "Blog & Notícias", icon: Newspaper },

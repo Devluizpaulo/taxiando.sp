@@ -1,151 +1,133 @@
 
-
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
-import { MoveRight, MapPin, Lightbulb, TrafficCone, Share2, Clock, Calendar } from 'lucide-react';
+import { MapPin, Clock, ArrowRight } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { type Event } from '@/lib/types';
-import { SharePopover } from './share-buttons';
-import { useEffect, useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { EventModal } from '@/app/events/events-client-page';
 
 export const EventCard = ({ event }: { event: Event }) => {
-    const [currentUrl, setCurrentUrl] = useState('');
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const eventUrl = `${window.location.origin}/events#event-${event.id}`;
-            setCurrentUrl(eventUrl);
-        }
-    }, [event.id]);
-    
-    const eventDate = parseISO(event.startDate as string);
-    const day = format(eventDate, "d");
-    const month = format(eventDate, "MMM", { locale: ptBR }).replace('.', '');
-    const time = format(eventDate, "HH:mm");
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const startDate = new Date(event.startDate as string);
+    const time = format(startDate, 'HH:mm');
+    const date = format(startDate, 'dd MMM', { locale: ptBR }).toUpperCase();
 
     return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Card id={`event-${event.id}`} className="group overflow-hidden rounded-xl border-2 border-transparent bg-card shadow-lg transition-all duration-300 ease-in-out hover:border-primary hover:shadow-2xl hover:-translate-y-1 cursor-pointer h-96">
-                    <div className="relative h-full">
-                        {/* Background gradient overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-background/80"></div>
-                        
-                        {/* Date badge */}
-                        <div className="absolute top-4 left-4 z-10">
-                            <div className="bg-primary text-primary-foreground rounded-lg px-3 py-2 text-center shadow-lg">
-                                <div className="text-2xl font-bold">{day}</div>
-                                <div className="text-xs font-semibold uppercase">{month}</div>
-                            </div>
-                        </div>
-                        
-                        {/* Time badge */}
-                        <div className="absolute top-4 right-4 z-10">
-                            <div className="bg-background/90 backdrop-blur-sm text-foreground rounded-lg px-3 py-2 text-center shadow-lg border">
-                                <div className="text-sm font-semibold">{time}h</div>
-                            </div>
-                        </div>
-                        
-                        {/* Content */}
-                        <div className="relative z-10 h-full flex flex-col justify-end p-6">
-                            <div className="space-y-3">
-                                <CardTitle className="font-headline text-xl leading-tight line-clamp-2 text-foreground drop-shadow-sm">
-                                    {event.title}
-                                </CardTitle>
-                                
-                                <CardDescription className="text-sm text-muted-foreground flex items-center gap-1.5 drop-shadow-sm">
-                                    <MapPin className="h-4 w-4" /> 
-                                    <span className="line-clamp-1">{event.location}</span>
-                                </CardDescription>
-                                
-                                <div className="flex items-center justify-between pt-2">
-                                    <div className="text-sm font-semibold text-primary flex items-center gap-1">
-                                        Saiba Mais <MoveRight className="h-4 w-4" />
-                                    </div>
-                                    
-                                    {/* Logo */}
-                                    <div className="bg-background/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
-                                        <Image src="/logo.png" alt="Logo" width={20} height={20} className="rounded-md" />
-                                    </div>
-                            </div>
-                            </div>
-                        </div>
-                        
-                        {/* Hover effect overlay */}
-                        <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300"></div>
-                    </div>
-                </Card>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col p-0 overflow-hidden">
-                 {/* Watermark in the background. */}
-                 <Image
+        <>
+            <Card className="card-hover overflow-hidden border-0 shadow-2xl bg-white/80 backdrop-blur-xl rounded-2xl relative">
+                {/* Marca d'água */}
+                <Image
                     src="/logo.png"
-                    alt="Táxiando SP Watermark"
-                    width={350}
-                    height={350}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.04] pointer-events-none"
-                    priority
+                    alt="Marca d'água"
+                    fill
+                    className="absolute inset-0 w-full h-full object-contain opacity-5 pointer-events-none select-none z-0"
+                    style={{ filter: 'blur(0.5px)' }}
                 />
-                 {/* The rest of the content will render on top of the watermark */}
-                 <DialogHeader className="p-6 pb-4 border-b bg-background/90 backdrop-blur-sm z-10">
-                    <DialogTitle className="font-headline text-2xl">{event.title}</DialogTitle>
-                    <DialogDescription className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" /> {event.location}
-                    </DialogDescription>
-                 </DialogHeader>
-                 <div className="flex-1 overflow-y-auto p-6 space-y-6 z-10">
-                    <div>
-                        <h4 className="font-semibold mb-2">Descrição Completa</h4>
-                        <p className="text-sm text-muted-foreground">{event.description}</p>
+                <CardContent className="p-0 relative z-10">
+                    {/* Header com hora e logo */}
+                    <div className="relative h-24 bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900 flex items-center justify-between px-5">
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-xl glass-effect shadow-xl">
+                                <Clock className="h-6 w-6 text-white drop-shadow-sm" />
+                            </div>
+                            <div className="space-y-1">
+                                <div className="text-white/70 text-xs font-medium tracking-wider">HORÁRIO</div>
+                                <div className="text-white text-xl font-bold tracking-wider drop-shadow-sm">{time}h</div>
+                            </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                            <div className="w-10 h-10 glass-effect rounded-xl flex items-center justify-center shadow-xl border border-white/30">
+                                <Image src="/logo.png" alt="Logo" width={24} height={24} className="rounded-sm drop-shadow-sm" />
+                            </div>
+                            <div className="px-2 py-1 bg-white/25 backdrop-blur-sm rounded-xl border border-white/40 shadow-lg">
+                                <span className="text-white text-xs font-bold tracking-wider">{date}</span>
+                            </div>
+                        </div>
                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <p className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary"/> <strong className="text-foreground">Data e Hora:</strong> {format(eventDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}h</p>
+                    {/* Conteúdo principal */}
+                    <div className="p-5 space-y-4">
+                        <h3 className="font-bold text-slate-800 text-lg leading-tight mb-1 line-clamp-2">
+                            {event.title}
+                        </h3>
+                        <div className="flex items-start gap-3 p-3 bg-gradient-to-br from-slate-100 via-gray-50 to-zinc-100 rounded-xl border border-slate-200/50 shadow-sm">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md">
+                                <MapPin className="h-4 w-4 text-white" />
                     </div>
+                            <div className="flex-1">
+                                <div className="text-xs font-bold text-slate-700 mb-1 tracking-wider">LOCAL</div>
+                                <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                                    {event.location}
+                                </p>
+                    </div>
+                        </div>
+                        <p className="text-sm text-slate-700 leading-relaxed line-clamp-3">
+                            {event.description}
+                        </p>
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="w-full mt-4 px-8 py-3 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white text-sm font-bold rounded-2xl hover:from-amber-600 hover:via-orange-600 hover:to-red-600 transition-all duration-500 flex items-center justify-center gap-3 group shadow-xl hover:shadow-2xl transform hover:scale-105 relative overflow-hidden cursor-pointer"
+                        >
+                            <span className="relative z-10 tracking-wider">SAIBA MAIS</span>
+                            <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300 relative z-10" />
+                        </button>
+                        </div>
+                </CardContent>
+            </Card>
+            {isModalOpen && (
+                <EventModal event={event} onClose={() => setIsModalOpen(false)} />
+            )}
+        </>
+    );
+};
 
-                    <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
-                        <h4 className="font-bold">Dicas Táticas para Motoristas</h4>
-                        <div className="flex items-start gap-3 text-sm text-muted-foreground">
-                            <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0 text-amber-500" />
-                            <div><strong className="text-foreground">Resumo da Oportunidade: </strong>{event.driverSummary}</div>
-                        </div>
-                         <div className="flex items-start gap-3 text-sm text-muted-foreground">
-                            <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0 text-amber-500" />
-                            <div><strong className="text-foreground">Horários de Pico: </strong>{event.peakTimes}</div>
-                        </div>
-                         <div className="flex items-start gap-3 text-sm text-muted-foreground">
-                            <TrafficCone className="h-4 w-4 mt-1 flex-shrink-0 text-amber-500" />
-                            <div><strong className="text-foreground">Dicas de Trânsito: </strong>{event.trafficTips}</div>
-                        </div>
-                         <div className="flex items-start gap-3 text-sm text-muted-foreground">
-                            <TrafficCone className="h-4 w-4 mt-1 flex-shrink-0 text-amber-500" />
-                            <div><strong className="text-foreground">Pontos de Embarque: </strong>{event.pickupPoints}</div>
+export function PosterEventCard({ event }: { event: Event }) {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const startDate = new Date(event.startDate as string);
+    const time = format(startDate, 'HH:mm');
+    const date = format(startDate, 'dd MMM', { locale: ptBR }).toUpperCase();
+
+    return (
+        <>
+            <div className="relative group w-56 sm:w-64">
+                {/* Moldura gradiente com pseudo-elemento before */}
+                <div className="absolute inset-0 rounded-2xl p-[2px] bg-gradient-to-br from-amber-400 via-orange-400 to-yellow-400 group-hover:from-orange-500 group-hover:to-amber-400 transition-all duration-300 z-0 pointer-events-none"></div>
+                <Card className="flex flex-col items-center bg-white/70 backdrop-blur-xl rounded-2xl border-0 p-0 overflow-hidden relative z-10 shadow-xl shadow-orange-100 hover:shadow-2xl hover:shadow-orange-300 hover:-translate-y-2 hover:scale-105 animate-fadeInUp">
+                    {/* Logo no topo */}
+                    <div className="w-full flex justify-center pt-5 pb-2">
+                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+                            <Image src="/logo.png" alt="Logo" width={40} height={40} className="rounded-md" />
                         </div>
                     </div>
+                    {/* Hora e data */}
+                    <div className="flex flex-col items-center mt-2 mb-2">
+                        <span className="text-xs font-bold text-amber-700 tracking-widest">{date}</span>
+                        <span className="text-lg font-extrabold text-slate-900 drop-shadow">{time}h</span>
+                    </div>
+                    {/* Título */}
+                    <div className="px-3 text-center mb-1">
+                        <h3 className="font-bold text-base text-slate-800 leading-tight line-clamp-2 drop-shadow-sm">{event.title}</h3>
                  </div>
-                 <DialogFooter className="p-6 pt-4 border-t bg-background/90 backdrop-blur-sm flex-col sm:flex-row sm:justify-between items-center w-full z-10">
-                    <div className="flex items-center gap-2">
-                        <Button asChild variant="outline">
-                            <a href={event.mapUrl} target="_blank" rel="noopener noreferrer">
-                                <MapPin className="mr-2"/> Ver no Mapa
-                            </a>
-                        </Button>
-                        {currentUrl && <SharePopover title={event.title} url={currentUrl} />}
+                    {/* Local */}
+                    <div className="flex items-center gap-1 text-xs text-slate-500 px-3 mb-2">
+                        <MapPin className="h-3 w-3 text-blue-500" />
+                        <span className="line-clamp-1">{event.location}</span>
                     </div>
-                 </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                    {/* Botão Saiba Mais */}
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="mt-2 mb-4 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all duration-300 flex items-center justify-center gap-2 shadow group-hover:scale-110 group-hover:shadow-lg"
+                    >
+                        Saiba Mais <ArrowRight className="h-4 w-4" />
+                    </button>
+                </Card>
+            </div>
+            {isModalOpen && (
+                <EventModal event={event} onClose={() => setIsModalOpen(false)} />
+            )}
+        </>
     );
 }
