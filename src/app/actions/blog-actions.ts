@@ -78,8 +78,8 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
             return {
                 id: doc.id,
                 ...data,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-                updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
+                createdAt: data.createdAt,
+                updatedAt: data.updatedAt,
             } as BlogPost;
         });
     } catch (error) {
@@ -104,8 +104,8 @@ export async function getPublishedBlogPosts(postLimit?: number): Promise<BlogPos
             return {
                 id: doc.id,
                 ...data,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-                updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
+                createdAt: data.createdAt,
+                updatedAt: data.updatedAt,
             } as BlogPost;
         });
     } catch (error) {
@@ -126,8 +126,8 @@ export async function getBlogPostById(postId: string): Promise<BlogPost | null> 
         return {
             id: doc.id,
             ...data,
-            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-            updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
         } as BlogPost;
     } catch (error) {
         return null;
@@ -150,8 +150,8 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
         return {
             id: doc.id,
             ...data,
-            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-            updatedAt: data.updatedAt ? (data.updatedAt as Timestamp).toDate().toISOString() : undefined,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
         } as BlogPost;
     } catch (error) {
         return null;
