@@ -1,0 +1,83 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Default deny all to ensure explicit rules are set.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Users can create their own profile after signing up
+    // and can only read/update their own data.
+    // Admins can manage any user.
+    match /users/{userId} {
+      allow create: if request.auth != null;
+      allow read, update: if request.auth.uid == userId || isAdmin();
+      // Allow fleets/admins to view basic driver info, and drivers to view fleet info
+      // This can be expanded with more granular rules later.
+      allow get: if request.auth != null; 
+    }
+
+    // Publicly readable collections for any visitor
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /credit_packages/{packageId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /services/{serviceId} {
+      allow read: if true;
+      // Allow creation/updates by providers or admins.
+      // (For now, admin-only write access is simpler and safer)
+      allow write: if isAdmin();
+    }
+
+    match /opportunities/{opportunityId} {
+      allow read: if true;
+      // Allow creation/updates by fleets or admins.
+      // (For now, admin-only write access is simpler and safer)
+      allow write: if isAdmin();
+    }
+
+    // Admin-only collections
+    match /coupons/{couponId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /analytics/{analyticId} {
+      allow read, write: if isAdmin(); // Lock down analytics to admins
+    }
+
+    // User-specific subcollections
+    match /users/{userId}/progress/{progressId} {
+      allow read, write: if request.auth.uid == userId || isAdmin();
+    }
+
+    match /users/{userId}/transactions/{transactionId} {
+      allow read, write: if request.auth.uid == userId || isAdmin();
+    }
+  }
+}
