@@ -223,6 +223,7 @@ export interface CityTip {
   target: 'driver' | 'client';
   priceRange?: '$' | '$$' | '$$$' | '$$$$';
   createdAt: Timestamp | string;
+  updatedAt?: Timestamp | string;
 }
 
 export interface VehiclePerk {

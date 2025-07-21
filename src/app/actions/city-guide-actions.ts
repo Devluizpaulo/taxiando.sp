@@ -77,11 +77,19 @@ export async function getTips(target?: 'driver' | 'client'): Promise<CityTip[]> 
         const snapshot = await query.get();
         return snapshot.docs.map(doc => {
             const data = doc.data();
+            // Ensure all required fields are present and correctly typed.
             return {
                 id: doc.id,
-                ...data,
-                createdAt: (data.createdAt && typeof data.createdAt.toDate === 'function') ? data.createdAt.toDate().toISOString() : (typeof data.createdAt === 'string' ? data.createdAt : null),
-                updatedAt: (data.updatedAt && typeof data.updatedAt.toDate === 'function') ? data.updatedAt.toDate().toISOString() : (typeof data.updatedAt === 'string' ? data.updatedAt : null),
+                title: data.title || '',
+                category: data.category || 'General',
+                description: data.description || '',
+                location: data.location || '',
+                imageUrls: data.imageUrls || [],
+                mapUrl: data.mapUrl,
+                target: data.target || 'driver',
+                priceRange: data.priceRange,
+                createdAt: (data.createdAt && typeof data.createdAt.toDate === 'function') ? data.createdAt.toDate().toISOString() : (typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString()),
+                updatedAt: (data.updatedAt && typeof data.updatedAt.toDate === 'function') ? data.updatedAt.toDate().toISOString() : (typeof data.updatedAt === 'string' ? data.updatedAt : undefined),
             } as CityTip;
         });
     } catch (error) {
