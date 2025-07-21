@@ -40,15 +40,19 @@ ALTER TABLE city_tips ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "City tips are viewable by everyone" ON city_tips
     FOR SELECT USING (true);
 
--- Política para inserção/atualização apenas por admins
-CREATE POLICY "City tips are insertable by authenticated users" ON city_tips
-    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+-- Política para inserção/atualização/deleção apenas por admins
+-- Pré-requisito: Tabela 'users' com colunas 'id' (auth.uid()) e 'role'
+DROP POLICY IF EXISTS "City tips are insertable by authenticated users" ON city_tips;
+CREATE POLICY "Admins can insert new city tips" ON city_tips
+    FOR INSERT WITH CHECK ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
 
-CREATE POLICY "City tips are updatable by authenticated users" ON city_tips
-    FOR UPDATE USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "City tips are updatable by authenticated users" ON city_tips;
+CREATE POLICY "Admins can update city tips" ON city_tips
+    FOR UPDATE USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
 
-CREATE POLICY "City tips are deletable by authenticated users" ON city_tips
-    FOR DELETE USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "City tips are deletable by authenticated users" ON city_tips;
+CREATE POLICY "Admins can delete city tips" ON city_tips
+    FOR DELETE USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
 
 -- Comentários para documentação
 COMMENT ON TABLE city_tips IS 'Dicas da cidade para motoristas e clientes';
