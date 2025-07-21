@@ -11,7 +11,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { type CourseFormValues } from '@/lib/course-schemas';
 import { nanoid } from 'nanoid';
 import { uploadFile } from './storage-actions';
-import { courseShellFormSchema } from '@/lib/course-schemas';
+import { courseFormSchema } from '@/lib/course-schemas';
 
 interface MarkLessonAsCompleteParams {
     courseId: string;
@@ -22,7 +22,7 @@ interface MarkLessonAsCompleteParams {
 
 export async function createCourse(values: { title: string; description: string; category: string }, userId?: string, userName?: string) {
     // Validação robusta com Zod
-    const validation = courseShellFormSchema.safeParse(values);
+    const validation = courseFormSchema.partial().safeParse(values);
     if (!validation.success) {
         // Internacionalização: mensagem em pt-BR
         return { success: false, error: 'Dados inválidos: ' + validation.error.errors.map(e => e.message).join('; ') };
