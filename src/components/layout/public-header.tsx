@@ -32,41 +32,49 @@ export function PublicHeader() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
-      <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-2">
-            {siteSettings ? (
-                <Image src={siteSettings.logoUrl} alt={siteSettings.siteName} width={150} height={42} className="h-16 w-auto rounded-lg" priority />
-            ) : (
-                <Skeleton className="h-12 w-36" />
-            )}
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-gradient-to-r from-white/95 via-background/95 to-amber-50/90 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm transition-shadow duration-300">
+      <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-8 gap-6">
+        <Link href="/" className="flex items-center gap-4" aria-label="Página inicial">
+          <Image src="/logo.png" alt="Táxiando SP" width={160} height={48} className="h-14 md:h-16 w-auto rounded-xl drop-shadow-lg bg-white/80 p-2" priority />
         </Link>
-        <nav className="hidden items-center gap-6 md:flex">
-          {navLinks.map((link) => (
+        <nav className="hidden items-center gap-8 lg:flex">
+          {navLinks.slice(0,5).map((link) => (
             <Link 
-                key={link.href} 
-                href={link.href}
-                className={cn(
-                    "text-sm font-medium transition-colors hover:text-primary",
-                    pathname === link.href ? "text-primary font-semibold" : "text-muted-foreground"
-                )}
+              key={link.href} 
+              href={link.href}
+              aria-label={link.label}
+              className={cn(
+                "text-base font-medium transition-colors hover:text-primary hover:underline underline-offset-8 px-3 py-2 rounded-md",
+                pathname === link.href ? "text-primary font-bold bg-amber-50/80 shadow-sm" : "text-muted-foreground"
+              )}
             >
               {link.label}
             </Link>
           ))}
+          <div className="relative group">
+            <Button variant="ghost" className="text-base font-medium px-3 py-2 rounded-md">Mais</Button>
+            <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 pointer-events-auto transition-opacity duration-200 z-50">
+              <div className="flex flex-col py-2">
+                {navLinks.slice(5).map((link) => (
+                  <Link key={link.href} href={link.href} aria-label={link.label} className="px-4 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-amber-50/60 rounded-md transition-colors">{link.label}</Link>
+                ))}
+              </div>
+            </div>
+          </div>
         </nav>
-        <div className="hidden items-center gap-2 md:flex">
-          <Button asChild variant="ghost">
+        <div className="hidden items-center gap-3 lg:flex">
+          <Button asChild variant="ghost" className="font-semibold">
             <Link href="/login">Login</Link>
           </Button>
-          <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90">
+          <Button asChild className="bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold shadow-md hover:from-amber-500 hover:to-orange-600 transition-all">
             <Link href="/register">Cadastre-se</Link>
           </Button>
         </div>
-         <div className="md:hidden">
+        <div className="lg:hidden">
+          {/* Mantém o menu mobile como Sheet, mas com mais espaçamento */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" className="shadow-md">
                 <Menu className="h-6 w-6" />
                 <span className="sr-only">Abrir menu</span>
               </Button>
@@ -76,31 +84,32 @@ export function PublicHeader() {
                 <SheetTitle>Menu</SheetTitle>
                 <SheetDescription>Navegação principal do site.</SheetDescription>
               </SheetHeader>
-              <nav className="grid gap-6 text-lg font-medium mt-10">
-                 {navLinks.map((link) => {
-                    const Icon = link.icon;
-                    return (
-                        <Link 
-                            key={link.href} 
-                            href={link.href}
-                            className={cn(
-                                "flex items-center gap-4 transition-colors hover:text-primary",
-                                pathname === link.href ? "text-primary font-semibold" : "text-muted-foreground"
-                            )}
-                        >
-                          <Icon className="h-5 w-5" />
-                          <span>{link.label}</span>
-                        </Link>
-                    )
-                  })}
-                  <div className="flex flex-col gap-4 pt-6">
-                     <Button asChild variant="ghost" size="lg">
-                        <Link href="/login">Login</Link>
-                    </Button>
-                    <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
-                        <Link href="/register">Cadastre-se</Link>
-                    </Button>
-                  </div>
+              <nav className="grid gap-8 text-lg font-medium mt-10">
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <Link 
+                      key={link.href} 
+                      href={link.href}
+                      aria-label={link.label}
+                      className={cn(
+                        "flex items-center gap-4 transition-colors hover:text-primary hover:underline underline-offset-8 px-3 py-3 rounded-md",
+                        pathname === link.href ? "text-primary font-bold bg-amber-50/80 shadow-sm" : "text-muted-foreground"
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{link.label}</span>
+                    </Link>
+                  )
+                })}
+                <div className="flex flex-col gap-4 pt-8">
+                  <Button asChild variant="ghost" size="lg" className="font-semibold">
+                    <Link href="/login">Login</Link>
+                  </Button>
+                  <Button asChild size="lg" className="bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold shadow-md hover:from-amber-500 hover:to-orange-600 transition-all">
+                    <Link href="/register">Cadastre-se</Link>
+                  </Button>
+                </div>
               </nav>
             </SheetContent>
           </Sheet>

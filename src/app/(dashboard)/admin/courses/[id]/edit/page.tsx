@@ -258,6 +258,26 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                 <Card>
                     <CardHeader><CardTitle>Informações Gerais do Curso</CardTitle></CardHeader>
                     <CardContent className="space-y-6">
+                        <FormField control={form.control} name="coverImageUrl" render={({ field }) => (
+  <FormItem>
+    <FormLabel>Capa do Curso</FormLabel>
+    <FormControl>
+      <Input type="file" accept="image/*" onChange={async (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          // Simulação: gerar URL local (substitua por upload real se necessário)
+          const url = URL.createObjectURL(file);
+          field.onChange(url);
+        }
+      }} />
+    </FormControl>
+    {form.watch("coverImageUrl") && (
+      <img src={form.watch("coverImageUrl") as string} alt="Preview da capa" className="mt-2 rounded-lg shadow w-full max-w-xs h-32 object-cover" />
+    )}
+    <FormDescription>Escolha uma imagem de capa para destacar seu curso.</FormDescription>
+    <FormMessage />
+  </FormItem>
+)}/>
                         <FormField control={form.control} name="title" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Título do Curso</FormLabel>

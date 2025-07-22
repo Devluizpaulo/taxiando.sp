@@ -81,9 +81,20 @@ export function CulturalAgendaSection() {
                                 </span>
                                 <div className="flex-1 h-px bg-gradient-to-r from-amber-200 via-slate-200 to-transparent ml-2"></div>
                             </div>
-                            <div className="flex justify-center items-stretch overflow-x-auto gap-8 pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+                            <div className="
+  flex justify-center items-stretch overflow-x-auto
+  gap-4 sm:gap-6 md:gap-8
+  pb-4 -mx-2 sm:-mx-4 px-2 sm:px-4
+  snap-x snap-mandatory
+  scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent
+  scrollbar-hide
+">
                                 {groupedEvents[date].map((event, idx) => (
-                                    <div key={event.id} className="w-full max-w-xs sm:w-64 flex-shrink-0 snap-start animate-slide-in" style={{ animationDelay: `${idx * 80}ms` }}>
+                                    <div
+                                        key={event.id}
+                                        className="w-56 sm:w-64 flex-shrink-0 snap-start animate-slide-in min-w-0"
+                                        style={{ animationDelay: `${idx * 80}ms` }}
+                                    >
                                         <PosterEventCard event={event} />
                                     </div>
                                 ))}

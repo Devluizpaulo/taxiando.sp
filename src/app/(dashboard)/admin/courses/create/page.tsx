@@ -21,6 +21,7 @@ const courseShellFormSchema = z.object({
   title: z.string().min(5, { message: 'O título deve ter pelo menos 5 caracteres.' }),
   description: z.string().min(20, { message: 'A descrição deve ter pelo menos 20 caracteres.' }),
   category: z.string().min(3, { message: 'A categoria é obrigatória.' }),
+  coverImageUrl: z.string().url('A capa deve ser uma URL válida.').optional(),
 });
 
 type CourseShellFormValues = z.infer<typeof courseShellFormSchema>;
@@ -30,9 +31,9 @@ export default function CreateCoursePage() {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const form = useForm<CourseShellFormValues>({
+    const form = useForm<z.infer<typeof courseShellFormSchema>>({
         resolver: zodResolver(courseShellFormSchema),
-        defaultValues: { title: '', description: '', category: '' },
+        defaultValues: { title: '', description: '', category: '', coverImageUrl: '' },
     });
 
     // Auto-save: salvar no localStorage
@@ -104,6 +105,26 @@ export default function CreateCoursePage() {
                                 <FormLabel>Descrição Curta</FormLabel>
                                 <FormControl><Textarea {...field} placeholder="Descreva o objetivo principal do curso." /></FormControl>
                                 <FormDescription>Explique em poucas palavras o que o aluno vai aprender.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}/>
+                        <FormField control={form.control} name="coverImageUrl" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Capa do Curso</FormLabel>
+                                <FormControl>
+                                    <Input type="file" accept="image/*" onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            // Simulação: gerar URL local (substitua por upload real se necessário)
+                                            const url = URL.createObjectURL(file);
+                                            field.onChange(url);
+                                        }
+                                    }} />
+                                </FormControl>
+                                {form.watch("coverImageUrl") && (
+                                    <img src={form.watch("coverImageUrl") as string} alt="Preview da capa" className="mt-2 rounded-lg shadow w-full max-w-xs h-32 object-cover" />
+                                )}
+                                <FormDescription>Escolha uma imagem de capa para destacar seu curso.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}/>

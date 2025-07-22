@@ -72,17 +72,18 @@ export function PublicFooter() {
   const socialMedia = settings?.socialMedia;
 
   return (
-    <footer className="border-t bg-muted/40">
-      <div className="container mx-auto px-4 py-12 md:px-6">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-5">
-            <div className="col-span-1 md:col-span-2 lg:col-span-1">
-                 <Link href="/" className="mb-4 inline-block">
-                    <Image src="/logo.png" alt="Táxiando SP Logo" width={150} height={142} className="h-16 w-auto rounded-lg shadow-md" />
+    <footer className="border-t bg-muted/40 relative">
+      <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-400 via-orange-300 to-yellow-200 opacity-70" />
+      <div className="container mx-auto px-4 py-16 md:px-8">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-5">
+            <div className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col items-center md:items-start">
+                 <Link href="/" className="mb-6 inline-block">
+                    <Image src="/logo.png" alt="Táxiando SP Logo" width={180} height={142} className="h-20 w-auto rounded-xl shadow-lg bg-white/80 p-2" />
                  </Link>
-                 <p className="max-w-xs text-sm text-muted-foreground">
+                 <p className="max-w-xs text-sm text-muted-foreground text-center md:text-left">
                     O ecossistema completo para o profissional do volante em São Paulo. Cursos, oportunidades, guia da cidade e muito mais.
                  </p>
-                 <div className="mt-6 flex gap-4">
+                 <div className="mt-8 flex gap-6">
                     {socialMedia?.facebook?.enabled && socialMedia.facebook.url && (
                         <Link href={socialMedia.facebook.url} aria-label="Facebook" target="_blank" rel="noopener noreferrer">
                             <FacebookIcon className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
@@ -139,7 +140,7 @@ export function PublicFooter() {
                 </form>
             </div>
         </div>
-        <div className="mt-12 border-t pt-8 text-center">
+        <div className="mt-16 border-t pt-8 text-center space-y-2">
             <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} Táxiando SP. Todos os direitos reservados.
             </p>

@@ -92,25 +92,25 @@ export function PosterEventCard({ event }: { event: Event }) {
 
     return (
         <>
-            <div className="relative group w-56 sm:w-64">
+            <div className="relative group w-full sm:w-64 min-w-0">
                 {/* Moldura gradiente com pseudo-elemento before */}
                 <div className="absolute inset-0 rounded-2xl p-[2px] bg-gradient-to-br from-amber-400 via-orange-400 to-yellow-400 group-hover:from-orange-500 group-hover:to-amber-400 transition-all duration-300 z-0 pointer-events-none"></div>
                 <Card className="flex flex-col items-center bg-white/70 backdrop-blur-xl rounded-2xl border-0 p-0 overflow-hidden relative z-10 shadow-xl shadow-orange-100 hover:shadow-2xl hover:shadow-orange-300 hover:-translate-y-2 hover:scale-105 animate-fadeInUp">
                     {/* Logo no topo */}
-                    <div className="w-full flex justify-center pt-5 pb-2">
-                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+                    <div className="w-full flex justify-center pt-3 pb-1 sm:pt-5 sm:pb-2">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
                             <Image src="/logo.png" alt="Logo" width={40} height={40} className="rounded-md" />
                         </div>
                     </div>
                     {/* Hora e data */}
-                    <div className="flex flex-col items-center mt-2 mb-2">
+                    <div className="flex flex-col items-center mt-1 mb-1 sm:mt-2 sm:mb-2">
                         <span className="text-xs font-bold text-amber-700 tracking-widest">{date}</span>
-                        <span className="text-lg font-extrabold text-slate-900 drop-shadow">{time}h</span>
+                        <span className="text-lg sm:text-xl font-extrabold text-slate-900 drop-shadow">{time}h</span>
                     </div>
                     {/* Título */}
-                    <div className="px-3 text-center mb-1">
-                        <h3 className="font-bold text-base text-slate-800 leading-tight line-clamp-2 drop-shadow-sm">{event.title}</h3>
-                 </div>
+                    <div className="px-2 sm:px-3 text-center mb-1">
+                        <h3 className="font-bold text-base sm:text-lg text-slate-800 leading-tight line-clamp-2 drop-shadow-sm">{event.title}</h3>
+                    </div>
                     {/* Local */}
                     <div className="flex items-center gap-1 text-xs text-slate-500 px-3 mb-2">
                         <MapPin className="h-3 w-3 text-blue-500" />
