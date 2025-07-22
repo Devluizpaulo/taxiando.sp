@@ -196,6 +196,7 @@ export interface Course {
   authorInfo?: string;
   legalNotice?: string;
   revenue?: number;
+  coverImageUrl?: string; // Adicionando a propriedade que faltava
 }
 
 export interface Event {
