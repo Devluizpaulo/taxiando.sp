@@ -28,15 +28,14 @@ export const lessonSchema = z.object({
   type: z.enum(['video', 'text', 'quiz', 'audio'], { required_error: "Selecione o tipo de aula."}),
   duration: z.coerce.number().min(1, "A duração deve ser de pelo menos 1 minuto."),
   content: z.string().optional(),
-  contentBlocks: z.array(z.object({
-    type: z.enum(['heading', 'paragraph', 'list', 'image']),
-    level: z.number().optional(),
-    text: z.string().optional(),
-    style: z.enum(['bullet', 'numbered']).optional(),
-    items: z.array(z.string()).optional(),
-    url: z.string().optional(),
-    alt: z.string().optional(),
-  })).optional(),
+  contentBlocks: z.array(z.discriminatedUnion('type', [
+    z.object({ type: z.literal('heading'), level: z.number(), text: z.string() }),
+    z.object({ type: z.literal('paragraph'), text: z.string() }),
+    z.object({ type: z.literal('list'), style: z.enum(['bullet', 'numbered']), items: z.array(z.string()) }),
+    z.object({ type: z.literal('image'), url: z.string(), alt: z.string().optional() }),
+    z.object({ type: z.literal('exercise'), question: z.string(), answer: z.string(), hints: z.array(z.string()).optional() }),
+    z.object({ type: z.literal('quiz'), questions: z.array(quizQuestionSchema) })
+  ])).optional(),
   audioFile: z.any().optional(),
   materials: z.array(supportingMaterialSchema).optional(),
   questions: z.array(quizQuestionSchema).optional(),

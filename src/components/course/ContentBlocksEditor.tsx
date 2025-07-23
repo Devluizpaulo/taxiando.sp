@@ -24,7 +24,7 @@ export function ContentBlocksEditor({
     else if (type === 'paragraph') newBlock = { type: 'paragraph', text: '' };
     else if (type === 'list') newBlock = { type: 'list', style: 'bullet', items: [''] };
     else if (type === 'exercise') newBlock = { type: 'exercise', question: '', answer: '', hints: [''] };
-    else if (type === 'quiz') newBlock = { type: 'quiz', questions: [{ id: '', question: '', options: [{ id: '', text: '' }], correctOptionId: '' }] };
+    else if (type === 'quiz') newBlock = { type: 'quiz', questions: [{ id: '', question: '', options: [{ id: '', text: '', isCorrect: false }], correctOptionId: '' }] };
     else newBlock = { type: 'image', url: '', alt: '' };
     const updated = [...blocks, newBlock];
     setBlocks(updated);
@@ -181,7 +181,7 @@ export function ContentBlocksEditor({
                     </div>
                   ))}
                   <Button type="button" size="sm" variant="outline" onClick={() => {
-                    const newOptions = [...q.options, { id: Math.random().toString(36).slice(2), text: '' }];
+                    const newOptions = [...q.options, { id: Math.random().toString(36).slice(2), text: '', isCorrect: false }];
                     const newQuestions = [...block.questions];
                     newQuestions[qidx] = { ...q, options: newOptions };
                     updateBlock(idx, { ...block, questions: newQuestions });
@@ -193,7 +193,7 @@ export function ContentBlocksEditor({
                 </div>
               ))}
               <Button type="button" size="sm" variant="outline" onClick={() => {
-                const newQuestions = [...block.questions, { id: Math.random().toString(36).slice(2), question: '', options: [{ id: Math.random().toString(36).slice(2), text: '' }], correctOptionId: '' }];
+                const newQuestions = [...block.questions, { id: Math.random().toString(36).slice(2), question: '', options: [{ id: Math.random().toString(36).slice(2), text: '', isCorrect: false }], correctOptionId: '' }];
                 updateBlock(idx, { ...block, questions: newQuestions });
               }}>+ Pergunta</Button>
             </div>
