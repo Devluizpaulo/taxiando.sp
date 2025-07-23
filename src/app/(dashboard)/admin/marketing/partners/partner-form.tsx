@@ -20,9 +20,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, UploadCloud, Link as LinkIcon, Images } from 'lucide-react';
 import { createPartner, updatePartner } from '@/app/actions/marketing-actions';
-import { getGalleryImages } from '@/app/actions/gallery-actions';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
+import { FirebaseImageUpload } from '@/components/ui/firebase-image-upload';
 
 export function PartnerForm({ partner }: { partner?: Partner }) {
     const { user, userProfile } = useAuth();
@@ -44,7 +44,7 @@ export function PartnerForm({ partner }: { partner?: Partner }) {
     });
 
     useEffect(() => {
-        getGalleryImages().then(setGalleryImages);
+        // getGalleryImages().then(setGalleryImages); // This line was removed as per the edit hint.
     }, []);
 
     const watchedImageUrls = useWatch({ control: form.control, name: 'imageUrls' });
@@ -124,17 +124,16 @@ export function PartnerForm({ partner }: { partner?: Partner }) {
                                         <TabsTrigger value="url"><LinkIcon/> URL</TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="upload" className="pt-4">
-                                        <FormField control={form.control} name="imageFile" render={({ field }) => (
-                                            <FormItem><FormControl><Input type="file" accept="image/*" onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                field.onChange(file);
-                                                if(file) {
-                                                    setLocalPreview(URL.createObjectURL(file));
-                                                    form.setValue('imageUrls', []); // Clear URLs if file is chosen
-                                                } else {
-                                                    setLocalPreview(null);
-                                                }
-                                            }}/></FormControl><FormMessage /></FormItem>
+                                        <FormField control={form.control} name="imageUrls" render={({ field }) => (
+                                            <FormItem>
+                                                <FirebaseImageUpload
+                                                    value={field.value?.[0]}
+                                                    onChange={url => field.onChange([url])}
+                                                    pathPrefix={`partners/banners/`}
+                                                    label="Imagem do Banner"
+                                                />
+                                                <FormMessage />
+                                            </FormItem>
                                         )}/>
                                     </TabsContent>
                                      <TabsContent value="gallery" className="pt-4">

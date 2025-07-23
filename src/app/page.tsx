@@ -15,7 +15,6 @@ import { PartnersSection } from "@/components/partners-section";
 import { getPublishedBlogPosts } from "@/app/actions/blog-actions";
 import { getFeaturedVehicles } from "@/app/actions/fleet-actions";
 import { getFeaturedServices } from "@/app/actions/service-actions";
-import { getTips } from "@/app/actions/supabase-city-guide-actions";
 import { BlogPost, ServiceListing, Testimonial, Vehicle } from "@/lib/types";
 import { mockTestimonials } from "@/lib/mock-data";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -253,76 +252,51 @@ const ClassifiedsSection = async () => {
     );
 }
 
-const CityGuideSection = async () => {
-  let tips: any[] = [];
-  
-  try {
-    tips = await getTips();
-    // Pegar apenas 3 dicas para mostrar na home
-    tips = tips.slice(0, 3);
-  } catch (error) {
-    console.error("Error fetching city tips:", error);
-  }
-
-  if (tips.length === 0) return null;
-
-  return (
-    <section id="city-guide" className="py-16 md:py-24 bg-muted">
-      <div className="container mx-auto px-4 md:px-6">
-        <div className="mb-12 text-center">
-          <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
-            Guia da Cidade
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            Descubra os melhores lugares de São Paulo com dicas exclusivas para motoristas e passageiros.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {tips.map((tip) => (
-            <Card key={tip.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              <CardHeader className="relative p-0">
-                {tip.imageUrls && tip.imageUrls.length > 0 ? (
-                  <Image 
-                    src={tip.imageUrls[0]} 
-                    alt={tip.title} 
-                    width={600} 
-                    height={400} 
-                    className="aspect-video w-full object-cover" 
-                  />
-                ) : (
-                  <div className="aspect-video w-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
-                    <MapPin className="h-12 w-12 text-slate-400" />
-                  </div>
-                )}
-                <Badge className="absolute left-3 top-3 bg-primary/90 text-primary-foreground">
-                  {tip.target === 'driver' ? 'Motorista' : 'Cliente'}
-                </Badge>
-              </CardHeader>
-              <CardContent className="flex-1 p-4">
-                <CardTitle className="font-headline text-lg">{tip.title}</CardTitle>
-                <CardDescription className="mt-2 line-clamp-2">{tip.description}</CardDescription>
-                <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span>{tip.location}</span>
-                </div>
-              </CardContent>
-              <CardFooter className="p-4 pt-0">
-                <Button asChild variant="outline" className="w-full">
-                  <Link href="/spdicas">Ver Mais Dicas</Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-        <div className="mt-8 text-center">
-          <Button asChild size="lg">
-            <Link href="/spdicas">Explorar Guia Completo <MoveRight className="ml-2" /></Link>
-          </Button>
-        </div>
+const CityGuideSection = () => (
+  <section id="city-guide" className="py-16 md:py-24 bg-muted">
+    <div className="container mx-auto px-4 md:px-6">
+      <div className="mb-12 text-center">
+        <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl">
+          Guia da Cidade
+        </h2>
+        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+          Descubra os melhores lugares de São Paulo com dicas exclusivas para motoristas e passageiros.
+        </p>
       </div>
-    </section>
-  );
-};
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Dicas removidas temporariamente. Implemente aqui se desejar mostrar dicas estáticas ou buscar de outro lugar. */}
+        <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+          <CardHeader className="relative p-0">
+            <div className="aspect-video w-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
+              <MapPin className="h-12 w-12 text-slate-400" />
+            </div>
+            <Badge className="absolute left-3 top-3 bg-primary/90 text-primary-foreground">
+              Motorista
+            </Badge>
+          </CardHeader>
+          <CardContent className="flex-1 p-4">
+            <CardTitle className="font-headline text-lg">Dica de exemplo</CardTitle>
+            <CardDescription className="mt-2 line-clamp-2">Aqui você pode exibir dicas estáticas ou buscar de outra fonte.</CardDescription>
+            <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span>São Paulo, SP</span>
+            </div>
+          </CardContent>
+          <CardFooter className="p-4 pt-0">
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/spdicas">Ver Mais Dicas</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+      <div className="mt-8 text-center">
+        <Button asChild size="lg">
+          <Link href="/spdicas">Explorar Guia Completo <MoveRight className="ml-2" /></Link>
+        </Button>
+      </div>
+    </div>
+  </section>
+);
 
 const RentVehiclePrompt = () => (
     <section id="rent-vehicle" className="py-16 md:py-24 bg-accent text-accent-foreground">
@@ -342,7 +316,14 @@ const RentVehiclePrompt = () => (
             </div>
           </div>
           <div className="relative h-80 w-full order-first md:order-last">
-            <Image src="/bannerhome.png" alt="Chave de carro sendo entregue" layout="fill" objectFit="cover" className="rounded-lg shadow-xl" data-ai-hint="handing car keys" />
+            <Image
+              src="/bannerhome.png"
+              alt="Chave de carro sendo entregue"
+              fill
+              className="rounded-lg shadow-xl object-cover"
+              priority
+              data-ai-hint="handing car keys"
+            />
           </div>
         </div>
       </div>

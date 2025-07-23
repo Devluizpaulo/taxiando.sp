@@ -1,6 +1,7 @@
 
 'use client';
 
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { getBlogPostById } from '@/app/actions/blog-actions';
 import { BlogPostForm } from '../../create/blog-post-form';
@@ -8,17 +9,18 @@ import { LoadingScreen } from '@/components/loading-screen';
 import { type BlogPost } from '@/lib/types';
 
 export default function EditBlogPostPage({ params }: { params: { id: string } }) {
+    const { id } = params;
     const [post, setPost] = useState<BlogPost | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchPost = async () => {
-            const fetchedPost = await getBlogPostById(params.id);
+            const fetchedPost = await getBlogPostById(id);
             setPost(fetchedPost);
             setLoading(false);
         };
         fetchPost();
-    }, [params.id]);
+    }, [id]);
 
     if (loading) {
         return <LoadingScreen />;

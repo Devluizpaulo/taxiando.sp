@@ -23,9 +23,7 @@ export async function uploadFile(formData: FormData, userId: string): Promise<{s
         const result = await uploadProfilePhoto(file, userId, 'Usuário', false);
         
         return {
-            success: result.success,
-            url: result.url,
-            error: result.error
+            success: result.success
         };
     } catch (error) {
         return { 
@@ -49,9 +47,7 @@ export async function uploadProfileFile(formData: FormData, userId: string, user
         const result = await uploadProfilePhoto(file, userId, userName, false);
         
         return {
-            success: result.success,
-            url: result.url,
-            error: result.error
+            success: result.success
         };
     } catch (error) {
         return { 
@@ -75,9 +71,7 @@ export async function uploadFleetLogoFile(formData: FormData, userId: string, us
         const result = await uploadFleetLogo(file, userId, userName, false);
         
         return {
-            success: result.success,
-            url: result.url,
-            error: result.error
+            success: result.success
         };
     } catch (error) {
         return { 
@@ -96,22 +90,15 @@ export async function uploadFleetGalleryFiles(files: File[], userId: string, use
     }
 
     try {
-        const results = await uploadFleetGallery(files, userId, userName, isPublic, false);
-        
-        const successfulUploads = results.filter(r => r.success);
-        const urls = successfulUploads.map(r => r.url!).filter(Boolean);
-        
-        if (urls.length === 0) {
-            return { 
-                success: false, 
-                error: 'Nenhum arquivo foi enviado com sucesso.' 
+        const result = await uploadFleetGallery(files, userId, userName, isPublic, false);
+        if (!result.success) {
+            return {
+                success: false,
+                error: 'Nenhum arquivo foi enviado com sucesso.'
             };
         }
-
         return {
-            success: true,
-            urls,
-            error: successfulUploads.length < files.length ? 'Alguns arquivos não puderam ser enviados.' : undefined
+            success: true
         };
     } catch (error) {
         return { 
@@ -135,9 +122,7 @@ export async function uploadDocumentFile(formData: FormData, userId: string, use
         const result = await uploadDocument(file, userId, userName, documentType, false);
         
         return {
-            success: result.success,
-            url: result.url,
-            error: result.error
+            success: result.success
         };
     } catch (error) {
         return { 

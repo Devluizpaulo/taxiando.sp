@@ -49,6 +49,7 @@ Táxiando SP é um ecossistema digital completo projetado para conectar, qualifi
 *   **Estilização:** [Tailwind CSS](https://tailwindcss.com/)
 *   **Componentes UI:** [ShadCN/UI](https://ui.shadcn.com/)
 *   **Backend & Banco de Dados:** [Firebase](https://firebase.google.com/) (Authentication, Firestore, Storage)
+*   **Upload de Imagens:** [Firebase Storage](https://firebase.google.com/docs/storage) (todas as imagens são armazenadas e servidas pelo Firebase)
 *   **Funcionalidades de IA:** [Genkit (Google AI)](https://firebase.google.com/docs/genkit)
 *   **Formulários:** [React Hook Form](https://react-hook-form.com/) com [Zod](https://zod.dev/) para validação.
 
@@ -155,3 +156,88 @@ Após configurar `FIREBASE_SERVICE_ACCOUNT_JSON` e as outras chaves do `.env.exa
 │       └── flows           #   - Fluxos de IA
 └── ...
 ```
+
+---
+
+## 🎯 Próximos Passos
+
+1.  **Implementar Upload de Imagens:**
+    -   Criar componentes de upload de imagem reutilizáveis.
+    -   Configurar regras de segurança do Firebase Storage.
+    -   Integrar com o sistema de perfil do usuário.
+
+2.  **Otimizar Performance:**
+    -   Implementar lazy loading para imagens.
+    -   Otimizar otimização de imagens.
+
+3.  **Melhorar UX:**
+    -   Adicionar feedback visual durante o upload.
+    -   Implementar preview de imagem antes do upload.
+
+4.  **Documentação:**
+    -   Expandir a documentação sobre o uso de imagens.
+    -   Adicionar exemplos de código para diferentes casos de uso.
+
+---
+
+## 📝 Notas
+
+-   O upload de imagens agora é feito exclusivamente pelo Firebase Storage.
+-   Todas as imagens são armazenadas e servidas pelo Firebase.
+-   As regras de segurança do Storage devem ser configuradas para permitir o upload e a leitura das imagens.
+
+---
+
+## 🛠️ Ferramentas Utilizadas
+
+-   **Framework:** [Next.js](https://nextjs.org/)
+-   **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
+-   **Estilização:** [Tailwind CSS](https://tailwindcss.com/)
+-   **Componentes UI:** [ShadCN/UI](https://ui.shadcn.com/)
+-   **Backend & Banco de Dados:** [Firebase](https://firebase.google.com/)
+-   **Funcionalidades de IA:** [Genkit (Google AI)](https://firebase.google.com/docs/genkit)
+-   **Formulários:** [React Hook Form](https://react-hook-form.com/)
+-   **Zod:** [Zod](https://zod.dev/)
+
+---
+
+## 🔗 Links Úteis
+
+-   [Firebase Console](https://console.firebase.google.com/)
+-   [Firebase Storage Documentation](https://firebase.google.com/docs/storage)
+-   [Next.js Documentation](https://nextjs.org/docs)
+-   [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+-   [ShadCN/UI Documentation](https://ui.shadcn.com/docs)
+
+---
+
+## 🤔 Perguntas Frequentes
+
+1.  **Como faço para adicionar uma nova imagem ao meu perfil?**
+    -   Use o componente `FirebaseImageUpload` para fazer o upload.
+    -   O componente gerencia o estado de carregamento, sucesso, erro e preview.
+
+2.  **As imagens são armazenadas permanentemente?**
+    -   Sim, as imagens são armazenadas no Firebase Storage.
+    -   Você pode configurar regras de expiração para controlar a duração.
+
+3.  **Posso usar imagens de outros sites?**
+    -   Não, as imagens devem ser hospedadas localmente ou em serviços de terceiros que permitam CORS.
+    -   Recomenda-se usar imagens de domínio próprio para segurança.
+
+---
+
+## 📝 Checklist
+
+-   [ ] Firebase configurado (Storage, Auth, Firestore)
+-   [ ] Build funcionando
+-   [ ] Upload de imagens testado
+
+---
+
+## 📚 Referências
+
+1.  [Firebase Storage](https://firebase.google.com/docs/storage)
+2.  [Next.js](https://nextjs.org/)
+3.  [Tailwind CSS](https://tailwindcss.com/)
+4.  [ShadCN/UI](https://ui.shadcn.com/)

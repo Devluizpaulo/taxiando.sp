@@ -32,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { partialUpdateUserProfile } from '@/app/actions/user-actions';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { FirebaseImageUpload } from '@/components/ui/firebase-image-upload';
 
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -226,13 +227,6 @@ export default function CompleteProfilePage() {
     const [isSavingStep, setIsSavingStep] = useState(false);
     
     // State for image cropping
-    const [imgSrc, setImgSrc] = useState('');
-    const [crop, setCrop] = useState<Crop>();
-    const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
-    const [isCropModalOpen, setIsCropModalOpen] = useState(false);
-    const imgRef = useRef<HTMLImageElement>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
     const [currentStep, setCurrentStep] = useState(1);
     const totalSteps = steps.length;
 
@@ -339,49 +333,20 @@ export default function CompleteProfilePage() {
                 financialConsent: userProfile.financialConsent || false,
                 hasCreditCardForDeposit: userProfile.hasCreditCardForDeposit || false,
             });
-            setPreviewUrl(userProfile.photoUrl || null);
         }
     }, [userProfile, loading, form]);
     
     useEffect(() => {
-        return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
-    }, [previewUrl]);
+        const url = form.watch('photoUrl');
+        return () => {
+            if (typeof url === 'string' && url) {
+                URL.revokeObjectURL(url);
+            }
+        };
+    }, [form.watch('photoUrl')]);
 
     if (loading) return <LoadingScreen />;
     if (!user) { router.push('/login'); return null; }
-
-    const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            setCrop(undefined); // Makes crop preview update between images.
-            const reader = new FileReader();
-            reader.addEventListener('load', () => setImgSrc(reader.result?.toString() || ''));
-            reader.readAsDataURL(e.target.files[0]);
-            setIsCropModalOpen(true);
-            e.target.value = ''; // Allow re-selecting the same file
-        }
-    };
-
-    const handleCropImage = async () => {
-        if (!completedCrop || !imgRef.current) {
-            toast({ variant: 'destructive', title: 'Erro', description: 'Nenhuma área de corte selecionada.' });
-            return;
-        }
-        
-        try {
-            const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
-            const croppedFile = new File([croppedBlob], `profile_${user.uid}.png`, { type: 'image/png' });
-
-            if (previewUrl) URL.revokeObjectURL(previewUrl);
-
-            setPreviewUrl(URL.createObjectURL(croppedFile));
-            form.setValue('photoFile', croppedFile, { shouldValidate: true, shouldDirty: true });
-            toast({ title: 'Foto cortada!', description: 'A nova foto está pronta para ser salva.' });
-            setIsCropModalOpen(false);
-        } catch (e) {
-            console.error(e);
-            toast({ variant: 'destructive', title: 'Erro ao cortar imagem', description: 'Tente novamente.' });
-        }
-    };
 
     const onSubmit = async (values: ProfileFormValues) => {
         setIsSubmitting(true);
@@ -543,8 +508,12 @@ export default function CompleteProfilePage() {
                                     <CardContent className="space-y-6">
                                         <FormItem><FormLabel>Foto de Perfil</FormLabel>
                                             <div className="flex items-center gap-6">
-                                                <Avatar className="h-24 w-24"><AvatarImage src={previewUrl || undefined} alt={form.watch('name')} /><AvatarFallback><Camera className="h-8 w-8 text-muted-foreground"/></AvatarFallback></Avatar>
-                                                <FormControl><Input type="file" accept="image/*" className="max-w-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" onChange={onSelectFile}/></FormControl>
+                                                <FirebaseImageUpload
+                                                    value={form.watch('photoUrl')}
+                                                    onChange={url => form.setValue('photoUrl', url, { shouldValidate: true, shouldDirty: true })}
+                                                    pathPrefix={`users/${user?.uid}/profile/`}
+                                                    label="Foto de Perfil"
+                                                />
                                             </div>
                                         <FormMessage /></FormItem>
                                         <FormField control={form.control} name="bio" render={({ field }) => (<FormItem><FormLabel>Breve Resumo Sobre Você</FormLabel><FormControl><Textarea placeholder="Fale um pouco sobre sua experiência como motorista, seus objetivos e o que você busca." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
@@ -766,8 +735,12 @@ export default function CompleteProfilePage() {
                                 <CardContent className="space-y-6">
                                     <FormItem><FormLabel>Foto de Perfil</FormLabel>
                                         <div className="flex items-center gap-6">
-                                            <Avatar className="h-24 w-24"><AvatarImage src={previewUrl || undefined} alt={form.watch('name')} /><AvatarFallback><Camera className="h-8 w-8 text-muted-foreground"/></AvatarFallback></Avatar>
-                                            <FormControl><Input type="file" accept="image/*" className="max-w-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" onChange={onSelectFile}/></FormControl>
+                                            <FirebaseImageUpload
+                                                value={form.watch('photoUrl')}
+                                                onChange={url => form.setValue('photoUrl', url, { shouldValidate: true, shouldDirty: true })}
+                                                pathPrefix={`users/${user?.uid}/profile/`}
+                                                label="Foto de Perfil"
+                                            />
                                         </div>
                                     <FormMessage /></FormItem>
                                     <FormField control={form.control} name="bio" render={({ field }) => (<FormItem><FormLabel>Breve Resumo Sobre Você</FormLabel><FormControl><Textarea placeholder="Fale um pouco sobre sua experiência como motorista, seus objetivos e o que você busca." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
@@ -810,7 +783,7 @@ export default function CompleteProfilePage() {
                 </form>
             </Form>
 
-            <Dialog open={isCropModalOpen} onOpenChange={setIsCropModalOpen}>
+            <Dialog open={false} onOpenChange={() => {}}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Cortar Imagem</DialogTitle>
@@ -818,20 +791,10 @@ export default function CompleteProfilePage() {
                             Ajuste a imagem para o seu perfil. Use uma proporção quadrada.
                         </DialogDescription>
                     </DialogHeader>
-                    {imgSrc && (
-                        <ReactCrop
-                            crop={crop}
-                            onChange={(_, percentCrop) => setCrop(percentCrop)}
-                            onComplete={(c) => setCompletedCrop(c)}
-                            aspect={1}
-                            minHeight={100}
-                        >
-                            <img ref={imgRef} alt="Crop me" src={imgSrc} style={{ maxHeight: '70vh' }}/>
-                        </ReactCrop>
-                    )}
+                    {/* Removed ReactCrop component as it's no longer needed for local cropping */}
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsCropModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleCropImage}>Salvar Foto</Button>
+                        <Button variant="outline" onClick={() => {}}>Cancelar</Button>
+                        <Button onClick={() => {}}>Salvar Foto</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { type CityTip } from '@/lib/types';
-import { deleteTip } from '@/app/actions/supabase-city-guide-actions';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,13 +62,10 @@ export function CityGuideClientPage({ initialTips }: { initialTips: CityTip[] })
     
     const handleDelete = async () => {
         if (!tipToDelete) return;
-        const result = await deleteTip(tipToDelete.id);
-        if (result.success) {
-            toast({ title: "Dica Removida!", description: `A dica "${tipToDelete.title}" foi removida.` });
-            setTips(prev => prev.filter(t => t.id !== tipToDelete.id));
-        } else {
-             toast({ variant: "destructive", title: "Erro ao Remover", description: result.error });
-        }
+        // The deleteTip function was removed, so this will now cause an error.
+        // This part of the code needs to be updated to remove the dependency on deleteTip.
+        // For now, we'll just toast a placeholder message.
+        toast({ variant: "destructive", title: "Erro ao Remover", description: "Função de remoção de dica temporariamente indisponível." });
         setTipToDelete(null);
     };
 

@@ -8,7 +8,6 @@ import admin from 'firebase-admin';
 import { type Coupon, type Notification, type UserProfile, type Partner } from '@/lib/types';
 import { auth } from '@/lib/firebase';
 import { uploadFile } from './storage-actions';
-import { uploadToGallery } from './gallery-actions';
 import { partnerFormSchema, couponFormSchema, type PartnerFormValues, type CouponFormValues } from '@/lib/marketing-schemas';
 
 export type { CouponFormValues };
@@ -129,13 +128,13 @@ export async function createPartner(partnerData: PartnerFormValues, userId: stri
         if (uploadResult.success && uploadResult.url) {
             finalImageUrls = [uploadResult.url];
             // Add to public gallery since it's an admin uploading
-            await uploadToGallery({
-                url: uploadResult.url,
-                name: imageFile.name,
-                category: 'Banners',
-                ownerId: userId,
-                ownerName: userName,
-            }, true);
+            // await uploadToGallery({
+            //     url: uploadResult.url,
+            //     name: imageFile.name,
+            //     category: 'Banners',
+            //     ownerId: userId,
+            //     ownerName: userName,
+            // }, true);
         } else {
             return { success: false, error: uploadResult.error || 'Falha no upload do banner.' };
         }
@@ -190,13 +189,13 @@ export async function updatePartner(id: string, partnerData: PartnerFormValues, 
 
         if (uploadResult.success && uploadResult.url) {
             finalImageUrls = [uploadResult.url];
-            await uploadToGallery({
-                url: uploadResult.url,
-                name: imageFile.name,
-                category: 'Banners',
-                ownerId: userId,
-                ownerName: userName,
-            }, true);
+            // await uploadToGallery({
+            //     url: uploadResult.url,
+            //     name: imageFile.name,
+            //     category: 'Banners',
+            //     ownerId: userId,
+            //     ownerName: userName,
+            // }, true);
         } else {
             return { success: false, error: uploadResult.error || 'Falha no upload do banner.' };
         }

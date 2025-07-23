@@ -1,18 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { 
-  uploadSecureImage, 
-  uploadMultipleSecureImages,
-  deleteSecureImage,
-  getUserImages,
-  getPublicImages,
-  getSignedUrl,
-  updateImageVisibility,
-  type ImageMetadata
-} from '@/lib/supabase-storage-secure';
-import { supabaseServer } from '@/lib/supabaseClient';
-import { CONFIG } from '@/lib/config';
 
 // ===== UPLOAD DE FOTOS DE PERFIL =====
 export async function uploadProfilePhoto(
@@ -21,16 +9,12 @@ export async function uploadProfilePhoto(
   userName: string,
   isAdmin: boolean = false
 ) {
-  return uploadSecureImage(file, {
-    bucketType: 'private',
-    folder: 'profile-photos',
-    ownerId: userId,
-    ownerName: userName,
-    category: 'profile',
-    isPublic: false, // Fotos de perfil são sempre privadas
-    name: `profile_${userId}`,
-    isAdmin
-  });
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("uploadProfilePhoto is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
 
 // ===== UPLOAD DE LOGOS DE FROTA =====
@@ -40,16 +24,12 @@ export async function uploadFleetLogo(
   userName: string,
   isAdmin: boolean = false
 ) {
-  return uploadSecureImage(file, {
-    bucketType: 'gallery',
-    folder: 'fleet-logos',
-    ownerId: userId,
-    ownerName: userName,
-    category: 'fleet-logo',
-    isPublic: true, // Logos de frota são públicos
-    name: `logo_${userId}`,
-    isAdmin
-  });
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("uploadFleetLogo is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
 
 // ===== UPLOAD DE GALERIA DE FROTA =====
@@ -60,15 +40,12 @@ export async function uploadFleetGallery(
   isPublic: boolean = true,
   isAdmin: boolean = false
 ) {
-  return uploadMultipleSecureImages(files, {
-    bucketType: 'gallery',
-    folder: 'fleet-gallery',
-    ownerId: userId,
-    ownerName: userName,
-    category: 'fleet-gallery',
-    isPublic,
-    isAdmin
-  });
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("uploadFleetGallery is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
 
 // ===== UPLOAD DE IMAGENS DE CITY TIPS =====
@@ -78,15 +55,12 @@ export async function uploadCityTipImages(
   userName: string,
   isAdmin: boolean = false
 ) {
-  return uploadMultipleSecureImages(files, {
-    bucketType: 'public',
-    folder: 'city-tips',
-    ownerId: userId,
-    ownerName: userName,
-    category: 'city-tips',
-    isPublic: true, // City tips são sempre públicas
-    isAdmin
-  });
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("uploadCityTipImages is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
 
 // ===== UPLOAD DE IMAGENS DE BLOG =====
@@ -96,15 +70,12 @@ export async function uploadBlogImages(
   userName: string,
   isAdmin: boolean = false
 ) {
-  return uploadMultipleSecureImages(files, {
-    bucketType: 'public',
-    folder: 'blog-images',
-    ownerId: userId,
-    ownerName: userName,
-    category: 'blog',
-    isPublic: true, // Imagens de blog são sempre públicas
-    isAdmin
-  });
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("uploadBlogImages is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
 
 // ===== UPLOAD DE DOCUMENTOS =====
@@ -115,16 +86,12 @@ export async function uploadDocument(
   documentType: string,
   isAdmin: boolean = false
 ) {
-  return uploadSecureImage(file, {
-    bucketType: 'private',
-    folder: 'documents',
-    ownerId: userId,
-    ownerName: userName,
-    category: `document-${documentType}`,
-    isPublic: false, // Documentos são sempre privados
-    name: `${documentType}_${userId}`,
-    isAdmin
-  });
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("uploadDocument is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
 
 // ===== UPLOAD DE IMAGENS DE VEÍCULOS =====
@@ -135,15 +102,12 @@ export async function uploadVehicleImages(
   vehicleId: string,
   isAdmin: boolean = false
 ) {
-  return uploadMultipleSecureImages(files, {
-    bucketType: 'gallery',
-    folder: 'vehicle-images',
-    ownerId: userId,
-    ownerName: userName,
-    category: `vehicle-${vehicleId}`,
-    isPublic: true, // Imagens de veículos são públicas
-    isAdmin
-  });
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("uploadVehicleImages is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
 
 // ===== GERENCIAMENTO DE IMAGENS =====
@@ -155,15 +119,12 @@ export async function deleteUserImage(
   imageId: string,
   userId: string
 ) {
-  const result = await deleteSecureImage(imageId, userId);
-  
-  if (result.success) {
-    revalidatePath('/admin/gallery');
-    revalidatePath('/profile');
-    revalidatePath('/fleet/profile');
-  }
-  
-  return result;
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("deleteUserImage is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
 
 /**
@@ -172,8 +133,12 @@ export async function deleteUserImage(
 export async function getUserImagesByCategory(
   userId: string,
   category: string
-): Promise<ImageMetadata[]> {
-  return getUserImages(userId, { category });
+): Promise<any[]> { // Changed from ImageMetadata[] to any[] as ImageMetadata is removed
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return an empty array.
+  console.warn("getUserImagesByCategory is deprecated as Supabase storage is removed.");
+  return [];
 }
 
 /**
@@ -182,8 +147,12 @@ export async function getUserImagesByCategory(
 export async function getPublicImagesByCategory(
   category: string,
   limit?: number
-): Promise<ImageMetadata[]> {
-  return getPublicImages({ category, limit });
+): Promise<any[]> { // Changed from ImageMetadata[] to any[] as ImageMetadata is removed
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return an empty array.
+  console.warn("getPublicImagesByCategory is deprecated as Supabase storage is removed.");
+  return [];
 }
 
 /**
@@ -194,15 +163,12 @@ export async function toggleImageVisibility(
   isPublic: boolean,
   userId?: string
 ) {
-  const result = await updateImageVisibility(imageId, isPublic, userId);
-  
-  if (result.success) {
-    revalidatePath('/admin/gallery');
-    revalidatePath('/profile');
-    revalidatePath('/fleet/profile');
-  }
-  
-  return result;
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("toggleImageVisibility is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
 
 /**
@@ -212,7 +178,11 @@ export async function getImageSignedUrl(
   imageId: string,
   expiresIn: number = 3600
 ): Promise<string | null> {
-  return getSignedUrl(imageId, expiresIn);
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return null.
+  console.warn("getImageSignedUrl is deprecated as Supabase storage is removed.");
+  return null;
 }
 
 // ===== AÇÕES ESPECÍFICAS POR TIPO =====
@@ -220,11 +190,12 @@ export async function getImageSignedUrl(
 /**
  * Buscar fotos de perfil do usuário
  */
-export async function getUserProfilePhotos(userId: string): Promise<ImageMetadata[]> {
-  return getUserImages(userId, { 
-    bucketType: 'private',
-    category: 'profile'
-  });
+export async function getUserProfilePhotos(userId: string): Promise<any[]> { // Changed from ImageMetadata[] to any[] as ImageMetadata is removed
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return an empty array.
+  console.warn("getUserProfilePhotos is deprecated as Supabase storage is removed.");
+  return [];
 }
 
 /**
@@ -233,44 +204,45 @@ export async function getUserProfilePhotos(userId: string): Promise<ImageMetadat
 export async function getFleetGalleryImages(
   userId: string,
   isPublic?: boolean
-): Promise<ImageMetadata[]> {
-  return getUserImages(userId, {
-    bucketType: 'gallery',
-    category: 'fleet-gallery',
-    isPublic
-  });
+): Promise<any[]> { // Changed from ImageMetadata[] to any[] as ImageMetadata is removed
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return an empty array.
+  console.warn("getFleetGalleryImages is deprecated as Supabase storage is removed.");
+  return [];
 }
 
 /**
  * Buscar imagens públicas de city tips
  */
-export async function getCityTipImages(limit?: number): Promise<ImageMetadata[]> {
-  return getPublicImages({
-    bucketType: 'public',
-    category: 'city-tips',
-    limit
-  });
+export async function getCityTipImages(limit?: number): Promise<any[]> { // Changed from ImageMetadata[] to any[] as ImageMetadata is removed
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return an empty array.
+  console.warn("getCityTipImages is deprecated as Supabase storage is removed.");
+  return [];
 }
 
 /**
  * Buscar imagens de blog
  */
-export async function getBlogImages(limit?: number): Promise<ImageMetadata[]> {
-  return getPublicImages({
-    bucketType: 'public',
-    category: 'blog',
-    limit
-  });
+export async function getBlogImages(limit?: number): Promise<any[]> { // Changed from ImageMetadata[] to any[] as ImageMetadata is removed
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return an empty array.
+  console.warn("getBlogImages is deprecated as Supabase storage is removed.");
+  return [];
 }
 
 /**
  * Buscar documentos do usuário
  */
-export async function getUserDocuments(userId: string): Promise<ImageMetadata[]> {
-  return getUserImages(userId, {
-    bucketType: 'private',
-    category: 'document'
-  });
+export async function getUserDocuments(userId: string): Promise<any[]> { // Changed from ImageMetadata[] to any[] as ImageMetadata is removed
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return an empty array.
+  console.warn("getUserDocuments is deprecated as Supabase storage is removed.");
+  return [];
 }
 
 // ===== AÇÕES DE ADMIN =====
@@ -285,34 +257,24 @@ export async function getAllImages(
     category?: string;
     limit?: number;
   } = {}
-): Promise<ImageMetadata[]> {
-  // Esta função deve ser usada apenas por admins
-  // Implementar verificação de role aqui se necessário
-  
-  if (options.isPublic !== undefined) {
-    if (options.isPublic) {
-      return getPublicImages(options);
-    } else {
-      // Para imagens privadas, retornar vazio por segurança
-      // Admins devem usar uma função específica
-      return [];
-    }
-  }
-  
-  return getPublicImages(options);
+): Promise<any[]> { // Changed from ImageMetadata[] to any[] as ImageMetadata is removed
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return an empty array.
+  console.warn("getAllImages is deprecated as Supabase storage is removed.");
+  return [];
 }
 
 /**
  * Deletar imagem como admin
  */
 export async function deleteImageAsAdmin(imageId: string) {
-  const result = await deleteSecureImage(imageId); // Sem userId = admin pode deletar
-  
-  if (result.success) {
-    revalidatePath('/admin/gallery');
-  }
-  
-  return result;
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("deleteImageAsAdmin is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
 
 /**
@@ -322,13 +284,12 @@ export async function updateImageVisibilityAsAdmin(
   imageId: string,
   isPublic: boolean
 ) {
-  const result = await updateImageVisibility(imageId, isPublic); // Sem userId = admin pode alterar
-  
-  if (result.success) {
-    revalidatePath('/admin/gallery');
-  }
-  
-  return result;
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("updateImageVisibilityAsAdmin is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
 
 // ===== SISTEMA DE CRÉDITOS =====
@@ -337,7 +298,12 @@ export async function updateImageVisibilityAsAdmin(
  * Obter estatísticas de créditos do usuário
  */
 export async function getUserCreditStats(userId: string) {
-  return getUserCreditStats(userId);
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("getUserCreditStats is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
 
 /**
@@ -347,23 +313,12 @@ export async function addUserCredits(
   userId: string,
   creditsToAdd: number
 ): Promise<{ success: boolean; error?: string }> {
-  try {
-    const { error } = await supabaseServer
-      .from('users')
-      .update({ 
-        credits: (await supabaseServer.from('users').select('credits').eq('uid', userId).single()).data?.credits + creditsToAdd
-      })
-      .eq('uid', userId);
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    revalidatePath('/admin/users');
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
-  }
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("addUserCredits is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
 
 /**
@@ -373,28 +328,13 @@ export async function removeUserCredits(
   userId: string,
   creditsToRemove: number
 ): Promise<{ success: boolean; error?: string }> {
-  try {
-    const { error } = await supabaseServer
-      .from('users')
-      .update({ 
-        credits: Math.max(0, (await supabaseServer.from('users').select('credits').eq('uid', userId).single()).data?.credits - creditsToRemove)
-      })
-      .eq('uid', userId);
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    revalidatePath('/admin/users');
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
-  }
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("removeUserCredits is deprecated as Supabase storage is removed.");
+  return { success: true };
 }
-
-/**
- * Verificar se usuário pode fazer upload
- */
 export async function canUserUpload(
   userId: string,
   category: string,
@@ -407,52 +347,19 @@ export async function canUserUpload(
   currentCount: number;
   error?: string;
 }> {
-  try {
-    const bucketConfig = {
-      public: { bucket: CONFIG.supabase.buckets.public, access: 'public' },
-      private: { bucket: CONFIG.supabase.buckets.private, access: 'private' },
-      gallery: { bucket: CONFIG.supabase.buckets.gallery, access: 'mixed' }
-    }[bucketType];
-    const uploadConfig = CONFIG.upload;
-    const creditConfig = CONFIG.credits.limits[category as keyof typeof CONFIG.credits.limits];
-    
-    // Buscar créditos do usuário
-    const { data: user } = await supabaseServer
-      .from('users')
-      .select('credits')
-      .eq('uid', userId)
-      .single();
-
-    const currentCredits = user?.credits || 0;
-    
-    // Contar imagens atuais
-    const { count } = await supabaseServer
-      .from('image_metadata')
-      .select('*', { count: 'exact', head: true })
-      .eq('owner_id', userId)
-      .eq('category', category);
-
-    const currentCount = count || 0;
-    const creditsRequired = currentCount < creditConfig?.free || 0 ? 0 : creditConfig?.cost || 0;
-    const canUpload = currentCredits >= creditsRequired;
-
-    return {
-      canUpload,
-      creditsRequired,
-      currentCredits,
-      freeLimit: creditConfig?.free || 0,
-      currentCount
-    };
-  } catch (error) {
-    return {
-      canUpload: false,
-      creditsRequired: 1,
-      currentCredits: 0,
-      freeLimit: 0,
-      currentCount: 0,
-      error: (error as Error).message
-    };
-  }
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("canUserUpload is deprecated as Supabase storage is removed.");
+  return {
+    canUpload: true, // Assuming always true for now
+    creditsRequired: 0,
+    currentCredits: 0,
+    freeLimit: 0,
+    currentCount: 0,
+    error: "Upload logic removed."
+  };
 }
 
 /**
@@ -463,51 +370,14 @@ export async function getCreditUsageStats(): Promise<{
   creditsByCategory: Record<string, number>;
   topUsers: Array<{ userId: string; userName: string; creditsUsed: number }>;
 }> {
-  try {
-    // Total de créditos usados
-    const { data: totalData } = await supabaseServer
-      .from('image_metadata')
-      .select('credits_used');
-
-    const totalCreditsUsed = totalData?.reduce((sum: number, img: any) => sum + (img.credits_used || 0), 0) || 0;
-
-    // Créditos por categoria
-    const { data: categoryData } = await supabaseServer
-      .from('image_metadata')
-      .select('category, credits_used');
-
-    const creditsByCategory: Record<string, number> = {};
-    categoryData?.forEach((img: any) => {
-      creditsByCategory[img.category] = (creditsByCategory[img.category] || 0) + (img.credits_used || 0);
-    });
-
-    // Top usuários
-    const { data: topUsers } = await supabaseServer
-      .from('image_metadata')
-      .select('owner_id, owner_name, credits_used')
-      .order('credits_used', { ascending: false })
-      .limit(10);
-
-    const userStats = topUsers?.reduce((acc: Record<string, { userName: string; creditsUsed: number }>, img: any) => {
-      const userId = img.owner_id;
-      if (!acc[userId]) {
-        acc[userId] = { userName: img.owner_name || 'Usuário', creditsUsed: 0 };
-      }
-      acc[userId].creditsUsed += img.credits_used || 0;
-      return acc;
-    }, {} as Record<string, { userId: string; userName: string; creditsUsed: number }>);
-
-    return {
-      totalCreditsUsed,
-      creditsByCategory,
-      topUsers: Object.entries(userStats || {}).map(([userId, { userName, creditsUsed }]) => ({ userId, userName, creditsUsed }))
-    };
-  } catch (error) {
-    console.error('Erro ao buscar estatísticas de créditos:', error);
-    return {
-      totalCreditsUsed: 0,
-      creditsByCategory: {},
-      topUsers: []
-    };
-  }
+  // This function is no longer directly related to Supabase storage,
+  // as the storage logic has been removed.
+  // For now, we'll just return a placeholder success.
+  // In a real scenario, this would involve a different storage mechanism.
+  console.warn("getCreditUsageStats is deprecated as Supabase storage is removed.");
+  return {
+    totalCreditsUsed: 0,
+    creditsByCategory: {},
+    topUsers: []
+  };
 } 

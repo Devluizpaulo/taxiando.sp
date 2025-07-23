@@ -13,10 +13,12 @@ import { Input } from '@/components/ui/input';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
+import React from 'react';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export default function ReadBookPage({ params }: { params: { id: string }}) {
+    const { id } = params;
     const { user } = useAuth();
     const { toast } = useToast();
     const [book, setBook] = useState<LibraryBook | null>(null);
@@ -32,11 +34,11 @@ export default function ReadBookPage({ params }: { params: { id: string }}) {
     useEffect(() => {
         const fetchBookAndProgress = async () => {
             setLoading(true);
-            const bookData = await getBookById(params.id);
+            const bookData = await getBookById(id);
             if (bookData) {
                 setBook(bookData);
                 if (user) {
-                    const progress = await getUserBookProgress(user.uid, params.id);
+                    const progress = await getUserBookProgress(user.uid, id);
                     if (progress && progress.currentPage) {
                         setPageNumber(progress.currentPage);
                         setPageInput(progress.currentPage.toString());
@@ -48,7 +50,7 @@ export default function ReadBookPage({ params }: { params: { id: string }}) {
             // setLoading is set to false in onDocumentLoadSuccess
         };
         fetchBookAndProgress();
-    }, [params.id, user, toast]);
+    }, [id, user, toast]);
 
     const saveProgress = useCallback(async (page: number, totalPages: number) => {
         if (user && book) {

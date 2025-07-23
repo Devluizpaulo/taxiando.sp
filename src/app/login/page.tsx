@@ -17,7 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Car, Circle } from 'lucide-react';
 import Link from 'next/link';
 import { PublicHeader } from '@/components/layout/public-header';
 import { PublicFooter } from '@/components/layout/public-footer';
@@ -104,7 +104,50 @@ export default function LoginPage() {
           <p className="text-muted-foreground">
              {isFirstLogin ? "Preparando seu painel para a sua nova jornada..." : "Que bom te ver de novo. Redirecionando..."}
           </p>
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          {/* Imagem do táxi animada */}
+          <div className="flex flex-col items-center mt-8">
+            <div className="w-[220px] h-[120px] relative animate-taxi-move">
+              {/* Fumaça dos pneus */}
+              {/* Traseiro */}
+              <div className="absolute left-6 bottom-2 w-8 h-8 pointer-events-none">
+                <div className="absolute left-0 bottom-0 w-6 h-6 bg-gray-300/60 rounded-full blur-sm animate-smoke-puff" />
+                <div className="absolute left-2 bottom-2 w-4 h-4 bg-gray-400/40 rounded-full blur-sm animate-smoke-puff delay-300" />
+              </div>
+              {/* Dianteiro */}
+              <div className="absolute right-6 bottom-2 w-8 h-8 pointer-events-none">
+                <div className="absolute right-0 bottom-0 w-6 h-6 bg-gray-300/60 rounded-full blur-sm animate-smoke-puff" />
+                <div className="absolute right-2 bottom-2 w-4 h-4 bg-gray-400/40 rounded-full blur-sm animate-smoke-puff delay-500" />
+              </div>
+              <Image
+                src="/logintxscreen.png"
+                alt="Táxi animado"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+          <style jsx global>{`
+            @keyframes taxi-move {
+              0%, 100% { transform: translateX(0); }
+              20% { transform: translateX(-10px); }
+              50% { transform: translateX(10px); }
+              80% { transform: translateX(-10px); }
+            }
+            .animate-taxi-move {
+              animation: taxi-move 2.8s ease-in-out infinite;
+            }
+            @keyframes smoke-puff {
+              0% { opacity: 0.7; transform: scale(0.7) translateY(0); }
+              60% { opacity: 0.3; transform: scale(1.1) translateY(-10px); }
+              100% { opacity: 0; transform: scale(1.3) translateY(-18px); }
+            }
+            .animate-smoke-puff {
+              animation: smoke-puff 1.4s linear infinite;
+            }
+            .delay-300 { animation-delay: 0.3s; }
+            .delay-500 { animation-delay: 0.5s; }
+          `}</style>
         </div>
       </div>
     );
@@ -154,7 +197,7 @@ export default function LoginPage() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" disabled={isLoading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                  <Button type="submit" disabled={isLoading} className="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold shadow-md hover:from-amber-500 hover:to-orange-600 transition-all">
                       {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Entrar'}
                   </Button>
                 </form>
@@ -162,7 +205,7 @@ export default function LoginPage() {
             </CardContent>
             <CardFooter className="justify-center text-sm">
             Não tem uma conta?{" "}
-            <Link href="/register" className="font-semibold text-accent hover:underline ml-1">
+            <Link href="/register" className="font-semibold text-orange-600 hover:underline ml-1">
                 Cadastre-se
             </Link>
             </CardFooter>

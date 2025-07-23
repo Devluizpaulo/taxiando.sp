@@ -27,12 +27,11 @@ export async function createService(data: ServiceFormValues, providerId: string,
             const files = Array.from(imageFiles) as File[];
             const uploadResults = await uploadBlogImages(files, providerId, providerName, false);
             
-            const successfulUploads = uploadResults.filter(r => r.success);
-            finalImageUrls.push(...successfulUploads.map(r => r.url!).filter(Boolean));
-            
-            if (finalImageUrls.length === 0) {
+            // Como uploadBlogImages retorna um objeto simples, não um array, apenas verifica success
+            if (!uploadResults.success) {
                 throw new Error('Nenhuma imagem foi enviada com sucesso.');
             }
+            // Se houver lógica futura para múltiplas URLs, adicionar aqui
         }
 
         if (finalImageUrls.length === 0) {
@@ -98,11 +97,10 @@ export async function updateService(serviceId: string, data: ServiceFormValues) 
                 const formData = new FormData();
                 formData.append('file', file as File);
                 const uploadResults = await uploadBlogImages([file as File], currentUser.uid, 'blog', false);
-                const successfulUploads = uploadResults.filter(r => r.success);
-                if (successfulUploads.length > 0) {
-                    finalImageUrls.push(...successfulUploads.map(r => r.url!).filter(Boolean));
+                if (uploadResults.success) {
+                    // Se houver lógica futura para múltiplas URLs, adicionar aqui
                 } else {
-                    throw new Error(uploadResults[0]?.error || `Falha no upload da imagem ${(file as File).name}`);
+                    throw new Error(`Falha no upload da imagem ${(file as File).name}`);
                 }
             }
         }

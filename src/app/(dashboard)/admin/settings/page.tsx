@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { FacebookIcon } from '@/components/icons/facebook-icon';
+import { FirebaseImageUpload } from '@/components/ui/firebase-image-upload';
 
 
 const themeSchema = z.object({
@@ -206,28 +207,12 @@ export default function SettingsPage() {
                                     <FormItem>
                                         <FormLabel>URL do Logo</FormLabel>
                                         <div className="flex gap-2 items-center">
-                                            <Input {...field} placeholder="/logo.png" />
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                style={{ display: 'none' }}
-                                                ref={logoInputRef}
-                                                onChange={async (e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (!file) return;
-                                                    const formData = new FormData();
-                                                    formData.append('file', file);
-                                                    const res = await fetch('/api/upload/logo', { method: 'POST', body: formData });
-                                                    const data = await res.json();
-                                                    if (data.url) {
-                                                        field.onChange(data.url);
-                                                        toast({ title: 'Logo enviado!', description: 'A URL foi preenchida automaticamente.' });
-                                                    } else {
-                                                        toast({ variant: 'destructive', title: 'Erro ao enviar logo', description: data.error || 'Erro desconhecido.' });
-                                                    }
-                                                }}
+                                            <FirebaseImageUpload
+                                                value={field.value}
+                                                onChange={url => field.onChange(url)}
+                                                pathPrefix={`settings/logo/`}
+                                                label="Logo da Plataforma"
                                             />
-                                            <Button type="button" variant="outline" onClick={() => logoInputRef.current?.click()}>Upload</Button>
                                         </div>
                                         <FormDescription>Use um caminho local (ex: /logo.png), uma URL completa ou faça upload de uma imagem.</FormDescription>
                                         {field.value && (

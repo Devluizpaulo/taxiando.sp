@@ -24,6 +24,7 @@ import { Loader2, Eye, Pen, Save, Sparkles, Link as LinkIcon, PlusCircle, Trash2
 import { createBlogPost, updateBlogPost } from '@/app/actions/blog-actions';
 import { uploadFile } from '@/app/actions/storage-actions';
 import { generateBlogPost, type GenerateBlogPostOutput } from '@/ai/flows/generate-blog-post-flow';
+import { FirebaseImageUpload } from '@/components/ui/firebase-image-upload';
 
 
 function slugify(text: string) {
@@ -307,63 +308,16 @@ export function BlogPostForm({ post }: { post?: BlogPost }) {
                                         <FormDescription>Posts em rascunho não são visíveis publicamente.</FormDescription>
                                     <FormMessage /></FormItem>
                                 )}/>
-                                 <FormField control={form.control} name="imageUrls" render={() => (
-    <FormItem>
-        <FormLabel>URLs das Imagens de Capa</FormLabel>
-        <FormDescription>Adicione uma ou mais URLs de imagens. A primeira será usada como capa principal.</FormDescription>
-        {form.watch('imageUrls').map((url, idx) => (
-            <div key={idx} className="flex items-center gap-2 mb-2">
-                <Input
-                    value={url}
-                    placeholder="https://..."
-                    onChange={e => {
-                        const urls = [...form.getValues('imageUrls')];
-                        urls[idx] = e.target.value;
-                        form.setValue('imageUrls', urls);
-                    }}
-                />
-                <Button type="button" variant="ghost" size="icon" onClick={() => {
-                    const urls = [...form.getValues('imageUrls')];
-                    urls.splice(idx, 1);
-                    form.setValue('imageUrls', urls);
-                }} disabled={form.watch('imageUrls').length === 1}>
-                    <Trash2 className="h-4 w-4" />
-                </Button>
-            </div>
-        ))}
-        <Button type="button" variant="outline" size="sm" onClick={() => form.setValue('imageUrls', [...form.getValues('imageUrls'), ''])}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar URL
-        </Button>
-        <FormMessage />
-    </FormItem>
-)}/>
-                                <div className="relative flex items-center justify-center text-sm text-muted-foreground before:flex-1 before:border-b before:border-border after:flex-1 after:border-b after:border-border">
-                                    <span className="px-2">OU</span>
-                                </div>
-                                <FormField
-                                    control={form.control}
-                                    name="imageFile"
-                                    render={({ field }) => (
+                                 <FormField control={form.control} name="imageUrls" render={({ field }) => (
                                         <FormItem>
-                                        <FormLabel>Enviar Imagem do Computador</FormLabel>
-                                            <FormControl>
-                                                <Input 
-                                                    type="file" 
-                                                    accept="image/*"
-                                                    className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                                                    onChange={(e) => {
-                                                        const file = e.target.files?.[0];
-                                                        field.onChange(file);
-                                                        if (file) {
-                                                            if (previewUrl) URL.revokeObjectURL(previewUrl);
-                                                            setPreviewUrl(URL.createObjectURL(file));
-                                                        } else {
-                                                            setPreviewUrl(null);
-                                                        }
-                                                    }}
-                                                />
-                                            </FormControl>
-                                        <FormMessage />
+                                            <FormLabel>Imagem de Capa</FormLabel>
+                                            <FirebaseImageUpload
+                                                value={field.value?.[0]}
+                                                onChange={url => field.onChange([url])}
+                                                pathPrefix={`blog/`}
+                                                label="Enviar Imagem do Computador"
+                                            />
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />

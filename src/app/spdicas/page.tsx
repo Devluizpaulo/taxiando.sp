@@ -1,6 +1,5 @@
 import { Star, MapPin } from 'lucide-react';
 import Image from 'next/image';
-import { getTips } from '@/app/actions/supabase-city-guide-actions';
 import { type CityTip } from '@/lib/types';
 import { PublicHeader } from '@/components/layout/public-header';
 import { PublicFooter } from '@/components/layout/public-footer';
@@ -9,7 +8,10 @@ export default async function SpDicasPage() {
   let tips: CityTip[] = [];
   
   try {
-    tips = await getTips();
+    // The getTips function was removed from supabase-city-guide-actions.
+    // This section will be removed or replaced with a placeholder.
+    // For now, we'll just set tips to an empty array as a placeholder.
+    tips = []; 
   } catch (error) {
     console.error("Error fetching tips:", error);
   }

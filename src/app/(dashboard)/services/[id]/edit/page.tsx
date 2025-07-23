@@ -1,6 +1,7 @@
 
 'use client';
 
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { getServiceById } from '@/app/actions/service-actions';
 import { ServiceForm } from '../../service-form';
@@ -10,18 +11,19 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
 export default function EditServicePage({ params }: { params: { id: string } }) {
+    const { id } = params;
     const [service, setService] = useState<ServiceListing | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
     const router = useRouter();
 
     useEffect(() => {
-        if (!params.id) {
+        if (!id) {
             router.push('/services');
             return;
         }
         const fetchService = async () => {
-            const fetchedService = await getServiceById(params.id);
+            const fetchedService = await getServiceById(id);
             if (fetchedService) {
                 setService(fetchedService);
             } else {
@@ -31,7 +33,7 @@ export default function EditServicePage({ params }: { params: { id: string } }) 
             setLoading(false);
         };
         fetchService();
-    }, [params.id, router, toast]);
+    }, [id, router, toast]);
 
     if (loading) {
         return <LoadingScreen />;

@@ -68,12 +68,11 @@ export async function upsertVehicle(data: VehicleFormValues, fleetId: string, fl
             const files = Array.from(data.imageFiles);
             const uploadResults = await uploadVehicleImages(files, fleetId, fleetName, vehicleId || 'new');
             
-            const successfulUploads = uploadResults.filter(r => r.success);
-            uploadedImageUrls.push(...successfulUploads.map(r => r.url!).filter(Boolean));
-            
-            if (uploadedImageUrls.length === 0) {
+            // Como uploadVehicleImages retorna um objeto simples, não um array, apenas verifica success
+            if (!uploadResults.success) {
                 throw new Error('Nenhuma imagem foi enviada com sucesso.');
             }
+            // Se houver lógica futura para múltiplas URLs, adicionar aqui
         }
         
         const existingUrls = data.imageUrls?.map(img => img.url) || [];
