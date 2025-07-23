@@ -156,7 +156,9 @@ export type ContentBlock =
   | { type: 'heading'; level: 1 | 2 | 3 | 4; text: string }
   | { type: 'paragraph'; text: string }
   | { type: 'list'; style: 'bullet' | 'numbered'; items: string[] }
-  | { type: 'image'; url: string; alt?: string };
+  | { type: 'image'; url: string; alt?: string }
+  | { type: 'exercise'; question: string; answer: string; hints?: string[] }
+  | { type: 'quiz'; questions: QuizQuestion[] };
 
 export interface Lesson {
   id: string;
