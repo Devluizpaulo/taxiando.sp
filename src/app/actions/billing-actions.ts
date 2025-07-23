@@ -308,7 +308,6 @@ export async function createCheckoutSession({ packageId, userId, couponCode }: C
 }
 
 // --- Mercado Pago Sync ---
-import { MercadoPagoConfig, Preference } from 'mercadopago';
 
 /**
  * Sincroniza todos os pacotes de créditos locais com o Mercado Pago.
