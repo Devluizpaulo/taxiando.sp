@@ -109,6 +109,7 @@ export default function BillingPage() {
 
 
     const handlePurchaseAttempt = async (pkg: CreditPackage) => {
+        console.log('[Billing] Iniciando compra do pacote:', pkg);
         if (!user) {
             toast({ variant: 'destructive', title: "Erro", description: "Você precisa estar logado para comprar." });
             return;
@@ -123,11 +124,13 @@ export default function BillingPage() {
         setSelectedPackageId(pkg.id);
 
         try {
+            toast({ title: 'Aguarde...', description: 'Preparando checkout Mercado Pago.' });
             const result = await createCheckoutSession({
                 packageId: pkg.id,
                 userId: user.uid,
                 couponCode: couponCode || undefined,
             });
+            console.log('[Billing] Resultado createCheckoutSession:', result);
 
             if (result.success) {
                 if (result.discountApplied) {
@@ -137,6 +140,7 @@ export default function BillingPage() {
                 if (result.gateway === 'stripe' && result.url) {
                     router.push(result.url);
                 } else if (result.gateway === 'mercadoPago' && result.preferenceId) {
+                    toast({ title: 'Checkout Mercado Pago', description: 'Preencha os dados do cartão para finalizar a compra.' });
                     setMpPreferenceId(result.preferenceId);
                 }
             } else {
@@ -228,11 +232,20 @@ export default function BillingPage() {
                                 <p className="text-sm text-muted-foreground">{pkg.credits} créditos</p>
                             </CardContent>
                             <CardContent>
-                                {settings?.activeGateway === 'mercadoPago' && selectedPackageId === pkg.id && mpPreferenceId ? (
-                                    <Wallet
-                                        initialization={{ preferenceId: mpPreferenceId }}
-                                        customization={{ texts: { valueProp: 'smart_option' } }}
-                                    />
+                                {settings?.activeGateway === 'mercadoPago' && selectedPackageId === pkg.id ? (
+                                    mpPreferenceId ? (
+                                        <div className="flex flex-col gap-2 items-center">
+                                            <Wallet
+                                                initialization={{ preferenceId: mpPreferenceId }}
+                                                customization={{ texts: { valueProp: 'smart_option' } }}
+                                            />
+                                            <p className="text-xs text-muted-foreground text-center">Preencha os dados do cartão para finalizar a compra. O pagamento é processado com segurança pelo Mercado Pago.</p>
+                                        </div>
+                                    ) : (
+                                        <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled>
+                                            <Loader2 className="mr-2 animate-spin" /> Preparando checkout...
+                                        </Button>
+                                    )
                                 ) : (
                                     <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => handlePurchaseAttempt(pkg)} disabled={isCreatingSession === pkg.id || !isPaymentConfigured}>
                                         {isCreatingSession === pkg.id ? <Loader2 className="mr-2 animate-spin" /> : <ShoppingCart className="mr-2" />}
