@@ -127,6 +127,7 @@ export default function SettingsPage() {
     }, [form, toast]);
 
     const onSubmit = async (values: SettingsFormValues) => {
+        console.log('[SettingsPage] onSubmit chamado', values);
         setIsSubmitting(true);
         try {
             // Corrige os campos url para garantir que são string
@@ -139,7 +140,9 @@ export default function SettingsPage() {
                 } : undefined,
                 logoUrl: values.logoUrl || ''
             };
+            console.log('[SettingsPage] Enviando para updateGlobalSettings:', fixedValues);
             const result = await updateGlobalSettings(fixedValues);
+            console.log('[SettingsPage] Resultado de updateGlobalSettings:', result);
 
             if (result.success) {
                  toast({ title: 'Sucesso!', description: result.message });
@@ -148,8 +151,10 @@ export default function SettingsPage() {
                  toast({ variant: 'destructive', title: 'Erro ao Salvar', description: result.error });
             }
         } catch (error) {
+            console.error('[SettingsPage] Erro no submit:', error);
             toast({ variant: 'destructive', title: 'Erro Crítico', description: 'Não foi possível se comunicar com o servidor.' });
         } finally {
+            console.log('[SettingsPage] onSubmit finalizado');
             setIsSubmitting(false);
         }
     };
