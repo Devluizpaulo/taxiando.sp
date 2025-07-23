@@ -62,7 +62,19 @@ export async function getAllCreditPackages(): Promise<CreditPackage[]> {
         const packagesCollection = adminDB.collection('credit_packages');
         const q = packagesCollection.orderBy('price', 'asc');
         const querySnapshot = await q.get();
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CreditPackage));
+        return querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                createdAt: data.createdAt && typeof data.createdAt.toDate === 'function'
+                  ? data.createdAt.toDate().toISOString()
+                  : data.createdAt,
+                updatedAt: data.updatedAt && typeof data.updatedAt?.toDate === 'function'
+                  ? data.updatedAt.toDate().toISOString()
+                  : data.updatedAt,
+            } as CreditPackage;
+        });
     } catch (error) {
         console.error("Error fetching credit packages: ", error);
         return [];
