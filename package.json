@@ -47,7 +47,7 @@
     "framer-motion": "^12.23.6",
     "genkit": "^1.13.0",
     "lucide-react": "^0.475.0",
-    "mercadopago": "^2.0.10",
+    "mercadopago": "^2.8.0",
     "nanoid": "^5.0.7",
     "next": "15.3.3",
     "patch-package": "^8.0.0",

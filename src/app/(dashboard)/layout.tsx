@@ -132,7 +132,14 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
         <SidebarHeader className="border-b border-sidebar-border p-4">
             <Link href="/dashboard" onClick={handleMenuClick}>
               {siteSettings ? (
-                  <Image src={siteSettings.logoUrl} alt={siteSettings.siteName} width={150} height={42} className="h-12 w-auto rounded-lg shadow-md" />
+                  <Image
+                    src={siteSettings.logoUrl && siteSettings.logoUrl !== '' ? siteSettings.logoUrl : "/logo.png"}
+                    alt={siteSettings.siteName}
+                    width={150}
+                    height={42}
+                    className="h-12 w-auto rounded-lg shadow-md"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/logo.png"; }}
+                  />
               ) : (
                   <Skeleton className="h-12 w-36" />
               )}

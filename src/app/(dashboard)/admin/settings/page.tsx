@@ -221,7 +221,14 @@ export default function SettingsPage() {
                                         </div>
                                         <FormDescription>Use um caminho local (ex: /logo.png), uma URL completa ou faça upload de uma imagem.</FormDescription>
                                         {field.value && (
-                                            <div className="mt-2"><img src={field.value} alt="Logo preview" className="h-16 max-w-xs rounded border" /></div>
+                                            <div className="mt-2">
+                                              <img
+                                                src={field.value}
+                                                alt="Logo preview"
+                                                className="h-16 max-w-xs rounded border"
+                                                onError={(e) => { e.currentTarget.src = "/logo.png"; }}
+                                              />
+                                            </div>
                                         )}
                                         <FormMessage />
                                     </FormItem>

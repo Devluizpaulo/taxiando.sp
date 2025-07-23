@@ -306,3 +306,53 @@ export async function createCheckoutSession({ packageId, userId, couponCode }: C
         return { success: false, error: `Falha ao iniciar pagamento: ${errorMessage}` };
     }
 }
+
+// --- Mercado Pago Sync ---
+import { MercadoPagoConfig, Preference } from 'mercadopago';
+
+/**
+ * Sincroniza todos os pacotes de créditos locais com o Mercado Pago.
+ * Cria ou atualiza produtos/preferências e salva o priceId no Firestore.
+ */
+export async function syncCreditPackagesWithMercadoPago() {
+    try {
+        const settings = await getPaymentSettings();
+        if (!settings.mercadoPago?.accessToken) {
+            throw new Error('Credenciais do Mercado Pago não configuradas.');
+        }
+        const client = new MercadoPagoConfig({ accessToken: settings.mercadoPago.accessToken });
+        const preference = new Preference(client);
+
+        // Busca todos os pacotes locais
+        const packagesCollection = adminDB.collection('credit_packages');
+        const querySnapshot = await packagesCollection.get();
+        const packages = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CreditPackage));
+
+        for (const pkg of packages) {
+            // Cria uma preferência para cada pacote (pode ser adaptado para produtos se necessário)
+            const result = await preference.create({
+                body: {
+                    items: [{
+                        id: pkg.id,
+                        title: pkg.name,
+                        description: pkg.description,
+                        quantity: 1,
+                        unit_price: pkg.price,
+                        currency_id: 'BRL',
+                    }],
+                    metadata: {
+                        package_id: pkg.id,
+                    },
+                }
+            });
+            if (result.id && pkg.priceId !== result.id) {
+                // Atualiza o priceId no Firestore se mudou
+                await packagesCollection.doc(pkg.id).update({ priceId: result.id });
+            }
+        }
+        return { success: true };
+    } catch (error) {
+        console.error('Erro ao sincronizar pacotes com Mercado Pago:', error);
+        return { success: false, error: (error as Error).message };
+    }
+}

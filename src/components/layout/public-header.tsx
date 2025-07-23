@@ -35,7 +35,15 @@ export function PublicHeader() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-gradient-to-r from-white/95 via-background/95 to-amber-50/90 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm transition-shadow duration-300">
       <div className="container mx-auto flex h-20 items-center justify-between px-2 md:px-4 lg:px-8 gap-2 md:gap-4">
         <Link href="/" className="flex items-center max-w-[60vw] mr-2 md:mr-4" aria-label="Página inicial">
-          <Image src={siteSettings?.logoUrl || "/logo.png"} alt={siteSettings?.siteName || "Táxiando SP"} width={140} height={40} className="h-10 md:h-14 w-auto rounded-xl drop-shadow-lg bg-white/80 p-2 max-w-full" priority />
+          <Image
+            src={siteSettings?.logoUrl && siteSettings.logoUrl !== '' ? siteSettings.logoUrl : "/logo.png"}
+            alt={siteSettings?.siteName || "Táxiando SP"}
+            width={140}
+            height={40}
+            className="h-10 md:h-14 w-auto rounded-xl drop-shadow-lg bg-white/80 p-2 max-w-full"
+            priority
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/logo.png"; }}
+          />
         </Link>
         {/* Menu desktop */}
         <nav className="hidden lg:flex items-center gap-3 md:gap-4 xl:gap-8 max-w-[60vw]">
