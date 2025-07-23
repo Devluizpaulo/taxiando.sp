@@ -337,6 +337,9 @@ function LessonItem({ lesson, course, isCompleted, onLessonCompleted, isLocked }
                                 </ul>
                             </div>
                         )}
+                        {lesson.contentBlocks && lesson.contentBlocks.length > 0 && (
+                          <ContentBlockPlayer blocks={lesson.contentBlocks} />
+                        )}
                     </div>
                     <DialogFooter className="p-6 pt-4 border-t bg-muted/50 flex-col sm:flex-row items-center justify-between gap-4">
                         {course.legalNotice && (
@@ -478,4 +481,87 @@ function QuizPlayer({ lesson, course, isCompleted, onLessonCompleted }: { lesson
             </div>
         </div>
     );
+}
+
+// Renderizador de blocos de conteúdo para o aluno
+function ContentBlockPlayer({ blocks, onExerciseComplete, onQuizComplete }: {
+  blocks: any[];
+  onExerciseComplete?: (idx: number, correct: boolean) => void;
+  onQuizComplete?: (idx: number, correct: boolean) => void;
+}) {
+  const [current, setCurrent] = useState(0);
+  const [exerciseResults, setExerciseResults] = useState<Record<number, boolean>>({});
+  const [quizResults, setQuizResults] = useState<Record<number, boolean>>({});
+  const block = blocks[current];
+  function next() { if (current < blocks.length - 1) setCurrent(c => c + 1); }
+  function prev() { if (current > 0) setCurrent(c => c - 1); }
+  return (
+    <div className="space-y-6">
+      <div>
+        <div className="mb-2 text-xs text-muted-foreground">Bloco {current + 1} de {blocks.length}</div>
+        {block.type === 'heading' && <h2 className={`text-${block.level}xl font-bold`}>{block.text}</h2>}
+        {block.type === 'paragraph' && <p>{block.text}</p>}
+        {block.type === 'list' && <ul className="list-disc ml-6">{block.items.map((item: string, i: number) => <li key={i}>{item}</li>)}</ul>}
+        {block.type === 'image' && <img src={block.url} alt={block.alt} className="rounded max-w-full" />}
+        {block.type === 'exercise' && (
+          <ExercisePlayer block={block} idx={current} onComplete={res => { setExerciseResults(r => ({ ...r, [current]: res })); onExerciseComplete?.(current, res); }} />
+        )}
+        {block.type === 'quiz' && (
+          <InlineQuizPlayer block={block} idx={current} onComplete={res => { setQuizResults(r => ({ ...r, [current]: res })); onQuizComplete?.(current, res); }} />
+        )}
+      </div>
+      <div className="flex gap-2 mt-4">
+        <Button type="button" variant="outline" onClick={prev} disabled={current === 0}>Anterior</Button>
+        <Button type="button" variant="outline" onClick={next} disabled={current === blocks.length - 1}>Próximo</Button>
+      </div>
+    </div>
+  );
+}
+
+function ExercisePlayer({ block, idx, onComplete }: { block: any, idx: number, onComplete: (correct: boolean) => void }) {
+  const [answer, setAnswer] = useState('');
+  const [result, setResult] = useState<null | boolean>(null);
+  return (
+    <div className="space-y-2">
+      <div className="font-semibold">{block.question}</div>
+      <input className="border rounded px-2 py-1 w-full" value={answer} onChange={e => setAnswer(e.target.value)} placeholder="Sua resposta" />
+      <div className="flex gap-2 mt-2">
+        <Button type="button" size="sm" onClick={() => { const ok = answer.trim().toLowerCase() === block.answer.trim().toLowerCase(); setResult(ok); onComplete(ok); }}>Verificar</Button>
+        {result !== null && (result ? <span className="text-green-600 font-bold">Correto!</span> : <span className="text-red-600 font-bold">Incorreto.</span>)}
+      </div>
+      {block.hints && block.hints.length > 0 && <details className="mt-2"><summary className="cursor-pointer text-xs text-muted-foreground">Dica</summary><ul className="list-disc ml-6 text-xs">{block.hints.map((h: string, i: number) => <li key={i}>{h}</li>)}</ul></details>}
+    </div>
+  );
+}
+
+function InlineQuizPlayer({ block, idx, onComplete }: { block: any, idx: number, onComplete: (correct: boolean) => void }) {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [result, setResult] = useState<null | boolean>(null);
+  const allAnswered = block.questions.every((q: any) => answers[q.id]);
+  function handleSubmit() {
+    let correct = true;
+    block.questions.forEach((q: any) => {
+      const correctOpt = q.options.find((o: any) => o.id === q.correctOptionId);
+      if (!correctOpt || answers[q.id] !== correctOpt.id) correct = false;
+    });
+    setResult(correct);
+    onComplete(correct);
+  }
+  return (
+    <div className="space-y-4">
+      {block.questions.map((q: any, i: number) => (
+        <div key={q.id} className="mb-2">
+          <div className="font-semibold">{q.question}</div>
+          {q.options.map((opt: any) => (
+            <label key={opt.id} className="flex items-center gap-2">
+              <input type="radio" name={`quiz-${idx}-${q.id}`} value={opt.id} checked={answers[q.id] === opt.id} onChange={() => setAnswers(a => ({ ...a, [q.id]: opt.id }))} />
+              {opt.text}
+            </label>
+          ))}
+        </div>
+      ))}
+      <Button type="button" size="sm" onClick={handleSubmit} disabled={!allAnswered}>Verificar</Button>
+      {result !== null && (result ? <span className="text-green-600 font-bold ml-2">Tudo correto!</span> : <span className="text-red-600 font-bold ml-2">Alguma resposta está incorreta.</span>)}
+    </div>
+  );
 }

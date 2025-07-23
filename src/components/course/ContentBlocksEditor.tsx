@@ -23,6 +23,8 @@ export function ContentBlocksEditor({
     if (type === 'heading') newBlock = { type: 'heading', level: 2, text: '' };
     else if (type === 'paragraph') newBlock = { type: 'paragraph', text: '' };
     else if (type === 'list') newBlock = { type: 'list', style: 'bullet', items: [''] };
+    else if (type === 'exercise') newBlock = { type: 'exercise', question: '', answer: '', hints: [''] };
+    else if (type === 'quiz') newBlock = { type: 'quiz', questions: [{ id: '', question: '', options: [{ id: '', text: '' }], correctOptionId: '' }] };
     else newBlock = { type: 'image', url: '', alt: '' };
     const updated = [...blocks, newBlock];
     setBlocks(updated);
@@ -108,6 +110,94 @@ export function ContentBlocksEditor({
               />
             </div>
           )}
+          {block.type === 'exercise' && (
+            <div className="space-y-1">
+              <input
+                className="w-full border rounded px-2 py-1"
+                value={block.question}
+                onChange={e => updateBlock(idx, { ...block, question: e.target.value })}
+                placeholder="Pergunta do exercício"
+              />
+              <input
+                className="w-full border rounded px-2 py-1"
+                value={block.answer}
+                onChange={e => updateBlock(idx, { ...block, answer: e.target.value })}
+                placeholder="Resposta correta"
+              />
+              <textarea
+                className="w-full border rounded px-2 py-1"
+                value={block.hints?.join('\n') || ''}
+                onChange={e => updateBlock(idx, { ...block, hints: e.target.value.split('\n') })}
+                placeholder="Dicas (uma por linha)"
+                rows={2}
+              />
+            </div>
+          )}
+          {block.type === 'quiz' && (
+            <div className="space-y-2">
+              {block.questions.map((q, qidx) => (
+                <div key={qidx} className="border rounded p-2 mb-2 bg-white/80">
+                  <input
+                    className="w-full border rounded px-2 py-1 mb-1"
+                    value={q.question}
+                    onChange={e => {
+                      const newQuestions = [...block.questions];
+                      newQuestions[qidx] = { ...q, question: e.target.value };
+                      updateBlock(idx, { ...block, questions: newQuestions });
+                    }}
+                    placeholder="Pergunta do quiz"
+                  />
+                  {q.options.map((opt, oidx) => (
+                    <div key={oidx} className="flex gap-2 items-center mb-1">
+                      <input
+                        className="border rounded px-2 py-1 flex-1"
+                        value={opt.text}
+                        onChange={e => {
+                          const newOptions = [...q.options];
+                          newOptions[oidx] = { ...opt, text: e.target.value };
+                          const newQuestions = [...block.questions];
+                          newQuestions[qidx] = { ...q, options: newOptions };
+                          updateBlock(idx, { ...block, questions: newQuestions });
+                        }}
+                        placeholder={`Opção ${oidx + 1}`}
+                      />
+                      <input
+                        type="radio"
+                        name={`correct-${idx}-${qidx}`}
+                        checked={q.correctOptionId === opt.id}
+                        onChange={() => {
+                          const newQuestions = [...block.questions];
+                          newQuestions[qidx] = { ...q, correctOptionId: opt.id };
+                          updateBlock(idx, { ...block, questions: newQuestions });
+                        }}
+                        title="Correta"
+                      />
+                      <Button type="button" size="icon" variant="ghost" onClick={() => {
+                        const newOptions = q.options.filter((_, i) => i !== oidx);
+                        const newQuestions = [...block.questions];
+                        newQuestions[qidx] = { ...q, options: newOptions };
+                        updateBlock(idx, { ...block, questions: newQuestions });
+                      }}>✕</Button>
+                    </div>
+                  ))}
+                  <Button type="button" size="sm" variant="outline" onClick={() => {
+                    const newOptions = [...q.options, { id: Math.random().toString(36).slice(2), text: '' }];
+                    const newQuestions = [...block.questions];
+                    newQuestions[qidx] = { ...q, options: newOptions };
+                    updateBlock(idx, { ...block, questions: newQuestions });
+                  }}>+ Opção</Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => {
+                    const newQuestions = block.questions.filter((_, i) => i !== qidx);
+                    updateBlock(idx, { ...block, questions: newQuestions });
+                  }}>Remover Pergunta</Button>
+                </div>
+              ))}
+              <Button type="button" size="sm" variant="outline" onClick={() => {
+                const newQuestions = [...block.questions, { id: Math.random().toString(36).slice(2), question: '', options: [{ id: Math.random().toString(36).slice(2), text: '' }], correctOptionId: '' }];
+                updateBlock(idx, { ...block, questions: newQuestions });
+              }}>+ Pergunta</Button>
+            </div>
+          )}
         </div>
       ))}
       <div className="flex gap-2 flex-wrap">
@@ -115,6 +205,8 @@ export function ContentBlocksEditor({
         <Button type="button" variant="outline" onClick={() => addBlock('paragraph')}>+ Parágrafo</Button>
         <Button type="button" variant="outline" onClick={() => addBlock('list')}>+ Lista</Button>
         <Button type="button" variant="outline" onClick={() => addBlock('image')}>+ Imagem</Button>
+        <Button type="button" variant="outline" onClick={() => addBlock('exercise')}>+ Exercício</Button>
+        <Button type="button" variant="outline" onClick={() => addBlock('quiz')}>+ Quiz</Button>
       </div>
     </div>
   );
