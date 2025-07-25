@@ -8,7 +8,7 @@ import { nanoid } from 'nanoid';
 import { use } from 'react';
 
 import { type Course } from '@/lib/types';
-import { getCourseById, updateCourse } from '@/app/actions/course-actions';
+import { getCourseById, updateCourse, updateCourseStatus } from '@/app/actions/course-actions';
 import { courseFormSchema, type CourseFormValues } from '@/lib/course-schemas';
 import { LoadingScreen } from '@/components/loading-screen';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic, DollarSign, Copyright, Gavel, CreditCard, BarChart, Trophy, BrainCircuit } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic, DollarSign, Copyright, Gavel, CreditCard, BarChart, Trophy, BrainCircuit, LogOut, UploadCloud, Save } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
@@ -34,6 +34,8 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { CoverImageGalleryModal } from '@/components/ui/CoverImageGalleryModal';
 
 // Definições globais de tipos literais
 export type PageType = "video" | "text" | "file";
@@ -151,6 +153,7 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
                     // Definições globais de tipos literais
                     const normalized = {
                         ...data,
+                        coverImageUrl: data.coverImageUrl ?? '',
                         difficulty: (data.difficulty === 'Iniciante' || data.difficulty === 'Intermediário' || data.difficulty === 'Avançado') ? data.difficulty : 'Iniciante',
                         modules: (data.modules ?? []).map(function (m: any) {
                             return {
@@ -207,6 +210,7 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
                 // Definições globais de tipos literais
                 const normalized = {
                     ...parsed,
+                    coverImageUrl: parsed.coverImageUrl ?? '',
                     modules: (parsed.modules ?? []).map(function (m: any) {
                         return {
                             ...m,
@@ -297,92 +301,99 @@ function EditCourseForm({ initialData, isPublished, initialModuleCount, user, ro
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
+    const [activeButton, setActiveButton] = useState<string | null>(null);
+    const [coverPreview, setCoverPreview] = useState<string | null>(typeof initialData.coverImageUrl === 'string' ? initialData.coverImageUrl : null);
+    const [galleryOpen, setGalleryOpen] = useState(false);
 
     // 2. Detecta alterações não salvas
     useEffect(() => {
-      const subscription = form.watch(() => setHasUnsavedChanges(true));
-      return () => subscription.unsubscribe();
+        const subscription = form.watch(() => setHasUnsavedChanges(true));
+        return () => subscription.unsubscribe();
     }, [form]);
 
     // 3. Confirmação de saída se houver alterações não salvas
     useEffect(() => {
-      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-        if (hasUnsavedChanges) {
-          e.preventDefault();
-          e.returnValue = '';
-        }
-      };
-      window.addEventListener('beforeunload', handleBeforeUnload);
-      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [hasUnsavedChanges]);
 
     // 4. Scroll para o primeiro erro ao salvar
     const scrollToFirstError = (errors: any) => {
-      const firstErrorField = Object.keys(errors)[0];
-      if (firstErrorField) {
-        const el = formRef.current?.querySelector(`[name="${firstErrorField}"]`);
-        if (el) {
-          (el as HTMLElement).focus();
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const firstErrorField = Object.keys(errors)[0];
+        if (firstErrorField) {
+            const el = formRef.current?.querySelector(`[name="${firstErrorField}"]`);
+            if (el) {
+                (el as HTMLElement).focus();
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
-      }
     };
 
     // 5. Submit handler com loading, toast, logs e scroll para erro
     const onSubmit = async (values: any, e?: React.BaseSyntheticEvent) => {
-      setIsSaving(true);
-      setHasUnsavedChanges(false);
-      console.log('Salvando curso...', values);
-      try {
-        await updateCourse(courseId, values, user.uid);
-        toast({ title: 'Sucesso', description: 'Curso salvo com sucesso!' });
-        console.log('Curso salvo com sucesso!');
-        // Type guard seguro para submitter:
-        const submitter = (e?.nativeEvent && typeof (e.nativeEvent as any).submitter === 'object') ? (e.nativeEvent as any).submitter : null;
-        if (submitter?.name === 'saveAndExit') {
-          window.location.href = '/admin/courses';
+        console.log('[onSubmit] chamado com valores:', values);
+        if (values && values.coverImageUrl) {
+            console.log('[onSubmit] coverImageUrl:', values.coverImageUrl, 'tipo:', typeof values.coverImageUrl, values.coverImageUrl instanceof File ? 'File' : 'string');
         }
-      } catch (error) {
-        toast({ title: 'Erro', description: 'Falha ao salvar curso.' });
-        console.error('Erro ao salvar curso:', error);
-        if (form.formState.errors) scrollToFirstError(form.formState.errors);
-      } finally {
-        setIsSaving(false);
-      }
+        setIsSaving(true);
+        setHasUnsavedChanges(false);
+        console.log('Iniciando salvamento', values);
+        try {
+            const result = await updateCourse(courseId, values, user.uid);
+            console.log('[onSubmit] resultado updateCourse:', result);
+            if (!result.success) {
+                toast({ title: 'Erro', description: result.error || 'Falha ao salvar curso.' });
+                console.error('Erro ao salvar:', result.error);
+                return;
+            }
+            toast({ title: 'Sucesso', description: 'Curso salvo com sucesso!' });
+            console.log('Salvo com sucesso!');
+            const submitter = (e?.nativeEvent && typeof (e.nativeEvent as any).submitter === 'object') ? (e.nativeEvent as any).submitter : null;
+            if (submitter?.name === 'saveAndExit') {
+                window.location.href = '/admin/courses';
+            }
+        } catch (error) {
+            toast({ title: 'Erro', description: 'Falha ao salvar curso.' });
+            console.error('Erro ao salvar curso:', error);
+            if (form.formState.errors) scrollToFirstError(form.formState.errors);
+        } finally {
+            setIsSaving(false);
+            setActiveButton(null);
+        }
     };
-
-    // 6. Cards destacados e espaçamento
-    // Adicione classes: shadow-lg, border-primary/30, rounded-xl, p-6, mb-8 aos Cards principais
-    // Exemplo:
-    // <Card className="shadow-lg border-primary/30 rounded-xl p-6 mb-8">
-    // ...
-    // </Card>
-
-    // 7. Indicação de campos obrigatórios
-    // Adicione <span className="text-red-500 ml-1">*</span> nos FormLabel dos campos obrigatórios
-    // Exemplo:
-    // <FormLabel>Nome do Curso <span className="text-red-500 ml-1">*</span></FormLabel>
-
-    // 8. Responsividade e foco visual em erro
-    // Adicione classes responsive (p-4 md:p-6), e para erro: border-red-500 focus-visible:ring-red-500
-    // Exemplo:
-    // <Input {...field} className={cn(fieldState.error && 'border-red-500 focus-visible:ring-red-500', '...outras classes')}/>
-
-    // 9. Botões de salvar
-    // Substitua o botão de submit por:
-    // <div className="flex gap-4 mt-8">
-    //   <Button type="submit" disabled={isSaving} name="saveAndContinue">
-    //     {isSaving ? <SpinnerIcon className="animate-spin mr-2 h-4 w-4" /> : null}
-    //     Salvar e Continuar Editando
-    //   </Button>
-    //   <Button type="submit" variant="secondary" disabled={isSaving} name="saveAndExit">
-    //     {isSaving ? <SpinnerIcon className="animate-spin mr-2 h-4 w-4" /> : null}
-    //     Salvar e Sair
-    //   </Button>
-    // </div>
 
     // Pré-visualização do curso
     const [showPreview, setShowPreview] = useState(false);
+
+    const handlePublishCourse = async () => {
+        setIsSaving(true);
+        console.log('Iniciando publicação do curso...');
+        try {
+            const result = await updateCourseStatus(courseId, 'Published');
+            if (!result.success) {
+                toast({ title: 'Erro', description: result.error || 'Falha ao publicar curso.' });
+                console.error('Erro ao publicar:', result.error);
+                return;
+            }
+            toast({ title: 'Sucesso', description: 'Curso publicado com sucesso!' });
+            console.log('Curso publicado com sucesso!');
+            setIsPublishedLocal(true);
+        } catch (error) {
+            toast({ title: 'Erro', description: 'Falha ao publicar curso.' });
+            console.error('Erro ao publicar curso:', error);
+        } finally {
+            setIsSaving(false);
+            setActiveButton(null);
+        }
+    };
+
+    const [isPublishedLocal, setIsPublishedLocal] = useState(isPublished);
 
     return (
         <Form {...form} key={courseId}>
@@ -404,7 +415,7 @@ function EditCourseForm({ initialData, isPublished, initialModuleCount, user, ro
                     </Card>
                 )}
 
-                {isPublished && (
+                {isPublishedLocal && (
                     <Card className="border-amber-500/50 bg-amber-500/5">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <AlertTriangle className="h-8 w-8 text-amber-600" />
@@ -416,204 +427,293 @@ function EditCourseForm({ initialData, isPublished, initialModuleCount, user, ro
                     </Card>
                 )}
 
-                <Card className="shadow-lg border-primary/30 rounded-xl p-6 mb-8">
-                    <CardHeader><h2 className="text-xl font-bold">Informações Gerais do Curso</h2></CardHeader>
-                    <CardContent className="space-y-6">
-                        <FormField control={form.control} name="coverImageUrl" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Capa do Curso</FormLabel>
-                                <FormControl>
-                                    <Input type="file" accept="image/*" onChange={async (e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            // Simulação: gerar URL local (substitua por upload real se necessário)
-                                            const url = URL.createObjectURL(file);
-                                            field.onChange(url);
-                                        }
-                                    }} />
-                                </FormControl>
-                                {form.watch("coverImageUrl") && (
-                                    <img src={form.watch("coverImageUrl") as string} alt="Preview da capa" className="mt-2 rounded-lg shadow w-full max-w-xs h-32 object-cover" />
-                                )}
-                                <FormDescription>Escolha uma imagem de capa para destacar seu curso.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="title" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Título do Curso <span className="text-red-500 ml-1">*</span></FormLabel>
-                                <FormControl>
-                                    <Input {...field} placeholder="Ex: Direção Defensiva Avançada" disabled={isPublished} className={`${form.formState.errors.title ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                </FormControl>
-                                <FormDescription>
-                                    Um título conciso e atraente para o curso.
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="category" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Categoria <span className="text-red-500 ml-1">*</span></FormLabel>
-                                <FormControl>
-                                    <Input {...field} placeholder="Ex: Segurança, Atendimento" disabled={isPublished} className={`${form.formState.errors.category ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                </FormControl>
-                                <FormDescription>
-                                    Defina a categoria principal do curso para organização.
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="description" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Descrição Curta <span className="text-red-500 ml-1">*</span></FormLabel>
-                                <FormControl>
-                                    <Textarea {...field} placeholder="Descreva o objetivo principal do curso." disabled={isPublished} className={`${form.formState.errors.description ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                </FormControl>
-                                <FormDescription>
-                                    Forneça uma breve descrição do que o curso oferece.
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                    </CardContent>
-                </Card>
-
-                <Card className="shadow-lg border-primary/30 rounded-xl p-6 mb-8">
-                    <CardHeader><h2 className="text-xl font-bold">Informações Financeiras, Legais e de Nível</h2></CardHeader>
-                    <CardContent className="space-y-6">
-                        <FormField control={form.control} name="difficulty" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="flex items-center gap-2"><Trophy /> Nível de Dificuldade <span className="text-red-500 ml-1">*</span></FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger className={form.formState.errors.difficulty ? 'border-red-500 focus-visible:ring-red-500' : ''}>
-                                            <SelectValue placeholder="Selecione o nível..." />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="Iniciante"><div className="flex items-center gap-2"><BarChart /> Iniciante</div></SelectItem>
-                                        <SelectItem value="Intermediário"><div className="flex items-center gap-2"><BrainCircuit /> Intermediário</div></SelectItem>
-                                        <SelectItem value="Avançado"><div className="flex items-center gap-2"><Trophy /> Avançado</div></SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormDescription>
-                                    Defina o nível de dificuldade para ajudar os alunos a escolherem o curso certo.
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
-                            <FormField control={form.control} name="investmentCost" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="flex items-center gap-2"><DollarSign /> Custo de Investimento (R$) <span className="text-red-500 ml-1">*</span></FormLabel>
-                                    <FormControl>
-                                        <Input type="number" {...field} placeholder="Ex: 500.00" className={`${form.formState.errors.investmentCost ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                    </FormControl>
-                                    <FormDescription>
-                                        Valor gasto na produção ou compra deste curso.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="priceInCredits" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="flex items-center gap-2"><CreditCard /> Preço em Créditos <span className="text-red-500 ml-1">*</span></FormLabel>
-                                    <FormControl>
-                                        <Input type="number" {...field} placeholder="Ex: 10" className={`${form.formState.errors.priceInCredits ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                    </FormControl>
-                                    <FormDescription>
-                                        Custo para o usuário comprar o curso. Deixe 0 para gratuito.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
+                <Tabs defaultValue="geral" className="w-full">
+                    <TabsList className="flex w-full bg-white rounded-t-lg shadow-sm border-b mb-2 overflow-x-auto">
+                        <TabsTrigger value="geral" className="px-6 py-3 font-semibold text-base rounded-t-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:shadow-inner transition-colors">Informações Gerais</TabsTrigger>
+                        <TabsTrigger value="financeiro" className="px-6 py-3 font-semibold text-base rounded-t-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:shadow-inner transition-colors">Financeiro/Legais</TabsTrigger>
+                        <TabsTrigger value="estrutura" className="px-6 py-3 font-semibold text-base rounded-t-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:shadow-inner transition-colors">Estrutura do Curso</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="geral">
+                        <Card className="shadow-lg border-primary/30 rounded-xl p-6 mb-8">
+                            <CardHeader><h2 className="text-xl font-bold">Informações Gerais do Curso</h2></CardHeader>
+                            <CardContent className="space-y-6">
+                                <FormField control={form.control} name="coverImageUrl" render={({ field }) => {
+                                    const isUploading = activeButton === 'save' && isSaving;
+                                    let showPreview: string | null = null;
+                                    if (coverPreview) {
+                                        showPreview = coverPreview;
+                                    } else if (typeof field.value === 'string' && field.value) {
+                                        showPreview = field.value;
+                                    } else {
+                                        showPreview = null;
+                                    }
+                                    return (
+                                        <FormItem>
+                                            <FormLabel>Capa do Curso</FormLabel>
+                                            <div className="flex gap-2 items-center mb-2">
+                                                <Input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={e => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            field.onChange(file); // Salva o File no form
+                                                            setCoverPreview(URL.createObjectURL(file)); // Só para preview
+                                                        }
+                                                    }}
+                                                />
+                                                <Button type="button" variant="outline" onClick={() => setGalleryOpen(true)}>
+                                                    Escolher da Biblioteca
+                                                </Button>
+                                            </div>
+                                            <CoverImageGalleryModal
+                                                open={galleryOpen}
+                                                onOpenChange={setGalleryOpen}
+                                                onSelect={url => {
+                                                    field.onChange(url);
+                                                    setCoverPreview(url);
+                                                    setGalleryOpen(false);
+                                                }}
+                                            />
+                                            {showPreview && (
+                                                <div className="relative mt-2 w-full max-w-xs h-32">
+                                                    <img
+                                                        src={showPreview}
+                                                        alt="Preview da capa"
+                                                        className="rounded-lg shadow w-full h-32 object-cover"
+                                                        style={{ opacity: isUploading ? 0.5 : 1, transition: 'opacity 0.3s' }}
+                                                    />
+                                                    {isUploading && (
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg">
+                                                            <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                            <FormDescription>Escolha uma imagem de capa para destacar seu curso.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    );
+                                }} />
+                                <FormField control={form.control} name="title" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Título do Curso <span className="text-red-500 ml-1">*</span></FormLabel>
+                                        <FormControl>
+                                            <Input {...field} placeholder="Ex: Direção Defensiva Avançada" disabled={isPublishedLocal} className={`${form.formState.errors.title ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
+                                        </FormControl>
+                                        <FormDescription>
+                                            Um título conciso e atraente para o curso.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="category" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Categoria <span className="text-red-500 ml-1">*</span></FormLabel>
+                                        <FormControl>
+                                            <Input {...field} placeholder="Ex: Segurança, Atendimento" disabled={isPublishedLocal} className={`${form.formState.errors.category ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
+                                        </FormControl>
+                                        <FormDescription>
+                                            Defina a categoria principal do curso para organização.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="description" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Descrição Curta <span className="text-red-500 ml-1">*</span></FormLabel>
+                                        <FormControl>
+                                            <Textarea {...field} placeholder="Descreva o objetivo principal do curso." disabled={isPublishedLocal} className={`${form.formState.errors.description ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
+                                        </FormControl>
+                                        <FormDescription>
+                                            Forneça uma breve descrição do que o curso oferece.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </CardContent>
+                        </Card>
+                        <div className="flex gap-4 mt-8">
+                            <Button
+                                type="button"
+                                disabled={isSaving}
+                                name="saveAndContinue"
+                                className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2 flex items-center gap-2"
+                                onClick={async (e) => {
+                                    setActiveButton('save');
+                                    await form.handleSubmit((values) => onSubmit(values, e))();
+                                }}
+                            >
+                                {activeButton === 'save' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
+                                Salvar e Continuar Editando
+                            </Button>
+                            <Button type="submit" variant="outline" disabled={isSaving} name="saveAndExit" className="border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg px-5 py-2 flex items-center gap-2">
+                                {activeButton === 'exit' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <LogOut className="h-4 w-4" />}
+                                Salvar e Sair
+                            </Button>
+                            <Button type="button" variant="default" onClick={handlePublishCourse} disabled={isSaving || isPublishedLocal} className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-5 py-2 flex items-center gap-2">
+                                {activeButton === 'publish' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <UploadCloud className="h-4 w-4" />}
+                                Publicar Curso
+                            </Button>
                         </div>
-                        <div className="border-t pt-6 space-y-6">
-                            <FormField control={form.control} name="authorInfo" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="flex items-center gap-2"><Copyright /> Informações de Direitos Autorais <span className="text-red-500 ml-1">*</span></FormLabel>
-                                    <FormControl>
-                                        <Input {...field} placeholder="Ex: © 2024 Nome do Produtor Terceirizado" className={`${form.formState.errors.authorInfo ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                    </FormControl>
-                                    <FormDescription>
-                                        Caso o conteúdo seja de terceiros, informe aqui.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="legalNotice" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="flex items-center gap-2"><Gavel /> Aviso Legal sobre Reprodução <span className="text-red-500 ml-1">*</span></FormLabel>
-                                    <FormControl>
-                                        <Textarea {...field} placeholder="Ex: A reprodução deste conteúdo é proibida..." rows={3} className={`${form.formState.errors.legalNotice ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                    </FormControl>
-                                    <FormDescription>
-                                        Este aviso será exibido aos alunos ao acessarem as aulas.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
+                    </TabsContent>
+                    <TabsContent value="financeiro">
+                        <Card className="shadow-lg border-primary/30 rounded-xl p-6 mb-8">
+                            <CardHeader><h2 className="text-xl font-bold">Informações Financeiras, Legais e de Nível</h2></CardHeader>
+                            <CardContent className="space-y-6">
+                                <FormField control={form.control} name="difficulty" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center gap-2"><Trophy /> Nível de Dificuldade <span className="text-red-500 ml-1">*</span></FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger className={form.formState.errors.difficulty ? 'border-red-500 focus-visible:ring-red-500' : ''}>
+                                                    <SelectValue placeholder="Selecione o nível..." />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="Iniciante"><div className="flex items-center gap-2"><BarChart /> Iniciante</div></SelectItem>
+                                                <SelectItem value="Intermediário"><div className="flex items-center gap-2"><BrainCircuit /> Intermediário</div></SelectItem>
+                                                <SelectItem value="Avançado"><div className="flex items-center gap-2"><Trophy /> Avançado</div></SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormDescription>
+                                            Defina o nível de dificuldade para ajudar os alunos a escolherem o curso certo.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+                                    <FormField control={form.control} name="investmentCost" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex items-center gap-2"><DollarSign /> Custo de Investimento (R$) <span className="text-red-500 ml-1">*</span></FormLabel>
+                                            <FormControl>
+                                                <Input type="number" {...field} placeholder="Ex: 500.00" className={`${form.formState.errors.investmentCost ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Valor gasto na produção ou compra deste curso.
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="priceInCredits" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex items-center gap-2"><CreditCard /> Preço em Créditos <span className="text-red-500 ml-1">*</span></FormLabel>
+                                            <FormControl>
+                                                <Input type="number" {...field} placeholder="Ex: 10" className={`${form.formState.errors.priceInCredits ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Custo para o usuário comprar o curso. Deixe 0 para gratuito.
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                </div>
+                                <div className="border-t pt-6 space-y-6">
+                                    <FormField control={form.control} name="authorInfo" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex items-center gap-2"><Copyright /> Informações de Direitos Autorais <span className="text-red-500 ml-1">*</span></FormLabel>
+                                            <FormControl>
+                                                <Input {...field} placeholder="Ex: © 2024 Nome do Produtor Terceirizado" className={`${form.formState.errors.authorInfo ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Caso o conteúdo seja de terceiros, informe aqui.
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="legalNotice" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex items-center gap-2"><Gavel /> Aviso Legal sobre Reprodução <span className="text-red-500 ml-1">*</span></FormLabel>
+                                            <FormControl>
+                                                <Textarea {...field} placeholder="Ex: A reprodução deste conteúdo é proibida..." rows={3} className={`${form.formState.errors.legalNotice ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Este aviso será exibido aos alunos ao acessarem as aulas.
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <div className="flex gap-4 mt-8">
+                            <Button type="submit" disabled={isSaving} name="saveAndContinue" className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2 flex items-center gap-2">
+                                {activeButton === 'save' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
+                                Salvar e Continuar Editando
+                            </Button>
+                            <Button type="submit" variant="outline" disabled={isSaving} name="saveAndExit" className="border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg px-5 py-2 flex items-center gap-2">
+                                {activeButton === 'exit' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <LogOut className="h-4 w-4" />}
+                                Salvar e Sair
+                            </Button>
+                            <Button type="button" variant="default" onClick={handlePublishCourse} disabled={isSaving || isPublishedLocal} className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-5 py-2 flex items-center gap-2">
+                                {activeButton === 'publish' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <UploadCloud className="h-4 w-4" />}
+                                Publicar Curso
+                            </Button>
                         </div>
-                    </CardContent>
-                </Card>
+                    </TabsContent>
+                    <TabsContent value="estrutura">
+                        <div>
+                            <h2 className="text-2xl font-bold font-headline">Estrutura do Curso</h2>
+                            <p className="text-muted-foreground">Adicione ou edite módulos e aulas para montar o conteúdo.</p>
+                        </div>
 
+                        <Accordion type="multiple" className="w-full space-y-4" defaultValue={moduleFields.map((_, i) => `module-${i}`)}>
+                            {moduleFields.map((moduleItem, moduleIndex) => {
+                                const isExistingModule = moduleIndex < initialModuleCount;
+                                const isEditingDisabled = isPublishedLocal && isExistingModule;
+                                return (
+                                    <ModuleField
+                                        key={moduleItem.id}
+                                        moduleIndex={moduleIndex}
+                                        moduleId={moduleItem.id}
+                                        removeModule={removeModule}
+                                        form={form}
+                                        isEditingDisabled={isEditingDisabled}
+                                        isPublished={isPublishedLocal}
+                                        initialModuleCount={initialModuleCount}
+                                    />
+                                );
+                            })}
+                        </Accordion>
 
-                <div>
-                    <h2 className="text-2xl font-bold font-headline">Estrutura do Curso</h2>
-                    <p className="text-muted-foreground">Adicione ou edite módulos e aulas para montar o conteúdo.</p>
-                </div>
+                        {form.formState.errors.modules?.root && (<p className="text-sm font-medium text-destructive">{form.formState.errors.modules.root.message}</p>)}
 
-                <Accordion type="multiple" className="w-full space-y-4" defaultValue={moduleFields.map((_, i) => `module-${i}`)}>
-                    {moduleFields.map((moduleItem, moduleIndex) => {
-                        const isExistingModule = moduleIndex < initialModuleCount;
-                        const isEditingDisabled = isPublished && isExistingModule;
-                        return (
-                            <ModuleField
-                                key={moduleItem.id}
-                                moduleIndex={moduleIndex}
-                                moduleId={moduleItem.id}
-                                removeModule={removeModule}
-                                form={form}
-                                isEditingDisabled={isEditingDisabled}
-                                isPublished={isPublished}
-                                initialModuleCount={initialModuleCount}
-                            />
-                        );
-                    })}
-                </Accordion>
-
-                {form.formState.errors.modules?.root && (<p className="text-sm font-medium text-destructive">{form.formState.errors.modules.root.message}</p>)}
-
-                <div className="flex justify-between items-center mt-4">
-                    <Button type="button" variant="outline" onClick={() => appendModule({
-                        id: nanoid(),
-                        title: '',
-                        lessons: [
-                            {
+                        <div className="flex justify-between items-center mt-4">
+                            <Button type="button" variant="outline" onClick={() => appendModule({
                                 id: nanoid(),
                                 title: '',
-                                summary: '',
-                                type: 'text' as LessonTypeLiteral,
-                                duration: 10,
-                                pages: [{ id: nanoid(), type: 'text' as PageType, title: '', textContent: '' }],
-                                questions: [],
-                            }
-                        ],
-                        badge: undefined,
-                    })}>
-                        <PlusCircle /> Adicionar Módulo
-                    </Button>
-                    <div className="flex gap-4 mt-8">
-                        <Button type="submit" disabled={isSaving} name="saveAndContinue">
-                            {isSaving ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
-                            Salvar e Continuar Editando
-                        </Button>
-                        <Button type="submit" variant="secondary" disabled={isSaving} name="saveAndExit">
-                            {isSaving ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
-                            Salvar e Sair
-                        </Button>
-                    </div>
-                </div>
+                                lessons: [
+                                    {
+                                        id: nanoid(),
+                                        title: '',
+                                        summary: '',
+                                        type: 'text' as LessonTypeLiteral,
+                                        duration: 10,
+                                        pages: [{ id: nanoid(), type: 'text' as PageType, title: '', textContent: '' }],
+                                        questions: [],
+                                    }
+                                ],
+                                badge: undefined,
+                            })}>
+                                <PlusCircle /> Adicionar Módulo
+                            </Button>
+                            <div className="flex gap-4 mt-8">
+                                <Button type="submit" disabled={isSaving} name="saveAndContinue" className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2 flex items-center gap-2">
+                                    {activeButton === 'save' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
+                                    Salvar e Continuar Editando
+                                </Button>
+                                <Button type="submit" variant="outline" disabled={isSaving} name="saveAndExit" className="border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg px-5 py-2 flex items-center gap-2">
+                                    {activeButton === 'exit' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <LogOut className="h-4 w-4" />}
+                                    Salvar e Sair
+                                </Button>
+                                <Button type="button" variant="default" onClick={handlePublishCourse} disabled={isSaving || isPublishedLocal} className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-5 py-2 flex items-center gap-2">
+                                    {activeButton === 'publish' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <UploadCloud className="h-4 w-4" />}
+                                    Publicar Curso
+                                </Button>
+                            </div>
+                        </div>
+                    </TabsContent>
+                </Tabs>
             </form>
         </Form>
     );
@@ -798,36 +898,37 @@ function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDi
                                             <InsertImageButton onInsert={markdown => form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.textContent`, (form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.textContent`) || '') + '\n' + markdown)} />
                                         </div>
                                         <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.textContent`} render={({ field }) => {
-  // Inicializa o editor Tiptap
-  const editor = useEditor({
-    extensions: [StarterKit, Link, Image],
-    content: field.value || '',
-    onUpdate: ({ editor }) => {
-      field.onChange(editor.getHTML());
-    },
-    editable: !isEditingDisabled,
-  });
-  // Sincroniza valor externo (reset do form)
-  useEffect(() => {
-    if (editor && field.value !== editor.getHTML()) {
-      editor.commands.setContent(field.value || '', false);
-    }
-  }, [field.value]);
-  return (
-    <FormItem>
-      <FormLabel>Conteúdo de Texto <span className="text-red-500 ml-1">*</span></FormLabel>
-      <div className="border rounded-lg bg-white shadow-sm focus-within:ring-2 focus-within:ring-primary/50">
-        <div className="relative">
-          {!editor?.getText() && <span className="absolute left-4 top-3 text-muted-foreground pointer-events-none select-none">Digite o conteúdo da página...</span>}
-          <EditorContent editor={editor} className="min-h-[180px] p-3 text-base font-medium prose max-w-none focus:outline-none" />
-        </div>
-      </div>
-      {form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.pages?.[activePage]?.textContent && (
-        <p className="text-red-500 text-sm mt-1">{form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.pages?.[activePage]?.textContent.message}</p>
-      )}
-    </FormItem>
-  );
-}} />
+                                            // Inicializa o editor Tiptap
+                                            const editor = useEditor({
+                                                extensions: [StarterKit, Link, Image],
+                                                content: field.value || '',
+                                                onUpdate: ({ editor }) => {
+                                                    field.onChange(editor.getHTML());
+                                                },
+                                                editable: !isEditingDisabled,
+                                                immediatelyRender: false,
+                                            });
+                                            // Sincroniza valor externo (reset do form)
+                                            useEffect(() => {
+                                                if (editor && field.value !== editor.getHTML()) {
+                                                    editor.commands.setContent(field.value || '', false);
+                                                }
+                                            }, [field.value]);
+                                            return (
+                                                <FormItem>
+                                                    <FormLabel>Conteúdo de Texto <span className="text-red-500 ml-1">*</span></FormLabel>
+                                                    <div className="border rounded-lg bg-white shadow-sm focus-within:ring-2 focus-within:ring-primary/50">
+                                                        <div className="relative">
+                                                            {!editor?.getText() && <span className="absolute left-4 top-3 text-muted-foreground pointer-events-none select-none">Digite o conteúdo da página...</span>}
+                                                            <EditorContent editor={editor} className="min-h-[180px] p-3 text-base font-medium prose max-w-none focus:outline-none" />
+                                                        </div>
+                                                    </div>
+                                                    {form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.pages?.[activePage]?.textContent && (
+                                                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.pages?.[activePage]?.textContent.message}</p>
+                                                    )}
+                                                </FormItem>
+                                            );
+                                        }} />
                                     </>
                                 )}
                                 {pages[activePage].type === 'file' && (

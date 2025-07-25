@@ -98,7 +98,7 @@ export const courseFormSchema = z.object({
   priceInCredits: z.coerce.number().min(0).default(0).optional(),
   authorInfo: z.string().optional(),
   legalNotice: z.string().optional(),
-  coverImageUrl: z.string().url('A capa deve ser uma URL válida.').optional(),
+  coverImageUrl: z.union([z.string(), z.instanceof(File)]),
 });
 
 export type CourseFormValues = z.infer<typeof courseFormSchema>;
