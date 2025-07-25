@@ -38,6 +38,7 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
     }, [id, router, toast]);
 
     if (isLoading) {
+
         return <LoadingScreen />;
     }
 

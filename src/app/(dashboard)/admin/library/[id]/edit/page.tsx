@@ -30,7 +30,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
         const fetchBook = async () => {
             const fetchedBook = await getBookById(id);
             if (fetchedBook) {
-                setBook(fetchedBook);
+            setBook(fetchedBook);
                 form.reset(fetchedBook);
             } else {
                 toast({ variant: 'destructive', title: 'Erro', description: 'Livro não encontrado.' });
