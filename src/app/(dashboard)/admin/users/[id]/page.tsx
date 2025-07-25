@@ -77,7 +77,7 @@ export default function AdminUserDetailsPage({ params }: { params: Promise<{ id:
                     phone: userData.phone || '',
                     role: userData.role,
                     profileStatus: userData.profileStatus as any || 'incomplete',
-                    credits: userData.credits || 0,
+                    credits: userData.credits ?? 0,
                 });
 
             } catch (error) {
@@ -128,12 +128,12 @@ export default function AdminUserDetailsPage({ params }: { params: Promise<{ id:
                     </Button>
                     <div className="flex items-center gap-4">
                         <Avatar className="h-20 w-20">
-                            <AvatarImage src={user.photoUrl} alt={user.name} />
-                            <AvatarFallback className="text-3xl">{user.name?.charAt(0) || 'U'}</AvatarFallback>
+                            <AvatarImage src={user.photoUrl ?? ''} alt={user.name ?? user.nomeFantasia ?? 'Usuário'} />
+                            <AvatarFallback className="text-3xl">{(user.name ?? user.nomeFantasia ?? 'U').charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <h1 className="font-headline text-3xl font-bold tracking-tight">{user.name || user.nomeFantasia}</h1>
-                            <p className="text-muted-foreground">{user.email}</p>
+                            <h1 className="font-headline text-3xl font-bold tracking-tight">{user.name ?? user.nomeFantasia ?? 'Nome não informado'}</h1>
+                            <p className="text-muted-foreground">{user.email ?? 'E-mail não informado'}</p>
                         </div>
                     </div>
                 </div>
