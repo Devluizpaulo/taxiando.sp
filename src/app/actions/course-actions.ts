@@ -230,19 +230,6 @@ export async function updateCourse(courseId: string, values: CourseFormValues, u
                         );
                         // Upload de materiais
                         let materials = lesson.materials || [];
-                        materials = await Promise.all(materials.map(async (m) => {
-                            if (m.file instanceof File) {
-                                const formData = new FormData();
-                                formData.append('file', m.file);
-                                const uploadResult = await uploadFile(formData, userId);
-                                if (uploadResult.success && uploadResult.url) {
-                                    return { name: m.name, url: uploadResult.url };
-                                } else {
-                                    throw new Error(uploadResult.error || 'Falha no upload do material.');
-                                }
-                            }
-                            return m;
-                        }));
                         // Upload de áudio (mantém lógica existente)
                         if (lesson.audioFile instanceof File) {
                             const formData = new FormData();

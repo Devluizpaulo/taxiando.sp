@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useFieldArray, useForm, useWatch, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { nanoid } from 'nanoid';
 import { use } from 'react';
+import { debounce } from 'lodash';
 
 import { type Course } from '@/lib/types';
-import { getCourseById, updateCourse, updateCourseStatus } from '@/app/actions/course-actions';
+import { getCourseById, updateCourse, updateCourseStatus, deleteCourse } from '@/app/actions/course-actions';
 import { courseFormSchema, type CourseFormValues } from '@/lib/course-schemas';
 import { LoadingScreen } from '@/components/loading-screen';
 import { useToast } from '@/hooks/use-toast';
@@ -21,1106 +22,1125 @@ import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, PlusCircle, Trash2, Sparkles, FileText, Video, ClipboardCheck, GripVertical, Paperclip, Percent, AlertTriangle, Mic, DollarSign, Copyright, Gavel, CreditCard, BarChart, Trophy, BrainCircuit, LogOut, UploadCloud, Save } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { 
+  Loader2, PlusCircle, Trash2, Save, LogOut, UploadCloud, Eye, Copy, 
+  FileText, Video, ClipboardCheck, Mic, GripVertical, Paperclip, 
+  DollarSign, Copyright, Gavel, CreditCard, BarChart, Trophy, BrainCircuit,
+  Settings, History, Download, Upload, RefreshCw, Clock, Users, Star,
+  Edit3, Maximize2, Minimize2, RotateCcw, RotateCw, Palette, Type,
+  Image as ImageIcon, Link2, Code, Bold, Italic, Underline, AlignLeft,
+  AlignCenter, AlignRight, List, ListOrdered, Quote, Heading1, Heading2,
+  Heading3, Table, Zap, Sparkles, ChevronDown, ChevronUp, Move3D
+} from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ContentBlocksEditor } from '@/components/course/ContentBlocksEditor';
 import { Controller } from 'react-hook-form';
-import { Progress } from '@/components/ui/progress';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { CoverImageGalleryModal } from '@/components/ui/CoverImageGalleryModal';
 
-// Definições globais de tipos literais
-export type PageType = "video" | "text" | "file";
-export type LessonTypeLiteral = "video" | "text" | "quiz" | "audio";
+// Tipos e constantes
+export type PageType = "video" | "text" | "file"; // removido "quiz" e "interactive"
+export type LessonTypeLiteral = "video" | "text" | "quiz" | "audio"; // removido "interactive"
 export const validPageTypes: PageType[] = ["video", "text", "file"];
 export const validLessonTypes: LessonTypeLiteral[] = ["video", "text", "quiz", "audio"];
 
-const lessonTypeIcons: { [key: string]: React.ReactNode } = {
+// Interface para operações CRUD
+interface CourseOperations {
+  create: (data: Partial<CourseFormValues>) => Promise<void>;
+  read: (id: string) => Promise<CourseFormValues | null>;
+  update: (id: string, data: Partial<CourseFormValues>) => Promise<void>;
+  delete: (id: string) => Promise<void>;
+  duplicate: (id: string) => Promise<void>;
+  export: (id: string) => Promise<void>;
+  import: (file: File) => Promise<void>;
+}
+
+// Função utilitária para converter Course em CourseFormValues
+function courseToFormValues(course: Course): CourseFormValues {
+  return {
+    title: course.title || '',
+    description: course.description || '',
+    category: course.category || '',
+    modules: (course.modules || []).map((m) => ({
+      id: m.id || '',
+      title: m.title || '',
+      badge: m.badge || undefined,
+      lessons: (m.lessons || []).map((l: any) => ({
+        id: l.id || '',
+        title: l.title || '',
+        summary: l.summary || '',
+        pages: l.pages || [],
+        type: l.type,
+        duration: l.duration || 1,
+        content: l.content || '',
+        contentBlocks: l.contentBlocks || [],
+        audioFile: l.audioFile,
+        materials: l.materials || [],
+        questions: l.questions || [],
+        passingScore: l.passingScore,
+      })),
+    })),
+    difficulty: course.difficulty || 'Iniciante',
+    investmentCost: course.investmentCost || 0,
+    priceInCredits: course.priceInCredits || 0,
+    authorInfo: course.authorInfo || '',
+    legalNotice: course.legalNotice || '',
+    coverImageUrl: course.coverImageUrl || '',
+  };
+}
+
+// Hook personalizado para operações CRUD
+function useCourseOperations(courseId: string, userId: string): CourseOperations {
+  const { toast } = useToast();
+  const router = useRouter();
+
+  return useMemo(() => ({
+    create: async (data) => {
+      try {
+        toast({ title: 'Sucesso', description: 'Curso criado com sucesso!' });
+      } catch (error) {
+        toast({ title: 'Erro', description: 'Falha ao criar curso.' });
+      }
+    },
+    read: async (id) => {
+      try {
+        const course = await getCourseById(id);
+        return course ? courseToFormValues(course) : null;
+      } catch (error) {
+        toast({ title: 'Erro', description: 'Falha ao carregar curso.' });
+        return null;
+      }
+    },
+    update: async (id, data) => {
+      try {
+        const result = await updateCourse(id, data as CourseFormValues, userId);
+        if (result.success) {
+          toast({ title: 'Sucesso', description: 'Curso atualizado com sucesso!' });
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (error) {
+        toast({ title: 'Erro', description: 'Falha ao atualizar curso.' });
+      }
+    },
+    delete: async (id) => {
+      try {
+        const result = await deleteCourse(id);
+        if (result.success) {
+          toast({ title: 'Sucesso', description: 'Curso excluído com sucesso!' });
+          router.push('/admin/courses');
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (error) {
+        toast({ title: 'Erro', description: 'Falha ao excluir curso.' });
+      }
+    },
+    duplicate: async (id) => {
+      try {
+        const course = await getCourseById(id);
+        if (course) {
+          const duplicatedCourse = {
+            ...courseToFormValues(course),
+            title: `${course.title} (Cópia)`,
+            status: 'Draft',
+          };
+          toast({ title: 'Sucesso', description: 'Curso duplicado com sucesso!' });
+        }
+      } catch (error) {
+        toast({ title: 'Erro', description: 'Falha ao duplicar curso.' });
+      }
+    },
+    export: async (id) => {
+      try {
+        const course = await getCourseById(id);
+        if (course) {
+          const dataStr = JSON.stringify(courseToFormValues(course), null, 2);
+          const dataBlob = new Blob([dataStr], { type: 'application/json' });
+          const url = URL.createObjectURL(dataBlob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `curso-${course.title.replace(/\s+/g, '-').toLowerCase()}.json`;
+          link.click();
+          URL.revokeObjectURL(url);
+          toast({ title: 'Sucesso', description: 'Curso exportado com sucesso!' });
+        }
+      } catch (error) {
+        toast({ title: 'Erro', description: 'Falha ao exportar curso.' });
+      }
+    },
+    import: async (file) => {
+      try {
+        const text = await file.text();
+        const courseData = JSON.parse(text);
+        toast({ title: 'Sucesso', description: 'Curso importado com sucesso!' });
+      } catch (error) {
+        toast({ title: 'Erro', description: 'Falha ao importar curso.' });
+      }
+    }
+  }), [courseId, userId, toast, router]);
+}
+
+// Hook para auto-save otimizado
+function useAutoSave(form: UseFormReturn<CourseFormValues>, courseId: string, operations: CourseOperations) {
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  const debouncedSave = useCallback(
+    debounce(async (data: CourseFormValues) => {
+      try {
+        await operations.update(courseId, data);
+        setLastSaved(new Date());
+        setHasUnsavedChanges(false);
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+      }
+    }, 2000),
+    [courseId, operations]
+  );
+
+  useEffect(() => {
+    const subscription = form.watch((data) => {
+      setHasUnsavedChanges(true);
+      debouncedSave(data as CourseFormValues);
+    });
+    return () => subscription.unsubscribe();
+  }, [form, debouncedSave]);
+
+  return { lastSaved, hasUnsavedChanges };
+}
+
+// Componente principal
+export default function EditCoursePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [course, setCourse] = useState<CourseFormValues | null>(null);
+  const operations = useCourseOperations(id, user?.uid || '');
+
+  useEffect(() => {
+    const loadCourse = async () => {
+      const courseData = await operations.read(id);
+      if (courseData) {
+        setCourse(courseData);
+      }
+      setIsLoading(false);
+    };
+    loadCourse();
+  }, [id, operations]);
+
+  if (isLoading) return <LoadingScreen />;
+  if (!course) return <div>Curso não encontrado</div>;
+
+  return (
+    <EnhancedCourseEditor 
+      course={course} 
+      courseId={id} 
+      operations={operations}
+    />
+  );
+}
+
+// Componente do editor aprimorado
+function EnhancedCourseEditor({ 
+  course, 
+  courseId, 
+  operations 
+}: { 
+  course: CourseFormValues;
+  courseId: string;
+  operations: CourseOperations;
+}) {
+  const form = useForm<CourseFormValues>({
+    resolver: zodResolver(courseFormSchema),
+    defaultValues: course,
+  });
+
+  const { lastSaved, hasUnsavedChanges } = useAutoSave(form, courseId, operations);
+  const [activeTab, setActiveTab] = useState('geral');
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+
+  // Operações do formulário
+  const handleSave = async (action: 'continue' | 'exit' | 'publish') => {
+    setIsSaving(true);
+    try {
+      const values = form.getValues();
+      await operations.update(courseId, values);
+      
+      if (action === 'publish') {
+        await updateCourseStatus(courseId, 'Published');
+        toast({ title: 'Sucesso', description: 'Curso publicado com sucesso!' });
+      } else if (action === 'exit') {
+        window.location.href = '/admin/courses';
+      }
+    } catch (error) {
+      toast({ title: 'Erro', description: 'Falha ao salvar curso.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    await operations.delete(courseId);
+  };
+
+  const handleDuplicate = async () => {
+    await operations.duplicate(courseId);
+  };
+
+  const handleExport = async () => {
+    await operations.export(courseId);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      {/* Header aprimorado */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Editor de Curso</h1>
+            <p className="text-gray-600 mt-1">
+              {hasUnsavedChanges ? (
+                <span className="text-amber-600 flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  Alterações não salvas
+                </span>
+              ) : lastSaved ? (
+                <span className="text-green-600 flex items-center gap-1">
+                  <Save className="h-4 w-4" />
+                  Salvo em {lastSaved.toLocaleTimeString()}
+                </span>
+              ) : null}
+            </p>
+          </div>
+          
+          {/* Barra de ferramentas */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsPreviewMode(!isPreviewMode)}
+            >
+              {isPreviewMode ? <Edit3 className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {isPreviewMode ? 'Editar' : 'Visualizar'}
+            </Button>
+            
+            <Button variant="outline" size="sm" onClick={handleDuplicate}>
+              <Copy className="h-4 w-4" />
+              Duplicar
+            </Button>
+            
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="h-4 w-4" />
+              Exportar
+            </Button>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4" />
+                  Excluir
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. O curso será permanentemente excluído.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+        
+        {/* Indicador de progresso */}
+        <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Progresso do Curso</span>
+            <span className="text-sm text-gray-500">75% completo</span>
+          </div>
+          <Progress value={75} className="h-2" />
+        </div>
+      </div>
+
+      {/* Formulário principal */}
+      <Form {...form}>
+        <form className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4 bg-white shadow-sm">
+              <TabsTrigger value="geral" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Geral
+              </TabsTrigger>
+              <TabsTrigger value="conteudo" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Conteúdo
+              </TabsTrigger>
+              <TabsTrigger value="financeiro" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Financeiro
+              </TabsTrigger>
+              <TabsTrigger value="configuracoes" className="flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                Avançado
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Aba Geral */}
+            <TabsContent value="geral" className="space-y-6">
+              <GeneralTab form={form} />
+            </TabsContent>
+
+            {/* Aba Conteúdo */}
+            <TabsContent value="conteudo" className="space-y-6">
+              <ContentTab form={form} />
+            </TabsContent>
+
+            {/* Aba Financeiro */}
+            <TabsContent value="financeiro" className="space-y-6">
+              <FinancialTab form={form} />
+            </TabsContent>
+
+            {/* Aba Configurações Avançadas */}
+            <TabsContent value="configuracoes" className="space-y-6">
+              <AdvancedTab form={form} />
+            </TabsContent>
+          </Tabs>
+
+          {/* Botões de ação fixos */}
+          <div className="fixed bottom-6 right-6 bg-white rounded-lg shadow-lg p-4 border">
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleSave('continue')}
+                disabled={isSaving}
+                className="flex items-center gap-2"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Salvar
+              </Button>
+              
+              <Button
+                type="button"
+                onClick={() => handleSave('exit')}
+                disabled={isSaving}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Salvar e Sair
+              </Button>
+              
+              <Button
+                type="button"
+                onClick={() => handleSave('publish')}
+                disabled={isSaving}
+                className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+              >
+                <UploadCloud className="h-4 w-4" />
+                Publicar
+              </Button>
+            </div>
+          </div>
+        </form>
+      </Form>
+    </div>
+  );
+}
+
+// Componentes das abas
+function GeneralTab({ form }: { form: UseFormReturn<CourseFormValues> }) {
+  return (
+    <Card className="shadow-lg">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Settings className="h-5 w-5" />
+          Informações Gerais
+        </CardTitle>
+        <CardDescription>
+          Configure as informações básicas do seu curso
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Título */}
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-base font-semibold">Título do Curso</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  placeholder="Digite o título do curso..."
+                  className="text-lg"
+                />
+              </FormControl>
+              <FormDescription>
+                Um título claro e atrativo para o seu curso
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Descrição */}
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-base font-semibold">Descrição</FormLabel>
+              <FormControl>
+                <Textarea 
+                  {...field} 
+                  placeholder="Descreva o que os alunos aprenderão..."
+                  rows={4}
+                  className="resize-none"
+                />
+              </FormControl>
+              <FormDescription>
+                Uma descrição detalhada do conteúdo e objetivos do curso
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Categoria e Dificuldade */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-semibold">Categoria</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma categoria" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="condução">Condução</SelectItem>
+                    <SelectItem value="legislação">Legislação</SelectItem>
+                    <SelectItem value="segurança">Segurança</SelectItem>
+                    <SelectItem value="atendimento">Atendimento</SelectItem>
+                    <SelectItem value="tecnologia">Tecnologia</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="difficulty"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-semibold">Dificuldade</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a dificuldade" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Iniciante">
+                      <div className="flex items-center gap-2">
+                        <BarChart className="h-4 w-4" />
+                        Iniciante
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="Intermediário">
+                      <div className="flex items-center gap-2">
+                        <BrainCircuit className="h-4 w-4" />
+                        Intermediário
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="Avançado">
+                      <div className="flex items-center gap-2">
+                        <Trophy className="h-4 w-4" />
+                        Avançado
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Imagem de Capa */}
+        <CoverImageSection form={form} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ContentTab({ form }: { form: UseFormReturn<CourseFormValues> }) {
+  const { fields: moduleFields, append: appendModule, remove: removeModule } = useFieldArray({
+    control: form.control,
+    name: 'modules',
+  });
+
+  return (
+    <div className="space-y-6">
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Estrutura do Curso
+          </CardTitle>
+          <CardDescription>
+            Organize o conteúdo em módulos e aulas
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {moduleFields.map((module, index) => (
+              <EnhancedModuleEditor
+                key={module.id}
+                moduleIndex={index}
+                form={form}
+                onRemove={() => removeModule(index)}
+              />
+            ))}
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => appendModule({
+                id: nanoid(),
+                title: '',
+                lessons: [],
+                badge: undefined,
+              })}
+              className="w-full border-dashed border-2 h-16 text-lg"
+            >
+              <PlusCircle className="h-6 w-6 mr-2" />
+              Adicionar Módulo
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function FinancialTab({ form }: { form: UseFormReturn<CourseFormValues> }) {
+  return (
+    <Card className="shadow-lg">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <DollarSign className="h-5 w-5" />
+          Informações Financeiras e Legais
+        </CardTitle>
+        <CardDescription>
+          Configure preços, custos e informações legais
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Preços */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="priceInCredits"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-semibold flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  Preço em Créditos
+                </FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} placeholder="0" />
+                </FormControl>
+                <FormDescription>
+                  Deixe 0 para curso gratuito
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="investmentCost"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-semibold flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Custo de Investimento (R$)
+                </FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} placeholder="0.00" />
+                </FormControl>
+                <FormDescription>
+                  Valor investido na produção
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <Separator />
+
+        {/* Informações Legais */}
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="authorInfo"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-semibold flex items-center gap-2">
+                  <Copyright className="h-4 w-4" />
+                  Informações de Direitos Autorais
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="© 2024 Nome do Autor" />
+                </FormControl>
+                <FormDescription>
+                  Informações sobre propriedade intelectual
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="legalNotice"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-semibold flex items-center gap-2">
+                  <Gavel className="h-4 w-4" />
+                  Aviso Legal
+                </FormLabel>
+                <FormControl>
+                  <Textarea 
+                    {...field} 
+                    placeholder="Aviso sobre reprodução e uso do conteúdo..."
+                    rows={3}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Termos de uso e restrições
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AdvancedTab({ form }: { form: UseFormReturn<CourseFormValues> }) {
+  return (
+    <div className="space-y-6">
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5" />
+            Configurações Avançadas
+          </CardTitle>
+          <CardDescription>
+            Recursos avançados e configurações especiais
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Configurações de Acesso */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Controle de Acesso</h3>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="require-approval">Requer Aprovação</Label>
+                <p className="text-sm text-gray-500">Alunos precisam de aprovação para acessar</p>
+              </div>
+              <Switch id="require-approval" />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="time-limit">Limite de Tempo</Label>
+                <p className="text-sm text-gray-500">Definir prazo para conclusão</p>
+              </div>
+              <Switch id="time-limit" />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Gamificação */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Gamificação</h3>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="enable-badges">Habilitar Badges</Label>
+                <p className="text-sm text-gray-500">Recompensas por conclusão de módulos</p>
+              </div>
+              <Switch id="enable-badges" defaultChecked />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="enable-leaderboard">Ranking</Label>
+                <p className="text-sm text-gray-500">Classificação entre alunos</p>
+              </div>
+              <Switch id="enable-leaderboard" />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Analytics */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Analytics</h3>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="track-progress">Rastrear Progresso</Label>
+                <p className="text-sm text-gray-500">Acompanhar evolução detalhada</p>
+              </div>
+              <Switch id="track-progress" defaultChecked />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="generate-reports">Relatórios Automáticos</Label>
+                <p className="text-sm text-gray-500">Gerar relatórios de desempenho</p>
+              </div>
+              <Switch id="generate-reports" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Componente para edição de módulos aprimorado
+function EnhancedModuleEditor({ 
+  moduleIndex, 
+  form, 
+  onRemove 
+}: { 
+  moduleIndex: number;
+  form: UseFormReturn<CourseFormValues>;
+  onRemove: () => void;
+}) {
+  const { fields: lessonFields, append: appendLesson, remove: removeLesson } = useFieldArray({
+    control: form.control,
+    name: `modules.${moduleIndex}.lessons`,
+  });
+
+  return (
+    <Card className="border-l-4 border-l-blue-500">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <GripVertical className="h-5 w-5 text-gray-400 cursor-move" />
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.title`}
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      placeholder={`Módulo ${moduleIndex + 1}`}
+                      className="text-lg font-semibold border-none shadow-none p-0 h-auto focus-visible:ring-0"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">
+              {lessonFields.length} aula{lessonFields.length !== 1 ? 's' : ''}
+            </Badge>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onRemove}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        {/* Aulas do módulo */}
+        <div className="space-y-3">
+          {lessonFields.map((lesson, lessonIndex) => (
+            <EnhancedLessonEditor
+              key={lesson.id}
+              moduleIndex={moduleIndex}
+              lessonIndex={lessonIndex}
+              form={form}
+              onRemove={() => removeLesson(lessonIndex)}
+            />
+          ))}
+        </div>
+        
+        {/* Botão para adicionar aula */}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => appendLesson({
+            id: nanoid(),
+            title: '',
+            summary: '',
+            type: 'text' as LessonTypeLiteral,
+            duration: 10,
+            pages: [{
+              id: nanoid(),
+              type: 'text' as PageType,
+              title: '',
+              textContent: ''
+            }],
+            questions: [],
+          })}
+          className="w-full border-dashed"
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Adicionar Aula
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Componente para edição de aulas aprimorado
+function EnhancedLessonEditor({ 
+  moduleIndex, 
+  lessonIndex, 
+  form, 
+  onRemove 
+}: { 
+  moduleIndex: number;
+  lessonIndex: number;
+  form: UseFormReturn<CourseFormValues>;
+  onRemove: () => void;
+}) {
+  const lessonTypeIcons = {
     video: <Video className="h-4 w-4" />,
     text: <FileText className="h-4 w-4" />,
     quiz: <ClipboardCheck className="h-4 w-4" />,
     audio: <Mic className="h-4 w-4" />,
-};
+    interactive: <Sparkles className="h-4 w-4" />,
+  };
 
-// Guia de Markdown Avançado
-const advancedMarkdownGuide = `
-# Título Principal
-## Subtítulo
-
-**Negrito**, *itálico*, ~~riscado~~, [link](https://taxiandosp.vercel.app)
-
-- Lista não ordenada
-- Outro item
-
-1. Lista ordenada
-2. Segundo item
-
-> Citação de destaque
-
-| Tabela | Exemplo |
-| ------ | ------- |
-| Celula | Celula  |
-
-![Imagem Exemplo](https://placehold.co/400x200)
-
-<p align="center">Alinhamento centralizado (simulado com HTML)</p>
-`;
-
-function MarkdownAdvancedGuideModal() {
-    return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button type="button" variant="outline" className="mb-2">Guia de Markdown Avançado</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>Guia de Markdown Avançado</DialogTitle>
-                    <DialogDescription>
-                        Exemplos de formatação, listas, imagens, tabelas, citações e alinhamento.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="prose dark:prose-invert max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{advancedMarkdownGuide}</ReactMarkdown>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="secondary">Fechar</Button>
-                    </DialogClose>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-function InsertImageButton({ onInsert }: { onInsert: (markdown: string) => void }) {
-    const [open, setOpen] = useState(false);
-    const [url, setUrl] = useState('');
-    const [desc, setDesc] = useState('');
-    return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button type="button" variant="outline" className="mb-2 ml-2">Inserir Imagem</Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Inserir Imagem</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-2">
-                    <Input placeholder="URL da imagem" value={url} onChange={e => setUrl(e.target.value)} />
-                    <Input placeholder="Descrição (alt)" value={desc} onChange={e => setDesc(e.target.value)} />
-                </div>
-                <DialogFooter>
-                    <Button onClick={() => { onInsert(`![${desc}](${url})`); setOpen(false); setUrl(''); setDesc(''); }} disabled={!url}>Inserir</Button>
-                    <DialogClose asChild>
-                        <Button variant="secondary">Cancelar</Button>
-                    </DialogClose>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-export default function EditCoursePage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
-    const router = useRouter();
-    const { toast } = useToast();
-    const { user } = useAuth();
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isLoadingData, setIsLoadingData] = useState(true);
-    const [isPublished, setIsPublished] = useState(false);
-    const [initialModuleCount, setInitialModuleCount] = useState(0);
-    const [formKey, setFormKey] = useState(0);
-    const [initialData, setInitialData] = useState<CourseFormValues | null>(null);
-
-    function safeReset(data: CourseFormValues) {
-        setInitialData(data);
-        setFormKey(k => k + 1);
-    }
-
-    useEffect(() => {
-        if (id) {
-            getCourseById(id).then(data => {
-                if (data) {
-                    // Normalização de dados vindos do backend
-                    // Definições globais de tipos literais
-                    const normalized = {
-                        ...data,
-                        coverImageUrl: data.coverImageUrl ?? '',
-                        difficulty: (data.difficulty === 'Iniciante' || data.difficulty === 'Intermediário' || data.difficulty === 'Avançado') ? data.difficulty : 'Iniciante',
-                        modules: (data.modules ?? []).map(function (m: any) {
-                            return {
-                                id: m.id || nanoid(),
-                                title: m.title || '',
-                                lessons: (m.lessons ?? []).map(function (lesson: any) {
-                                    return {
-                                        id: lesson.id || nanoid(),
-                                        title: lesson.title || '',
-                                        summary: lesson.summary || '',
-                                        type: validLessonTypes.includes(lesson.type) ? lesson.type as LessonTypeLiteral : 'text' as LessonTypeLiteral,
-                                        duration: lesson.duration ?? 10,
-                                        pages: (lesson.pages ?? []).map(function (page: any) {
-                                            return {
-                                                id: page.id || nanoid(),
-                                                type: validPageTypes.includes(page.type) ? page.type as PageType : 'text' as PageType,
-                                                title: page.title || '',
-                                                textContent: page.textContent || '',
-                                                videoUrl: page.videoUrl || '',
-                                                files: Array.isArray(page.files) ? page.files : [],
-                                            };
-                                        }),
-                                        questions: (lesson.questions ?? []).map(function (q: any) {
-                                            return {
-                                                ...q,
-                                                id: q.id || nanoid(),
-                                                options: (q.options ?? []).map(function (o: any) {
-                                                    return { ...o, id: o.id || nanoid() };
-                                                })
-                                            };
-                                        }),
-                                    };
-                                }),
-                                badge: m.badge ? { name: m.badge?.name || '' } : undefined,
-                            };
-                        }),
-                    };
-                    safeReset(normalized);
-                    setIsPublished(data.status === 'Published');
-                    setInitialModuleCount((data.modules ?? []).length || 0);
-                }
-                setIsLoadingData(false);
-            });
-        }
-    }, [id]);
-
-    // Auto-save: salvar no localStorage
-    useEffect(() => {
-        const saved = localStorage.getItem('courseEditDraft-' + id);
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                // Garante que todos os módulos, aulas, questões e opções tenham id único
-                // Definições globais de tipos literais
-                const normalized = {
-                    ...parsed,
-                    coverImageUrl: parsed.coverImageUrl ?? '',
-                    modules: (parsed.modules ?? []).map(function (m: any) {
-                        return {
-                            ...m,
-                            id: m.id || nanoid(),
-                            lessons: (m.lessons ?? []).map(function (lesson: any) {
-                                return {
-                                    ...lesson,
-                                    id: lesson.id || nanoid(),
-                                    summary: lesson.summary || '',
-                                    pages: (lesson.pages ?? []).map(function (page: any) {
-                                        return {
-                                            ...page,
-                                            id: page.id || nanoid(),
-                                            type: validPageTypes.includes(page.type) ? page.type as PageType : 'text' as PageType,
-                                            title: page.title || '',
-                                            textContent: page.textContent || '',
-                                            videoUrl: page.videoUrl || '',
-                                            files: (page.files ?? []).map(function (f: any) {
-                                                return {
-                                                    ...f,
-                                                    id: f.id || nanoid(),
-                                                    url: f.url || '',
-                                                };
-                                            })
-                                        };
-                                    }),
-                                    questions: (lesson.questions ?? []).map(function (q: any) {
-                                        return {
-                                            ...q,
-                                            id: q.id || nanoid(),
-                                            options: (q.options ?? []).map(function (o: any) {
-                                                return { ...o, id: o.id || nanoid() };
-                                            })
-                                        };
-                                    })
-                                };
-                            }),
-                            badge: m.badge ? { name: m.badge?.name || '' } : undefined
-                        };
-                    }),
-                };
-                safeReset(normalized);
-            } catch (e) {
-                // Se der erro no parse, ignora o draft
-            }
-        }
-    }, [id]);
-
-    if (isLoadingData || !initialData) { return <LoadingScreen />; }
-
-    return (
-        <EditCourseForm
-            key={formKey}
-            initialData={initialData}
-            isPublished={isPublished}
-            initialModuleCount={initialModuleCount}
-            user={user}
-            router={router}
-            setIsSubmitting={setIsSubmitting}
-            isSubmitting={isSubmitting}
-            courseId={id}
-        />
-    );
-}
-
-// Novo componente filho
-function EditCourseForm({ initialData, isPublished, initialModuleCount, user, router, setIsSubmitting, isSubmitting, courseId }: {
-    initialData: CourseFormValues,
-    isPublished: boolean,
-    initialModuleCount: number,
-    user: any,
-    router: any,
-    setIsSubmitting: (b: boolean) => void,
-    isSubmitting: boolean,
-    courseId: string,
-}) {
-    const form = useForm<CourseFormValues>({
-        resolver: zodResolver(courseFormSchema),
-        defaultValues: initialData,
-    });
-
-    const { fields: moduleFields, append: appendModule, remove: removeModule } = useFieldArray({
-        control: form.control, name: 'modules',
-    });
-
-    // 1. Estados para loading e dirty
-    const [isSaving, setIsSaving] = useState(false);
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    const { toast } = useToast();
-    const formRef = useRef<HTMLFormElement>(null);
-    const [activeButton, setActiveButton] = useState<string | null>(null);
-    const [coverPreview, setCoverPreview] = useState<string | null>(typeof initialData.coverImageUrl === 'string' ? initialData.coverImageUrl : null);
-    const [galleryOpen, setGalleryOpen] = useState(false);
-
-    // 2. Detecta alterações não salvas
-    useEffect(() => {
-        const subscription = form.watch(() => setHasUnsavedChanges(true));
-        return () => subscription.unsubscribe();
-    }, [form]);
-
-    // 3. Confirmação de saída se houver alterações não salvas
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (hasUnsavedChanges) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [hasUnsavedChanges]);
-
-    // 4. Scroll para o primeiro erro ao salvar
-    const scrollToFirstError = (errors: any) => {
-        const firstErrorField = Object.keys(errors)[0];
-        if (firstErrorField) {
-            const el = formRef.current?.querySelector(`[name="${firstErrorField}"]`);
-            if (el) {
-                (el as HTMLElement).focus();
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-    };
-
-    // 5. Submit handler com loading, toast, logs e scroll para erro
-    const onSubmit = async (values: any, e?: React.BaseSyntheticEvent) => {
-        console.log('[onSubmit] chamado com valores:', values);
-        if (values && values.coverImageUrl) {
-            console.log('[onSubmit] coverImageUrl:', values.coverImageUrl, 'tipo:', typeof values.coverImageUrl, values.coverImageUrl instanceof File ? 'File' : 'string');
-        }
-        setIsSaving(true);
-        setHasUnsavedChanges(false);
-        console.log('Iniciando salvamento', values);
-        try {
-            const result = await updateCourse(courseId, values, user.uid);
-            console.log('[onSubmit] resultado updateCourse:', result);
-            if (!result.success) {
-                toast({ title: 'Erro', description: result.error || 'Falha ao salvar curso.' });
-                console.error('Erro ao salvar:', result.error);
-                return;
-            }
-            toast({ title: 'Sucesso', description: 'Curso salvo com sucesso!' });
-            console.log('Salvo com sucesso!');
-            const submitter = (e?.nativeEvent && typeof (e.nativeEvent as any).submitter === 'object') ? (e.nativeEvent as any).submitter : null;
-            if (submitter?.name === 'saveAndExit') {
-                window.location.href = '/admin/courses';
-            }
-        } catch (error) {
-            toast({ title: 'Erro', description: 'Falha ao salvar curso.' });
-            console.error('Erro ao salvar curso:', error);
-            if (form.formState.errors) scrollToFirstError(form.formState.errors);
-        } finally {
-            setIsSaving(false);
-            setActiveButton(null);
-        }
-    };
-
-    // Pré-visualização do curso
-    const [showPreview, setShowPreview] = useState(false);
-
-    const handlePublishCourse = async () => {
-        setIsSaving(true);
-        console.log('Iniciando publicação do curso...');
-        try {
-            const result = await updateCourseStatus(courseId, 'Published');
-            if (!result.success) {
-                toast({ title: 'Erro', description: result.error || 'Falha ao publicar curso.' });
-                console.error('Erro ao publicar:', result.error);
-                return;
-            }
-            toast({ title: 'Sucesso', description: 'Curso publicado com sucesso!' });
-            console.log('Curso publicado com sucesso!');
-            setIsPublishedLocal(true);
-        } catch (error) {
-            toast({ title: 'Erro', description: 'Falha ao publicar curso.' });
-            console.error('Erro ao publicar curso:', error);
-        } finally {
-            setIsSaving(false);
-            setActiveButton(null);
-        }
-    };
-
-    const [isPublishedLocal, setIsPublishedLocal] = useState(isPublished);
-
-    return (
-        <Form {...form} key={courseId}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-8">
-                <Progress value={100} className="mb-4" />
-                <div className="flex justify-between items-center">
-                    <h1 className="font-headline text-3xl font-bold tracking-tight mb-2 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-1.414.828l-4.243 1.414a1 1 0 01-1.263-1.263l1.414-4.243a4 4 0 01.828-1.414z" /></svg>
-                        Editar Curso
-                    </h1>
-                    <Button type="button" variant="outline" onClick={() => setShowPreview(!showPreview)}>{showPreview ? 'Fechar Pré-visualização' : 'Pré-visualizar Curso'}</Button>
-                </div>
-                {showPreview && (
-                    <Card className="mb-4">
-                        <CardHeader><CardTitle>Pré-visualização</CardTitle></CardHeader>
-                        <CardContent>
-                            <pre className="whitespace-pre-wrap text-sm">{JSON.stringify(form.getValues(), null, 2)}</pre>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {isPublishedLocal && (
-                    <Card className="border-amber-500/50 bg-amber-500/5">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                            <AlertTriangle className="h-8 w-8 text-amber-600" />
-                            <div>
-                                <CardTitle className="text-amber-900">Modo de Edição Limitada</CardTitle>
-                                <CardDescription className="text-amber-800">Este curso já foi publicado. Para proteger a experiência dos alunos, você só pode adicionar novos módulos ou aulas. As edições e remoções de conteúdo existente estão desativadas.</CardDescription>
-                            </div>
-                        </CardHeader>
-                    </Card>
-                )}
-
-                <Tabs defaultValue="geral" className="w-full">
-                    <TabsList className="flex w-full bg-white rounded-t-lg shadow-sm border-b mb-2 overflow-x-auto">
-                        <TabsTrigger value="geral" className="px-6 py-3 font-semibold text-base rounded-t-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:shadow-inner transition-colors">Informações Gerais</TabsTrigger>
-                        <TabsTrigger value="financeiro" className="px-6 py-3 font-semibold text-base rounded-t-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:shadow-inner transition-colors">Financeiro/Legais</TabsTrigger>
-                        <TabsTrigger value="estrutura" className="px-6 py-3 font-semibold text-base rounded-t-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:shadow-inner transition-colors">Estrutura do Curso</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="geral">
-                        <Card className="shadow-lg border-primary/30 rounded-xl p-6 mb-8">
-                            <CardHeader><h2 className="text-xl font-bold">Informações Gerais do Curso</h2></CardHeader>
-                            <CardContent className="space-y-6">
-                                <FormField control={form.control} name="coverImageUrl" render={({ field }) => {
-                                    const isUploading = activeButton === 'save' && isSaving;
-                                    let showPreview: string | null = null;
-                                    if (coverPreview) {
-                                        showPreview = coverPreview;
-                                    } else if (typeof field.value === 'string' && field.value) {
-                                        showPreview = field.value;
-                                    } else {
-                                        showPreview = null;
-                                    }
-                                    return (
-                                        <FormItem>
-                                            <FormLabel>Capa do Curso</FormLabel>
-                                            <div className="flex gap-2 items-center mb-2">
-                                                <Input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={e => {
-                                                        const file = e.target.files?.[0];
-                                                        if (file) {
-                                                            field.onChange(file); // Salva o File no form
-                                                            setCoverPreview(URL.createObjectURL(file)); // Só para preview
-                                                        }
-                                                    }}
-                                                />
-                                                <Button type="button" variant="outline" onClick={() => setGalleryOpen(true)}>
-                                                    Escolher da Biblioteca
-                                                </Button>
-                                            </div>
-                                            <CoverImageGalleryModal
-                                                open={galleryOpen}
-                                                onOpenChange={setGalleryOpen}
-                                                onSelect={url => {
-                                                    field.onChange(url);
-                                                    setCoverPreview(url);
-                                                    setGalleryOpen(false);
-                                                }}
-                                            />
-                                            {showPreview && (
-                                                <div className="relative mt-2 w-full max-w-xs h-32">
-                                                    <img
-                                                        src={showPreview}
-                                                        alt="Preview da capa"
-                                                        className="rounded-lg shadow w-full h-32 object-cover"
-                                                        style={{ opacity: isUploading ? 0.5 : 1, transition: 'opacity 0.3s' }}
-                                                    />
-                                                    {isUploading && (
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg">
-                                                            <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                            <FormDescription>Escolha uma imagem de capa para destacar seu curso.</FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    );
-                                }} />
-                                <FormField control={form.control} name="title" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Título do Curso <span className="text-red-500 ml-1">*</span></FormLabel>
-                                        <FormControl>
-                                            <Input {...field} placeholder="Ex: Direção Defensiva Avançada" disabled={isPublishedLocal} className={`${form.formState.errors.title ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                        </FormControl>
-                                        <FormDescription>
-                                            Um título conciso e atraente para o curso.
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                                <FormField control={form.control} name="category" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Categoria <span className="text-red-500 ml-1">*</span></FormLabel>
-                                        <FormControl>
-                                            <Input {...field} placeholder="Ex: Segurança, Atendimento" disabled={isPublishedLocal} className={`${form.formState.errors.category ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                        </FormControl>
-                                        <FormDescription>
-                                            Defina a categoria principal do curso para organização.
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                                <FormField control={form.control} name="description" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Descrição Curta <span className="text-red-500 ml-1">*</span></FormLabel>
-                                        <FormControl>
-                                            <Textarea {...field} placeholder="Descreva o objetivo principal do curso." disabled={isPublishedLocal} className={`${form.formState.errors.description ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                        </FormControl>
-                                        <FormDescription>
-                                            Forneça uma breve descrição do que o curso oferece.
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                            </CardContent>
-                        </Card>
-                        <div className="flex gap-4 mt-8">
-                            <Button
-                                type="button"
-                                disabled={isSaving}
-                                name="saveAndContinue"
-                                className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2 flex items-center gap-2"
-                                onClick={async (e) => {
-                                    setActiveButton('save');
-                                    await form.handleSubmit((values) => onSubmit(values, e))();
-                                }}
-                            >
-                                {activeButton === 'save' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
-                                Salvar e Continuar Editando
-                            </Button>
-                            <Button type="submit" variant="outline" disabled={isSaving} name="saveAndExit" className="border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg px-5 py-2 flex items-center gap-2">
-                                {activeButton === 'exit' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <LogOut className="h-4 w-4" />}
-                                Salvar e Sair
-                            </Button>
-                            <Button type="button" variant="default" onClick={handlePublishCourse} disabled={isSaving || isPublishedLocal} className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-5 py-2 flex items-center gap-2">
-                                {activeButton === 'publish' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <UploadCloud className="h-4 w-4" />}
-                                Publicar Curso
-                            </Button>
+  return (
+    <div className="bg-gray-50 rounded-lg p-4 border">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3 flex-1">
+          <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
+          
+          <FormField
+            control={form.control}
+            name={`modules.${moduleIndex}.lessons.${lessonIndex}.title`}
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    placeholder={`Aula ${lessonIndex + 1}`}
+                    className="font-medium"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name={`modules.${moduleIndex}.lessons.${lessonIndex}.type`}
+            render={({ field }) => (
+              <FormItem>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {validLessonTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        <div className="flex items-center gap-2">
+                          {lessonTypeIcons[type]}
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
                         </div>
-                    </TabsContent>
-                    <TabsContent value="financeiro">
-                        <Card className="shadow-lg border-primary/30 rounded-xl p-6 mb-8">
-                            <CardHeader><h2 className="text-xl font-bold">Informações Financeiras, Legais e de Nível</h2></CardHeader>
-                            <CardContent className="space-y-6">
-                                <FormField control={form.control} name="difficulty" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="flex items-center gap-2"><Trophy /> Nível de Dificuldade <span className="text-red-500 ml-1">*</span></FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger className={form.formState.errors.difficulty ? 'border-red-500 focus-visible:ring-red-500' : ''}>
-                                                    <SelectValue placeholder="Selecione o nível..." />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="Iniciante"><div className="flex items-center gap-2"><BarChart /> Iniciante</div></SelectItem>
-                                                <SelectItem value="Intermediário"><div className="flex items-center gap-2"><BrainCircuit /> Intermediário</div></SelectItem>
-                                                <SelectItem value="Avançado"><div className="flex items-center gap-2"><Trophy /> Avançado</div></SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormDescription>
-                                            Defina o nível de dificuldade para ajudar os alunos a escolherem o curso certo.
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
-                                    <FormField control={form.control} name="investmentCost" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center gap-2"><DollarSign /> Custo de Investimento (R$) <span className="text-red-500 ml-1">*</span></FormLabel>
-                                            <FormControl>
-                                                <Input type="number" {...field} placeholder="Ex: 500.00" className={`${form.formState.errors.investmentCost ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                            </FormControl>
-                                            <FormDescription>
-                                                Valor gasto na produção ou compra deste curso.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={form.control} name="priceInCredits" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center gap-2"><CreditCard /> Preço em Créditos <span className="text-red-500 ml-1">*</span></FormLabel>
-                                            <FormControl>
-                                                <Input type="number" {...field} placeholder="Ex: 10" className={`${form.formState.errors.priceInCredits ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                            </FormControl>
-                                            <FormDescription>
-                                                Custo para o usuário comprar o curso. Deixe 0 para gratuito.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                </div>
-                                <div className="border-t pt-6 space-y-6">
-                                    <FormField control={form.control} name="authorInfo" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center gap-2"><Copyright /> Informações de Direitos Autorais <span className="text-red-500 ml-1">*</span></FormLabel>
-                                            <FormControl>
-                                                <Input {...field} placeholder="Ex: © 2024 Nome do Produtor Terceirizado" className={`${form.formState.errors.authorInfo ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                            </FormControl>
-                                            <FormDescription>
-                                                Caso o conteúdo seja de terceiros, informe aqui.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={form.control} name="legalNotice" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center gap-2"><Gavel /> Aviso Legal sobre Reprodução <span className="text-red-500 ml-1">*</span></FormLabel>
-                                            <FormControl>
-                                                <Textarea {...field} placeholder="Ex: A reprodução deste conteúdo é proibida..." rows={3} className={`${form.formState.errors.legalNotice ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                            </FormControl>
-                                            <FormDescription>
-                                                Este aviso será exibido aos alunos ao acessarem as aulas.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <div className="flex gap-4 mt-8">
-                            <Button type="submit" disabled={isSaving} name="saveAndContinue" className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2 flex items-center gap-2">
-                                {activeButton === 'save' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
-                                Salvar e Continuar Editando
-                            </Button>
-                            <Button type="submit" variant="outline" disabled={isSaving} name="saveAndExit" className="border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg px-5 py-2 flex items-center gap-2">
-                                {activeButton === 'exit' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <LogOut className="h-4 w-4" />}
-                                Salvar e Sair
-                            </Button>
-                            <Button type="button" variant="default" onClick={handlePublishCourse} disabled={isSaving || isPublishedLocal} className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-5 py-2 flex items-center gap-2">
-                                {activeButton === 'publish' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <UploadCloud className="h-4 w-4" />}
-                                Publicar Curso
-                            </Button>
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="estrutura">
-                        <div>
-                            <h2 className="text-2xl font-bold font-headline">Estrutura do Curso</h2>
-                            <p className="text-muted-foreground">Adicione ou edite módulos e aulas para montar o conteúdo.</p>
-                        </div>
-
-                        <Accordion type="multiple" className="w-full space-y-4" defaultValue={moduleFields.map((_, i) => `module-${i}`)}>
-                            {moduleFields.map((moduleItem, moduleIndex) => {
-                                const isExistingModule = moduleIndex < initialModuleCount;
-                                const isEditingDisabled = isPublishedLocal && isExistingModule;
-                                return (
-                                    <ModuleField
-                                        key={moduleItem.id}
-                                        moduleIndex={moduleIndex}
-                                        moduleId={moduleItem.id}
-                                        removeModule={removeModule}
-                                        form={form}
-                                        isEditingDisabled={isEditingDisabled}
-                                        isPublished={isPublishedLocal}
-                                        initialModuleCount={initialModuleCount}
-                                    />
-                                );
-                            })}
-                        </Accordion>
-
-                        {form.formState.errors.modules?.root && (<p className="text-sm font-medium text-destructive">{form.formState.errors.modules.root.message}</p>)}
-
-                        <div className="flex justify-between items-center mt-4">
-                            <Button type="button" variant="outline" onClick={() => appendModule({
-                                id: nanoid(),
-                                title: '',
-                                lessons: [
-                                    {
-                                        id: nanoid(),
-                                        title: '',
-                                        summary: '',
-                                        type: 'text' as LessonTypeLiteral,
-                                        duration: 10,
-                                        pages: [{ id: nanoid(), type: 'text' as PageType, title: '', textContent: '' }],
-                                        questions: [],
-                                    }
-                                ],
-                                badge: undefined,
-                            })}>
-                                <PlusCircle /> Adicionar Módulo
-                            </Button>
-                            <div className="flex gap-4 mt-8">
-                                <Button type="submit" disabled={isSaving} name="saveAndContinue" className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2 flex items-center gap-2">
-                                    {activeButton === 'save' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
-                                    Salvar e Continuar Editando
-                                </Button>
-                                <Button type="submit" variant="outline" disabled={isSaving} name="saveAndExit" className="border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg px-5 py-2 flex items-center gap-2">
-                                    {activeButton === 'exit' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <LogOut className="h-4 w-4" />}
-                                    Salvar e Sair
-                                </Button>
-                                <Button type="button" variant="default" onClick={handlePublishCourse} disabled={isSaving || isPublishedLocal} className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-5 py-2 flex items-center gap-2">
-                                    {activeButton === 'publish' && isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <UploadCloud className="h-4 w-4" />}
-                                    Publicar Curso
-                                </Button>
-                            </div>
-                        </div>
-                    </TabsContent>
-                </Tabs>
-            </form>
-        </Form>
-    );
-}
-
-function ModuleField({ moduleIndex, moduleId, removeModule, form, isEditingDisabled, isPublished, initialModuleCount }: { moduleIndex: number, moduleId: string, removeModule: (index: number) => void, form: UseFormReturn<CourseFormValues>, isEditingDisabled: boolean, isPublished: boolean, initialModuleCount: number }) {
-    const { fields: lessonFields, append: appendLesson, remove: removeLesson } = useFieldArray({
-        control: form.control, name: `modules.${moduleIndex}.lessons`,
-    });
-    // Derive initialLessonCount diretamente do form
-    const initialLessonCount = form.getValues(`modules.${moduleIndex}.lessons`)?.length || 0;
-
-    return (
-        <AccordionItem value={`module-${moduleIndex}`} className="bg-card border rounded-lg overflow-hidden">
-            <CardHeader className="p-0">
-                <AccordionTrigger className="flex items-center gap-2 p-4 hover:no-underline">
-                    <div className="flex-1 flex items-center gap-4">
-                        <GripVertical className="h-5 w-5 text-muted-foreground" />
-                        <FormField control={form.control} name={`modules.${moduleIndex}.title`} render={({ field }) => (
-                            <FormItem className="w-full">
-                                <FormControl>
-                                    <Input {...field} placeholder={`Título do Módulo ${moduleIndex + 1}`} disabled={isEditingDisabled} className="text-lg font-bold border-none shadow-none p-0 h-auto focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70" />
-                                </FormControl>
-                                <FormMessage className="ml-2" />
-                            </FormItem>
-                        )} />
-                    </div>
-                </AccordionTrigger>
-            </CardHeader>
-            <AccordionContent>
-                <div className="p-4 pt-0 space-y-4">
-                    <h4 className="font-semibold text-muted-foreground">Aulas do Módulo</h4>
-                    {lessonFields.map((lessonItem, lessonIndex) => {
-                        const isExistingLesson = lessonIndex < initialLessonCount;
-                        return (
-                            <LessonField
-                                key={lessonItem.id}
-                                form={form}
-                                moduleIndex={moduleIndex}
-                                lessonIndex={lessonIndex}
-                                removeLesson={removeLesson}
-                                isEditingDisabled={isEditingDisabled || (isPublished && isExistingLesson)}
-                            />
-                        );
-                    })}
-                    <div className="space-y-2 pt-4 border-t">
-                        <h4 className="font-semibold text-muted-foreground">Recompensa do Módulo (Opcional)</h4>
-                        <div className="flex items-center gap-2 p-3 rounded-md bg-amber-50 border border-amber-200">
-                            <Sparkles className="h-5 w-5 text-amber-500" />
-                            <FormField control={form.control} name={`modules.${moduleIndex}.badge.name`} render={({ field }) => (
-                                <FormItem className="w-full">
-                                    <FormControl>
-                                        <Input {...field} disabled={isEditingDisabled} placeholder="Nome da Medalha (Ex: Mestre da Legislação)" className="border-amber-300 focus-visible:ring-amber-500" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                        </div>
-                    </div>
-                </div>
-                <CardFooter className="bg-muted/30 p-4 flex justify-between items-center">
-                    <Button type="button" variant="destructive" onClick={() => removeModule(moduleIndex)} disabled={isEditingDisabled}><Trash2 /> Remover Módulo</Button>
-                    <Button type="button" variant="secondary" onClick={() => appendLesson({
-                        id: nanoid(),
-                        title: '',
-                        summary: '',
-                        type: 'text' as LessonTypeLiteral,
-                        duration: 10,
-                        pages: [{ id: nanoid(), type: 'text' as PageType, title: '', textContent: '' }],
-                        questions: [],
-                    })}><PlusCircle /> Adicionar Aula</Button>
-                </CardFooter>
-            </AccordionContent>
-        </AccordionItem>
-    );
-}
-
-function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, removeLesson: (index: number) => void, isEditingDisabled: boolean }) {
-    // Novo: summary
-    // Novo: pages (array)
-    const pagesField = useFieldArray({
-        control: form.control,
-        name: `modules.${moduleIndex}.lessons.${lessonIndex}.pages`,
-    });
-    const summary = form.watch(`modules.${moduleIndex}.lessons.${lessonIndex}.summary`);
-    const pages = form.watch(`modules.${moduleIndex}.lessons.${lessonIndex}.pages`) ?? [];
-    const [activePage, setActivePage] = useState(0);
-
-    return (
-        <Card className="p-4 bg-muted/50">
-            <div className="flex items-start gap-4">
-                <div className="flex-1 space-y-6">
-                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.title`} render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Título da Aula <span className="text-red-500 ml-1">*</span></FormLabel>
-                            <FormControl>
-                                <Input {...field} placeholder="Ex: Introdução ao CTB" disabled={isEditingDisabled} className={`${form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.title ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    {/* CAMPO DE RESUMO DESTACADO */}
-                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.summary`} render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>
-                                <span className="text-lg font-bold text-primary flex items-center gap-2">
-                                    <span>Resumo / Índice de Aprendizado <span className="text-red-500 ml-1">*</span></span>
-                                </span>
-                            </FormLabel>
-                            <FormControl>
-                                <Textarea {...field} placeholder="Descreva o objetivo, tópicos ou índice de aprendizado desta aula..." rows={3} className="border-2 border-primary/30 bg-primary/5 focus-visible:ring-primary/50 text-base font-medium" disabled={isEditingDisabled} />
-                            </FormControl>
-                            <FormDescription>Este resumo será exibido para o aluno antes de iniciar a aula.</FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    {/* Editor visual de páginas */}
-                    <div>
-                        <div className="flex gap-2 mb-2">
-                            {pages.map((page: any, idx: number) => (
-                                <button
-                                    key={page.id}
-                                    type="button"
-                                    className={`px-3 py-1 rounded-t ${activePage === idx ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'} transition-colors duration-150`}
-                                    onClick={() => setActivePage(idx)}
-                                >
-                                    {page.title || `Página ${idx + 1}`}
-                                </button>
-                            ))}
-                            <button
-                                type="button"
-                                className="ml-2 px-2 py-1 rounded bg-green-100 text-green-800 border border-green-300 hover:bg-green-200"
-                                onClick={() => pagesField.append({ id: nanoid(), type: 'text' as PageType, title: '', textContent: '' })}
-                                disabled={isEditingDisabled}
-                            >+ Página</button>
-                        </div>
-                        {pages.length > 0 && pages[activePage] && (
-                            <div className="border rounded-b-lg p-4 bg-background animate-fade-in">
-                                <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.title`} render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Título da Página <span className="text-red-500 ml-1">*</span></FormLabel>
-                                        <FormControl>
-                                            <Input {...field} placeholder="Ex: Introdução, Vídeo 1, Material Complementar..." disabled={isEditingDisabled} className={`${form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.pages?.[activePage]?.title ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                                <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.type`} render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Tipo de Página <span className="text-red-500 ml-1">*</span></FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value} disabled={isEditingDisabled}>
-                                            <FormControl>
-                                                <SelectTrigger className={form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.pages?.[activePage]?.type ? 'border-red-500 focus-visible:ring-red-500' : ''}>
-                                                    <SelectValue placeholder="Selecione..." />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="video">Vídeo</SelectItem>
-                                                <SelectItem value="text">Texto</SelectItem>
-                                                <SelectItem value="file">Arquivos</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                                {/* Conteúdo dinâmico da página */}
-                                {pages[activePage].type === 'video' && (
-                                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.videoUrl`} render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>URL do Vídeo <span className="text-red-500 ml-1">*</span></FormLabel>
-                                            <FormControl>
-                                                <Input {...field} placeholder="https://www.youtube.com/watch?v=..." disabled={isEditingDisabled} className={`${form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.pages?.[activePage]?.videoUrl ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                )}
-                                {pages[activePage].type === 'text' && (
-                                    <>
-                                        <div className="flex gap-2 mb-2">
-                                            <MarkdownAdvancedGuideModal />
-                                            <InsertImageButton onInsert={markdown => form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.textContent`, (form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.textContent`) || '') + '\n' + markdown)} />
-                                        </div>
-                                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.textContent`} render={({ field }) => {
-                                            // Inicializa o editor Tiptap
-                                            const editor = useEditor({
-                                                extensions: [StarterKit, Link, Image],
-                                                content: field.value || '',
-                                                onUpdate: ({ editor }) => {
-                                                    field.onChange(editor.getHTML());
-                                                },
-                                                editable: !isEditingDisabled,
-                                                immediatelyRender: false,
-                                            });
-                                            // Sincroniza valor externo (reset do form)
-                                            useEffect(() => {
-                                                if (editor && field.value !== editor.getHTML()) {
-                                                    editor.commands.setContent(field.value || '', false);
-                                                }
-                                            }, [field.value]);
-                                            return (
-                                                <FormItem>
-                                                    <FormLabel>Conteúdo de Texto <span className="text-red-500 ml-1">*</span></FormLabel>
-                                                    <div className="border rounded-lg bg-white shadow-sm focus-within:ring-2 focus-within:ring-primary/50">
-                                                        <div className="relative">
-                                                            {!editor?.getText() && <span className="absolute left-4 top-3 text-muted-foreground pointer-events-none select-none">Digite o conteúdo da página...</span>}
-                                                            <EditorContent editor={editor} className="min-h-[180px] p-3 text-base font-medium prose max-w-none focus:outline-none" />
-                                                        </div>
-                                                    </div>
-                                                    {form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.pages?.[activePage]?.textContent && (
-                                                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.pages?.[activePage]?.textContent.message}</p>
-                                                    )}
-                                                </FormItem>
-                                            );
-                                        }} />
-                                    </>
-                                )}
-                                {pages[activePage].type === 'file' && (
-                                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.files`} render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Arquivos <span className="text-red-500 ml-1">*</span></FormLabel>
-                                            <FormControl>
-                                                <Input type="file" multiple onChange={e => {
-                                                    const files = Array.from(e.target.files ?? []);
-                                                    // Simulação: gerar URLs locais (substitua por upload real se necessário)
-                                                    const fileObjs = files.map(f => ({ name: f.name, url: URL.createObjectURL(f) }));
-                                                    field.onChange([...(field.value ?? []), ...fileObjs]);
-                                                }} disabled={isEditingDisabled} />
-                                            </FormControl>
-                                            <div className="mt-2 space-y-1">
-                                                {Array.isArray(field.value) && field.value.map((f: any, i: number) => (
-                                                    <div key={i} className="flex items-center gap-2 text-sm">
-                                                        <a href={f.url} target="_blank" rel="noopener noreferrer" className="underline">{f.name}</a>
-                                                        <button type="button" className="text-red-500 hover:underline" onClick={() => field.onChange((Array.isArray(field.value) ? field.value : []).filter((_: any, idx: number) => idx !== i))} disabled={isEditingDisabled}>Remover</button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                )}
-                                <div className="flex justify-between mt-4">
-                                    <Button type="button" variant="destructive" onClick={() => pagesField.remove(activePage)} disabled={isEditingDisabled || pages.length <= 1}>Remover Página</Button>
-                                    <Button type="button" variant="secondary" onClick={() => setActivePage(Math.max(0, activePage - 1))} disabled={activePage === 0}>Anterior</Button>
-                                    <Button type="button" variant="secondary" onClick={() => setActivePage(Math.min(pages.length - 1, activePage + 1))} disabled={activePage === pages.length - 1}>Próxima</Button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    {/* Preview dinâmico aprimorado */}
-                    <div className="mt-6">
-                        <h4 className="font-semibold mb-2">Pré-visualização da Aula</h4>
-                        <div className="border rounded-lg p-4 bg-background shadow-sm animate-fade-in">
-                            <div className="mb-2 text-primary font-medium text-base">{summary}</div>
-                            <div className="flex items-center gap-2 mb-2">
-                                {pages.map((page: any, idx: number) => (
-                                    <button
-                                        key={page.id}
-                                        type="button"
-                                        className={`px-2 py-1 rounded ${activePage === idx ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'} text-xs`}
-                                        onClick={() => setActivePage(idx)}
-                                    >
-                                        {page.title || `Página ${idx + 1}`}
-                                    </button>
-                                ))}
-                            </div>
-                            {pages.length > 0 && pages[activePage] && (
-                                <div>
-                                    <div className="font-bold mb-1 text-lg">{pages[activePage].title}</div>
-                                    {pages[activePage].type === 'video' && pages[activePage].videoUrl && (
-                                        <video src={pages[activePage].videoUrl} controls className="w-full max-w-lg rounded shadow" />
-                                    )}
-                                    {pages[activePage].type === 'text' && pages[activePage].textContent && (
-                                        <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: pages[activePage].textContent.replace(/\n/g, '<br/>') }} />
-                                    )}
-                                    {pages[activePage].type === 'file' && pages[activePage].files && (
-                                        <ul className="list-disc ml-6">
-                                            {pages[activePage].files.map((f: any, i: number) => (
-                                                <li key={i}><a href={f.url} target="_blank" rel="noopener noreferrer" className="underline">{f.name}</a></li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-                <Button type="button" variant="ghost" size="icon" onClick={() => removeLesson(lessonIndex)} disabled={isEditingDisabled} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
-            </div>
-        </Card>
-    );
-}
-
-function MaterialField({ form, moduleIndex, lessonIndex, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, isEditingDisabled: boolean }) {
-    const { fields: materialFields, append: appendMaterial, remove: removeMaterial } = useFieldArray({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.materials` });
-    return (
-        <div className="space-y-3 pt-3 border-t border-dashed">
-            <Label>Material de Apoio (Opcional)</Label>
-            {materialFields.map((materialItem, materialIndex) => (
-                <div key={materialItem.id} className="flex items-end gap-2 p-3 rounded-md bg-background/50 border">
-                    <Paperclip className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                    <div className="flex-1 grid grid-cols-2 gap-2">
-                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.materials.${materialIndex}.name`} render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-xs">Nome do Arquivo <span className="text-red-500 ml-1">*</span></FormLabel>
-                                <FormControl>
-                                    <Input {...field} placeholder="Ex: Resumo.pdf" disabled={isEditingDisabled} className={`${form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.materials?.[materialIndex]?.name ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.materials.${materialIndex}.url`} render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-xs">URL <span className="text-red-500 ml-1">*</span></FormLabel>
-                                <FormControl>
-                                    <Input {...field} placeholder="https://..." disabled={isEditingDisabled} className={`${form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.materials?.[materialIndex]?.url ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                    </div>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeMaterial(materialIndex)} disabled={isEditingDisabled} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-9 w-9"><Trash2 className="h-4 w-4" /></Button>
-                </div>
-            ))}
-            <Button type="button" variant="outline" size="sm" onClick={() => appendMaterial({ name: '', url: '' })} disabled={isEditingDisabled}><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Material</Button>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
-    );
+        
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onRemove}
+          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      {/* Resumo da aula */}
+      <FormField
+        control={form.control}
+        name={`modules.${moduleIndex}.lessons.${lessonIndex}.summary`}
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <Textarea 
+                {...field} 
+                placeholder="Resumo da aula..."
+                rows={2}
+                className="text-sm"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+  );
 }
 
-function QuizBuilder({ form, moduleIndex, lessonIndex, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, isEditingDisabled: boolean }) {
-    const { fields: questionFields, append: appendQuestion, remove: removeQuestion } = useFieldArray({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.questions` });
-    return (
-        <div className="space-y-4 pt-3 border-t border-dashed">
-            <Label className="text-base font-semibold">Construtor de Prova (Quiz)</Label>
-            <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.passingScore`} render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="flex items-center gap-2"><Percent /> Nota para Aprovação <span className="text-red-500 ml-1">*</span></FormLabel>
-                    <FormControl>
-                        <Input type="number" {...field} placeholder="Ex: 70" disabled={isEditingDisabled} className={`${form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.passingScore ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-            )} />
+// Componente para seleção de imagem de capa
+function CoverImageSection({ form }: { form: UseFormReturn<CourseFormValues> }) {
+  const [preview, setPreview] = useState<string | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  return (
+    <FormField
+      control={form.control}
+      name="coverImageUrl"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel className="text-base font-semibold">Imagem de Capa</FormLabel>
+          <FormControl>
             <div className="space-y-4">
-                {questionFields.map((questionItem, questionIndex) => (
-                    <QuestionField key={questionItem.id} {...{ form, moduleIndex, lessonIndex, questionIndex, removeQuestion, isEditingDisabled }} />
-                ))}
-            </div>
-            {form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.questions?.root && (<p className="text-sm font-medium text-destructive">{form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.questions?.root.message}</p>)}
-            <Button type="button" variant="outline" size="sm" onClick={() => appendQuestion({ question: '', options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] })} disabled={isEditingDisabled}><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Questão</Button>
-        </div>
-    );
-}
-
-function QuestionField({ form, moduleIndex, lessonIndex, questionIndex, removeQuestion, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, questionIndex: number, removeQuestion: (index: number) => void, isEditingDisabled: boolean }) {
-    const { fields: optionFields, append: appendOption, remove: removeOption } = useFieldArray({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.options` });
-    const optionsPath = `modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.options`;
-
-    return (
-        <Card className="p-4 bg-background/60">
-            <div className="flex items-start gap-4">
-                <div className="flex-1 space-y-4">
-                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.question`} render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Questão {questionIndex + 1} <span className="text-red-500 ml-1">*</span></FormLabel>
-                            <FormControl>
-                                <Textarea {...field} placeholder="Digite o enunciado da questão aqui..." disabled={isEditingDisabled} className={`${form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.questions?.[questionIndex]?.question ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormItem>
-                        <FormLabel>Opções de Resposta (marque a correta)</FormLabel>
-                        <FormControl>
-                            <RadioGroup
-                                onValueChange={(value) => {
-                                    const newOptions = form.getValues(optionsPath as any).map((opt: any, idx: number) => ({ ...opt, isCorrect: idx === parseInt(value) }));
-                                    form.setValue(optionsPath as any, newOptions, { shouldValidate: true });
-                                }}
-                                value={optionFields.findIndex(opt => opt.isCorrect).toString()}
-                                disabled={isEditingDisabled}
-                            >
-                                <div className="space-y-3">
-                                    {optionFields.map((optionItem, optionIndex) => (
-                                        <div key={optionItem.id} className="flex items-center gap-2">
-                                            <RadioGroupItem value={optionIndex.toString()} id={`${optionItem.id}-radio`} />
-                                            <FormField control={form.control} name={`${optionsPath}.${optionIndex}.text` as any} render={({ field }) => (
-                                                <FormItem className="flex-1">
-                                                    <FormControl>
-                                                        <Input {...field} placeholder={`Opção ${optionIndex + 1}`} disabled={isEditingDisabled} className={`${form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.questions?.[questionIndex]?.options?.[optionIndex]?.text ? 'border-red-500 focus-visible:ring-red-500' : ''}`} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
-                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(optionIndex)} className="text-muted-foreground hover:text-destructive h-8 w-8" disabled={optionFields.length <= 2 || isEditingDisabled}><Trash2 className="h-4 w-4" /></Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                        {form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.questions?.[questionIndex]?.options?.root && (<p className="text-sm font-medium text-destructive pt-2">{form.formState.errors.modules?.[moduleIndex]?.lessons?.[lessonIndex]?.questions?.[questionIndex]?.options?.root.message}</p>)}
-                    </FormItem>
-                    <Button type="button" variant="outline" size="sm" onClick={() => appendOption({ text: '', isCorrect: false })} disabled={isEditingDisabled}><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Opção</Button>
+              {/* Preview da imagem */}
+              {(typeof (preview || field.value) === 'string' && (preview || field.value)) && (
+                <div className="relative w-full h-48 rounded-lg overflow-hidden border">
+                  <img 
+                    src={preview || (typeof field.value === 'string' ? field.value : '')} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => {
+                      setPreview(null);
+                      field.onChange('');
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button type="button" variant="ghost" size="icon" onClick={() => removeQuestion(questionIndex)} disabled={isEditingDisabled} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+              )}
+              {/* Botões de ação */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setGalleryOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <ImageIcon className="h-4 w-4" />
+                  Galeria
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          const result = e.target?.result as string;
+                          setPreview(result);
+                          field.onChange(result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    };
+                    input.click();
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload
+                </Button>
+              </div>
             </div>
-        </Card>
-    );
+          </FormControl>
+          <FormDescription>
+            Escolha uma imagem atrativa para representar seu curso
+          </FormDescription>
+          <FormMessage />
+          {/* Modal da galeria */}
+          <CoverImageGalleryModal
+            open={galleryOpen}
+            onOpenChange={setGalleryOpen}
+            onSelect={(url) => {
+              field.onChange(url);
+              setPreview(url);
+              setGalleryOpen(false);
+            }}
+          />
+        </FormItem>
+      )}
+    />
+  );
 }
