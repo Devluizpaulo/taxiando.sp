@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
+import { use } from 'react';
 
 import {
   updateUserByAdmin,
@@ -38,7 +39,8 @@ const adminEditUserSchema = z.object({
 
 type AdminEditUserFormValues = z.infer<typeof adminEditUserSchema>;
 
-export default function AdminUserDetailsPage({ params }: { params: { id: string } }) {
+export default function AdminUserDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const { toast } = useToast();
     const router = useRouter();
 
@@ -58,7 +60,7 @@ export default function AdminUserDetailsPage({ params }: { params: { id: string 
             setLoading(true);
             try {
                 const [userData, coursesData] = await Promise.all([
-                    getUserProfileById(params.id),
+                    getUserProfileById(id),
                     getAllCourses()
                 ]);
                 
@@ -85,7 +87,7 @@ export default function AdminUserDetailsPage({ params }: { params: { id: string 
             }
         };
         fetchData();
-    }, [params.id, router, toast, form]);
+    }, [id, router, toast, form]);
 
     const onSubmit = async (values: AdminEditUserFormValues) => {
         if (!user) return;

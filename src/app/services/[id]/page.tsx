@@ -19,10 +19,10 @@ import { LoadingScreen } from '@/components/loading-screen';
 import { type ServiceListing, type UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { use } from 'react';
 
-export default function ServiceDetailsPage() {
-    const params = useParams();
-    const serviceId = params.id as string;
+export default function ServicePage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const router = useRouter();
     const { toast } = useToast();
 
@@ -32,14 +32,14 @@ export default function ServiceDetailsPage() {
     const [mainImage, setMainImage] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!serviceId) {
+        if (!id) {
             router.push('/services/marketplace');
             return;
         }
 
         const fetchDetails = async () => {
             setLoading(true);
-            const result = await getServiceAndProviderDetails(serviceId);
+            const result = await getServiceAndProviderDetails(id);
             if (result.success && result.service) {
                 setService(result.service);
                 setProvider(result.provider);
@@ -54,7 +54,7 @@ export default function ServiceDetailsPage() {
         };
 
         fetchDetails();
-    }, [serviceId, router, toast]);
+    }, [id, router, toast]);
 
     if (loading) {
         return <LoadingScreen />;

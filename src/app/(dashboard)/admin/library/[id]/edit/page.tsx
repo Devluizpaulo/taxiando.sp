@@ -6,21 +6,42 @@ import { BookForm } from '../../book-form';
 import { LoadingScreen } from '@/components/loading-screen';
 import { type LibraryBook } from '@/lib/types';
 import { getBookById } from '@/app/actions/library-actions';
+import { use } from 'react';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { bookFormSchema, type BookFormValues } from '@/lib/library-schemas';
 
-export default function EditBookPage({ params }: { params: { id: string } }) {
+export default function EditBookPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
+    const router = useRouter();
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [book, setBook] = useState<LibraryBook | null>(null);
-    const [loading, setLoading] = useState(true);
+
+    const form = useForm<BookFormValues>({
+        resolver: zodResolver(bookFormSchema),
+    });
 
     useEffect(() => {
+        setIsLoading(true);
         const fetchBook = async () => {
-            const fetchedBook = await getBookById(params.id);
-            setBook(fetchedBook);
-            setLoading(false);
+            const fetchedBook = await getBookById(id);
+            if (fetchedBook) {
+                setBook(fetchedBook);
+                form.reset(fetchedBook);
+            } else {
+                toast({ variant: 'destructive', title: 'Erro', description: 'Livro não encontrado.' });
+                router.push('/admin/library');
+            }
+            setIsLoading(false);
         };
         fetchBook();
-    }, [params.id]);
+    }, [id]);
 
-    if (loading) {
+    if (isLoading) {
         return <LoadingScreen />;
     }
 

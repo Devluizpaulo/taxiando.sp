@@ -8,6 +8,7 @@ import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { use } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -81,7 +82,8 @@ const AiAssistantCard = ({ onDetailsGenerated, isGenerating }: { onDetailsGenera
     );
 }
 
-export default function EditEventPage({ params }: { params: { id: string }}) {
+export default function EditEventPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -94,8 +96,8 @@ export default function EditEventPage({ params }: { params: { id: string }}) {
     });
 
     useEffect(() => {
-        if (params.id) {
-            getEventById(params.id).then(data => {
+        if (id) {
+            getEventById(id).then(data => {
                 if (data) {
                     form.reset({
                         ...data,
@@ -108,7 +110,7 @@ export default function EditEventPage({ params }: { params: { id: string }}) {
                 setIsLoadingData(false);
             });
         }
-    }, [params.id, form, router, toast]);
+    }, [id, form, router, toast]);
 
     const watchedValues = form.watch();
 
@@ -146,7 +148,7 @@ export default function EditEventPage({ params }: { params: { id: string }}) {
     const onSubmit = async (values: EventFormValues) => {
         setIsSubmitting(true);
         try {
-            const result = await updateEvent(params.id, values);
+            const result = await updateEvent(id, values);
 
             if (result.success) {
                 toast({

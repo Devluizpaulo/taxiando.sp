@@ -22,9 +22,20 @@ export const quizQuestionSchema = z.object({
   path: ['options'],
 });
 
+export const lessonPageSchema = z.object({
+  id: z.string(),
+  type: z.enum(['video', 'text', 'file']),
+  title: z.string().optional(),
+  videoUrl: z.string().url().optional(),
+  textContent: z.string().optional(),
+  files: z.array(z.object({ name: z.string(), url: z.string().url() })).optional(),
+});
+
 export const lessonSchema = z.object({
-  id: z.string().optional(),
-  title: z.string().min(3, "O título da aula é obrigatório."),
+  id: z.string(),
+  title: z.string(),
+  summary: z.string().min(10, 'Adicione um resumo ou índice de aprendizado para a aula.'),
+  pages: z.array(lessonPageSchema).min(1, 'Adicione pelo menos uma página/conteúdo para a aula.'),
   type: z.enum(['video', 'text', 'quiz', 'audio'], { required_error: "Selecione o tipo de aula."}),
   duration: z.coerce.number().min(1, "A duração deve ser de pelo menos 1 minuto."),
   content: z.string().optional(),

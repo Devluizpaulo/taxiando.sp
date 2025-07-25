@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
+import { use } from 'react';
 
 import { getCreditPackageById, updateCreditPackage } from '@/app/actions/billing-actions';
 import { packageFormSchema, type PackageFormValues } from '@/lib/billing-schemas';
@@ -19,7 +20,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { LoadingScreen } from '@/components/loading-screen';
 
 
-export default function EditPackagePage({ params }: { params: { id: string } }) {
+export default function EditPackagePage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,7 +34,7 @@ export default function EditPackagePage({ params }: { params: { id: string } }) 
     useEffect(() => {
         const fetchPackage = async () => {
             setIsLoading(true);
-            const pkg = await getCreditPackageById(params.id);
+            const pkg = await getCreditPackageById(id);
             if (pkg) {
                 form.reset(pkg);
             } else {
@@ -42,11 +44,11 @@ export default function EditPackagePage({ params }: { params: { id: string } }) 
             setIsLoading(false);
         };
         fetchPackage();
-    }, [params.id, form, toast, router]);
+    }, [id, form, toast, router]);
 
     const onSubmit = async (values: PackageFormValues) => {
         setIsSubmitting(true);
-        const result = await updateCreditPackage(params.id, values);
+        const result = await updateCreditPackage(id, values);
 
         if (result.success) {
             toast({ title: 'Pacote Atualizado!', description: `O pacote "${values.name}" foi salvo com sucesso.` });

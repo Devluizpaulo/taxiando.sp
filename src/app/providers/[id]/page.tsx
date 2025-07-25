@@ -15,18 +15,20 @@ import { StarRating } from '@/components/ui/star-rating';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { use } from 'react';
 
-export default async function ProviderProfilePage({ params }: { params: { id: string } }) {
-    const { success, provider, services } = await getProviderPublicProfile(params.id);
+export default async function ProviderPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
+    const { success, provider, services } = await getProviderPublicProfile(id);
 
     if (!success || !provider) {
         notFound();
     }
     
     // Fire-and-forget the tracking action. No need to await.
-    trackProviderProfileView(params.id);
+    trackProviderProfileView(id);
     
-    const reviews = await getReviewsForUser(params.id);
+    const reviews = await getReviewsForUser(id);
 
     return (
         <div className="flex min-h-screen flex-col bg-muted/40">

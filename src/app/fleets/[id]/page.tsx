@@ -14,15 +14,17 @@ import { StarRating } from '@/components/ui/star-rating';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { use } from 'react';
 
-export default async function FleetProfilePage({ params }: { params: { id: string } }) {
-    const { success, fleet, vehicles } = await getFleetPublicProfile(params.id);
+export default async function FleetPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
+    const { success, fleet, vehicles } = await getFleetPublicProfile(id);
 
     if (!success || !fleet) {
         notFound();
     }
     
-    const reviews = await getReviewsForUser(params.id);
+    const reviews = await getReviewsForUser(id);
 
     return (
         <div className="flex min-h-screen flex-col bg-muted/40">

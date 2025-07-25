@@ -260,7 +260,22 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                 {form.formState.errors.modules?.root && (<p className="text-sm font-medium text-destructive">{form.formState.errors.modules.root.message}</p>)}
 
                 <div className="flex justify-between items-center mt-4">
-                    <Button type="button" variant="outline" onClick={() => appendModule({ title: '', lessons: [{ title: '', type: 'video', duration: 10, content: '' }] })}>
+                    <Button type="button" variant="outline" onClick={() => appendModule({
+                        id: nanoid(),
+                        title: '',
+                        lessons: [
+                            {
+                                id: nanoid(),
+                                title: '',
+                                summary: '',
+                                type: 'text',
+                                duration: 10,
+                                pages: [{ id: nanoid(), type: 'text', title: '', textContent: '' }],
+                                questions: [],
+                            }
+                        ],
+                        badge: undefined,
+                    })}>
                         <PlusCircle /> Adicionar Módulo
                     </Button>
                     <Button type="submit" disabled={isSubmitting} size="lg">
@@ -308,7 +323,15 @@ function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPub
                 </div>
                  <CardFooter className="bg-muted/30 p-4 flex justify-between items-center">
                     <Button type="button" variant="destructive" onClick={() => removeModule(moduleIndex)} disabled={isEditingDisabled}><Trash2 /> Remover Módulo</Button>
-                    <Button type="button" variant="secondary" onClick={() => appendLesson({ title: '', type: 'video', duration: 10, content: '', materials: [] })}><PlusCircle /> Adicionar Aula</Button>
+                    <Button type="button" variant="secondary" onClick={() => appendLesson({
+                        id: nanoid(),
+                        title: '',
+                        summary: '',
+                        type: 'text',
+                        duration: 10,
+                        pages: [{ id: nanoid(), type: 'text', title: '', textContent: '' }],
+                        questions: [],
+                    })}><PlusCircle /> Adicionar Aula</Button>
                 </CardFooter>
             </AccordionContent>
         </AccordionItem>

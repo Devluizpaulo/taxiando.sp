@@ -9,6 +9,7 @@ import { getCouponById, updateCoupon, type CouponFormValues } from '@/app/action
 import { couponFormSchema } from '@/lib/marketing-schemas';
 import { type Coupon } from '@/lib/types';
 import { toDate } from '@/lib/date-utils';
+import { use } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +22,8 @@ import { Switch } from '@/components/ui/switch';
 import { DatePicker } from '@/components/ui/datepicker';
 import { LoadingScreen } from '@/components/loading-screen';
 
-export default function EditCouponPage({ params }: { params: { id: string } }) {
+export default function EditCouponPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +36,7 @@ export default function EditCouponPage({ params }: { params: { id: string } }) {
     useEffect(() => {
         const fetchCoupon = async () => {
             setIsLoading(true);
-            const coupon = await getCouponById(params.id);
+            const coupon = await getCouponById(id);
             if (coupon) {
                 form.reset({
                     ...coupon,
@@ -47,12 +49,12 @@ export default function EditCouponPage({ params }: { params: { id: string } }) {
             setIsLoading(false);
         };
         fetchCoupon();
-    }, [params.id, form, toast, router]);
+    }, [id, form, toast, router]);
 
     const onSubmit = async (values: CouponFormValues) => {
         setIsSubmitting(true);
         try {
-            const result = await updateCoupon(params.id, values);
+            const result = await updateCoupon(id, values);
             if (result.success) {
                 toast({ title: 'Cupom Atualizado!', description: `O cupom "${values.code}" foi salvo com sucesso.` });
                 router.push('/admin/marketing/coupons');

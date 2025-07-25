@@ -5,6 +5,7 @@ import { useFieldArray, useForm, useWatch, type UseFormReturn } from 'react-hook
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { nanoid } from 'nanoid';
+import { use } from 'react';
 
 import { type Course } from '@/lib/types';
 import { getCourseById, updateCourse } from '@/app/actions/course-actions';
@@ -29,6 +30,12 @@ import remarkGfm from 'remark-gfm';
 import { ContentBlocksEditor } from '@/components/course/ContentBlocksEditor';
 import { Controller } from 'react-hook-form';
 import { Progress } from '@/components/ui/progress';
+
+// Definições globais de tipos literais
+export type PageType = "video" | "text" | "file";
+export type LessonTypeLiteral = "video" | "text" | "quiz" | "audio";
+export const validPageTypes: PageType[] = ["video", "text", "file"];
+export const validLessonTypes: LessonTypeLiteral[] = ["video", "text", "quiz", "audio"];
 
 const lessonTypeIcons: { [key: string]: React.ReactNode } = {
     video: <Video className="h-4 w-4" />,
@@ -115,7 +122,8 @@ function InsertImageButton({ onInsert }: { onInsert: (markdown: string) => void 
   );
 }
 
-export default function EditCoursePage({ params }: { params: { id: string }}) {
+export default function EditCoursePage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const router = useRouter();
     const { toast } = useToast();
     const { user } = useAuth();
@@ -123,54 +131,160 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [isPublished, setIsPublished] = useState(false);
     const [initialModuleCount, setInitialModuleCount] = useState(0);
+    const [formKey, setFormKey] = useState(0);
+    const [initialData, setInitialData] = useState<CourseFormValues | null>(null);
 
-    const form = useForm<CourseFormValues>({
-        resolver: zodResolver(courseFormSchema),
-        defaultValues: { 
-            title: '', 
-            description: '', 
-            category: '', 
-            modules: [],
-            difficulty: 'Iniciante',
-            investmentCost: 0,
-            priceInCredits: 0,
-            authorInfo: '',
-            legalNotice: '',
-        },
-    });
+    function safeReset(data: CourseFormValues) {
+        setInitialData(data);
+        setFormKey(k => k + 1);
+    }
 
     useEffect(() => {
-        if (params.id) {
-            getCourseById(params.id).then(data => {
+        if (id) {
+            getCourseById(id).then(data => {
                 if (data) {
-                    form.reset({
+                    // Normalização de dados vindos do backend
+                    // Definições globais de tipos literais
+                    const normalized = {
                         ...data,
-                        modules: data.modules.map(m => ({
-                            ...m,
-                            badge: m.badge ? { name: m.badge?.name || '' } : undefined
-                        })),
-                    });
+                        difficulty: (data.difficulty === 'Iniciante' || data.difficulty === 'Intermediário' || data.difficulty === 'Avançado') ? data.difficulty : 'Iniciante',
+                        modules: (data.modules ?? []).map(function(m: any) {
+                            return {
+                                id: m.id || nanoid(),
+                                title: m.title || '',
+                                lessons: (m.lessons ?? []).map(function(lesson: any) {
+                                    return {
+                                        id: lesson.id || nanoid(),
+                                        title: lesson.title || '',
+                                        summary: lesson.summary || '',
+                                        type: validLessonTypes.includes(lesson.type) ? lesson.type as LessonTypeLiteral : 'text' as LessonTypeLiteral,
+                                        duration: lesson.duration ?? 10,
+                                        pages: (lesson.pages ?? []).map(function(page: any) {
+                                            return {
+                                                id: page.id || nanoid(),
+                                                type: validPageTypes.includes(page.type) ? page.type as PageType : 'text' as PageType,
+                                                title: page.title || '',
+                                                textContent: page.textContent || '',
+                                                videoUrl: page.videoUrl || '',
+                                                files: Array.isArray(page.files) ? page.files : [],
+                                            };
+                                        }),
+                                        questions: (lesson.questions ?? []).map(function(q: any) {
+                                            return {
+                                                ...q,
+                                                id: q.id || nanoid(),
+                                                options: (q.options ?? []).map(function(o: any) {
+                                                    return { ...o, id: o.id || nanoid() };
+                                                })
+                                            };
+                                        }),
+                                    };
+                                }),
+                                badge: m.badge ? { name: m.badge?.name || '' } : undefined,
+                            };
+                        }),
+                    };
+                    safeReset(normalized);
                     setIsPublished(data.status === 'Published');
-                    setInitialModuleCount(data.modules?.length || 0);
+                    setInitialModuleCount((data.modules ?? []).length || 0);
                 }
                 setIsLoadingData(false);
             });
         }
-    }, [params.id, form]);
+    }, [id]);
 
     // Auto-save: salvar no localStorage
     useEffect(() => {
-        const saved = localStorage.getItem('courseEditDraft-' + params.id);
+        const saved = localStorage.getItem('courseEditDraft-' + id);
         if (saved) {
-            form.reset(JSON.parse(saved));
+            try {
+                const parsed = JSON.parse(saved);
+                // Garante que todos os módulos, aulas, questões e opções tenham id único
+                // Definições globais de tipos literais
+                const normalized = {
+                    ...parsed,
+                    modules: (parsed.modules ?? []).map(function(m: any) {
+                        return {
+                            ...m,
+                            id: m.id || nanoid(),
+                            lessons: (m.lessons ?? []).map(function(lesson: any) {
+                                return {
+                                    ...lesson,
+                                    id: lesson.id || nanoid(),
+                                    summary: lesson.summary || '',
+                                    pages: (lesson.pages ?? []).map(function(page: any) {
+                                        return {
+                                            ...page,
+                                            id: page.id || nanoid(),
+                                            type: validPageTypes.includes(page.type) ? page.type as PageType : 'text' as PageType,
+                                            title: page.title || '',
+                                            textContent: page.textContent || '',
+                                            videoUrl: page.videoUrl || '',
+                                            files: (page.files ?? []).map(function(f: any) {
+                                                return {
+                                                    ...f,
+                                                    id: f.id || nanoid(),
+                                                    url: f.url || '',
+                                                };
+                                            })
+                                        };
+                                    }),
+                                    questions: (lesson.questions ?? []).map(function(q: any) {
+                                        return {
+                                            ...q,
+                                            id: q.id || nanoid(),
+                                            options: (q.options ?? []).map(function(o: any) {
+                                                return { ...o, id: o.id || nanoid() };
+                                            })
+                                        };
+                                    })
+                                };
+                            }),
+                            badge: m.badge ? { name: m.badge?.name || '' } : undefined
+                        };
+                    }),
+                };
+                safeReset(normalized);
+            } catch (e) {
+                // Se der erro no parse, ignora o draft
+            }
         }
-    }, [params.id]);
-    useEffect(() => {
-        const subscription = form.watch((value) => {
-            localStorage.setItem('courseEditDraft-' + params.id, JSON.stringify(value));
-        });
-        return () => subscription.unsubscribe();
-    }, [form, params.id]);
+    }, [id]);
+
+    if (isLoadingData || !initialData) { return <LoadingScreen />; }
+
+    return (
+        <EditCourseForm
+            key={formKey}
+            initialData={initialData}
+            isPublished={isPublished}
+            initialModuleCount={initialModuleCount}
+            user={user}
+            toast={toast}
+            router={router}
+            setIsSubmitting={setIsSubmitting}
+            isSubmitting={isSubmitting}
+            courseId={id}
+        />
+    );
+}
+
+// Novo componente filho
+function EditCourseForm({ initialData, isPublished, initialModuleCount, user, toast, router, setIsSubmitting, isSubmitting, courseId }: {
+    initialData: CourseFormValues,
+    isPublished: boolean,
+    initialModuleCount: number,
+    user: any,
+    toast: any,
+    router: any,
+    setIsSubmitting: (b: boolean) => void,
+    isSubmitting: boolean,
+    courseId: string,
+}) {
+    const form = useForm<CourseFormValues>({
+        resolver: zodResolver(courseFormSchema),
+        defaultValues: initialData,
+    });
 
     const { fields: moduleFields, append: appendModule, remove: removeModule } = useFieldArray({
         control: form.control, name: 'modules',
@@ -183,7 +297,6 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
             setIsSubmitting(false);
             return;
         }
-
         try {
             const valuesWithIds = {
                 ...values,
@@ -193,22 +306,21 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                     lessons: module.lessons.map(lesson => ({
                         ...lesson,
                         id: lesson.id || nanoid(),
+                        summary: lesson.summary || '',
+                        pages: lesson.pages && lesson.pages.length > 0 ? lesson.pages : [{ id: nanoid(), type: 'text' as PageType, title: '', textContent: '' }],
                         questions: lesson.questions?.map(q => ({
                             ...q,
                             id: q.id || nanoid(),
                             options: q.options.map(o => ({ ...o, id: o.id || nanoid() }))
-                        }))
+                        })) ?? []
                     }))
                 }))
             };
-            
-            const result = await updateCourse(params.id, valuesWithIds, user.uid);
-
+            const result = await updateCourse(courseId, valuesWithIds, user.uid);
             if (result.success) {
                 toast({ title: 'Curso Atualizado com Sucesso!', description: `O curso "${values.title}" foi salvo.` });
                 router.push('/admin/courses');
             } else { throw new Error(result.error); }
-
         } catch (error) {
             console.error("Error updating course: ", error);
             toast({ variant: 'destructive', title: 'Erro ao Atualizar Curso', description: (error as Error).message });
@@ -217,13 +329,11 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
         }
     };
     
-    if (isLoadingData) { return <LoadingScreen />; }
-
     // Pré-visualização do curso
     const [showPreview, setShowPreview] = useState(false);
 
     return (
-        <Form {...form}>
+        <Form {...form} key={courseId}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-8">
                 <Progress value={100} className="mb-4" />
                 <div className="flex justify-between items-center">
@@ -405,14 +515,40 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                     {moduleFields.map((moduleItem, moduleIndex) => {
                         const isExistingModule = moduleIndex < initialModuleCount;
                         const isEditingDisabled = isPublished && isExistingModule;
-                        return (<ModuleField key={moduleItem.id} moduleIndex={moduleIndex} removeModule={removeModule} form={form} isEditingDisabled={isEditingDisabled} isPublished={isPublished} />);
+                        return (
+                            <ModuleField
+                                key={moduleItem.id}
+                                moduleIndex={moduleIndex}
+                                moduleId={moduleItem.id}
+                                removeModule={removeModule}
+                                form={form}
+                                isEditingDisabled={isEditingDisabled}
+                                isPublished={isPublished}
+                                initialModuleCount={initialModuleCount}
+                            />
+                        );
                     })}
                 </Accordion>
                 
                 {form.formState.errors.modules?.root && (<p className="text-sm font-medium text-destructive">{form.formState.errors.modules.root.message}</p>)}
 
                 <div className="flex justify-between items-center mt-4">
-                    <Button type="button" variant="outline" onClick={() => appendModule({ title: '', lessons: [{ title: '', type: 'video', duration: 10, content: '' }] })}>
+                    <Button type="button" variant="outline" onClick={() => appendModule({
+                        id: nanoid(),
+                        title: '',
+                        lessons: [
+                            {
+                                id: nanoid(),
+                                title: '',
+                                summary: '',
+                                type: 'text' as LessonTypeLiteral,
+                                duration: 10,
+                                pages: [{ id: nanoid(), type: 'text' as PageType, title: '', textContent: '' }],
+                                questions: [],
+                            }
+                        ],
+                        badge: undefined,
+                    })}>
                         <PlusCircle /> Adicionar Módulo
                     </Button>
                     <Button type="submit" disabled={isSubmitting} size="lg">
@@ -425,13 +561,12 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
     );
 }
 
-function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPublished }: { moduleIndex: number, removeModule: (index: number) => void, form: UseFormReturn<CourseFormValues>, isEditingDisabled: boolean, isPublished: boolean }) {
+function ModuleField({ moduleIndex, moduleId, removeModule, form, isEditingDisabled, isPublished, initialModuleCount }: { moduleIndex: number, moduleId: string, removeModule: (index: number) => void, form: UseFormReturn<CourseFormValues>, isEditingDisabled: boolean, isPublished: boolean, initialModuleCount: number }) {
     const { fields: lessonFields, append: appendLesson, remove: removeLesson } = useFieldArray({
         control: form.control, name: `modules.${moduleIndex}.lessons`,
     });
-    
-    // Store initial lesson count to differentiate existing from new lessons
-    const [initialLessonCount] = useState(form.getValues(`modules.${moduleIndex}.lessons`)?.length || 0);
+    // Derive initialLessonCount diretamente do form
+    const initialLessonCount = form.getValues(`modules.${moduleIndex}.lessons`)?.length || 0;
 
     return (
         <AccordionItem value={`module-${moduleIndex}`} className="bg-card border rounded-lg overflow-hidden">
@@ -455,7 +590,16 @@ function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPub
                     <h4 className="font-semibold text-muted-foreground">Aulas do Módulo</h4>
                     {lessonFields.map((lessonItem, lessonIndex) => {
                         const isExistingLesson = lessonIndex < initialLessonCount;
-                        return (<LessonField key={lessonItem.id} form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} removeLesson={removeLesson} isEditingDisabled={isEditingDisabled || (isPublished && isExistingLesson)} />);
+                        return (
+                            <LessonField
+                                key={lessonItem.id}
+                                form={form}
+                                moduleIndex={moduleIndex}
+                                lessonIndex={lessonIndex}
+                                removeLesson={removeLesson}
+                                isEditingDisabled={isEditingDisabled || (isPublished && isExistingLesson)}
+                            />
+                        );
                     })}
                     <div className="space-y-2 pt-4 border-t">
                         <h4 className="font-semibold text-muted-foreground">Recompensa do Módulo (Opcional)</h4>
@@ -474,7 +618,15 @@ function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPub
                 </div>
                  <CardFooter className="bg-muted/30 p-4 flex justify-between items-center">
                     <Button type="button" variant="destructive" onClick={() => removeModule(moduleIndex)} disabled={isEditingDisabled}><Trash2 /> Remover Módulo</Button>
-                    <Button type="button" variant="secondary" onClick={() => appendLesson({ title: '', type: 'video', duration: 10, content: '', materials: [] })}><PlusCircle /> Adicionar Aula</Button>
+                    <Button type="button" variant="secondary" onClick={() => appendLesson({
+                        id: nanoid(),
+                        title: '',
+                        summary: '',
+                        type: 'text' as LessonTypeLiteral,
+                        duration: 10,
+                        pages: [{ id: nanoid(), type: 'text' as PageType, title: '', textContent: '' }],
+                        questions: [],
+                    })}><PlusCircle /> Adicionar Aula</Button>
                 </CardFooter>
             </AccordionContent>
         </AccordionItem>
@@ -482,13 +634,20 @@ function ModuleField({ moduleIndex, removeModule, form, isEditingDisabled, isPub
 }
 
 function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDisabled }: { form: UseFormReturn<CourseFormValues>, moduleIndex: number, lessonIndex: number, removeLesson: (index: number) => void, isEditingDisabled: boolean }) {
-    const lessonType = useWatch({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.type` });
-    const watchedContent = useWatch({ control: form.control, name: `modules.${moduleIndex}.lessons.${lessonIndex}.content` });
+    // Novo: summary
+    // Novo: pages (array)
+    const pagesField = useFieldArray({
+        control: form.control,
+        name: `modules.${moduleIndex}.lessons.${lessonIndex}.pages`,
+    });
+    const summary = form.watch(`modules.${moduleIndex}.lessons.${lessonIndex}.summary`);
+    const pages = form.watch(`modules.${moduleIndex}.lessons.${lessonIndex}.pages`) ?? [];
+    const [activePage, setActivePage] = useState(0);
 
     return (
         <Card className="p-4 bg-muted/50">
             <div className="flex items-start gap-4">
-                <div className="flex-1 space-y-4">
+                <div className="flex-1 space-y-6">
                     <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.title`} render={({ field }) => (
                         <FormItem>
                             <FormLabel>Título da Aula</FormLabel>
@@ -498,101 +657,161 @@ function LessonField({ form, moduleIndex, lessonIndex, removeLesson, isEditingDi
                             <FormMessage />
                         </FormItem>
                     )}/>
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.type`} render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Tipo</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isEditingDisabled}>
-                                    <FormControl>
-                                        <SelectTrigger>{field.value ? <div className="flex items-center gap-2">{lessonTypeIcons[field.value]} {field.value.charAt(0).toUpperCase() + field.value.slice(1)}</div> : "Selecione..."}</SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="video"><div className="flex items-center gap-2"><Video /> Vídeo</div></SelectItem>
-                                        <SelectItem value="text"><div className="flex items-center gap-2"><FileText /> Texto</div></SelectItem>
-                                        <SelectItem value="audio"><div className="flex items-center gap-2"><Mic /> Áudio</div></SelectItem>
-                                        <SelectItem value="quiz"><div className="flex items-center gap-2"><ClipboardCheck /> Prova (Quiz)</div></SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
-                        <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.duration`} render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Duração (min)</FormLabel>
-                                <FormControl>
-                                    <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} disabled={isEditingDisabled} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
+                    {/* CAMPO DE RESUMO DESTACADO */}
+                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.summary`} render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>
+                                <span className="text-lg font-bold text-primary flex items-center gap-2">
+                                    <span>Resumo / Índice de Aprendizado</span>
+                                    <span className="text-xs text-muted-foreground">(obrigatório)</span>
+                                </span>
+                            </FormLabel>
+                            <FormControl>
+                                <Textarea {...field} placeholder="Descreva o objetivo, tópicos ou índice de aprendizado desta aula..." rows={3} className="border-2 border-primary/30 bg-primary/5 focus-visible:ring-primary/50 text-base font-medium" disabled={isEditingDisabled} />
+                            </FormControl>
+                            <FormDescription>Este resumo será exibido para o aluno antes de iniciar a aula.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}/>
+                    {/* Editor visual de páginas */}
+                    <div>
+                        <div className="flex gap-2 mb-2">
+                            {pages.map((page: any, idx: number) => (
+                                <button
+                                    key={page.id}
+                                    type="button"
+                                    className={`px-3 py-1 rounded-t ${activePage === idx ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'} transition-colors duration-150`}
+                                    onClick={() => setActivePage(idx)}
+                                >
+                                    {page.title || `Página ${idx + 1}`}
+                                </button>
+                            ))}
+                            <button
+                                type="button"
+                                className="ml-2 px-2 py-1 rounded bg-green-100 text-green-800 border border-green-300 hover:bg-green-200"
+                                onClick={() => pagesField.append({ id: nanoid(), type: 'text' as PageType, title: '', textContent: '' })}
+                                disabled={isEditingDisabled}
+                            >+ Página</button>
+                        </div>
+                        {pages.length > 0 && pages[activePage] && (
+                            <div className="border rounded-b-lg p-4 bg-background animate-fade-in">
+                                <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.title`} render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Título da Página</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} placeholder="Ex: Introdução, Vídeo 1, Material Complementar..." disabled={isEditingDisabled} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.type`} render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Tipo de Página</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value} disabled={isEditingDisabled}>
+                                            <FormControl>
+                                                <SelectTrigger>{field.value ? field.value.charAt(0).toUpperCase() + field.value.slice(1) : 'Selecione...'}</SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="video">Vídeo</SelectItem>
+                                                <SelectItem value="text">Texto</SelectItem>
+                                                <SelectItem value="file">Arquivos</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                {/* Conteúdo dinâmico da página */}
+                                {pages[activePage].type === 'video' && (
+                                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.videoUrl`} render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>URL do Vídeo</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} placeholder="https://www.youtube.com/watch?v=..." disabled={isEditingDisabled} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}/>
+                                )}
+                                {pages[activePage].type === 'text' && (
+                                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.textContent`} render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Conteúdo de Texto</FormLabel>
+                                            <FormControl>
+                                                <Textarea {...field} placeholder="Digite o conteúdo da página..." rows={6} disabled={isEditingDisabled} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}/>
+                                )}
+                                {pages[activePage].type === 'file' && (
+                                    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${activePage}.files`} render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Arquivos</FormLabel>
+                                            <FormControl>
+                                                <Input type="file" multiple onChange={e => {
+                                                    const files = Array.from(e.target.files ?? []);
+                                                    // Simulação: gerar URLs locais (substitua por upload real se necessário)
+                                                    const fileObjs = files.map(f => ({ name: f.name, url: URL.createObjectURL(f) }));
+                                                    field.onChange([...(field.value ?? []), ...fileObjs]);
+                                                }} disabled={isEditingDisabled} />
+                                            </FormControl>
+                                            <div className="mt-2 space-y-1">
+                                                {Array.isArray(field.value) && field.value.map((f: any, i: number) => (
+                                                    <div key={i} className="flex items-center gap-2 text-sm">
+                                                        <a href={f.url} target="_blank" rel="noopener noreferrer" className="underline">{f.name}</a>
+                                                        <button type="button" className="text-red-500 hover:underline" onClick={() => field.onChange((Array.isArray(field.value) ? field.value : []).filter((_: any, idx: number) => idx !== i))} disabled={isEditingDisabled}>Remover</button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}/>
+                                )}
+                                <div className="flex justify-between mt-4">
+                                    <Button type="button" variant="destructive" onClick={() => pagesField.remove(activePage)} disabled={isEditingDisabled || pages.length <= 1}>Remover Página</Button>
+                                    <Button type="button" variant="secondary" onClick={() => setActivePage(Math.max(0, activePage - 1))} disabled={activePage === 0}>Anterior</Button>
+                                    <Button type="button" variant="secondary" onClick={() => setActivePage(Math.min(pages.length - 1, activePage + 1))} disabled={activePage === pages.length - 1}>Próxima</Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                     {lessonType === 'video' && (<FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.content`} render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>URL do Vídeo (YouTube/Vimeo)</FormLabel>
-                            <FormControl>
-                                <Input {...field} placeholder="https://www.youtube.com/watch?v=..." disabled={isEditingDisabled} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}/>)}
-                    {lessonType === 'audio' && (<FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.audioFile`} render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Arquivo de Áudio</FormLabel>
-                            <FormControl>
-                                <Input type="file" accept="audio/*" onChange={(e) => field.onChange(e.target.files?.[0])} disabled={isEditingDisabled} className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"/>
-                            </FormControl>
-                            <FormDescription>
-                                Se já houver um áudio salvo, o envio de um novo irá substituí-lo.
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}/>)}
-                    {lessonType === 'text' && (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.contentBlocks`} render={({ field }) => (
-      <FormItem className="md:col-span-1">
-        <FormLabel>Conteúdo da Aula (Blocos)</FormLabel>
-        <Controller
-          control={form.control}
-          name={`modules.${moduleIndex}.lessons.${lessonIndex}.contentBlocks`}
-          render={({ field }) => (
-            <ContentBlocksEditor value={(field.value as import('@/lib/types').ContentBlock[]) ?? []} onChange={field.onChange} />
-          )}
-        />
-        <FormMessage />
-      </FormItem>
-    )}/>
-    <div className="md:col-span-1 space-y-2">
-      <FormLabel>Preview</FormLabel>
-      <div className="prose dark:prose-invert max-w-none rounded-md border bg-background p-4 min-h-[256px] overflow-x-auto">
-        {((form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.contentBlocks`) as import('@/lib/types').ContentBlock[]) ?? []).length === 0 ? (
-          <p className="text-sm text-muted-foreground">A pré-visualização aparecerá aqui.</p>
-        ) : (
-          (form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.contentBlocks`) as import('@/lib/types').ContentBlock[]).map((block, idx) => {
-            if (block.type === 'heading') {
-              const Tag = `h${block.level}` as keyof JSX.IntrinsicElements;
-              return <Tag key={idx} className="mt-4 mb-2">{block.text}</Tag>;
-            }
-            if (block.type === 'paragraph') {
-              return <ReactMarkdown key={idx} remarkPlugins={[remarkGfm]}>{block.text || ''}</ReactMarkdown>;
-            }
-            if (block.type === 'list') {
-              if (block.style === 'numbered') {
-                return <ol key={idx} className="list-decimal ml-6">{(block.items || []).map((item, i) => <li key={i}>{item}</li>)}</ol>;
-              }
-              return <ul key={idx} className="list-disc ml-6">{(block.items || []).map((item, i) => <li key={i}>{item}</li>)}</ul>;
-            }
-            if (block.type === 'image') {
-              return <div key={idx} className="my-4"><img src={block.url} alt={block.alt || ''} className="max-w-full rounded shadow" /><div className="text-xs text-center text-muted-foreground">{block.alt}</div></div>;
-            }
-            return null;
-          })
-        )}
-      </div>
-    </div>
-  </div>
-)}
-                    {lessonType === 'quiz' ? (<QuizBuilder form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />) : (<MaterialField form={form} moduleIndex={moduleIndex} lessonIndex={lessonIndex} isEditingDisabled={isEditingDisabled} />)}
+                    {/* Preview dinâmico aprimorado */}
+                    <div className="mt-6">
+                        <h4 className="font-semibold mb-2">Pré-visualização da Aula</h4>
+                        <div className="border rounded-lg p-4 bg-background shadow-sm animate-fade-in">
+                            <div className="mb-2 text-primary font-medium text-base">{summary}</div>
+                            <div className="flex items-center gap-2 mb-2">
+                                {pages.map((page: any, idx: number) => (
+                                    <button
+                                        key={page.id}
+                                        type="button"
+                                        className={`px-2 py-1 rounded ${activePage === idx ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'} text-xs`}
+                                        onClick={() => setActivePage(idx)}
+                                    >
+                                        {page.title || `Página ${idx + 1}`}
+                                    </button>
+                                ))}
+                            </div>
+                            {pages.length > 0 && pages[activePage] && (
+                                <div>
+                                    <div className="font-bold mb-1 text-lg">{pages[activePage].title}</div>
+                                    {pages[activePage].type === 'video' && pages[activePage].videoUrl && (
+                                        <video src={pages[activePage].videoUrl} controls className="w-full max-w-lg rounded shadow" />
+                                    )}
+                                    {pages[activePage].type === 'text' && pages[activePage].textContent && (
+                                        <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: pages[activePage].textContent.replace(/\n/g, '<br/>') }} />
+                                    )}
+                                    {pages[activePage].type === 'file' && pages[activePage].files && (
+                                        <ul className="list-disc ml-6">
+                                            {pages[activePage].files.map((f: any, i: number) => (
+                                                <li key={i}><a href={f.url} target="_blank" rel="noopener noreferrer" className="underline">{f.name}</a></li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
                 <Button type="button" variant="ghost" size="icon" onClick={() => removeLesson(lessonIndex)} disabled={isEditingDisabled} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
             </div>

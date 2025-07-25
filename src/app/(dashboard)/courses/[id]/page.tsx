@@ -26,6 +26,7 @@ import { LoadingScreen } from '@/components/loading-screen';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { markLessonAsComplete } from '@/app/actions/course-actions';
+import { use } from 'react';
 
 
 const getLessonIcon = (type: Lesson['type']) => {
@@ -48,7 +49,8 @@ const getYoutubeEmbedUrl = (url: string): string | null => {
 }
 
 
-export default function CourseDetailsPage({ params }: { params: { id: string } }) {
+export default function CoursePage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const { user, userProfile } = useAuth();
     const { toast } = useToast();
     const [course, setCourse] = useState<Course | null>(null);
@@ -61,7 +63,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
         if (!user) return;
         setLoading(true);
         try {
-            const result = await getCourseAccessData(params.id, user.uid);
+            const result = await getCourseAccessData(id, user.uid);
             if (result.success && result.course) {
                 setCourse(result.course);
                 setCompletedLessons(result.completedLessons || []);
@@ -80,7 +82,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
         if (user) {
             fetchCourseData();
         }
-    }, [user, params.id]);
+    }, [user, id]);
 
     const handleLessonCompleted = (lessonId: string) => {
         if (!completedLessons.includes(lessonId)) {
