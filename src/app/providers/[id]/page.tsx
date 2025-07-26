@@ -49,7 +49,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
                             </p>
                             {provider.reviewCount && provider.reviewCount > 0 && (
                                 <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground">
-                                    <StarRating rating={provider.averageRating || 0} readOnly size={16}/>
+                                    <StarRating rating={provider.averageRating || 0} size="md"/>
                                     <span>({provider.averageRating?.toFixed(1)}) de {provider.reviewCount} avaliações</span>
                                 </div>
                             )}
@@ -105,7 +105,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
                                                             <p className="font-semibold">{review.reviewerName}</p>
                                                             <p className="text-xs text-muted-foreground">{format(new Date(review.createdAt as string), "dd 'de' MMMM, yyyy", { locale: ptBR })}</p>
                                                         </div>
-                                                        <StarRating rating={review.rating} readOnly />
+                                                        <StarRating rating={review.rating} />
                                                     </div>
                                                     <p className="mt-2 text-sm text-muted-foreground italic">"{review.comment}"</p>
                                                 </div>

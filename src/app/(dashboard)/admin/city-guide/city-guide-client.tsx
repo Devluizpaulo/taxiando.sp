@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { type CityTip } from '@/lib/types';
+import { deleteTip } from '@/app/actions/city-guide-actions';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -70,10 +71,20 @@ export function CityGuideClientPage({ initialTips }: { initialTips: CityTip[] })
     const handleDelete = async () => {
         if (!tipToDelete) return;
         
-        // Remover a dica da lista local
-        setTips(tips.filter(t => t.id !== tipToDelete.id));
-        toast({ title: "Dica Removida!", description: "A dica foi removida com sucesso." });
-        setTipToDelete(null);
+        try {
+            const result = await deleteTip(tipToDelete.id);
+            if (result.success) {
+                // Remover a dica da lista local
+                setTips(tips.filter(t => t.id !== tipToDelete.id));
+                toast({ title: "Dica Removida!", description: "A dica foi removida com sucesso." });
+            } else {
+                toast({ variant: 'destructive', title: "Erro ao Remover", description: result.error });
+            }
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Erro ao Remover", description: (error as Error).message });
+        } finally {
+            setTipToDelete(null);
+        }
     };
 
     const handleFormFinished = (newOrUpdatedTip: CityTip) => {

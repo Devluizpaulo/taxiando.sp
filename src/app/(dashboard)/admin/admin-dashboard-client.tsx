@@ -767,19 +767,19 @@ export function AdminDashboardClient() {
 
     // Função para buscar dados do dashboard
     const fetchDashboardData = async (periodStart?: Date) => {
-        setPageLoading(true);
-        try {
+            setPageLoading(true);
+            try {
             const data = await getAdminDashboardData(periodStart);
-            setUsers(data.users);
-            setVehicles(data.vehicles);
-            setServices(data.services);
-            setAnalytics(data.analytics);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Erro ao Carregar Painel', description: 'Não foi possível carregar os dados do painel. Tente recarregar a página.' });
-        } finally {
-            setPageLoading(false);
-        }
-    };
+                setUsers(data.users);
+                setVehicles(data.vehicles);
+                setServices(data.services);
+                setAnalytics(data.analytics);
+            } catch (error) {
+                toast({ variant: 'destructive', title: 'Erro ao Carregar Painel', description: 'Não foi possível carregar os dados do painel. Tente recarregar a página.' });
+            } finally {
+                setPageLoading(false);
+            }
+        };
 
     // Carregar dados iniciais
     useEffect(() => {
@@ -849,7 +849,7 @@ export function AdminDashboardClient() {
                 {/* Header Moderno */}
                 <div className="animate-fade-in-up">
                     <div className="flex items-center justify-between mb-2">
-                        <div>
+            <div>
                             <h1 className="text-4xl font-bold text-gradient mb-2 flex items-center gap-3">
                                 <div className="p-3 rounded-full gradient-bg animate-glow">
                                     <Rocket className="h-8 w-8 text-white" />
@@ -868,8 +868,8 @@ export function AdminDashboardClient() {
                                 <div className="text-2xl font-bold text-gray-900">{users.length}</div>
                             </div>
                         </div>
-                    </div>
-                    
+            </div>
+            
                     {/* Seletor de Período */}
                     <div className="flex items-center justify-between mt-4 p-4 bg-white rounded-xl shadow-lg border border-gray-200">
                         <div className="flex items-center gap-3">
@@ -893,7 +893,7 @@ export function AdminDashboardClient() {
                             </Badge>
                         </div>
                     </div>
-                </div>
+            </div>
 
                 {/* Alertas e Notificações em Tempo Real */}
                 <div className="animate-fade-in-up" style={{ animationDelay: '200ms' }}>
@@ -1099,13 +1099,13 @@ export function AdminDashboardClient() {
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                     <div className="lg:col-span-2">
                         <Card className="card-hover border-0 shadow-xl bg-white">
-                            <CardHeader>
+                     <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-xl font-bold text-gray-900">
                                     <Target className="h-6 w-6 text-blue-500" />
                                     Visão Geral do Engajamento
                                 </CardTitle>
                                 <CardDescription className="text-gray-700 font-medium">Métricas detalhadas de performance da plataforma</CardDescription>
-                            </CardHeader>
+                    </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                                     <CircularProgress
@@ -1137,8 +1137,8 @@ export function AdminDashboardClient() {
                                         subtitle="Ativos"
                                     />
                                 </div>
-                            </CardContent>
-                        </Card>
+                    </CardContent>
+                </Card>
                     </div>
                     
                     <div className="space-y-6">
@@ -1153,7 +1153,7 @@ export function AdminDashboardClient() {
                         />
                         
                         <Card className="card-hover border-0 shadow-xl bg-white">
-                            <CardHeader>
+                     <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-xl font-bold text-gray-900">
                                     <TrendingUp className="h-5 w-5 text-green-500" />
                                     Performance Rápida
@@ -1201,8 +1201,8 @@ export function AdminDashboardClient() {
                                 Métricas em Tempo Real
                             </CardTitle>
                             <CardDescription className="text-gray-700 font-medium">Dados atualizados a cada minuto</CardDescription>
-                        </CardHeader>
-                        <CardContent>
+                    </CardHeader>
+                    <CardContent>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                                 <div className="text-center">
                                     <div className="text-3xl font-bold mb-2 animate-pulse-slow text-blue-600">
@@ -1229,9 +1229,9 @@ export function AdminDashboardClient() {
                                     <div className="text-sm font-semibold text-gray-700">Serviços Ativos</div>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                    </CardContent>
+                </Card>
+            </div>
 
                 {/* Gráficos e Análises */}
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -1333,28 +1333,28 @@ export function AdminDashboardClient() {
                             <Settings className="h-4 w-4 mr-2" />
                             Configurações
                         </TabsTrigger>
-                    </TabsList>
-                    
+                </TabsList>
+                
                     <TabsContent value="opportunities" className="mt-6">
                         <Card className="card-hover border-0 shadow-xl">
-                            <CardHeader>
+                        <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Car className="h-6 w-6 text-blue-500" />
                                     Moderar Anúncios de Veículos
                                 </CardTitle>
                                 <CardDescription>Aprove ou rejeite os veículos anunciados para locação</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Table>
-                                    <TableHeader>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
                                         <TableRow className="bg-gradient-to-r from-blue-50 to-purple-50">
-                                            <TableHead>Veículo Anunciado</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead className="text-right">Ações</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {vehicles.length === 0 ? (
+                                        <TableHead>Veículo Anunciado</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {vehicles.length === 0 ? (
                                             <TableRow>
                                                 <TableCell colSpan={3} className="h-24 text-center">
                                                     <div className="flex flex-col items-center gap-2">
@@ -1363,68 +1363,68 @@ export function AdminDashboardClient() {
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
-                                        ) : (
-                                            vehicles.map(vehicle => (
+                                    ) : (
+                                        vehicles.map(vehicle => (
                                                 <TableRow key={vehicle.id} className="hover:bg-gray-50 transition-colors">
-                                                    <TableCell className="font-medium">
-                                                        <Button variant="link" className="p-0 h-auto" onClick={() => handleViewVehicleDetails(vehicle.id)} disabled={isFetchingDetails}>
-                                                            {vehicle.make} {vehicle.model} ({vehicle.plate})
-                                                        </Button>
-                                                    </TableCell>
+                                                <TableCell className="font-medium">
+                                                    <Button variant="link" className="p-0 h-auto" onClick={() => handleViewVehicleDetails(vehicle.id)} disabled={isFetchingDetails}>
+                                                        {vehicle.make} {vehicle.model} ({vehicle.plate})
+                                                    </Button>
+                                                </TableCell>
                                                     <TableCell>
                                                         <AnimatedBadge variant={getStatusVariant(vehicle.moderationStatus) as any}>
                                                             {vehicle.moderationStatus}
                                                         </AnimatedBadge>
                                                     </TableCell>
-                                                    <TableCell className="text-right">
-                                                        {vehicle.moderationStatus === 'Pendente' && (
-                                                            <div className="flex gap-2 justify-end">
-                                                                {updatingListingStatus === vehicle.id ? (
+                                                <TableCell className="text-right">
+                                                    {vehicle.moderationStatus === 'Pendente' && (
+                                                        <div className="flex gap-2 justify-end">
+                                                            {updatingListingStatus === vehicle.id ? (
                                                                     <Button variant="outline" size="sm" disabled>
                                                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processando...
                                                                     </Button>
-                                                                ) : (
-                                                                    <>
+                                                            ) : (
+                                                                <>
                                                                         <Button variant="outline" size="sm" onClick={() => handleListingApproval(vehicle.id, 'vehicles', 'Aprovado')}>
                                                                             <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar
                                                                         </Button>
                                                                         <Button variant="destructive" size="sm" onClick={() => handleListingApproval(vehicle.id, 'vehicles', 'Rejeitado')}>
                                                                             <XCircle className="mr-2 h-4 w-4" /> Rejeitar
                                                                         </Button>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                         )}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                     )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
                      <TabsContent value="services" className="mt-6">
                         <Card className="card-hover border-0 shadow-xl">
-                            <CardHeader>
+                        <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Wrench className="h-6 w-6 text-green-500" />
                                     Moderar Serviços e Produtos
                                 </CardTitle>
                                 <CardDescription>Aprove ou rejeite os anúncios dos prestadores de serviço</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                               <Table>
-                                    <TableHeader>
+                        </CardHeader>
+                        <CardContent>
+                           <Table>
+                                <TableHeader>
                                         <TableRow className="bg-gradient-to-r from-green-50 to-blue-50">
-                                            <TableHead>Título do Anúncio</TableHead>
-                                            <TableHead>Prestador</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead className="text-right">Ações</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {services.length === 0 ? (
+                                        <TableHead>Título do Anúncio</TableHead>
+                                        <TableHead>Prestador</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {services.length === 0 ? (
                                             <TableRow>
                                                 <TableCell colSpan={4} className="h-24 text-center">
                                                     <div className="flex flex-col items-center gap-2">
@@ -1433,85 +1433,85 @@ export function AdminDashboardClient() {
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
-                                        ) : (
-                                            services.map(srv => (
+                                    ) : (
+                                        services.map(srv => (
                                                 <TableRow key={srv.id} className="hover:bg-gray-50 transition-colors">
-                                                    <TableCell className="font-medium">
-                                                        <Button variant="link" className="p-0 h-auto" onClick={() => handleViewServiceDetails(srv.id)} disabled={isFetchingDetails}>
-                                                            {srv.title}
-                                                        </Button>
-                                                    </TableCell>
-                                                    <TableCell>{srv.provider}</TableCell>
+                                                <TableCell className="font-medium">
+                                                    <Button variant="link" className="p-0 h-auto" onClick={() => handleViewServiceDetails(srv.id)} disabled={isFetchingDetails}>
+                                                        {srv.title}
+                                                    </Button>
+                                                </TableCell>
+                                                <TableCell>{srv.provider}</TableCell>
                                                     <TableCell>
                                                         <AnimatedBadge variant={getStatusVariant(srv.status) as any}>
                                                             {srv.status}
                                                         </AnimatedBadge>
                                                     </TableCell>
-                                                    <TableCell className="text-right">
-                                                        {srv.status === 'Pendente' && (
-                                                            <div className="flex gap-2 justify-end">
-                                                                {updatingListingStatus === srv.id ? (
+                                                <TableCell className="text-right">
+                                                    {srv.status === 'Pendente' && (
+                                                        <div className="flex gap-2 justify-end">
+                                                            {updatingListingStatus === srv.id ? (
                                                                     <Button variant="outline" size="sm" disabled>
                                                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processando...
                                                                     </Button>
-                                                                ) : (
-                                                                    <>
+                                                            ) : (
+                                                                <>
                                                                         <Button variant="outline" size="sm" onClick={() => handleListingApproval(srv.id, 'services', 'Aprovado')}>
                                                                             <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar
                                                                         </Button>
                                                                         <Button variant="destructive" size="sm" onClick={() => handleListingApproval(srv.id, 'services', 'Rejeitado')}>
                                                                             <XCircle className="mr-2 h-4 w-4" /> Rejeitar
                                                                         </Button>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                         )}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                     )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
                     <TabsContent value="settings" className="mt-6">
                         <Card className="card-hover border-0 shadow-xl">
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                 <div>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                             <div>
                                     <CardTitle className="flex items-center gap-2">
                                         <Settings className="h-6 w-6 text-orange-500" />
                                         Configurações da Plataforma
                                     </CardTitle>
                                     <CardDescription>Acesse as configurações de pagamento, temas e outras opções</CardDescription>
-                                </div>
+                            </div>
                                 <Button asChild className="bg-blue-600 text-white hover:bg-blue-700 font-semibold">
                                     <Link href="/admin/settings">
                                         <Settings className="mr-2 h-4 w-4" />
                                         Gerenciar Configurações
                                     </Link>
-                                </Button>
-                            </CardHeader>
-                            <CardContent>
+                            </Button>
+                        </CardHeader>
+                        <CardContent>
                                 <p className="text-gray-600">Clique no botão para gerenciar gateways de pagamento, aparência do site e outras definições.</p>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
-                 
-                <VehicleDetailsModal
-                    isOpen={isVehicleModalOpen}
-                    onOpenChange={setVehicleModalOpen}
-                    vehicle={selectedVehicle}
-                    fleet={selectedVehicleFleet}
-                />
-                <ServiceDetailsModal
-                    isOpen={isServiceModalOpen}
-                    onOpenChange={setServiceModalOpen}
-                    service={selectedService}
-                    provider={selectedServiceProvider}
-                />
-            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+             
+            <VehicleDetailsModal
+                isOpen={isVehicleModalOpen}
+                onOpenChange={setVehicleModalOpen}
+                vehicle={selectedVehicle}
+                fleet={selectedVehicleFleet}
+            />
+            <ServiceDetailsModal
+                isOpen={isServiceModalOpen}
+                onOpenChange={setServiceModalOpen}
+                service={selectedService}
+                provider={selectedServiceProvider}
+            />
+        </div>
         </>
     );
 }

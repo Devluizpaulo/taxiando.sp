@@ -58,7 +58,7 @@ export default function ProviderReviewsPage() {
                                                 {format(new Date(review.createdAt as string), "dd 'de' MMMM, yyyy", { locale: ptBR })}
                                             </p>
                                         </div>
-                                        <StarRating rating={review.rating} readOnly />
+                                        <StarRating rating={review.rating} />
                                     </div>
                                     <p className="mt-2 text-sm text-muted-foreground italic">"{review.comment}"</p>
                                 </div>

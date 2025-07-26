@@ -74,7 +74,7 @@ export function ReviewForm({ reviewer, reviewee, related, onReviewSubmitted }: R
             <FormItem>
               <FormLabel>Sua Avaliação para {reviewee.name}</FormLabel>
               <FormControl>
-                <StarRating rating={field.value} setRating={field.onChange} size={28} />
+                <StarRating rating={field.value} onRatingChange={field.onChange} size="lg" interactive />
               </FormControl>
               <FormMessage />
             </FormItem>

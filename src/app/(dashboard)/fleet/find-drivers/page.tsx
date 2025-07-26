@@ -48,7 +48,7 @@ function DriverCard({ driver, onViewProfile }: { driver: AdminUser; onViewProfil
                 <div className="flex-1">
                     <CardTitle>{driver.name}</CardTitle>
                     <div className="flex items-center gap-2 mt-1">
-                        <StarRating rating={driver.averageRating || 0} readOnly size={14} />
+                        <StarRating rating={driver.averageRating || 0} size="sm" />
                         <span className="text-xs text-muted-foreground">({driver.reviewCount || 0} avaliações)</span>
                     </div>
                 </div>
@@ -115,7 +115,7 @@ function DriverProfileModal({ user, reviews, isLoading, isOpen, onOpenChange }: 
                                 <CardContent>
                                     {user.reviewCount && user.reviewCount > 0 ? (
                                          <div className="flex items-center gap-2">
-                                            <StarRating rating={user.averageRating || 0} readOnly size={16}/>
+                                            <StarRating rating={user.averageRating || 0} size="md"/>
                                             <span className="text-sm text-muted-foreground">{(user.averageRating || 0).toFixed(1)} ({user.reviewCount} avaliações)</span>
                                         </div>
                                     ) : (
@@ -171,7 +171,7 @@ function DriverProfileModal({ user, reviews, isLoading, isOpen, onOpenChange }: 
                                             <div key={review.id} className="text-sm border-b last:border-0 pb-2 last:pb-0">
                                                 <div className="flex justify-between items-center">
                                                     <span className="font-semibold">{review.reviewerName}</span>
-                                                    <StarRating rating={review.rating} readOnly size={14}/>
+                                                    <StarRating rating={review.rating} size="sm"/>
                                                 </div>
                                                 <p className="mt-2 text-muted-foreground italic">"{review.comment}"</p>
                                             </div>

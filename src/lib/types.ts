@@ -215,6 +215,19 @@ export interface Event {
   createdAt: Timestamp | string;
 }
 
+export interface CityTipReview {
+  id: string;
+  tipId: string;
+  rating: number; // 1-5 estrelas
+  comment: string;
+  reviewerName: string; // Obrigatório
+  reviewerEmail?: string; // Opcional
+  reviewerRole: 'driver' | 'client' | 'admin';
+  createdAt: string; // Sempre string ISO
+  isVerified?: boolean;
+  isAnonymous?: boolean; // Se foi enviado sem cadastro
+}
+
 export interface CityTip {
   id: string;
   title: string;
@@ -225,8 +238,12 @@ export interface CityTip {
   mapUrl?: string;
   target: 'driver' | 'client';
   priceRange?: '$' | '$$' | '$$$' | '$$$$';
-  createdAt: Timestamp | string;
-  updatedAt?: Timestamp | string;
+  createdAt: string; // Sempre string ISO
+  updatedAt?: string; // Sempre string ISO
+  // Sistema de avaliação
+  averageRating?: number; // 0-5
+  reviewCount?: number;
+  reviews?: CityTipReview[];
 }
 
 export interface VehiclePerk {

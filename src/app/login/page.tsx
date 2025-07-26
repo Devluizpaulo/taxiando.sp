@@ -107,16 +107,19 @@ export default function LoginPage() {
           {/* Imagem do táxi animada */}
           <div className="flex flex-col items-center mt-8">
             <div className="w-[220px] h-[120px] relative animate-taxi-move">
-              {/* Fumaça dos pneus */}
-              {/* Traseiro */}
-              <div className="absolute left-6 bottom-2 w-8 h-8 pointer-events-none">
-                <div className="absolute left-0 bottom-0 w-6 h-6 bg-gray-300/60 rounded-full blur-sm animate-smoke-puff" />
-                <div className="absolute left-2 bottom-2 w-4 h-4 bg-gray-400/40 rounded-full blur-sm animate-smoke-puff delay-300" />
-              </div>
-              {/* Dianteiro */}
-              <div className="absolute right-6 bottom-2 w-8 h-8 pointer-events-none">
-                <div className="absolute right-0 bottom-0 w-6 h-6 bg-gray-300/60 rounded-full blur-sm animate-smoke-puff" />
-                <div className="absolute right-2 bottom-2 w-4 h-4 bg-gray-400/40 rounded-full blur-sm animate-smoke-puff delay-500" />
+              {/* Fumaça apenas nas rodas traseiras */}
+              <div className="absolute left-6 bottom-2 w-16 h-16 pointer-events-none">
+                {/* Fumaça principal - mais escura */}
+                <div className="absolute left-0 bottom-0 w-8 h-8 bg-gray-800/90 rounded-full blur-md animate-smoke-puff" />
+                <div className="absolute left-1 bottom-1 w-6 h-6 bg-gray-700/80 rounded-full blur-sm animate-smoke-puff delay-200" />
+                <div className="absolute left-2 bottom-2 w-4 h-4 bg-gray-600/70 rounded-full blur-sm animate-smoke-puff delay-400" />
+                {/* Fumaça secundária - mais clara */}
+                <div className="absolute left-3 bottom-3 w-3 h-3 bg-gray-500/60 rounded-full blur-sm animate-smoke-puff delay-600" />
+                
+                {/* Partículas de fumaça adicionais */}
+                <div className="absolute left-1 bottom-0 w-2 h-2 bg-gray-600/50 rounded-full blur-sm animate-smoke-particle delay-100" />
+                <div className="absolute left-2 bottom-1 w-1.5 h-1.5 bg-gray-500/40 rounded-full blur-sm animate-smoke-particle delay-300" />
+                <div className="absolute left-0 bottom-1 w-1 h-1 bg-gray-400/30 rounded-full blur-sm animate-smoke-particle delay-500" />
               </div>
               <Image
                 src="/logintxscreen.png"
@@ -138,13 +141,48 @@ export default function LoginPage() {
               animation: taxi-move 2.8s ease-in-out infinite;
             }
             @keyframes smoke-puff {
-              0% { opacity: 0.7; transform: scale(0.7) translateY(0); }
-              60% { opacity: 0.3; transform: scale(1.1) translateY(-10px); }
-              100% { opacity: 0; transform: scale(1.3) translateY(-18px); }
+              0% { 
+                opacity: 0.8; 
+                transform: scale(0.8) translateY(0) translateX(0); 
+              }
+              30% { 
+                opacity: 0.6; 
+                transform: scale(1.2) translateY(-8px) translateX(-2px); 
+              }
+              60% { 
+                opacity: 0.4; 
+                transform: scale(1.5) translateY(-15px) translateX(-4px); 
+              }
+              100% { 
+                opacity: 0; 
+                transform: scale(1.8) translateY(-25px) translateX(-6px); 
+              }
             }
             .animate-smoke-puff {
-              animation: smoke-puff 1.4s linear infinite;
+              animation: smoke-puff 2s ease-out infinite;
             }
+            .delay-200 { animation-delay: 0.2s; }
+            .delay-400 { animation-delay: 0.4s; }
+            .delay-600 { animation-delay: 0.6s; }
+            
+            @keyframes smoke-particle {
+              0% { 
+                opacity: 0.6; 
+                transform: scale(0.5) translateY(0) translateX(0); 
+              }
+              50% { 
+                opacity: 0.3; 
+                transform: scale(1.2) translateY(-12px) translateX(-3px); 
+              }
+              100% { 
+                opacity: 0; 
+                transform: scale(1.5) translateY(-20px) translateX(-5px); 
+              }
+            }
+            .animate-smoke-particle {
+              animation: smoke-particle 1.5s ease-out infinite;
+            }
+            .delay-100 { animation-delay: 0.1s; }
             .delay-300 { animation-delay: 0.3s; }
             .delay-500 { animation-delay: 0.5s; }
           `}</style>

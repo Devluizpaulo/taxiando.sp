@@ -16,6 +16,14 @@ export async function generateMetadata(): Promise<Metadata> {
     title: settings.siteName || 'Táxiando SP',
     description: settings.seo?.metaDescription || 'A plataforma completa para taxistas de São Paulo.',
     keywords: settings.seo?.metaKeywords || 'táxi, sp, taxista, frota',
+    icons: {
+      icon: [
+        { url: '/logintxscreen.png', type: 'image/png' },
+        { url: '/favicon.ico', type: 'image/x-icon' }
+      ],
+      apple: '/logintxscreen.png',
+      shortcut: '/logintxscreen.png'
+    }
   }
 }
 

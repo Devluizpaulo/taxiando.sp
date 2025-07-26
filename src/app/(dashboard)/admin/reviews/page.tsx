@@ -73,7 +73,7 @@ export default function AdminReviewsPage() {
                             <Card key={review.id} className="p-4 flex flex-col md:flex-row gap-4">
                                 <div className="flex-1 space-y-2">
                                     <div className="flex items-center gap-2">
-                                        <StarRating rating={review.rating} readOnly />
+                                        <StarRating rating={review.rating} />
                                         <Badge variant="secondary">{review.rating.toFixed(1)}</Badge>
                                     </div>
                                     <p className="text-sm text-muted-foreground italic">"{review.comment}"</p>
