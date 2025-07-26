@@ -7,6 +7,7 @@ import { cityGuideFormSchema, type CityGuideFormValues } from '@/lib/city-guide-
 import { type CityTip } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
+import { generateTipWithAI } from '@/app/actions/city-guide-actions';
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
@@ -58,13 +59,31 @@ export function TipFormDialog({ isOpen, setIsOpen, tip, onFinished }: TipFormDia
 
         setIsGeneratingAI(true);
         try {
-            // This function is no longer available, so it will be removed.
-            // The form will now rely on the defaultValues and the user's input.
-            // For now, we'll just toast a placeholder message.
-            toast({ 
-                title: 'Conteúdo Gerado!', 
-                description: 'A IA não está mais disponível para gerar conteúdo.' 
+            const result = await generateTipWithAI({
+                topic: aiPrompt,
+                target: target,
             });
+
+            if (result.success && result.data) {
+                // Preencher o formulário com os dados gerados pela IA
+                form.setValue('title', result.data.title);
+                form.setValue('description', result.data.description);
+                form.setValue('category', result.data.category);
+                form.setValue('location', result.data.location);
+                if (result.data.priceRange) {
+                    form.setValue('priceRange', result.data.priceRange);
+                }
+                if (result.data.mapUrl) {
+                    form.setValue('mapUrl', result.data.mapUrl);
+                }
+                
+                toast({ 
+                    title: 'Conteúdo Gerado!', 
+                    description: 'A IA preencheu o formulário com sucesso.' 
+                });
+            } else {
+                throw new Error(result.error || 'Erro ao gerar conteúdo');
+            }
         } catch (error) {
             toast({ 
                 variant: 'destructive', 
@@ -79,11 +98,23 @@ export function TipFormDialog({ isOpen, setIsOpen, tip, onFinished }: TipFormDia
     const onSubmit = async (values: CityGuideFormValues) => {
         setIsSubmitting(true);
         try {
-            // This function is no longer available, so it will be removed.
-            // The form will now rely on the defaultValues and the user's input.
-            // For now, we'll just toast a placeholder message.
+            // Criar um objeto CityTip com os valores do formulário
+            const newTip: CityTip = {
+                id: tip?.id || `tip_${Date.now()}`,
+                title: values.title,
+                description: values.description,
+                category: values.category,
+                location: values.location,
+                target: values.target,
+                imageUrls: values.imageUrls || [],
+                mapUrl: values.mapUrl || '',
+                priceRange: values.priceRange,
+                createdAt: tip?.createdAt || new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+            
             toast({ title: tip ? 'Dica Atualizada!' : 'Dica Criada!', description: 'A dica foi salva com sucesso.' });
-            onFinished(values as CityTip); // Assuming values are the tip to be saved
+            onFinished(newTip);
         } catch (error) {
             toast({ variant: 'destructive', title: 'Erro ao Salvar', description: (error as Error).message });
         } finally {

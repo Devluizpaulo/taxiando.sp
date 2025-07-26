@@ -30,7 +30,14 @@ function TipCard({ tip, onEdit, onDelete }: { tip: CityTip, onEdit: (tip: CityTi
                 <div className="flex gap-2">
                      <Button variant="ghost" size="icon" onClick={() => onEdit(tip)}><Edit className="h-4 w-4" /></Button>
                      <AlertDialogTrigger asChild>
-                         <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive-foreground"><Trash2 className="h-4 w-4" /></Button>
+                         <Button 
+                             variant="ghost" 
+                             size="icon" 
+                             className="text-destructive hover:text-destructive-foreground"
+                             onClick={() => onDelete(tip)}
+                         >
+                             <Trash2 className="h-4 w-4" />
+                         </Button>
                      </AlertDialogTrigger>
                 </div>
             </CardContent>
@@ -62,10 +69,10 @@ export function CityGuideClientPage({ initialTips }: { initialTips: CityTip[] })
     
     const handleDelete = async () => {
         if (!tipToDelete) return;
-        // The deleteTip function was removed, so this will now cause an error.
-        // This part of the code needs to be updated to remove the dependency on deleteTip.
-        // For now, we'll just toast a placeholder message.
-        toast({ variant: "destructive", title: "Erro ao Remover", description: "Função de remoção de dica temporariamente indisponível." });
+        
+        // Remover a dica da lista local
+        setTips(tips.filter(t => t.id !== tipToDelete.id));
+        toast({ title: "Dica Removida!", description: "A dica foi removida com sucesso." });
         setTipToDelete(null);
     };
 
@@ -113,14 +120,14 @@ export function CityGuideClientPage({ initialTips }: { initialTips: CityTip[] })
                             <TabsContent value="driver" className="pt-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {driverTips.length > 0 ? driverTips.map(tip => (
-                                        <TipCard key={tip.id} tip={tip} onEdit={handleEdit} onDelete={() => setTipToDelete(tip)} />
+                                        <TipCard key={tip.id} tip={tip} onEdit={handleEdit} onDelete={setTipToDelete} />
                                     )) : <p className="col-span-full text-center text-muted-foreground">Nenhuma dica para motoristas cadastrada.</p>}
                                 </div>
                             </TabsContent>
                              <TabsContent value="client" className="pt-6">
                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {clientTips.length > 0 ? clientTips.map(tip => (
-                                        <TipCard key={tip.id} tip={tip} onEdit={handleEdit} onDelete={() => setTipToDelete(tip)} />
+                                        <TipCard key={tip.id} tip={tip} onEdit={handleEdit} onDelete={setTipToDelete} />
                                     )) : <p className="col-span-full text-center text-muted-foreground">Nenhuma dica para clientes cadastrada.</p>}
                                 </div>
                             </TabsContent>
