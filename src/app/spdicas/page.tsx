@@ -4,16 +4,16 @@ import { type CityTip } from '@/lib/types';
 import { PublicHeader } from '@/components/layout/public-header';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { PageViewTracker } from "@/components/page-view-tracker";
+import { adminDB } from '@/lib/firebase-admin';
 
 export default async function SpDicasPage() {
   let tips: CityTip[] = [];
-  
+  let errorMsg = '';
   try {
-    // The getTips function was removed from supabase-city-guide-actions.
-    // This section will be removed or replaced with a placeholder.
-    // For now, we'll just set tips to an empty array as a placeholder.
-    tips = []; 
+    const snapshot = await adminDB.collection('cityTips').orderBy('createdAt', 'desc').get();
+    tips = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CityTip));
   } catch (error) {
+    errorMsg = 'Erro ao buscar dicas. Tente novamente mais tarde.';
     console.error("Error fetching tips:", error);
   }
 
@@ -31,11 +31,17 @@ export default async function SpDicasPage() {
             Confira lugares, paradas, restaurantes, pontos turísticos e dicas úteis para motoristas e passageiros. 
             Avalie, compartilhe e descubra novos destinos em São Paulo!
           </p>
-          
-          {tips.length > 0 ? (
+
+          {errorMsg ? (
+            <div className="text-center py-12 animate-fadeInUp">
+              <MapPin className="h-16 w-16 text-red-300 mx-auto mb-4 animate-bounce" />
+              <h3 className="text-lg font-semibold text-red-600 mb-2">{errorMsg}</h3>
+              <p className="text-slate-500">Estamos trabalhando para resolver.</p>
+            </div>
+          ) : tips.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-              {tips.map((tip) => (
-                <div key={tip.id} className="relative group rounded-2xl overflow-hidden shadow-xl bg-white/80 backdrop-blur-xl border-2 border-transparent hover:border-amber-400 transition-all duration-300 flex flex-col animate-fadeInUp">
+              {tips.map((tip, idx) => (
+                <div key={tip.id} className="relative group rounded-2xl overflow-hidden shadow-xl bg-white/80 backdrop-blur-xl border-2 border-transparent hover:border-amber-400 transition-all duration-300 flex flex-col animate-fadeInUp" style={{ animationDelay: `${idx * 80}ms` }}>
                   <div className="relative w-full h-40">
                     {tip.imageUrls && tip.imageUrls.length > 0 ? (
                       <Image 
@@ -81,10 +87,10 @@ export default async function SpDicasPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <MapPin className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+            <div className="text-center py-12 animate-fadeInUp">
+              <MapPin className="h-16 w-16 text-slate-300 mx-auto mb-4 animate-bounce" />
               <h3 className="text-lg font-semibold text-slate-600 mb-2">Nenhuma dica disponível</h3>
-              <p className="text-slate-500">Em breve teremos dicas incríveis sobre São Paulo!</p>
+              <p className="text-slate-500">Em breve teremos dicas incríveis sobre São Paulo!<br/>Volte sempre para conferir novidades.</p>
             </div>
           )}
         </div>
