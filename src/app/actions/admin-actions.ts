@@ -390,22 +390,162 @@ export async function ensureInitialData() {
 }
 
 
-export async function getAdminDashboardAnalytics(): Promise<AnalyticsData> {
+export async function getAdminDashboardAnalytics(periodStart?: Date): Promise<AnalyticsData> {
     try {
         const pageViewsRef = adminDB.collection('analytics').doc('page_views');
         const loginsRef = adminDB.collection('analytics').doc('logins');
         const salesRef = adminDB.collection('analytics').doc('sales');
+        const contentViewsRef = adminDB.collection('analytics').doc('content_views');
+        const contentSharesRef = adminDB.collection('analytics').doc('content_shares');
 
-        const [pageViewsSnap, loginsSnap, salesSnap] = await Promise.all([
-            pageViewsRef.get(),
-            loginsRef.get(),
-            salesRef.get(),
-        ]);
+        // Filtro de período
+        let pageViewsCounts: Record<string, number> = {};
+        let loginsCount = 0;
+        let sharesCounts: Record<string, number> = {};
+        if (periodStart) {
+            // Page Views
+            const pageViewsEventsSnap = await pageViewsRef.collection('events')
+                .where('timestamp', '>=', periodStart)
+                .get();
+            pageViewsEventsSnap.forEach(doc => {
+                const data = doc.data();
+                if (data.page) {
+                    pageViewsCounts[data.page] = (pageViewsCounts[data.page] || 0) + 1;
+                }
+            });
+            // Logins
+            const loginsEventsSnap = await loginsRef.collection('events')
+                .where('timestamp', '>=', periodStart)
+                .get();
+            loginsCount = loginsEventsSnap.size;
+            // Shares
+            const sharesEventsSnap = await contentSharesRef.collection('events')
+                .where('timestamp', '>=', periodStart)
+                .get();
+            sharesEventsSnap.forEach(doc => {
+                const data = doc.data();
+                if (data.contentType) {
+                    const key = `${data.contentType}_total_shares`;
+                    sharesCounts[key] = (sharesCounts[key] || 0) + 1;
+                }
+            });
+        }
+
+        // Get top content for each type
+        const topContent: AnalyticsData['topContent'] = {};
+        
+        try {
+            // Get top blog posts
+            const blogViewsSnapshot = await contentViewsRef.collection('blog').orderBy('views', 'desc').limit(5).get();
+            const blogSharesSnapshot = await contentSharesRef.collection('blog').orderBy('totalShares', 'desc').limit(5).get();
+            
+            const blogViewsMap = new Map();
+            blogViewsSnapshot.docs.forEach(doc => {
+                blogViewsMap.set(doc.id, { ...doc.data(), id: doc.id });
+            });
+            
+            const blogSharesMap = new Map();
+            blogSharesSnapshot.docs.forEach(doc => {
+                blogSharesMap.set(doc.id, { ...doc.data(), id: doc.id });
+            });
+            
+            topContent.blog = Array.from(blogViewsMap.keys()).map(id => {
+                const views = blogViewsMap.get(id);
+                const shares = blogSharesMap.get(id);
+                return {
+                    id,
+                    title: views?.title || shares?.title || id,
+                    views: views?.views || 0,
+                    shares: shares?.totalShares || 0
+                };
+            }).sort((a, b) => (b.views + b.shares) - (a.views + a.shares)).slice(0, 5);
+
+            // Get top events
+            const eventViewsSnapshot = await contentViewsRef.collection('event').orderBy('views', 'desc').limit(5).get();
+            const eventSharesSnapshot = await contentSharesRef.collection('event').orderBy('totalShares', 'desc').limit(5).get();
+            
+            const eventViewsMap = new Map();
+            eventViewsSnapshot.docs.forEach(doc => {
+                eventViewsMap.set(doc.id, { ...doc.data(), id: doc.id });
+            });
+            
+            const eventSharesMap = new Map();
+            eventSharesSnapshot.docs.forEach(doc => {
+                eventSharesMap.set(doc.id, { ...doc.data(), id: doc.id });
+            });
+            
+            topContent.events = Array.from(eventViewsMap.keys()).map(id => {
+                const views = eventViewsMap.get(id);
+                const shares = eventSharesMap.get(id);
+                return {
+                    id,
+                    title: views?.title || shares?.title || id,
+                    views: views?.views || 0,
+                    shares: shares?.totalShares || 0
+                };
+            }).sort((a, b) => (b.views + b.shares) - (a.views + a.shares)).slice(0, 5);
+
+            // Get top courses
+            const courseViewsSnapshot = await contentViewsRef.collection('course').orderBy('views', 'desc').limit(5).get();
+            const courseSharesSnapshot = await contentSharesRef.collection('course').orderBy('totalShares', 'desc').limit(5).get();
+            
+            const courseViewsMap = new Map();
+            courseViewsSnapshot.docs.forEach(doc => {
+                courseViewsMap.set(doc.id, { ...doc.data(), id: doc.id });
+            });
+            
+            const courseSharesMap = new Map();
+            courseSharesSnapshot.docs.forEach(doc => {
+                courseSharesMap.set(doc.id, { ...doc.data(), id: doc.id });
+            });
+            
+            topContent.courses = Array.from(courseViewsMap.keys()).map(id => {
+                const views = courseViewsMap.get(id);
+                const shares = courseSharesMap.get(id);
+                return {
+                    id,
+                    title: views?.title || shares?.title || id,
+                    views: views?.views || 0,
+                    shares: shares?.totalShares || 0
+                };
+            }).sort((a, b) => (b.views + b.shares) - (a.views + a.shares)).slice(0, 5);
+
+            // Get top services
+            const serviceViewsSnapshot = await contentViewsRef.collection('service').orderBy('views', 'desc').limit(5).get();
+            const serviceSharesSnapshot = await contentSharesRef.collection('service').orderBy('totalShares', 'desc').limit(5).get();
+            
+            const serviceViewsMap = new Map();
+            serviceViewsSnapshot.docs.forEach(doc => {
+                serviceViewsMap.set(doc.id, { ...doc.data(), id: doc.id });
+            });
+            
+            const serviceSharesMap = new Map();
+            serviceSharesSnapshot.docs.forEach(doc => {
+                serviceSharesMap.set(doc.id, { ...doc.data(), id: doc.id });
+            });
+            
+            topContent.services = Array.from(serviceViewsMap.keys()).map(id => {
+                const views = serviceViewsMap.get(id);
+                const shares = serviceSharesMap.get(id);
+                return {
+                    id,
+                    title: views?.title || shares?.title || id,
+                    views: views?.views || 0,
+                    shares: shares?.totalShares || 0
+                };
+            }).sort((a, b) => (b.views + b.shares) - (a.views + a.shares)).slice(0, 5);
+
+        } catch (error) {
+            console.error("Error fetching top content:", error);
+        }
 
         const analytics: AnalyticsData = {
-            pageViews: pageViewsSnap.exists ? pageViewsSnap.data() : { home: 0 },
-            logins: loginsSnap.exists ? loginsSnap.data() : { total: 0 },
-            sales: salesSnap.exists ? salesSnap.data() : { totalRevenue: 0, packagesSold: 0 },
+            pageViews: periodStart ? pageViewsCounts : (await pageViewsRef.get()).data() || {},
+            logins: periodStart ? { total: loginsCount } : (await loginsRef.get()).data() || { total: 0 },
+            sales: (await salesRef.get()).data() || { totalRevenue: 0, packagesSold: 0 },
+            contentViews: (await contentViewsRef.get()).data() || {},
+            contentShares: periodStart ? sharesCounts : (await contentSharesRef.get()).data() || {},
+            topContent,
         };
 
         return analytics;
@@ -417,7 +557,7 @@ export async function getAdminDashboardAnalytics(): Promise<AnalyticsData> {
 
 const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
 
-export async function getAdminDashboardData() {
+export async function getAdminDashboardData(periodStart?: Date) {
     await ensureInitialData();
 
     let usersData: AdminUser[] = [];
@@ -430,7 +570,7 @@ export async function getAdminDashboardData() {
             adminDB.collection('users').orderBy('createdAt', 'desc').get(),
             adminDB.collection('vehicles').where('moderationStatus', '==', 'Pendente').get(),
             adminDB.collection('services').where('status', '==', 'Pendente').get(),
-            getAdminDashboardAnalytics()
+            getAdminDashboardAnalytics(periodStart)
         ]);
 
         usersData = usersSnapshot.docs.map(doc => {

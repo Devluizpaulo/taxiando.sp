@@ -20,6 +20,7 @@ import { type ServiceListing, type UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { use } from 'react';
+import { trackContentView } from '@/app/actions/analytics-actions';
 
 export default function ServicePage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -46,6 +47,9 @@ export default function ServicePage({ params }: { params: Promise<{ id: string }
                 if (result.service.imageUrls && result.service.imageUrls.length > 0) {
                     setMainImage(result.service.imageUrls[0]);
                 }
+                
+                // Track content view
+                trackContentView('service', result.service.id, result.service.title);
             } else {
                 toast({ variant: 'destructive', title: 'Erro', description: result.error || 'Serviço não encontrado.' });
                 notFound();

@@ -338,6 +338,13 @@ export interface PaymentGatewaySettings {
 export interface AnalyticsData {
     pageViews?: {
         home?: number;
+        blog?: number;
+        events?: number;
+        courses?: number;
+        services?: number;
+        rentals?: number;
+        library?: number;
+        spdicas?: number;
     };
     logins?: {
         total?: number;
@@ -350,6 +357,31 @@ export interface AnalyticsData {
         month: string;
         total: number;
     }[];
+    contentViews?: {
+        blog_total_views?: number;
+        event_total_views?: number;
+        course_total_views?: number;
+        service_total_views?: number;
+    };
+    contentShares?: {
+        blog_total_shares?: number;
+        event_total_shares?: number;
+        course_total_shares?: number;
+        service_total_shares?: number;
+        platform_shares?: {
+            facebook?: number;
+            twitter?: number;
+            whatsapp?: number;
+            linkedin?: number;
+            copy_link?: number;
+        };
+    };
+    topContent?: {
+        blog?: Array<{ id: string; title: string; views: number; shares: number }>;
+        events?: Array<{ id: string; title: string; views: number; shares: number }>;
+        courses?: Array<{ id: string; title: string; views: number; shares: number }>;
+        services?: Array<{ id: string; title: string; views: number; shares: number }>;
+    };
 }
 
 export interface Coupon {

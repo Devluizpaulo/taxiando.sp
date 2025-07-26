@@ -8,6 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAuth } from '@/hooks/use-auth';
 import { getCourseAccessData, purchaseCourse } from '@/app/actions/course-actions';
+import { trackContentView } from '@/app/actions/analytics-actions';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,9 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                 setCourse(result.course);
                 setCompletedLessons(result.completedLessons || []);
                 setHasAccess(result.hasAccess || false);
+                
+                // Track content view
+                trackContentView('course', result.course.id, result.course.title);
             } else {
                  toast({ variant: "destructive", title: "Erro", description: result.error || "Não foi possível carregar os dados do curso." });
             }

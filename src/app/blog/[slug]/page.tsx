@@ -13,7 +13,7 @@ import { headers } from 'next/headers';
 import { ShareButtons } from "@/components/share-buttons";
 import { Link as LinkIcon } from "lucide-react";
 import { toDate } from '@/lib/date-utils';
-
+import { trackContentView } from "@/app/actions/analytics-actions";
 
 export default async function BlogPostPage({ params }: { params: { slug: string }}) {
     const post = await getBlogPostBySlug(params.slug);
@@ -26,6 +26,9 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
     const domain = headersList.get('x-forwarded-host') || headersList.get('host') || "localhost:9002";
     const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
     const postUrl = `${protocol}://${domain}/blog/${post.slug}`;
+    
+    // Track content view
+    trackContentView('blog', post.id, post.title);
     
     return (
         <div className="flex min-h-screen flex-col bg-background">
@@ -72,7 +75,12 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
 
                     <div className="mt-12 border-t pt-8">
-                        <ShareButtons title={post.title} url={postUrl} />
+                        <ShareButtons 
+                            title={post.title} 
+                            url={postUrl} 
+                            contentType="blog"
+                            contentId={post.id}
+                        />
                     </div>
                 </article>
             </main>

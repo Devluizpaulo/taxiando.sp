@@ -12,6 +12,7 @@ import { CityTipCard } from "@/components/city-tip-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { trackContentView, trackContentShare } from '@/app/actions/analytics-actions';
 
 // CSS para esconder scrollbar e animações
 const customStyles = `
@@ -132,6 +133,9 @@ export default function EventsPageClient({ events, tips }: { events: Event[], ti
     const openEventModal = (event: Event) => {
         setSelectedEvent(event);
         setIsModalOpen(true);
+        
+        // Track content view
+        trackContentView('event', event.id, event.title);
     };
 
     const closeEventModal = () => {
@@ -631,17 +635,26 @@ export function EventModal({ event, onClose }: { event: Event, onClose: () => vo
         const text = `🎉 ${event.title}\n\n📍 ${event.location}\n⏰ ${date} às ${time}h\n\nConfira mais detalhes: ${window.location.href}`;
         const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
         window.open(url, '_blank');
+        
+        // Track share
+        trackContentShare('event', event.id, 'whatsapp');
     };
     
     const shareToTwitter = (event: Event) => {
         const text = `🎉 ${event.title}\n\n📍 ${event.location}\n⏰ ${date} às ${time}h\n\nConfira mais detalhes: ${window.location.href}`;
         const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
         window.open(url, '_blank');
+        
+        // Track share
+        trackContentShare('event', event.id, 'twitter');
     };
     
     const shareToFacebook = (event: Event) => {
         const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
         window.open(url, '_blank');
+        
+        // Track share
+        trackContentShare('event', event.id, 'facebook');
     };
     
     const copyToClipboard = async (event: Event) => {
@@ -649,6 +662,9 @@ export function EventModal({ event, onClose }: { event: Event, onClose: () => vo
         try {
             await navigator.clipboard.writeText(text);
             alert('Link copiado para a área de transferência!');
+            
+            // Track share
+            trackContentShare('event', event.id, 'copy_link');
         } catch (err) {
             console.error('Erro ao copiar:', err);
             alert('Erro ao copiar link');
