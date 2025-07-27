@@ -16,7 +16,6 @@ import { getPublishedBlogPosts } from "@/app/actions/blog-actions";
 import { getFeaturedVehicles } from "@/app/actions/fleet-actions";
 import { getFeaturedServices } from "@/app/actions/service-actions";
 import { BlogPost, ServiceListing, Testimonial, Vehicle } from "@/lib/types";
-import { mockTestimonials } from "@/lib/mock-data";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getGlobalSettings } from "./actions/admin-actions";
 
@@ -483,7 +482,7 @@ export default async function Home() {
 
           <CityGuideSection />
 
-          {settings.homepage?.showTestimonials && <TestimonialsSection testimonials={mockTestimonials} />}
+          {settings.homepage?.showTestimonials && <TestimonialsSection testimonials={[]} />}
 
           <QuizSection />
           

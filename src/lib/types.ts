@@ -609,3 +609,136 @@ export interface MatchResult {
 }
 
 export type HomePageServiceListing = Pick<ServiceListing, 'id' | 'title' | 'provider' | 'category' | 'price' | 'status' | 'imageUrls'> & { imageHint: string };
+
+// Tipos para o Guia Premium de Locais e Roteiros
+export interface Location {
+  id: string;
+  name: string;
+  description: string;
+  category: LocationCategory;
+  region: Region;
+  subRegion?: string;
+  address: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  priceRange: PriceRange;
+  rating: number;
+  reviewCount: number;
+  imageUrls: string[];
+  features: LocationFeature[];
+  tips: string[];
+  taxiTips: string[];
+  parkingInfo: ParkingInfo;
+  bathroomInfo: BathroomInfo;
+  averageFare?: number;
+  openingHours?: string;
+  phone?: string;
+  website?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Route {
+  id: string;
+  name: string;
+  description: string;
+  theme: RouteTheme;
+  duration: number; // em minutos
+  distance: number; // em km
+  estimatedFare: number;
+  stops: RouteStop[];
+  tips: string[];
+  targetAudience: 'driver' | 'client' | 'both';
+  difficulty: 'easy' | 'medium' | 'hard';
+  imageUrls: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RouteStop {
+  locationId: string;
+  location: Location;
+  order: number;
+  duration: number; // tempo de parada em minutos
+  description: string;
+  tips: string[];
+}
+
+export type LocationCategory = 
+  | 'comida-boa-barata'
+  | 'bares-baladas'
+  | 'banheiros-limpos'
+  | 'cafes-padarias-24h'
+  | 'parques-pracas'
+  | 'postos-estrutura'
+  | 'estacionamento-facil'
+  | 'espacos-kids'
+  | 'pontos-turisticos'
+  | 'shoppings-centros'
+  | 'mercadões-feiras'
+  | 'hospedagem-rapida';
+
+export type Region = 
+  | 'zona-norte'
+  | 'zona-sul'
+  | 'zona-leste'
+  | 'zona-oeste'
+  | 'centro-expandido'
+  | 'abc-paulista'
+  | 'osasco-barueri'
+  | 'guarulhos'
+  | 'taboao-embu'
+  | 'baixada-santista'
+  | 'litoral-norte'
+  | 'litoral-sul'
+  | 'campinas'
+  | 'sorocaba'
+  | 'vale-paraiba'
+  | 'ribeirao-preto'
+  | 'sao-jose-rio-preto';
+
+export type RouteTheme = 
+  | 'day-off-motorista'
+  | 'rota-turistica'
+  | 'gastronomia'
+  | 'cultura-arte'
+  | 'natureza-parques'
+  | 'compras-shoppings'
+  | 'vida-noturna'
+  | 'familia-kids'
+  | 'romantico'
+  | 'aventura';
+
+export type PriceRange = '$' | '$$' | '$$$' | '$$$$';
+
+export interface LocationFeature {
+  type: 'wifi' | 'parking' | 'bathroom' | 'food' | 'drinks' | 'kids' | 'pet-friendly' | 'accessible' | '24h' | 'delivery';
+  available: boolean;
+  description?: string;
+}
+
+export interface ParkingInfo {
+  available: boolean;
+  type: 'free' | 'paid' | 'street' | 'none';
+  description?: string;
+  price?: string;
+}
+
+export interface BathroomInfo {
+  available: boolean;
+  clean: boolean;
+  rating: number; // 1-5
+  description?: string;
+}
+
+export interface LocationReview {
+  id: string;
+  locationId: string;
+  rating: number;
+  comment: string;
+  reviewerName: string;
+  reviewerType: 'driver' | 'client';
+  createdAt: Date;
+}

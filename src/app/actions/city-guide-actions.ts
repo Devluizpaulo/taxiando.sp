@@ -104,6 +104,7 @@ export async function getTips(target?: 'driver' | 'client'): Promise<CityTip[]> 
                 priceRange: data.priceRange,
                 createdAt: convertTimestamp(data.createdAt),
                 updatedAt: data.updatedAt ? convertTimestamp(data.updatedAt) : undefined,
+                destaque: data.destaque === true,
             } as CityTip;
         });
     } catch (error) {
@@ -132,20 +133,26 @@ export async function getAllTips(): Promise<CityTip[]> {
                 return new Date().toISOString();
             };
 
+            // No retorno de cada dica, inclua todos os campos:
             return {
                 id: doc.id,
                 title: data.title || '',
                 category: data.category || 'General',
                 description: data.description || '',
                 location: data.location || '',
+                region: data.region || '',
                 imageUrls: data.imageUrls || [],
                 mapUrl: data.mapUrl,
                 target: data.target || 'driver',
                 priceRange: data.priceRange,
+                tags: data.tags || [],
+                comment: data.comment || '',
+                openingHours: data.openingHours || '',
                 averageRating: data.averageRating || 0,
                 reviewCount: data.reviewCount || 0,
                 createdAt: convertTimestamp(data.createdAt),
                 updatedAt: data.updatedAt ? convertTimestamp(data.updatedAt) : undefined,
+                destaque: data.destaque === true,
             } as CityTip;
         });
     } catch (error) {

@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -10,6 +9,12 @@ import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as z from 'zod';
 
+declare module '@/lib/types' {
+  interface GlobalSettings {
+    cityGuideCategories?: string[];
+    cityGuideRegions?: string[];
+  }
+}
 
 export async function updateUserProfileStatus(userId: string, newStatus: 'Aprovado' | 'Rejeitado' | 'Pendente') {
     try {
@@ -229,7 +234,9 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
                     '--border': '0 0% 89.8%', '--input': '0 0% 89.8%', '--ring': '120 60% 30%',
                 }
             }
-        ]
+        ],
+        cityGuideCategories: [],
+        cityGuideRegions: [],
     };
 
     try {
@@ -248,6 +255,8 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
                 legal: { ...defaultSettings.legal, ...existingData?.legal },
                 socialMedia: { ...defaultSettings.socialMedia, ...existingData?.socialMedia },
                 themes: existingData?.themes && existingData.themes.length > 0 ? existingData.themes : defaultSettings.themes,
+                cityGuideCategories: existingData?.cityGuideCategories || defaultSettings.cityGuideCategories,
+                cityGuideRegions: existingData?.cityGuideRegions || defaultSettings.cityGuideRegions,
             } as GlobalSettings;
         }
         
