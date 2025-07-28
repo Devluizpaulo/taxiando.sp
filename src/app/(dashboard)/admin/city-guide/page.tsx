@@ -1,8 +1,9 @@
 
-import { CityGuideClientPage } from './city-guide-client';
-import { getAllTips } from '@/app/actions/city-guide-actions';
+import { getTips } from '@/app/actions/city-guide-actions';
+import { CityGuideCategoriesPage } from './city-guide-categories-page';
 
-export default async function AdminCityGuidePage() {
-    let tips = await getAllTips();
-    return <CityGuideClientPage initialTips={tips} />;
+export default async function CityGuidePage() {
+  const tips = await getTips();
+  
+  return <CityGuideCategoriesPage initialTips={tips} />;
 }

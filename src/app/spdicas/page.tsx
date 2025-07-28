@@ -26,7 +26,7 @@ import { FiltroPerfil } from '@/components/dicas/filtro-perfil';
 
 // Import types and data
 import { Dica, Regiao, TipoDica, Publico, FiltrosDicas } from '@/lib/dicas-types';
-import { getAllTips } from '@/app/actions/city-guide-actions';
+import { getTips } from '@/app/actions/city-guide-actions';
 // Importar getGlobalSettings:
 import { getGlobalSettings } from '@/app/actions/admin-actions';
 
@@ -161,7 +161,7 @@ export default function SpDicasPage() {
   // Update filtered dicas when filters change
   useEffect(() => {
     async function fetchDicas() {
-      const tips = await getAllTips();
+      const tips = await getTips();
       setDicas(tips as any); // adapte o tipo se necessário
       setFilteredDicas(tips as any);
     }

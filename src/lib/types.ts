@@ -231,19 +231,122 @@ export interface CityTipReview {
 export interface CityTip {
   id: string;
   title: string;
-  category: string;
   description: string;
   location: string;
-  imageUrls: string[];
+  region: string;
+  imageUrls?: string[];
   mapUrl?: string;
-  target: 'driver' | 'client';
-  priceRange?: '$' | '$$' | '$$$' | '$$$$';
-  createdAt: string; // Sempre string ISO
-  updatedAt?: string; // Sempre string ISO
-  // Sistema de avaliação
-  averageRating?: number; // 0-5
+  target: 'driver' | 'client' | 'both';
+  tags: string[];
+  comment?: string;
+  tipType: 'gastronomia' | 'day-off' | 'pousada' | 'turismo' | 'cultura' | 'nightlife' | 'roteiros' | 'compras' | 'aventura' | 'familia' | 'pet' | 'outro';
+  
+  // Campos específicos por categoria
+  gastronomia?: {
+    priceRange: '$' | '$$' | '$$$' | '$$$$';
+    cuisineType: string;
+    openingHours: string;
+    menuUrl?: string;
+  };
+  
+  dayOff?: {
+    travelTime: string;
+    estimatedCost: string;
+    positivePoints: string[];
+    nearbyFood?: string;
+    idealFor: string[];
+    bonusTip?: string;
+  };
+  
+  pousada?: {
+    partnershipType: 'discount' | 'gift' | 'other';
+    couponCode?: string;
+    validUntil?: string;
+    bookingUrl?: string;
+    whatsapp?: string;
+    averagePrice: string;
+  };
+  
+  turismo?: {
+    bestTime: string;
+    needsTicket: boolean;
+    ticketUrl?: string;
+    hasLocalGuide: boolean;
+    accessibilityLevel: 'low' | 'medium' | 'high';
+  };
+
+  cultura?: {
+    eventType: string;
+    entryFee: string;
+    schedule: string;
+    website?: string;
+    hasGuidedTour: boolean;
+    suitableForChildren: boolean;
+  };
+
+  nightlife?: {
+    musicType: string;
+    dressCode?: string;
+    ageRestriction?: string;
+    coverCharge?: string;
+    parkingAvailable: boolean;
+    foodAvailable: boolean;
+  };
+
+  roteiros?: {
+    duration: string;
+    distance: string;
+    transportation: string;
+    bestSeason: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    includesGuide: boolean;
+  };
+
+  compras?: {
+    storeType: string;
+    priceRange: '$' | '$$' | '$$$' | '$$$$';
+    specialties: string[];
+    parking: boolean;
+    foodCourt: boolean;
+    openingHours: string;
+  };
+
+  aventura?: {
+    activityType: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    duration: string;
+    equipmentNeeded: boolean;
+    guideRequired: boolean;
+    bestSeason: string;
+    safetyLevel: 'low' | 'medium' | 'high';
+  };
+
+  familia?: {
+    ageRange: string;
+    activities: string[];
+    hasPlayground: boolean;
+    hasFood: boolean;
+    hasBathroom: boolean;
+    strollerFriendly: boolean;
+    priceRange: '$' | '$$' | '$$$' | '$$$$';
+  };
+
+  pet?: {
+    petTypes: string[];
+    hasPetArea: boolean;
+    hasPetMenu: boolean;
+    requiresLeash: boolean;
+    hasVetNearby: boolean;
+    petFee?: string;
+  };
+  
+  // Campos adicionais
+  contributorName?: string;
+  status: 'draft' | 'published' | 'pending';
+  createdAt: string;
+  updatedAt: string;
+  averageRating?: number;
   reviewCount?: number;
-  reviews?: CityTipReview[];
 }
 
 export interface VehiclePerk {
