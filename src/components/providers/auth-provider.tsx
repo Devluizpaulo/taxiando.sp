@@ -42,7 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (docSnap.exists()) {
                 const rawProfile = docSnap.data() as UserProfile;
                 const cleanedProfile = cleanUserProfile(rawProfile) as UserProfile;
-                const sessionValidSince = cleanedProfile.sessionValidSince ? new Date(cleanedProfile.sessionValidSince).getTime() : undefined;
+                const sessionValidSince =
+                  typeof cleanedProfile.sessionValidSince === 'string'
+                    ? new Date(cleanedProfile.sessionValidSince).getTime()
+                    : undefined;
 
                 // Check if the current token is older than the last valid session timestamp.
                 // Add a small grace period (e.g., 5 seconds) to prevent race conditions where

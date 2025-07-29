@@ -167,10 +167,14 @@ export function MultiPageLessonViewer({
                 return currentPage.videoUrl ? (
                     <div className="my-4">
                         <InteractiveVideoPlayer 
-                            videoUrl={currentPage.videoUrl}
+                            videoBlock={{
+                                type: 'video',
+                                url: currentPage.videoUrl,
+                                platform: 'direct',
+                                title: currentPage.title
+                            }}
                             observations={currentPage.observations}
                             showObservations={showObservations}
-                            onObservationsToggle={() => setShowObservations(!showObservations)}
                         />
                     </div>
                 ) : (

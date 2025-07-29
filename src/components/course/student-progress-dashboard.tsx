@@ -162,7 +162,7 @@ export function StudentProgressDashboard({
                                         <div>
                                             <CardTitle className="text-lg">{module.title}</CardTitle>
                                             <CardDescription>
-                                                {module.lessons.length} aulas • {formatDuration(module.lessons.reduce((acc, l) => acc + l.duration, 0))}
+                                                {module.lessons.length} aulas • {formatDuration(module.lessons.reduce((acc, l) => acc + l.totalDuration, 0))}
                                             </CardDescription>
                                         </div>
                                     </div>
@@ -203,7 +203,7 @@ export function StudentProgressDashboard({
                                                                 <h4 className="font-medium">{lesson.title}</h4>
                                                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                                     <Clock className="h-3 w-3" />
-                                                                    {formatDuration(lesson.duration)}
+                                                                    {formatDuration(lesson.totalDuration)}
                                                                     {lesson.type && (
                                                                         <Badge variant="outline" className="text-xs">
                                                                             {lesson.type}
@@ -311,7 +311,7 @@ export function StudentProgressDashboard({
                         </div>
                         <div className="text-center">
                             <div className="text-2xl font-bold text-purple-600">
-                                {formatDuration(course.modules.reduce((acc, m) => acc + m.lessons.reduce((acc2, l) => acc2 + l.duration, 0), 0))}
+                                {formatDuration(course.modules.reduce((acc, m) => acc + m.lessons.reduce((acc2, l) => acc2 + l.totalDuration, 0), 0))}
                             </div>
                             <div className="text-sm text-muted-foreground">Duração Total</div>
                         </div>
