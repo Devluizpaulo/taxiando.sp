@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { use } from 'react';
 import { useEffect, useState } from 'react';
 import { getServiceById } from '@/app/actions/service-actions';
 import { ServiceForm } from '../../service-form';
@@ -10,8 +10,8 @@ import { type ServiceListing } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
-export default function EditServicePage({ params }: { params: { id: string } }) {
-    const { id } = params;
+export default function EditServicePage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const [service, setService] = useState<ServiceListing | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();

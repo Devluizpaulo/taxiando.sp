@@ -8,6 +8,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as z from 'zod';
+import { cleanUserProfile } from '@/lib/utils';
 
 declare module '@/lib/types' {
   interface GlobalSettings {
@@ -41,18 +42,11 @@ export async function getUserProfileById(userId: string): Promise<AdminUser | nu
         if (!userDoc.exists) return null;
 
         const data = userDoc.data() as UserProfile;
+        const cleanedData = cleanUserProfile(data);
         
-        const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
-
         return {
-            ...data,
+            ...cleanedData,
             uid: userDoc.id,
-            createdAt: typeof data.createdAt === 'object' && data.createdAt !== null && typeof (data.createdAt as any).toDate === 'function' ? toISO(data.createdAt) : new Date().toISOString(),
-            cnhExpiration: typeof data.cnhExpiration === 'object' && data.cnhExpiration !== null && typeof (data.cnhExpiration as any).toDate === 'function' ? toISO(data.cnhExpiration) : undefined,
-            condutaxExpiration: typeof data.condutaxExpiration === 'object' && data.condutaxExpiration !== null && typeof (data.condutaxExpiration as any).toDate === 'function' ? toISO(data.condutaxExpiration) : undefined,
-            alvaraExpiration: typeof data.alvaraExpiration === 'object' && data.alvaraExpiration !== null && typeof (data.alvaraExpiration as any).toDate === 'function' ? toISO(data.alvaraExpiration) : undefined,
-            lastNotificationCheck: typeof data.lastNotificationCheck === 'object' && data.lastNotificationCheck !== null && typeof (data.lastNotificationCheck as any).toDate === 'function' ? toISO(data.lastNotificationCheck) : undefined,
-            lastSeekingRentalsCheck: typeof data.lastSeekingRentalsCheck === 'object' && data.lastSeekingRentalsCheck !== null && typeof (data.lastSeekingRentalsCheck as any).toDate === 'function' ? toISO(data.lastSeekingRentalsCheck) : undefined,
         } as AdminUser;
 
     } catch (error) {
@@ -564,7 +558,7 @@ export async function getAdminDashboardAnalytics(periodStart?: Date): Promise<An
     }
 }
 
-const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
+
 
 export async function getAdminDashboardData(periodStart?: Date) {
     await ensureInitialData();
@@ -584,16 +578,10 @@ export async function getAdminDashboardData(periodStart?: Date) {
 
         usersData = usersSnapshot.docs.map(doc => {
             const data = doc.data() as UserProfile;
+            const cleanedData = cleanUserProfile(data);
             return {
-                ...data,
+                ...cleanedData,
                 uid: doc.id,
-                createdAt: toISO(data.createdAt) || new Date().toISOString(),
-                cnhExpiration: toISO(data.cnhExpiration),
-                condutaxExpiration: toISO(data.condutaxExpiration),
-                alvaraExpiration: toISO(data.alvaraExpiration),
-                lastNotificationCheck: toISO(data.lastNotificationCheck),
-                lastSeekingRentalsCheck: typeof data.lastSeekingRentalsCheck === 'object' && data.lastSeekingRentalsCheck !== null && typeof (data.lastSeekingRentalsCheck as any).toDate === 'function' ? toISO(data.lastSeekingRentalsCheck) : undefined,
-                sessionValidSince: typeof data.sessionValidSince === 'object' && data.sessionValidSince !== null && typeof (data.sessionValidSince as any).toDate === 'function' ? toISO(data.sessionValidSince) : (typeof data.sessionValidSince === 'string' ? data.sessionValidSince : undefined),
             } as AdminUser;
         });
 

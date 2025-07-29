@@ -2,7 +2,7 @@
 
 'use client'
 
-import React from 'react';
+import React, { use } from 'react';
 import { useState, useEffect } from 'react';
 import Link from "next/link";
 import Image from "next/image";
@@ -23,7 +23,7 @@ import { type Vehicle, type UserProfile } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 
-export default function RentalDetailsPage({ params }: { params: { id: string } }) {
+export default function RentalDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { user, userProfile, loading: authLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
@@ -34,7 +34,7 @@ export default function RentalDetailsPage({ params }: { params: { id: string } }
     const [isApplying, setIsApplying] = useState(false);
     const [mainImage, setMainImage] = useState<string | null>(null);
 
-    const { id } = params;
+    const { id } = use(params);
 
     useEffect(() => {
         const fetchDetails = async () => {

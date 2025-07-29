@@ -1,15 +1,15 @@
 
 'use client';
 
-import React from 'react';
+import React, { use } from 'react';
 import { useEffect, useState } from 'react';
 import { getBlogPostById } from '@/app/actions/blog-actions';
 import { BlogPostForm } from '../../create/blog-post-form';
 import { LoadingScreen } from '@/components/loading-screen';
 import { type BlogPost } from '@/lib/types';
 
-export default function EditBlogPostPage({ params }: { params: { id: string } }) {
-    const { id } = params;
+export default function EditBlogPostPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const [post, setPost] = useState<BlogPost | null>(null);
     const [loading, setLoading] = useState(true);
 

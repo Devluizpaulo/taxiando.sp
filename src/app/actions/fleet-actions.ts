@@ -10,6 +10,7 @@ import { type VehicleFormValues } from '@/lib/fleet-schemas';
 import { auth } from '@/lib/firebase';
 import { uploadVehicleImages } from './secure-storage-actions';
 import admin from 'firebase-admin';
+import { cleanUserProfile, cleanFirestoreData } from '@/lib/utils';
 
 // Get all data for a fleet's dashboard
 export async function getFleetData(fleetId: string) {
@@ -24,10 +25,10 @@ export async function getFleetData(fleetId: string) {
         const vehicleIds = vehicleDocs.map(doc => doc.id);
         const vehicles = vehicleDocs.map(doc => {
             const data = doc.data();
+            const cleanedData = cleanFirestoreData(data);
             return { 
-                ...data,
+                ...cleanedData,
                 id: doc.id, 
-                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString()
             } as Vehicle;
         });
 
@@ -35,14 +36,14 @@ export async function getFleetData(fleetId: string) {
         if (vehicleIds.length > 0) {
             const applicationsQuery = adminDB.collection('applications').where('vehicleId', 'in', vehicleIds).orderBy('appliedAt', 'desc');
             const applicationsSnapshot = await applicationsQuery.get();
-            applications = applicationsSnapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    ...data,
-                    id: doc.id,
-                    appliedAt: (data.appliedAt as Timestamp)?.toDate().toISOString(),
-                } as VehicleApplication;
-            });
+                    applications = applicationsSnapshot.docs.map(doc => {
+            const data = doc.data();
+            const cleanedData = cleanFirestoreData(data);
+            return {
+                ...cleanedData,
+                id: doc.id,
+            } as VehicleApplication;
+        });
         }
         
         return { success: true, vehicles, applications };
@@ -216,19 +217,11 @@ export async function getDriverProfile(driverId: string, fleetUserId: string): P
             if (!driverDoc.exists) throw new Error("Perfil do motorista não encontrado.");
 
             const data = driverDoc.data() as UserProfile;
-            const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
+            const cleanedData = cleanUserProfile(data);
 
             const profile = {
-                ...data,
+                ...cleanedData,
                 uid: driverDoc.id,
-                createdAt: toISO(data.createdAt) || new Date().toISOString(),
-                cnhExpiration: toISO(data.cnhExpiration),
-                condutaxExpiration: toISO(data.condutaxExpiration),
-                alvaraExpiration: toISO(data.alvaraExpiration),
-                lastNotificationCheck: toISO(data.lastNotificationCheck),
-                lastSeekingRentalsCheck: typeof data.lastSeekingRentalsCheck === "string"
-  ? data.lastSeekingRentalsCheck
-  : toISO(data.lastSeekingRentalsCheck),
             } as AdminUser;
             
             return { success: true, profile };
@@ -422,13 +415,14 @@ export async function getFleetPublicProfile(fleetId: string) {
             return { success: false, error: "Frota não encontrada." };
         }
         
-        const fleetProfile = { uid: fleetDoc.id, ...fleetDoc.data() } as UserProfile;
+        const fleetData = fleetDoc.data() as UserProfile;
+        const fleetProfile = cleanUserProfile({ uid: fleetDoc.id, ...fleetData }) as UserProfile;
         const availableVehicles = vehiclesQuery.docs.map(doc => {
              const data = doc.data();
+             const cleanedData = cleanFirestoreData(data);
              return {
-                ...data,
+                ...cleanedData,
                 id: doc.id,
-                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
             } as Vehicle;
         });
 
@@ -449,19 +443,12 @@ export async function getDriversSeekingRentals(): Promise<AdminUser[]> {
             .orderBy('createdAt', 'desc')
             .get();
             
-        const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
-
         const drivers = snapshot.docs.map(doc => {
             const data = doc.data() as UserProfile;
-             return {
-                ...data,
+            const cleanedData = cleanUserProfile(data);
+            return {
+                ...cleanedData,
                 uid: doc.id,
-                createdAt: toISO(data.createdAt) || new Date().toISOString(),
-                cnhExpiration: toISO(data.cnhExpiration),
-                condutaxExpiration: toISO(data.condutaxExpiration),
-                alvaraExpiration: toISO(data.alvaraExpiration as Timestamp | undefined),
-                lastNotificationCheck: toISO(data.lastNotificationCheck as Timestamp | undefined),
-                lastSeekingRentalsCheck: toISO(data.lastSeekingRentalsCheck as Timestamp | undefined),
             } as AdminUser;
         });
         

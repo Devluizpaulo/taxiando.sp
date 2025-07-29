@@ -10,6 +10,7 @@ import { serviceFormSchema, type ServiceFormValues } from '@/lib/service-schemas
 import { auth } from '@/lib/firebase';
 import { uploadBlogImages } from './secure-storage-actions';
 import admin from 'firebase-admin';
+import { cleanUserProfile, timestampToISO } from '@/lib/utils';
 
 export async function createService(data: ServiceFormValues, providerId: string, providerName: string) {
     if (!providerId) return { success: false, error: "ID do prestador não fornecido." };
@@ -66,10 +67,10 @@ export async function getServiceById(serviceId: string): Promise<ServiceListing 
         if (!docRef.exists) return null;
 
         const data = docRef.data()!;
+        const cleanedData = cleanFirestoreData(data);
         return {
-            ...data,
+            ...cleanedData,
             id: docRef.id,
-            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
         } as ServiceListing;
     } catch (error) {
         console.error("Error fetching service by ID:", error);
@@ -135,10 +136,10 @@ export async function getServicesByProvider(providerId: string): Promise<Service
         const snapshot = await adminDB.collection('services').where('providerId', '==', providerId).orderBy('createdAt', 'desc').get();
         return snapshot.docs.map(doc => {
             const data = doc.data();
+            const cleanedData = cleanFirestoreData(data);
             return {
-                ...data,
+                ...cleanedData,
                 id: doc.id,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
             } as ServiceListing;
         });
     } catch (error) {
@@ -303,13 +304,14 @@ export async function getProviderPublicProfile(providerId: string) {
             return { success: false, error: "Prestador não encontrado." };
         }
             
-        const providerProfile = { uid: providerDoc.id, ...providerDoc.data() } as UserProfile;
+        const providerData = providerDoc.data() as UserProfile;
+        const providerProfile = cleanUserProfile({ uid: providerDoc.id, ...providerData }) as UserProfile;
         const activeServices = servicesQuery.docs.map(doc => {
              const data = doc.data();
+             const cleanedData = cleanFirestoreData(data);
              return {
-                ...data,
+                ...cleanedData,
                 id: doc.id,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
             } as ServiceListing;
         });
 

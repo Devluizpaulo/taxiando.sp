@@ -8,6 +8,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { type UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { cleanUserProfile } from '@/lib/utils';
 
 
 export interface AuthContextType {
@@ -39,8 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
               if (docSnap.exists()) {
-                const profile = docSnap.data() as UserProfile;
-                const sessionValidSince = profile.sessionValidSince?.toDate().getTime();
+                const rawProfile = docSnap.data() as UserProfile;
+                const cleanedProfile = cleanUserProfile(rawProfile) as UserProfile;
+                const sessionValidSince = cleanedProfile.sessionValidSince ? new Date(cleanedProfile.sessionValidSince).getTime() : undefined;
 
                 // Check if the current token is older than the last valid session timestamp.
                 // Add a small grace period (e.g., 5 seconds) to prevent race conditions where
@@ -56,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     signOut(auth);
                 } else {
                     setUser(user);
-                    setUserProfile(profile);
+                    setUserProfile(cleanedProfile);
                 }
               } else {
                 console.error("User exists in Auth, but not in Firestore. Signing out.");

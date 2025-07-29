@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useFieldArray, useForm, useWatch, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -70,7 +70,8 @@ const MarkdownGuide = () => {
     )
 }
 
-export default function EditCoursePage({ params }: { params: { id: string }}) {
+export default function EditCoursePage({ params }: { params: Promise<{ id: string }>}) {
+    const { id } = use(params);
     const router = useRouter();
     const { toast } = useToast();
     const { user } = useAuth();
@@ -95,8 +96,8 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
     });
 
     useEffect(() => {
-        if (params.id) {
-            getCourseById(params.id).then(data => {
+        if (id) {
+            getCourseById(id).then(data => {
                 if (data) {
                     form.reset(data as any);
                     setIsPublished(data.status === 'Published');
@@ -105,7 +106,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                 setIsLoadingData(false);
             });
         }
-    }, [params.id, form]);
+    }, [id, form]);
 
     const { fields: moduleFields, append: appendModule, remove: removeModule } = useFieldArray({
         control: form.control, name: 'modules',
@@ -137,7 +138,7 @@ export default function EditCoursePage({ params }: { params: { id: string }}) {
                 }))
             };
             
-            const result = await updateCourse(params.id, valuesWithIds, user.uid);
+            const result = await updateCourse(id, valuesWithIds, user.uid);
 
             if (result.success) {
                 toast({ title: 'Curso Atualizado com Sucesso!', description: `O curso "${values.title}" foi salvo.` });

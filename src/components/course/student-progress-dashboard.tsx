@@ -1,145 +1,329 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Star, Clock, Calendar, Award, Zap } from 'lucide-react';
-import { Course } from '@/lib/types';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import { 
+    BookOpen, 
+    CheckCircle, 
+    Circle, 
+    Clock, 
+    Play, 
+    ThumbsUp, 
+    ThumbsDown, 
+    MessageSquare,
+    Award,
+    BarChart3
+} from 'lucide-react';
+import { type Course, type Module, type Lesson } from '@/lib/types';
 
-// Definir tipos locais:
-type UserAchievement = {
-  id: string;
-  name: string;
-  description?: string;
-  earnedAt: string;
-};
-
-type UserProgress = {
-  completedLessons: string[];
-  level?: number;
-  experiencePoints?: number;
-  achievements?: UserAchievement[];
-  totalTimeSpent?: number;
-  currentStreak?: number;
-};
-
-interface StudentProgressDashboardProps {
-  userProgress: UserProgress;
-  course: Course;
+interface StudentProgress {
+    courseId: string;
+    completedLessons: string[];
+    currentModule: string;
+    currentLesson: string;
+    progress: number;
+    lastAccessed: Date;
+    certificateEarned?: boolean;
+    certificateUrl?: string;
 }
 
-export function StudentProgressDashboard({ userProgress, course }: StudentProgressDashboardProps) {
-  const [progressPercentage, setProgressPercentage] = useState(0);
-  
-  useEffect(() => {
-    // Calcular porcentagem de progresso
-    const totalLessons = course.modules.reduce((acc, module) => acc + module.lessons.length, 0);
-    const completedLessons = userProgress.completedLessons.length;
-    const percentage = Math.round((completedLessons / totalLessons) * 100);
-    setProgressPercentage(percentage);
-  }, [userProgress, course]);
+interface StudentProgressDashboardProps {
+    course: Course;
+    studentProgress: StudentProgress;
+    onLessonComplete: (lessonId: string) => void;
+    onLessonFeedback: (lessonId: string, feedback: 'thumbsUp' | 'thumbsDown', comment?: string) => void;
+}
 
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-amber-500" />
-            Seu Progresso
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between mb-1 text-sm">
-                <span>Progresso do Curso</span>
-                <span className="font-medium">{progressPercentage}%</span>
-              </div>
-              <Progress value={progressPercentage} className="h-2" />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 pt-2">
-              <div className="flex flex-col items-center p-3 bg-muted rounded-md">
-                <div className="text-2xl font-bold">{userProgress.level || 1}</div>
-                <div className="text-xs text-muted-foreground">Nível Atual</div>
-              </div>
-              <div className="flex flex-col items-center p-3 bg-muted rounded-md">
-                <div className="text-2xl font-bold">{userProgress.experiencePoints || 0}</div>
-                <div className="text-xs text-muted-foreground">Pontos XP</div>
-              </div>
-            </div>
-            
-            <div className="pt-2">
-              <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                <Star className="h-4 w-4 text-amber-500" />
-                Conquistas ({userProgress.achievements?.length || 0})
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {userProgress.achievements?.map((achievement: UserAchievement) => (
-                  <Badge key={achievement.id} variant="outline" className="bg-amber-50 text-amber-800 border-amber-200 flex items-center gap-1">
-                    <Award className="h-3 w-3" />
-                    {achievement.name}
-                  </Badge>
-                ))}
-                {(!userProgress.achievements || userProgress.achievements.length === 0) && (
-                  <span className="text-xs text-muted-foreground">Complete aulas para ganhar conquistas</span>
-                )}
-              </div>
-            </div>
-            
-            <div className="pt-2">
-              <h4 className="text-sm font-medium mb-2">Estatísticas</h4>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>Tempo total: {userProgress.totalTimeSpent || 0} min</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>Sequência atual: {userProgress.currentStreak || 0} dias</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Zap className="h-5 w-5 text-amber-500" />
-            Próximos Objetivos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {progressPercentage < 100 && (
-              <div className="p-3 border rounded-md bg-background">
-                <div className="font-medium">Completar o curso</div>
-                <Progress value={progressPercentage} className="h-1.5 mt-2" />
-              </div>
+export function StudentProgressDashboard({ 
+    course, 
+    studentProgress, 
+    onLessonComplete, 
+    onLessonFeedback 
+}: StudentProgressDashboardProps) {
+    const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+    const [feedbackComments, setFeedbackComments] = useState<Record<string, string>>({});
+
+    const toggleModule = (moduleId: string) => {
+        const newExpanded = new Set(expandedModules);
+        if (newExpanded.has(moduleId)) {
+            newExpanded.delete(moduleId);
+        } else {
+            newExpanded.add(moduleId);
+        }
+        setExpandedModules(newExpanded);
+    };
+
+    const isLessonCompleted = (lessonId: string) => {
+        return studentProgress.completedLessons.includes(lessonId);
+    };
+
+    const getModuleProgress = (module: Module) => {
+        const completedLessons = module.lessons.filter(lesson => 
+            isLessonCompleted(lesson.id)
+        ).length;
+        return (completedLessons / module.lessons.length) * 100;
+    };
+
+    const getCourseProgress = () => {
+        const totalLessons = course.modules.reduce((acc, module) => acc + module.lessons.length, 0);
+        const completedLessons = studentProgress.completedLessons.length;
+        return (completedLessons / totalLessons) * 100;
+    };
+
+    const formatDuration = (minutes: number) => {
+        if (!minutes) return 'N/A';
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        if (hours > 0) {
+            return `${hours}h ${mins > 0 ? `${mins}min` : ''}`;
+        }
+        return `${mins}min`;
+    };
+
+    const handleFeedback = (lessonId: string, type: 'thumbsUp' | 'thumbsDown') => {
+        onLessonFeedback(lessonId, type, feedbackComments[lessonId]);
+        setFeedbackComments(prev => ({ ...prev, [lessonId]: '' }));
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Header com progresso geral */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle className="flex items-center gap-2">
+                                <BookOpen className="h-5 w-5" />
+                                {course.title}
+                            </CardTitle>
+                            <CardDescription>
+                                Seu progresso no curso
+                            </CardDescription>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-2xl font-bold">{Math.round(getCourseProgress())}%</div>
+                            <div className="text-sm text-muted-foreground">
+                                {studentProgress.completedLessons.length} de {course.modules.reduce((acc, m) => acc + m.lessons.length, 0)} aulas
+                            </div>
+                        </div>
+                    </div>
+                    <Progress value={getCourseProgress()} className="mt-4" />
+                </CardHeader>
+            </Card>
+
+            {/* Certificado se disponível */}
+            {studentProgress.certificateEarned && (
+                <Card className="border-green-200 bg-green-50">
+                    <CardContent className="pt-6">
+                        <div className="flex items-center gap-3">
+                            <Award className="h-8 w-8 text-green-600" />
+                            <div>
+                                <h3 className="font-semibold text-green-800">Parabéns! Você completou o curso!</h3>
+                                <p className="text-sm text-green-700">Seu certificado está disponível para download.</p>
+                            </div>
+                            {studentProgress.certificateUrl && (
+                                <Button variant="outline" size="sm" className="ml-auto">
+                                    <Award className="mr-2 h-4 w-4" />
+                                    Baixar Certificado
+                                </Button>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
             )}
-            
-            {userProgress.level && userProgress.level < 5 && (
-              <div className="p-3 border rounded-md bg-background">
-                <div className="font-medium">Alcançar nível {userProgress.level + 1}</div>
-                <div className="text-xs text-muted-foreground mt-1">Ganhe mais {100 - (userProgress.experiencePoints || 0) % 100} XP</div>
-                <Progress value={(userProgress.experiencePoints || 0) % 100} className="h-1.5 mt-2" />
-              </div>
-            )}
-            
-            {(!userProgress.currentStreak || userProgress.currentStreak < 3) && (
-              <div className="p-3 border rounded-md bg-background">
-                <div className="font-medium">Sequência de 3 dias</div>
-                <div className="text-xs text-muted-foreground mt-1">Estude por {3 - (userProgress.currentStreak || 0)} dias consecutivos</div>
-                <Progress value={((userProgress.currentStreak || 0) / 3) * 100} className="h-1.5 mt-2" />
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+
+            {/* Lista de módulos */}
+            <div className="space-y-4">
+                {course.modules.map((module, moduleIndex) => {
+                    const moduleProgress = getModuleProgress(module);
+                    const isExpanded = expandedModules.has(module.id);
+                    
+                    return (
+                        <Card key={module.id}>
+                            <CardHeader 
+                                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                onClick={() => toggleModule(module.id)}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-medium text-muted-foreground">
+                                                Módulo {moduleIndex + 1}
+                                            </span>
+                                            {moduleProgress === 100 && (
+                                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <CardTitle className="text-lg">{module.title}</CardTitle>
+                                            <CardDescription>
+                                                {module.lessons.length} aulas • {formatDuration(module.lessons.reduce((acc, l) => acc + l.duration, 0))}
+                                            </CardDescription>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-right">
+                                            <div className="text-sm font-medium">{Math.round(moduleProgress)}%</div>
+                                            <Progress value={moduleProgress} className="w-20 h-2" />
+                                        </div>
+                                        <Button variant="ghost" size="sm">
+                                            {isExpanded ? '−' : '+'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            
+                            {isExpanded && (
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        {module.lessons.map((lesson, lessonIndex) => {
+                                            const isCompleted = isLessonCompleted(lesson.id);
+                                            const isCurrent = lesson.id === studentProgress.currentLesson;
+                                            
+                                            return (
+                                                <div key={lesson.id} className="border rounded-lg p-4">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm text-muted-foreground">
+                                                                    {lessonIndex + 1}
+                                                                </span>
+                                                                {isCompleted ? (
+                                                                    <CheckCircle className="h-5 w-5 text-green-600" />
+                                                                ) : (
+                                                                    <Circle className="h-5 w-5 text-muted-foreground" />
+                                                                )}
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-medium">{lesson.title}</h4>
+                                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                                    <Clock className="h-3 w-3" />
+                                                                    {formatDuration(lesson.duration)}
+                                                                    {lesson.type && (
+                                                                        <Badge variant="outline" className="text-xs">
+                                                                            {lesson.type}
+                                                                        </Badge>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            {isCurrent && (
+                                                                <Badge variant="default" className="bg-blue-100 text-blue-800">
+                                                                    Atual
+                                                                </Badge>
+                                                            )}
+                                                            <Button 
+                                                                variant={isCompleted ? "outline" : "default"}
+                                                                size="sm"
+                                                                onClick={() => !isCompleted && onLessonComplete(lesson.id)}
+                                                                disabled={isCompleted}
+                                                            >
+                                                                {isCompleted ? (
+                                                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                                                ) : (
+                                                                    <Play className="mr-2 h-4 w-4" />
+                                                                )}
+                                                                {isCompleted ? 'Concluída' : 'Iniciar'}
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Feedback da aula */}
+                                                    {isCompleted && (
+                                                        <div className="mt-3 pt-3 border-t">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <span className="text-sm font-medium">Esta aula foi útil?</span>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleFeedback(lesson.id, 'thumbsUp')}
+                                                                >
+                                                                    <ThumbsUp className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleFeedback(lesson.id, 'thumbsDown')}
+                                                                >
+                                                                    <ThumbsDown className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                            <div className="flex gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Deixe um comentário (opcional)..."
+                                                                    value={feedbackComments[lesson.id] || ''}
+                                                                    onChange={(e) => setFeedbackComments(prev => ({
+                                                                        ...prev,
+                                                                        [lesson.id]: e.target.value
+                                                                    }))}
+                                                                    className="flex-1 text-sm px-2 py-1 border rounded"
+                                                                />
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => handleFeedback(lesson.id, 'thumbsUp')}
+                                                                >
+                                                                    <MessageSquare className="mr-2 h-3 w-3" />
+                                                                    Enviar
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </CardContent>
+                            )}
+                        </Card>
+                    );
+                })}
+            </div>
+
+            {/* Estatísticas do aluno */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5" />
+                        Suas Estatísticas
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">
+                                {studentProgress.completedLessons.length}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Aulas Concluídas</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">
+                                {Math.round(getCourseProgress())}%
+                            </div>
+                            <div className="text-sm text-muted-foreground">Progresso Geral</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-600">
+                                {formatDuration(course.modules.reduce((acc, m) => acc + m.lessons.reduce((acc2, l) => acc2 + l.duration, 0), 0))}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Duração Total</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-orange-600">
+                                {studentProgress.certificateEarned ? 'Sim' : 'Não'}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Certificado</div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
 }

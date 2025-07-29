@@ -13,12 +13,12 @@ import { Input } from '@/components/ui/input';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
-import React from 'react';
+import React, { use } from 'react';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-export default function ReadBookPage({ params }: { params: { id: string }}) {
-    const { id } = params;
+export default function ReadBookPage({ params }: { params: Promise<{ id: string }>}) {
+    const { id } = use(params);
     const { user } = useAuth();
     const { toast } = useToast();
     const [book, setBook] = useState<LibraryBook | null>(null);

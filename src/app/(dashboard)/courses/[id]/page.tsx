@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock, ClipboardCheck, AlertTriangle, RefreshCw, XCircle, Mic, Copyright, Gavel, ShoppingCart, Trophy } from "lucide-react";
+import { BookOpen, CheckCircle2, Circle, Clock, PlayCircle, FileText, Award, Paperclip, Loader2, Lock, ClipboardCheck, AlertTriangle, RefreshCw, XCircle, Mic, Copyright, Gavel, ShoppingCart, Trophy, Move3D } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { type Course, type Lesson } from "@/lib/types";
@@ -32,10 +32,9 @@ import { use } from 'react';
 
 const getLessonIcon = (type: Lesson['type']) => {
     switch(type) {
-        case 'video': return <PlayCircle className="h-5 w-5 text-muted-foreground" />;
-        case 'text': return <FileText className="h-5 w-5 text-muted-foreground" />;
-        case 'quiz': return <ClipboardCheck className="h-5 w-5 text-muted-foreground" />;
-        case 'audio': return <Mic className="h-5 w-5 text-muted-foreground" />;
+        case 'single': return <FileText className="h-5 w-5 text-muted-foreground" />;
+        case 'multi_page': return <Move3D className="h-5 w-5 text-muted-foreground" />;
+        default: return <FileText className="h-5 w-5 text-muted-foreground" />;
     }
 }
 

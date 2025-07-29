@@ -157,20 +157,94 @@ export type ContentBlock =
   | { type: 'paragraph'; text: string }
   | { type: 'list'; style: 'bullet' | 'numbered'; items: string[] }
   | { type: 'image'; url: string; alt?: string }
+  | { type: 'video'; url: string; platform?: 'youtube' | 'vimeo' | 'direct'; title?: string }
+  | { type: 'audio'; url: string; title?: string; duration?: number }
+  | { type: 'pdf'; url: string; title?: string; filename?: string }
+  | { type: 'gallery'; images: Array<{ url: string; alt?: string; caption?: string }> }
   | { type: 'exercise'; question: string; answer: string; hints?: string[] }
-  | { type: 'quiz'; questions: QuizQuestion[] };
+  | { type: 'quiz'; questions: QuizQuestion[] }
+  | { type: 'observation'; text: string; icon?: string }; // Campo de observações importantes
+
+// Nova interface para páginas/trechos de aula
+export interface LessonPage {
+  id: string;
+  title: string;
+  type: 'text' | 'video' | 'audio' | 'pdf' | 'gallery' | 'quiz' | 'exercise' | 'mixed';
+  order: number; // Para ordenação das páginas
+  duration?: number; // Duração estimada da página em minutos
+  
+  // Conteúdo específico por tipo
+  contentBlocks?: ContentBlock[]; // Para páginas de texto/mixed
+  videoUrl?: string; // Para páginas de vídeo
+  audioUrl?: string; // Para páginas de áudio
+  pdfUrl?: string; // Para páginas de PDF
+  galleryImages?: Array<{ url: string; alt?: string; caption?: string }>; // Para galerias
+  questions?: QuizQuestion[]; // Para quizzes
+  exercise?: { question: string; answer: string; hints?: string[] }; // Para exercícios
+  
+  // Campos adicionais
+  summary?: string; // Resumo da página
+  observations?: string; // Observações importantes
+  isCompleted?: boolean; // Para tracking de progresso por página
+  
+  // Feedback específico da página
+  feedback?: {
+    thumbsUp: number;
+    thumbsDown: number;
+    comments: Array<{
+      id: string;
+      userId: string;
+      userName: string;
+      comment: string;
+      createdAt: Timestamp | string;
+    }>;
+  };
+}
 
 export interface Lesson {
   id: string;
   title: string;
-  type: 'video' | 'text' | 'quiz' | 'audio';
-  duration: number;
+  description?: string; // Descrição geral da aula
+  type: 'single' | 'multi_page'; // Tipo de aula: única ou múltiplas páginas
+  totalDuration: number; // Duração total da aula
+  
+  // Estrutura antiga (para compatibilidade)
   content?: string; // compatibilidade antiga
   contentBlocks?: ContentBlock[]; // novo modelo
   audioFile?: any;
   materials?: SupportingMaterial[];
   questions?: QuizQuestion[];
   passingScore?: number;
+  
+  // Nova estrutura para múltiplas páginas
+  pages?: LessonPage[]; // Array de páginas/trechos da aula
+  
+  // Campos gerais da aula
+  summary?: string;
+  observations?: string; // Campo de observações importantes
+  order?: number; // Para ordenação drag-and-drop
+  isCompleted?: boolean; // Para tracking de progresso geral
+  
+  // Feedback geral da aula
+  feedback?: {
+    thumbsUp: number;
+    thumbsDown: number;
+    comments: Array<{
+      id: string;
+      userId: string;
+      userName: string;
+      comment: string;
+      createdAt: Timestamp | string;
+    }>;
+  };
+  
+  // Configurações da aula
+  settings?: {
+    allowPageNavigation?: boolean; // Se permite navegar entre páginas livremente
+    requireSequentialProgress?: boolean; // Se requer progresso sequencial
+    showProgressBar?: boolean; // Se mostra barra de progresso
+    autoAdvance?: boolean; // Se avança automaticamente
+  };
 }
 
 
@@ -190,7 +264,7 @@ export interface Course {
   totalLessons: number;
   totalDuration: number; 
   createdAt: Timestamp | string; 
-  status?: 'Published' | 'Draft';
+  status?: 'Published' | 'Draft' | 'Archived';
   students?: number;
   difficulty?: 'Iniciante' | 'Intermediário' | 'Avançado';
   investmentCost?: number;
@@ -198,7 +272,44 @@ export interface Course {
   authorInfo?: string;
   legalNotice?: string;
   revenue?: number;
-  coverImageUrl?: string; // Adicionando a propriedade que faltava
+  coverImageUrl?: string;
+  
+  // Novos campos da estrutura solicitada
+  targetAudience?: string;
+  estimatedDuration?: number; // em minutos
+  isPublicListing?: boolean; // checkbox para listagem pública
+  
+  // Tipo de contrato
+  contractType?: 'own_content' | 'partner_content';
+  saleValue?: number;
+  
+  // Controle financeiro
+  courseType?: 'own_course' | 'partner_course';
+  partnerName?: string;
+  paymentType?: 'fixed' | 'percentage' | 'free' | 'exchange';
+  contractStatus?: 'negotiating' | 'signed' | 'expired';
+  contractPdfUrl?: string;
+  
+  // SEO e tags
+  seoTags?: string[];
+  
+  // Configurações de avaliação
+  enableComments?: boolean;
+  autoCertification?: boolean;
+  minimumPassingScore?: number;
+  
+  // Métricas de desempenho
+  completionRate?: number;
+  averageRating?: number;
+  reviewCount?: number;
+  viewCount?: number;
+  
+  // Campos de criação
+  createdBy?: string;
+  createdByName?: string;
+  updatedAt?: Timestamp | string;
+  updatedBy?: string;
+  updatedByName?: string;
 }
 
 export interface Event {

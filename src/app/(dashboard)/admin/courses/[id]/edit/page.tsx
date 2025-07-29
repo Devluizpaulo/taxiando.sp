@@ -37,8 +37,10 @@ import {
   Edit3, Maximize2, Minimize2, RotateCcw, RotateCw, Palette, Type,
   Image as ImageIcon, Link2, Code, Bold, Italic, Underline, AlignLeft,
   AlignCenter, AlignRight, List, ListOrdered, Quote, Heading1, Heading2,
-  Heading3, Table, Zap, Sparkles, ChevronDown, ChevronUp, Move3D
+  Heading3, Table, Zap, Sparkles, ChevronDown, ChevronUp, Move3D,
+  AlertCircle, Check
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/use-auth';
 import { useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -52,10 +54,9 @@ import Image from '@tiptap/extension-image';
 import { CoverImageGalleryModal } from '@/components/ui/CoverImageGalleryModal';
 
 // Tipos e constantes
-export type PageType = "video" | "text" | "file"; // removido "quiz" e "interactive"
-export type LessonTypeLiteral = "video" | "text" | "quiz" | "audio"; // removido "interactive"
-export const validPageTypes: PageType[] = ["video", "text", "file"];
-export const validLessonTypes: LessonTypeLiteral[] = ["video", "text", "quiz", "audio"];
+// Removido tipos locais - usar tipos do schema
+export const validPageTypes = ["text", "video", "audio", "pdf", "gallery", "exercise", "quiz", "mixed"] as const;
+export const validLessonTypes = ["single", "multi_page"] as const;
 
 // Interface para operações CRUD
 interface CourseOperations {
@@ -70,36 +71,143 @@ interface CourseOperations {
 
 // Função utilitária para converter Course em CourseFormValues
 function courseToFormValues(course: Course): CourseFormValues {
-  return {
-    title: course.title || '',
-    description: course.description || '',
-    category: course.category || '',
-    modules: (course.modules || []).map((m) => ({
-      id: m.id || '',
-      title: m.title || '',
-      badge: m.badge || undefined,
-      lessons: (m.lessons || []).map((l: any) => ({
-        id: l.id || '',
-        title: l.title || '',
-        summary: l.summary || '',
-        pages: l.pages || [],
-        type: l.type,
-        duration: l.duration || 1,
-        content: l.content || '',
-        contentBlocks: l.contentBlocks || [],
-        audioFile: l.audioFile,
-        materials: l.materials || [],
-        questions: l.questions || [],
-        passingScore: l.passingScore,
-      })),
-    })),
-    difficulty: course.difficulty || 'Iniciante',
-    investmentCost: course.investmentCost || 0,
-    priceInCredits: course.priceInCredits || 0,
-    authorInfo: course.authorInfo || '',
-    legalNotice: course.legalNotice || '',
-    coverImageUrl: course.coverImageUrl || '',
-  };
+  try {
+    console.log(`[courseToFormValues] Convertendo curso:`, course);
+    
+    if (!course) {
+      console.error('[courseToFormValues] Curso é null ou undefined');
+      throw new Error('Curso é null ou undefined');
+    }
+
+    // Função helper para garantir que algo seja um array
+    const ensureArray = (value: any, name: string): any[] => {
+      console.log(`[courseToFormValues] Verificando ${name}:`, typeof value, value);
+      
+      if (value === null || value === undefined) {
+        console.log(`[courseToFormValues] ${name} é null/undefined, retornando array vazio`);
+        return [];
+      }
+      
+      if (Array.isArray(value)) {
+        console.log(`[courseToFormValues] ${name} é um array válido com ${value.length} itens`);
+        return value;
+      }
+      
+      if (typeof value === 'object') {
+        console.log(`[courseToFormValues] ${name} é um objeto, convertendo para array vazio`);
+        return [];
+      }
+      
+      console.log(`[courseToFormValues] ${name} é um tipo primitivo, retornando array vazio`);
+      return [];
+    };
+
+    // Verificação robusta dos módulos
+    const modules = ensureArray(course.modules, 'course.modules');
+    console.log(`[courseToFormValues] Modules processados:`, modules);
+
+    const formValues = {
+      title: course.title || '',
+      description: course.description || '',
+      category: course.category || '',
+      modules: modules.map((m) => {
+        // Verificação robusta das lessons
+        const lessons = ensureArray(m.lessons, `module ${m.title}.lessons`);
+        
+        return {
+          id: m.id || '',
+          title: m.title || '',
+          badge: m.badge || null,
+          lessons: lessons.map((l: any) => ({
+            id: l.id || '',
+            title: l.title || '',
+            summary: l.summary || '',
+            pages: ensureArray(l.pages, `lesson ${l.title}.pages`).map((p: any) => ({
+              id: p.id || '',
+              title: p.title || '',
+              type: p.type || 'text',
+              order: p.order || 0,
+              duration: p.duration || 1,
+              contentBlocks: ensureArray(p.contentBlocks, `page ${p.title}.contentBlocks`),
+              videoUrl: p.videoUrl || '',
+              audioUrl: p.audioUrl || '',
+              pdfUrl: p.pdfUrl || '',
+              galleryImages: ensureArray(p.galleryImages, `page ${p.title}.galleryImages`),
+              questions: ensureArray(p.questions, `page ${p.title}.questions`),
+              exercise: p.exercise || undefined,
+              summary: p.summary || '',
+              observations: p.observations || '',
+              isCompleted: p.isCompleted || false,
+              feedback: p.feedback || {
+                thumbsUp: 0,
+                thumbsDown: 0,
+                comments: []
+              }
+            })),
+            type: l.type || 'single',
+            totalDuration: l.totalDuration || l.duration || 1,
+            content: l.content || '',
+            contentBlocks: ensureArray(l.contentBlocks, `lesson ${l.title}.contentBlocks`),
+            audioFile: l.audioFile,
+            materials: ensureArray(l.materials, `lesson ${l.title}.materials`),
+            questions: ensureArray(l.questions, `lesson ${l.title}.questions`),
+            passingScore: l.passingScore || 70,
+            observations: l.observations || '',
+            order: l.order || 0,
+            isCompleted: l.isCompleted || false,
+            feedback: l.feedback || {
+              thumbsUp: 0,
+              thumbsDown: 0,
+              comments: []
+            },
+            settings: l.settings || {
+              allowPageNavigation: true,
+              requireSequentialProgress: false,
+              showProgressBar: true,
+              autoAdvance: false
+            }
+          })),
+        };
+      }),
+      difficulty: course.difficulty || 'Iniciante',
+      investmentCost: course.investmentCost || 0,
+      priceInCredits: course.priceInCredits || 0,
+      authorInfo: course.authorInfo || '',
+      legalNotice: course.legalNotice || '',
+      coverImageUrl: course.coverImageUrl || '',
+      
+      // Novos campos obrigatórios
+      targetAudience: course.targetAudience || '',
+      estimatedDuration: course.estimatedDuration || 1,
+      isPublicListing: course.isPublicListing || false,
+      
+      // Tipo de contrato
+      contractType: course.contractType || 'own_content',
+      saleValue: course.saleValue || 0,
+      
+      // Controle financeiro
+      courseType: course.courseType || 'own_course',
+      partnerName: course.partnerName || '',
+      paymentType: course.paymentType || 'fixed',
+      contractStatus: course.contractStatus || 'negotiating',
+      contractPdfUrl: course.contractPdfUrl || '',
+      
+      // SEO e tags
+      seoTags: course.seoTags || [],
+      
+      // Configurações de avaliação
+      enableComments: course.enableComments !== undefined ? course.enableComments : true,
+      autoCertification: course.autoCertification !== undefined ? course.autoCertification : true,
+      minimumPassingScore: course.minimumPassingScore || 70,
+    };
+
+    console.log(`[courseToFormValues] Form values gerados:`, formValues);
+    return formValues;
+  } catch (error) {
+    console.error(`[courseToFormValues] Erro ao converter curso:`, error);
+    console.error(`[courseToFormValues] Stack trace:`, (error as Error).stack);
+    throw error;
+  }
 }
 
 // Hook personalizado para operações CRUD
@@ -117,11 +225,25 @@ function useCourseOperations(courseId: string, userId: string): CourseOperations
     },
     read: async (id) => {
       try {
+        console.log(`[useCourseOperations.read] Buscando curso: ${id}`);
         const course = await getCourseById(id);
-        return course ? courseToFormValues(course) : null;
+        
+        if (course) {
+          console.log(`[useCourseOperations.read] Curso encontrado:`, course);
+          const formValues = courseToFormValues(course);
+          console.log(`[useCourseOperations.read] Form values:`, formValues);
+          return formValues;
+        } else {
+          console.log(`[useCourseOperations.read] Curso não encontrado: ${id}`);
+          return null;
+        }
       } catch (error) {
-        toast({ title: 'Erro', description: 'Falha ao carregar curso.' });
-        return null;
+        console.error(`[useCourseOperations.read] Erro ao carregar curso:`, error);
+        toast({ 
+          title: 'Erro', 
+          description: 'Falha ao carregar curso. Verifique o console para mais detalhes.' 
+        });
+        throw error; // Re-throw para que o componente possa capturar
       }
     },
     update: async (id, data) => {
@@ -229,20 +351,95 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [course, setCourse] = useState<CourseFormValues | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const operations = useCourseOperations(id, user?.uid || '');
+
+  // Verificar se o usuário está autenticado
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-600 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Acesso Negado
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700">Você precisa estar logado para acessar esta página.</p>
+            <div className="mt-4">
+              <Button 
+                onClick={() => window.location.href = '/login'}
+                variant="outline"
+                className="w-full"
+              >
+                Ir para Login
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   useEffect(() => {
     const loadCourse = async () => {
-      const courseData = await operations.read(id);
-      if (courseData) {
-        setCourse(courseData);
+      try {
+        console.log(`[EditCoursePage] Carregando curso com ID: ${id}`);
+        console.log(`[EditCoursePage] Usuário:`, user);
+        console.log(`[EditCoursePage] Operations:`, operations);
+        
+        if (!id || id.trim() === '') {
+          console.error('[EditCoursePage] ID do curso é inválido:', id);
+          setError('ID do curso inválido');
+          return;
+        }
+        
+        const courseData = await operations.read(id);
+        if (courseData) {
+          console.log(`[EditCoursePage] Curso carregado com sucesso:`, courseData);
+          setCourse(courseData);
+        } else {
+          console.log(`[EditCoursePage] Curso não encontrado: ${id}`);
+          setError('Curso não encontrado');
+        }
+      } catch (error) {
+        console.error(`[EditCoursePage] Erro ao carregar curso:`, error);
+        setError('Falha ao carregar curso');
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     loadCourse();
-  }, [id, operations]);
+  }, [id, operations, user]);
 
   if (isLoading) return <LoadingScreen />;
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-600 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Erro
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700">{error}</p>
+            <div className="mt-4">
+              <Button 
+                onClick={() => window.location.href = '/admin/courses'}
+                variant="outline"
+                className="w-full"
+              >
+                Voltar para Lista de Cursos
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   if (!course) return <div>Curso não encontrado</div>;
 
   return (
@@ -926,15 +1123,23 @@ function EnhancedModuleEditor({
             id: nanoid(),
             title: '',
             summary: '',
-            type: 'text' as LessonTypeLiteral,
-            duration: 10,
+            type: 'single',
+            totalDuration: 10,
             pages: [{
               id: nanoid(),
-              type: 'text' as PageType,
-              title: '',
-              textContent: ''
+              type: 'text',
+              title: 'Página 1',
+              order: 0,
+              contentBlocks: [{
+                type: 'paragraph',
+                text: ''
+              }],
+              summary: '',
+              observations: '',
             }],
             questions: [],
+            materials: [],
+            observations: '',
           })}
           className="w-full border-dashed"
         >
@@ -958,94 +1163,870 @@ function EnhancedLessonEditor({
   form: UseFormReturn<CourseFormValues>;
   onRemove: () => void;
 }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState('content');
+
   const lessonTypeIcons = {
-    video: <Video className="h-4 w-4" />,
-    text: <FileText className="h-4 w-4" />,
-    quiz: <ClipboardCheck className="h-4 w-4" />,
-    audio: <Mic className="h-4 w-4" />,
-    interactive: <Sparkles className="h-4 w-4" />,
+    single: <FileText className="h-4 w-4" />,
+    multi_page: <Move3D className="h-4 w-4" />,
   };
 
   return (
-    <div className="bg-gray-50 rounded-lg p-4 border">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3 flex-1">
-          <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
-          
-          <FormField
-            control={form.control}
-            name={`modules.${moduleIndex}.lessons.${lessonIndex}.title`}
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    placeholder={`Aula ${lessonIndex + 1}`}
-                    className="font-medium"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name={`modules.${moduleIndex}.lessons.${lessonIndex}.type`}
-            render={({ field }) => (
-              <FormItem>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+    <Card className="border-l-4 border-l-green-500">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 flex-1">
+            <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
+            
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.title`}
+              render={({ field }) => (
+                <FormItem className="flex-1">
                   <FormControl>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <Input 
+                      {...field} 
+                      placeholder={`Aula ${lessonIndex + 1}`}
+                      className="font-medium text-lg"
+                    />
                   </FormControl>
-                  <SelectContent>
-                    {validLessonTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        <div className="flex items-center gap-2">
-                          {lessonTypeIcons[type]}
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.type`}
+              render={({ field }) => (
+                <FormItem>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {validLessonTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          <div className="flex items-center gap-2">
+                            {lessonTypeIcons[type]}
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-blue-600 hover:text-blue-700"
+            >
+              {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+            
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onRemove}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onRemove}
-          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
+      </CardHeader>
       
-      {/* Resumo da aula */}
-      <FormField
-        control={form.control}
-        name={`modules.${moduleIndex}.lessons.${lessonIndex}.summary`}
-        render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <Textarea 
-                {...field} 
-                placeholder="Resumo da aula..."
-                rows={2}
-                className="text-sm"
+      {isExpanded && (
+        <CardContent className="space-y-4">
+          {/* Tabs para diferentes seções */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="content" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Conteúdo
+              </TabsTrigger>
+              <TabsTrigger value="pages" className="flex items-center gap-2">
+                <Move3D className="h-4 w-4" />
+                Páginas
+              </TabsTrigger>
+              <TabsTrigger value="materials" className="flex items-center gap-2">
+                <Paperclip className="h-4 w-4" />
+                Materiais
+              </TabsTrigger>
+              <TabsTrigger value="quiz" className="flex items-center gap-2">
+                <ClipboardCheck className="h-4 w-4" />
+                Quiz
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="content" className="space-y-4">
+              {/* Resumo da aula */}
+              <FormField
+                control={form.control}
+                name={`modules.${moduleIndex}.lessons.${lessonIndex}.summary`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Resumo da Aula</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        {...field} 
+                        placeholder="Descreva brevemente o que será abordado nesta aula..."
+                        rows={3}
+                        className="text-sm"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Um resumo curto que aparecerá na lista de aulas.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+
+              {/* Observações importantes */}
+              <FormField
+                control={form.control}
+                name={`modules.${moduleIndex}.lessons.${lessonIndex}.observations`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações Importantes</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        {...field} 
+                        placeholder="Dicas práticas, avisos importantes, ou observações didáticas..."
+                        rows={3}
+                        className="text-sm"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Informações importantes que aparecerão destacadas para o aluno.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Duração estimada */}
+              <FormField
+                control={form.control}
+                name={`modules.${moduleIndex}.lessons.${lessonIndex}.totalDuration`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Duração Estimada (minutos)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        type="number" 
+                        min="1"
+                        placeholder="15"
+                        className="w-32"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Tempo estimado para completar esta aula.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </TabsContent>
+
+            <TabsContent value="pages" className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium">Páginas da Aula</h4>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentPages = form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.pages`) || [];
+                      const newPage = {
+                        id: nanoid(),
+                        title: `Página ${currentPages.length + 1}`,
+                        type: 'text' as const,
+                        order: currentPages.length,
+                        contentBlocks: [],
+                        summary: '',
+                        observations: '',
+                      };
+                      form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.pages`, [...currentPages, newPage]);
+                    }}
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Adicionar Página
+                  </Button>
+                </div>
+
+                {/* Lista de páginas */}
+                <div className="space-y-3">
+                  {form.watch(`modules.${moduleIndex}.lessons.${lessonIndex}.pages`)?.map((page, pageIndex) => (
+                    <Card key={page.id} className="border-l-4 border-l-blue-300">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
+                            <FormField
+                              control={form.control}
+                              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.title`}
+                              render={({ field }) => (
+                                <FormItem className="flex-1">
+                                  <FormControl>
+                                    <Input 
+                                      {...field} 
+                                      placeholder="Título da página"
+                                      className="font-medium"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.type`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger className="w-32">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {validPageTypes.map((type) => (
+                                        <SelectItem key={type} value={type}>
+                                          <div className="flex items-center gap-2">
+                                            {type === 'video' && <Video className="h-4 w-4" />}
+                                            {type === 'text' && <FileText className="h-4 w-4" />}
+                                            {type === 'audio' && <Mic className="h-4 w-4" />}
+                                            {type === 'pdf' && <FileText className="h-4 w-4" />}
+                                            {type === 'gallery' && <ImageIcon className="h-4 w-4" />}
+                                            {type === 'exercise' && <ClipboardCheck className="h-4 w-4" />}
+                                            {type === 'quiz' && <ClipboardCheck className="h-4 w-4" />}
+                                            {type === 'mixed' && <Sparkles className="h-4 w-4" />}
+                                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                                          </div>
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const currentPages = form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.pages`) || [];
+                              const newPages = currentPages.filter((_, index) => index !== pageIndex);
+                              form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.pages`, newPages);
+                            }}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-3">
+                        {/* Conteúdo específico da página baseado no tipo */}
+                        <PageContentEditor 
+                          form={form}
+                          moduleIndex={moduleIndex}
+                          lessonIndex={lessonIndex}
+                          pageIndex={pageIndex}
+                          pageType={page.type}
+                        />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="materials" className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium">Materiais Complementares</h4>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentMaterials = form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.materials`) || [];
+                      const newMaterial = {
+                        name: '',
+                        url: '',
+                      };
+                      form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.materials`, [...currentMaterials, newMaterial]);
+                    }}
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Adicionar Material
+                  </Button>
+                </div>
+
+                {/* Lista de materiais */}
+                <div className="space-y-3">
+                  {form.watch(`modules.${moduleIndex}.lessons.${lessonIndex}.materials`)?.map((material, materialIndex) => (
+                    <div key={materialIndex} className="flex items-center gap-3 p-3 border rounded-lg">
+                      <Paperclip className="h-4 w-4 text-gray-400" />
+                      <FormField
+                        control={form.control}
+                        name={`modules.${moduleIndex}.lessons.${lessonIndex}.materials.${materialIndex}.name`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                placeholder="Nome do material"
+                                className="text-sm"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`modules.${moduleIndex}.lessons.${lessonIndex}.materials.${materialIndex}.url`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                placeholder="URL do material"
+                                className="text-sm"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const currentMaterials = form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.materials`) || [];
+                          const newMaterials = currentMaterials.filter((_, index) => index !== materialIndex);
+                          form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.materials`, newMaterials);
+                        }}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="quiz" className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium">Quiz da Aula</h4>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentQuestions = form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.questions`) || [];
+                      const newQuestion = {
+                        id: nanoid(),
+                        question: '',
+                        options: [
+                          { id: nanoid(), text: '', isCorrect: false },
+                          { id: nanoid(), text: '', isCorrect: false },
+                          { id: nanoid(), text: '', isCorrect: false },
+                          { id: nanoid(), text: '', isCorrect: false },
+                        ],
+                      };
+                      form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.questions`, [...currentQuestions, newQuestion]);
+                    }}
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Adicionar Questão
+                  </Button>
+                </div>
+
+                {/* Lista de questões */}
+                <div className="space-y-4">
+                  {form.watch(`modules.${moduleIndex}.lessons.${lessonIndex}.questions`)?.map((question, questionIndex) => (
+                    <Card key={question.id} className="border-l-4 border-l-purple-300">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-sm font-medium">Questão {questionIndex + 1}</h5>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const currentQuestions = form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.questions`) || [];
+                              const newQuestions = currentQuestions.filter((_, index) => index !== questionIndex);
+                              form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.questions`, newQuestions);
+                            }}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-3">
+                        <FormField
+                          control={form.control}
+                          name={`modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.question`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Textarea 
+                                  {...field} 
+                                  placeholder="Digite a pergunta..."
+                                  rows={2}
+                                  className="text-sm"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Opções da questão */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Opções:</Label>
+                          {question.options?.map((option, optionIndex) => (
+                            <div key={option.id} className="flex items-center gap-3">
+                              <FormField
+                                control={form.control}
+                                name={`modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.options.${optionIndex}.isCorrect`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <Checkbox 
+                                        checked={field.value} 
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`modules.${moduleIndex}.lessons.${lessonIndex}.questions.${questionIndex}.options.${optionIndex}.text`}
+                                render={({ field }) => (
+                                  <FormItem className="flex-1">
+                                    <FormControl>
+                                      <Input 
+                                        {...field} 
+                                        placeholder={`Opção ${optionIndex + 1}`}
+                                        className="text-sm"
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
+// Componente para editar conteúdo específico de cada página
+function PageContentEditor({ 
+  form, 
+  moduleIndex, 
+  lessonIndex, 
+  pageIndex, 
+  pageType 
+}: { 
+  form: UseFormReturn<CourseFormValues>;
+  moduleIndex: number;
+  lessonIndex: number;
+  pageIndex: number;
+  pageType: 'text' | 'video' | 'audio' | 'pdf' | 'gallery' | 'exercise' | 'quiz' | 'mixed';
+}) {
+  const renderContentByType = () => {
+    switch (pageType) {
+      case 'text':
+        return (
+          <div className="space-y-3">
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.summary`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Resumo da Página</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      {...field} 
+                      placeholder="Resumo do conteúdo desta página..."
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.observations`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Observações</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      {...field} 
+                      placeholder="Observações importantes para esta página..."
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            {/* Editor de blocos de conteúdo */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Blocos de Conteúdo</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentBlocks = form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.contentBlocks`) || [];
+                    const newBlock = {
+                      type: 'paragraph' as const,
+                      text: '',
+                    };
+                    form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.contentBlocks`, [...currentBlocks, newBlock]);
+                  }}
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Adicionar Bloco
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                {form.watch(`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.contentBlocks`)?.map((block, blockIndex) => (
+                  <div key={blockIndex} className="flex items-start gap-2 p-2 border rounded-lg">
+                    <FormField
+                      control={form.control}
+                      name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.contentBlocks.${blockIndex}.type`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="paragraph">Parágrafo</SelectItem>
+                              <SelectItem value="heading">Título</SelectItem>
+                              <SelectItem value="list">Lista</SelectItem>
+                              <SelectItem value="image">Imagem</SelectItem>
+                              <SelectItem value="video">Vídeo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.contentBlocks.${blockIndex}.text`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              placeholder="Conteúdo do bloco..."
+                              rows={2}
+                              className="text-sm"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const currentBlocks = form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.contentBlocks`) || [];
+                        const newBlocks = currentBlocks.filter((_, index) => index !== blockIndex);
+                        form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.contentBlocks`, newBlocks);
+                      }}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'video':
+        return (
+          <div className="space-y-3">
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.videoUrl`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL do Vídeo</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      className="text-sm"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Cole a URL do vídeo (YouTube, Vimeo, ou arquivo direto)
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.summary`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição do Vídeo</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      {...field} 
+                      placeholder="Descreva o conteúdo do vídeo..."
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+        );
+        
+      case 'pdf':
+        return (
+          <div className="space-y-3">
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.pdfUrl`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL do Arquivo PDF</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      placeholder="https://exemplo.com/arquivo.pdf"
+                      className="text-sm"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    URL do arquivo PDF
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.summary`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição do Arquivo</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      {...field} 
+                      placeholder="Descreva o conteúdo do arquivo..."
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+        );
+        
+      case 'audio':
+        return (
+          <div className="space-y-3">
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.audioUrl`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL do Áudio</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      placeholder="https://exemplo.com/audio.mp3"
+                      className="text-sm"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    URL do arquivo de áudio
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.summary`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição do Áudio</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      {...field} 
+                      placeholder="Descreva o conteúdo do áudio..."
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+        );
+        
+      case 'gallery':
+        return (
+          <div className="space-y-3">
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.summary`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição da Galeria</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      {...field} 
+                      placeholder="Descreva a galeria de imagens..."
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+        );
+        
+      case 'exercise':
+        return (
+          <div className="space-y-3">
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.summary`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição do Exercício</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      {...field} 
+                      placeholder="Descreva o exercício..."
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+        );
+        
+      case 'quiz':
+        return (
+          <div className="space-y-3">
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.summary`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição do Quiz</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      {...field} 
+                      placeholder="Descreva o quiz..."
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+        );
+        
+      case 'mixed':
+        return (
+          <div className="space-y-3">
+            <FormField
+              control={form.control}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.summary`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição do Conteúdo Misto</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      {...field} 
+                      placeholder="Descreva o conteúdo misto..."
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+        );
+        
+      default:
+        return (
+          <div className="text-sm text-gray-500">
+            Tipo de página não suportado: {pageType}
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {renderContentByType()}
     </div>
   );
 }
