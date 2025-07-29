@@ -1123,7 +1123,7 @@ function EnhancedModuleEditor({
             id: nanoid(),
             title: '',
             summary: '',
-            type: 'single',
+            type: 'single', // Corrigido aqui!
             totalDuration: 10,
             pages: [{
               id: nanoid(),

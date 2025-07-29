@@ -10,7 +10,7 @@ import { serviceFormSchema, type ServiceFormValues } from '@/lib/service-schemas
 import { auth } from '@/lib/firebase';
 import { uploadBlogImages } from './secure-storage-actions';
 import admin from 'firebase-admin';
-import { cleanUserProfile, timestampToISO } from '@/lib/utils';
+import { cleanUserProfile, timestampToISO, cleanFirestoreData } from '@/lib/utils';
 
 export async function createService(data: ServiceFormValues, providerId: string, providerName: string) {
     if (!providerId) return { success: false, error: "ID do prestador não fornecido." };
@@ -305,7 +305,8 @@ export async function getProviderPublicProfile(providerId: string) {
         }
             
         const providerData = providerDoc.data() as UserProfile;
-        const providerProfile = cleanUserProfile({ uid: providerDoc.id, ...providerData }) as UserProfile;
+        const { uid: _, ...providerDataWithoutUid } = providerData;
+        const providerProfile = cleanUserProfile({ ...providerDataWithoutUid, uid: providerDoc.id }) as UserProfile;
         const activeServices = servicesQuery.docs.map(doc => {
              const data = doc.data();
              const cleanedData = cleanFirestoreData(data);

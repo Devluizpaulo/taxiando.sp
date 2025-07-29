@@ -274,7 +274,9 @@ export async function getVehicleDetails(vehicleId: string) {
             return { success: false, error: 'Frota associada não encontrada.' };
         }
 
-        const fleet = { uid: fleetDoc.id, ...fleetDoc.data() } as UserProfile;
+        const fleetData = fleetDoc.data() as UserProfile;
+        const { uid: _, ...fleetDataWithoutUid } = fleetData;
+        const fleet = { ...fleetDataWithoutUid, uid: fleetDoc.id } as UserProfile;
         
         return { 
             success: true, 
@@ -416,7 +418,8 @@ export async function getFleetPublicProfile(fleetId: string) {
         }
         
         const fleetData = fleetDoc.data() as UserProfile;
-        const fleetProfile = cleanUserProfile({ uid: fleetDoc.id, ...fleetData }) as UserProfile;
+        const { uid: _, ...fleetDataWithoutUid } = fleetData;
+        const fleetProfile = cleanUserProfile({ ...fleetDataWithoutUid, uid: fleetDoc.id }) as UserProfile;
         const availableVehicles = vehiclesQuery.docs.map(doc => {
              const data = doc.data();
              const cleanedData = cleanFirestoreData(data);

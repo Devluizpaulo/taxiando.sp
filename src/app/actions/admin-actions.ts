@@ -672,7 +672,11 @@ export async function getAdminReportsData() {
         ]);
         
         // User reports
-        const users = usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as AdminUser));
+        const users = usersSnapshot.docs.map(doc => {
+            const data = doc.data();
+            const { uid: _, ...dataWithoutUid } = data;
+            return { ...dataWithoutUid, uid: doc.id } as AdminUser;
+        });
         const userCounts = users.reduce((acc, user) => {
             acc[user.role] = (acc[user.role] || 0) + 1;
             return acc;

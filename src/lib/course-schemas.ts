@@ -2,10 +2,17 @@
 
 import * as z from 'zod';
 
-export const supportingMaterialSchema = z.object({
-  name: z.string().min(1, "O nome do material é obrigatório."),
-  url: z.string().url("URL inválida."),
-});
+export const supportingMaterialSchema = z.union([
+  z.object({
+    name: z.string().min(1, "O nome do material é obrigatório."),
+    url: z.string().url("URL inválida."),
+  }),
+  z.object({
+    name: z.string(),
+    size: z.number(),
+    type: z.string().optional()
+  })
+]);
 
 export const quizOptionSchema = z.object({
   id: z.string().optional(),
@@ -129,7 +136,20 @@ export const lessonPageSchema = z.object({
       comment: z.string(),
       createdAt: z.union([z.string(), z.date()])
     })).default([])
-  }).optional()
+  }).optional(),
+  
+  // Arquivos anexados
+  files: z.array(z.union([
+    z.object({
+      name: z.string(),
+      url: z.string().url("URL do arquivo inválida.")
+    }),
+    z.object({
+      name: z.string(),
+      size: z.number(),
+      type: z.string().optional()
+    })
+  ])).optional()
 }).superRefine((data, ctx) => {
   // Validação específica por tipo de página
   switch (data.type) {
@@ -216,7 +236,14 @@ export const lessonSchema = z.object({
   // Estrutura antiga (para compatibilidade)
   content: z.string().optional(),
   contentBlocks: z.array(contentBlockSchema).optional(),
-  audioFile: z.any().optional(),
+  audioFile: z.union([
+    z.object({
+      name: z.string(),
+      size: z.number(),
+      type: z.string().optional()
+    }), 
+    z.string()
+  ]).optional(),
   materials: z.array(supportingMaterialSchema).optional(),
   questions: z.array(quizQuestionSchema).optional(),
   passingScore: z.coerce.number().min(0).max(100).optional(),

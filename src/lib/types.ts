@@ -130,7 +130,13 @@ export interface Enrollment {
 
 export interface SupportingMaterial {
   name: string;
-  url: string; 
+  url: string;
+}
+
+export interface SupportingMaterialFile {
+  name: string;
+  size: number;
+  type?: string;
 }
 
 export interface Badge {
@@ -199,6 +205,16 @@ export interface LessonPage {
       createdAt: Timestamp | string;
     }>;
   };
+  
+  // Arquivos anexados
+  files?: Array<{
+    name: string;
+    url: string;
+  } | {
+    name: string;
+    size: number;
+    type?: string;
+  }>;
 }
 
 export interface Lesson {
@@ -211,8 +227,8 @@ export interface Lesson {
   // Estrutura antiga (para compatibilidade)
   content?: string; // compatibilidade antiga
   contentBlocks?: ContentBlock[]; // novo modelo
-  audioFile?: any;
-  materials?: SupportingMaterial[];
+  audioFile?: string | SupportingMaterialFile;
+  materials?: (SupportingMaterial | SupportingMaterialFile)[];
   questions?: QuizQuestion[];
   passingScore?: number;
   

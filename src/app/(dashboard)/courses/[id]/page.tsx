@@ -268,7 +268,7 @@ function LessonItem({ lesson, course, isCompleted, onLessonCompleted, isLocked }
                 </div>
             </div>
             <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground flex items-center gap-1"><Clock className="h-4 w-4"/> {lesson.duration} min</span>
+                <span className="text-sm text-muted-foreground flex items-center gap-1"><Clock className="h-4 w-4"/> {lesson.totalDuration} min</span>
             </div>
         </div>
     );
@@ -284,7 +284,8 @@ function LessonItem({ lesson, course, isCompleted, onLessonCompleted, isLocked }
         );
     }
     
-    if (lesson.type === 'quiz') {
+    // Verificar se a aula tem questões para mostrar o quiz
+    if (lesson.questions && lesson.questions.length > 0) {
         return <li className="flex flex-col rounded-md p-3 hover:bg-muted/50"><QuizPlayer lesson={lesson} course={course} isCompleted={isCompleted} onLessonCompleted={onLessonCompleted} /></li>;
     }
     
@@ -297,28 +298,14 @@ function LessonItem({ lesson, course, isCompleted, onLessonCompleted, isLocked }
                 <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
                     <DialogHeader className="p-6 pb-4 border-b">
                         <DialogTitle className="font-headline text-2xl">{lesson.title}</DialogTitle>
-                        <DialogDescription>Duração: {lesson.duration} minutos. {course.authorInfo && <span className="flex items-center gap-1.5 text-xs mt-1"><Copyright/> {course.authorInfo}</span>}</DialogDescription>
+                        <DialogDescription>Duração: {lesson.totalDuration} minutos. {course.authorInfo && <span className="flex items-center gap-1.5 text-xs mt-1"><Copyright/> {course.authorInfo}</span>}</DialogDescription>
                     </DialogHeader>
                     <div className="flex-1 overflow-y-auto p-6">
-                        {lesson.type === 'video' && lesson.content && (
-                            <div className="aspect-video w-full">
-                                <iframe
-                                    className="w-full h-full rounded-lg"
-                                    src={getYoutubeEmbedUrl(lesson.content) || ''}
-                                    title={lesson.title}
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                ></iframe>
-                            </div>
-                        )}
-                        {lesson.type === 'audio' && lesson.content && (
-                            <audio controls className="w-full">
-                                <source src={lesson.content} type="audio/mpeg" />
-                                Seu navegador não suporta o elemento de áudio.
-                            </audio>
-                        )}
-                         {lesson.type === 'text' && lesson.content && (
-                           <div className="prose prose-sm lg:prose-base max-w-none dark:prose-invert">
+                        {/* Conteúdo baseado em contentBlocks ou content */}
+                        {lesson.contentBlocks && lesson.contentBlocks.length > 0 ? (
+                            <ContentBlockPlayer blocks={lesson.contentBlocks} />
+                        ) : lesson.content && (
+                            <div className="prose prose-sm lg:prose-base max-w-none dark:prose-invert">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                     {lesson.content}
                                 </ReactMarkdown>
@@ -331,20 +318,26 @@ function LessonItem({ lesson, course, isCompleted, onLessonCompleted, isLocked }
                                 <ul className="space-y-2">
                                     {lesson.materials.map(material => (
                                         <li key={material.name}>
-                                            <Button asChild variant="outline" className="justify-start gap-2">
-                                                <a href={material.url} target="_blank" rel="noopener noreferrer">
-                                                    <Paperclip className="h-4 w-4" />
-                                                    {material.name}
-                                                </a>
-                                            </Button>
+                                            {'url' in material ? (
+                                                <Button asChild variant="outline" className="justify-start gap-2">
+                                                    <a href={material.url} target="_blank" rel="noopener noreferrer">
+                                                        <Paperclip className="h-4 w-4" />
+                                                        {material.name}
+                                                    </a>
+                                                </Button>
+                                            ) : (
+                                                <div className="flex items-center gap-2 p-2 border rounded-lg bg-muted/50">
+                                                    <Paperclip className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="text-sm text-muted-foreground">{material.name}</span>
+                                                    <span className="text-xs text-muted-foreground">(Arquivo não disponível)</span>
+                                                </div>
+                                            )}
                                         </li>
                                     ))}
                                 </ul>
                             </div>
                         )}
-                        {lesson.contentBlocks && lesson.contentBlocks.length > 0 && (
-                          <ContentBlockPlayer blocks={lesson.contentBlocks} />
-                        )}
+
                     </div>
                     <DialogFooter className="p-6 pt-4 border-t bg-muted/50 flex-col sm:flex-row items-center justify-between gap-4">
                         {course.legalNotice && (
@@ -424,7 +417,7 @@ function QuizPlayer({ lesson, course, isCompleted, onLessonCompleted }: { lesson
                     <div className="flex items-center gap-2">{getLessonIcon(lesson.type)}<span className={cn(isCompleted && "line-through text-muted-foreground")}>{lesson.title}</span></div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <span className="text-sm text-muted-foreground flex items-center gap-1"><Clock className="h-4 w-4"/> {lesson.duration} min</span>
+                    <span className="text-sm text-muted-foreground flex items-center gap-1"><Clock className="h-4 w-4"/> {lesson.totalDuration} min</span>
                 </div>
             </div>
             <div className="ml-10 space-y-6 border-t border-dashed pt-4">

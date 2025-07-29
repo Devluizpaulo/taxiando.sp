@@ -321,7 +321,7 @@ export async function updateCourse(courseId: string, values: CourseFormValues, u
 
         // Upload da capa se for File
         let coverImageUrl = values.coverImageUrl;
-        if (coverImageUrl instanceof File) {
+        if (coverImageUrl && coverImageUrl instanceof File) {
             console.log('[updateCourse] Fazendo upload da capa...');
             const formData = new FormData();
             formData.append('file', coverImageUrl);
@@ -345,7 +345,7 @@ export async function updateCourse(courseId: string, values: CourseFormValues, u
                             (lesson.pages || []).map(async (page) => {
                                 let files = page.files || [];
                                 files = await Promise.all(files.map(async (f) => {
-                                    if (f instanceof File) {
+                                    if (f && typeof f === 'object' && 'name' in f && 'size' in f && f instanceof File) {
                                         const formData = new FormData();
                                         formData.append('file', f);
                                         const uploadResult = await uploadFile(formData, userId);
@@ -362,8 +362,21 @@ export async function updateCourse(courseId: string, values: CourseFormValues, u
                         );
                         // Upload de materiais
                         let materials = lesson.materials || [];
+                        materials = await Promise.all(materials.map(async (material) => {
+                            if (material && typeof material === 'object' && 'name' in material && 'size' in material && material instanceof File) {
+                                const formData = new FormData();
+                                formData.append('file', material);
+                                const uploadResult = await uploadFile(formData, userId);
+                                if (uploadResult.success && uploadResult.url) {
+                                    return { name: material.name, url: uploadResult.url };
+                                } else {
+                                    throw new Error(uploadResult.error || 'Falha no upload do material.');
+                                }
+                            }
+                            return material;
+                        }));
                         // Upload de áudio (mantém lógica existente)
-                        if (lesson.audioFile instanceof File) {
+                        if (lesson.audioFile && typeof lesson.audioFile === 'object' && 'name' in lesson.audioFile && 'size' in lesson.audioFile && lesson.audioFile instanceof File) {
                             const formData = new FormData();
                             formData.append('file', lesson.audioFile);
                             const uploadResult = await uploadFile(formData, userId);
@@ -387,7 +400,7 @@ export async function updateCourse(courseId: string, values: CourseFormValues, u
         finalModules.forEach(module => {
             module.lessons.forEach(lesson => {
                 totalLessons++;
-                totalDuration += Number(lesson.duration) || 0;
+                totalDuration += Number(lesson.totalDuration) || 0;
             });
         });
 
