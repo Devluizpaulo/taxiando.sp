@@ -1,6 +1,7 @@
 
 
 import { type Timestamp } from "firebase/firestore";
+import { type IndividualQuizSchema } from "@/lib/course-schemas";
 
 export interface RelatedLink {
   id?: string;
@@ -169,7 +170,21 @@ export type ContentBlock =
   | { type: 'gallery'; images: Array<{ url: string; alt?: string; caption?: string }> }
   | { type: 'exercise'; question: string; answer: string; hints?: string[] }
   | { type: 'quiz'; questions: QuizQuestion[] }
-  | { type: 'observation'; text: string; icon?: string }; // Campo de observações importantes
+  | { type: 'observation'; text: string; icon?: string }
+  // Novos elementos educativos
+  | { type: 'interactive_simulation'; title: string; description?: string; scenario: string; options: Array<{ id: string; text: string; outcome: string; isCorrect: boolean }>; feedback?: string }
+  | { type: 'case_study'; title: string; description: string; background: string; challenge: string; questions: string[]; solution?: string; keyLearnings?: string[] }
+  | { type: 'mind_map'; title: string; centralTopic: string; branches: Array<{ id: string; text: string; subBranches?: Array<{ id: string; text: string }> }> }
+  | { type: 'flashcard'; front: string; back: string; category?: string; difficulty: 'easy' | 'medium' | 'hard' }
+  | { type: 'timeline'; title: string; events: Array<{ id: string; date: string; title: string; description: string; imageUrl?: string }> }
+  | { type: 'comparison_table'; title: string; columns: string[]; rows: Array<{ id: string; feature: string; values: string[] }> }
+  | { type: 'fill_blanks'; title: string; text: string; blanks: Array<{ id: string; correctAnswer: string; hints?: string[]; alternatives?: string[] }> }
+  | { type: 'matching'; title: string; leftItems: Array<{ id: string; text: string }>; rightItems: Array<{ id: string; text: string; correctMatch: string }> }
+  | { type: 'drag_drop'; title: string; description: string; items: Array<{ id: string; text: string; correctZone: string }>; zones: Array<{ id: string; title: string; description?: string }> }
+  | { type: 'hotspot'; title: string; imageUrl: string; hotspots: Array<{ id: string; x: number; y: number; radius: number; title: string; description: string; isCorrect: boolean }> }
+  | { type: 'word_search'; title: string; grid: string[][]; words: Array<{ id: string; word: string; direction: 'horizontal' | 'vertical' | 'diagonal'; startX: number; startY: number }> }
+  | { type: 'crossword'; title: string; grid: Array<Array<{ letter?: string; number?: number; isBlack: boolean }>>; clues: { across: Array<{ number: number; clue: string; answer: string }>; down: Array<{ number: number; clue: string; answer: string }> } }
+  | { type: 'scenario_builder'; title: string; description: string; variables?: Array<{ id: string; name: string; type: 'text' | 'number' | 'boolean' | 'select'; options?: string[]; defaultValue?: string }>; outcomes: Array<{ id: string; condition: string; result: string; feedback?: string }> };
 
 // Nova interface para páginas/trechos de aula
 export interface LessonPage {
@@ -186,6 +201,7 @@ export interface LessonPage {
   pdfUrl?: string; // Para páginas de PDF
   galleryImages?: Array<{ url: string; alt?: string; caption?: string }>; // Para galerias
   questions?: QuizQuestion[]; // Para quizzes
+  individualQuiz?: IndividualQuizSchema; // Para quiz individual configurado
   exercise?: { question: string; answer: string; hints?: string[] }; // Para exercícios
   
   // Campos adicionais

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { nanoid } from 'nanoid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,7 +22,8 @@ import {
     FileImage, 
     HelpCircle,
     Lightbulb,
-    GripVertical
+    GripVertical,
+    Settings
 } from 'lucide-react';
 import { type ContentBlock } from '@/lib/types';
 
@@ -58,6 +60,127 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                     return { type: 'quiz', questions: [] };
                 case 'observation':
                     return { type: 'observation', text: '', icon: '💡' };
+                case 'interactive_simulation':
+                    return { 
+                        type: 'interactive_simulation', 
+                        title: '', 
+                        description: '', 
+                        scenario: '', 
+                        options: [
+                            { id: nanoid(), text: '', outcome: '', isCorrect: false },
+                            { id: nanoid(), text: '', outcome: '', isCorrect: false }
+                        ], 
+                        feedback: '' 
+                    };
+                case 'case_study':
+                    return { 
+                        type: 'case_study', 
+                        title: '', 
+                        description: '', 
+                        background: '', 
+                        challenge: '', 
+                        questions: [''], 
+                        solution: '', 
+                        keyLearnings: [] 
+                    };
+                case 'mind_map':
+                    return { 
+                        type: 'mind_map', 
+                        title: '', 
+                        centralTopic: '', 
+                        branches: [{ id: nanoid(), text: '', subBranches: [] }] 
+                    };
+                case 'flashcard':
+                    return { 
+                        type: 'flashcard', 
+                        front: '', 
+                        back: '', 
+                        category: '', 
+                        difficulty: 'medium' 
+                    };
+                case 'timeline':
+                    return { 
+                        type: 'timeline', 
+                        title: '', 
+                        events: [
+                            { id: nanoid(), date: '', title: '', description: '' },
+                            { id: nanoid(), date: '', title: '', description: '' }
+                        ] 
+                    };
+                case 'comparison_table':
+                    return { 
+                        type: 'comparison_table', 
+                        title: '', 
+                        columns: ['', ''], 
+                        rows: [{ id: nanoid(), feature: '', values: ['', ''] }] 
+                    };
+                case 'fill_blanks':
+                    return { 
+                        type: 'fill_blanks', 
+                        title: '', 
+                        text: '', 
+                        blanks: [{ id: nanoid(), correctAnswer: '', hints: [], alternatives: [] }] 
+                    };
+                case 'matching':
+                    return { 
+                        type: 'matching', 
+                        title: '', 
+                        leftItems: [
+                            { id: nanoid(), text: '' },
+                            { id: nanoid(), text: '' }
+                        ], 
+                        rightItems: [
+                            { id: nanoid(), text: '', correctMatch: '' },
+                            { id: nanoid(), text: '', correctMatch: '' }
+                        ] 
+                    };
+                case 'drag_drop':
+                    return { 
+                        type: 'drag_drop', 
+                        title: '', 
+                        description: '', 
+                        items: [
+                            { id: nanoid(), text: '', correctZone: '' },
+                            { id: nanoid(), text: '', correctZone: '' }
+                        ], 
+                        zones: [
+                            { id: nanoid(), title: '', description: '' },
+                            { id: nanoid(), title: '', description: '' }
+                        ] 
+                    };
+                case 'hotspot':
+                    return { 
+                        type: 'hotspot', 
+                        title: '', 
+                        imageUrl: '', 
+                        hotspots: [{ id: nanoid(), x: 50, y: 50, radius: 20, title: '', description: '', isCorrect: false }] 
+                    };
+                case 'word_search':
+                    return { 
+                        type: 'word_search', 
+                        title: '', 
+                        grid: Array(10).fill(null).map(() => Array(10).fill('A')), 
+                        words: [
+                            { id: nanoid(), word: '', direction: 'horizontal', startX: 0, startY: 0 },
+                            { id: nanoid(), word: '', direction: 'vertical', startX: 0, startY: 0 },
+                            { id: nanoid(), word: '', direction: 'diagonal', startX: 0, startY: 0 }
+                        ] 
+                    };
+                case 'crossword':
+                    return { 
+                        type: 'crossword', 
+                        title: '', 
+                        grid: Array(10).fill(null).map(() => Array(10).fill({ letter: '', number: undefined, isBlack: false })), 
+                        clues: { across: [], down: [] } 
+                    };
+                case 'scenario_builder':
+                    return { 
+                        type: 'scenario_builder', 
+                        title: '', 
+                        description: '', 
+                        variables: [], 
+                        outcomes: [{ id: nanoid(), condition: '', result: '', feedback: '' }] 
+                    };
                 default:
                     return { type: 'paragraph', text: '' };
             }
@@ -419,6 +542,87 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                     </div>
                 );
 
+            // Novos elementos educativos - renderizar editores específicos
+            case 'interactive_simulation':
+            case 'case_study':
+            case 'timeline':
+            case 'fill_blanks':
+            case 'mind_map':
+            case 'flashcard':
+            case 'comparison_table':
+            case 'matching':
+            case 'drag_drop':
+            case 'hotspot':
+            case 'word_search':
+            case 'crossword':
+            case 'scenario_builder':
+                return (
+                    <div className="space-y-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="text-lg">
+                                    {block.type === 'interactive_simulation' && '🎮'}
+                                    {block.type === 'case_study' && '📋'}
+                                    {block.type === 'timeline' && '📅'}
+                                    {block.type === 'fill_blanks' && '✏️'}
+                                    {block.type === 'mind_map' && '🧠'}
+                                    {block.type === 'flashcard' && '🃏'}
+                                    {block.type === 'comparison_table' && '📊'}
+                                    {block.type === 'matching' && '🔗'}
+                                    {block.type === 'drag_drop' && '🎯'}
+                                    {block.type === 'hotspot' && '📍'}
+                                    {block.type === 'word_search' && '🔍'}
+                                    {block.type === 'crossword' && '📝'}
+                                    {block.type === 'scenario_builder' && '🎭'}
+                                </span>
+                                <h4 className="font-medium">
+                                    {getBlockLabel(block.type)}
+                                </h4>
+                            </div>
+                            <p className="text-sm text-blue-700">
+                                Este elemento educativo será configurado no editor específico.
+                                Use o botão "Configurar Elemento" abaixo para editar detalhadamente.
+                            </p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <Input
+                                value={'title' in block ? block.title || '' : ''}
+                                onChange={(e) => {
+                                    if ('title' in block) {
+                                        updateBlock(index, { ...block, title: e.target.value });
+                                    }
+                                }}
+                                placeholder="Título do elemento..."
+                            />
+                            <Textarea
+                                value={'description' in block ? block.description || '' : ''}
+                                onChange={(e) => {
+                                    if ('description' in block) {
+                                        updateBlock(index, { ...block, description: e.target.value });
+                                    }
+                                }}
+                                placeholder="Descrição breve..."
+                                rows={2}
+                            />
+                        </div>
+
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => {
+                                // Aqui você pode abrir um modal ou navegar para o editor específico
+                                console.log('Abrir editor específico para:', block.type);
+                            }}
+                        >
+                            <Settings className="h-4 w-4 mr-2" />
+                            Configurar Elemento Detalhadamente
+                        </Button>
+                    </div>
+                );
+
             default:
                 return <div>Tipo de bloco não suportado</div>;
         }
@@ -436,6 +640,19 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
             case 'gallery': return <FileImage className="h-4 w-4" />;
             case 'exercise': return <HelpCircle className="h-4 w-4" />;
             case 'observation': return <Lightbulb className="h-4 w-4" />;
+            case 'interactive_simulation': return <span className="text-lg">🎮</span>;
+            case 'case_study': return <span className="text-lg">📋</span>;
+            case 'mind_map': return <span className="text-lg">🧠</span>;
+            case 'flashcard': return <span className="text-lg">🃏</span>;
+            case 'timeline': return <span className="text-lg">📅</span>;
+            case 'comparison_table': return <span className="text-lg">📊</span>;
+            case 'fill_blanks': return <span className="text-lg">✏️</span>;
+            case 'matching': return <span className="text-lg">🔗</span>;
+            case 'drag_drop': return <span className="text-lg">🎯</span>;
+            case 'hotspot': return <span className="text-lg">📍</span>;
+            case 'word_search': return <span className="text-lg">🔍</span>;
+            case 'crossword': return <span className="text-lg">📝</span>;
+            case 'scenario_builder': return <span className="text-lg">🎭</span>;
             default: return <FileText className="h-4 w-4" />;
         }
     };
@@ -452,6 +669,19 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
             case 'gallery': return 'Galeria';
             case 'exercise': return 'Exercício';
             case 'observation': return 'Observação';
+            case 'interactive_simulation': return 'Simulação Interativa';
+            case 'case_study': return 'Estudo de Caso';
+            case 'mind_map': return 'Mapa Mental';
+            case 'flashcard': return 'Flashcard';
+            case 'timeline': return 'Linha do Tempo';
+            case 'comparison_table': return 'Tabela Comparativa';
+            case 'fill_blanks': return 'Preencher Lacunas';
+            case 'matching': return 'Correspondência';
+            case 'drag_drop': return 'Arrastar e Soltar';
+            case 'hotspot': return 'Hotspot';
+            case 'word_search': return 'Caça-Palavras';
+            case 'crossword': return 'Palavras Cruzadas';
+            case 'scenario_builder': return 'Construtor de Cenários';
             default: return 'Bloco';
         }
     };
@@ -476,6 +706,19 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                             <SelectItem value="gallery">Galeria</SelectItem>
                             <SelectItem value="exercise">Exercício</SelectItem>
                             <SelectItem value="observation">Observação</SelectItem>
+                            <SelectItem value="interactive_simulation">🎮 Simulação Interativa</SelectItem>
+                            <SelectItem value="case_study">📋 Estudo de Caso</SelectItem>
+                            <SelectItem value="mind_map">🧠 Mapa Mental</SelectItem>
+                            <SelectItem value="flashcard">🃏 Flashcard</SelectItem>
+                            <SelectItem value="timeline">📅 Linha do Tempo</SelectItem>
+                            <SelectItem value="comparison_table">📊 Tabela Comparativa</SelectItem>
+                            <SelectItem value="fill_blanks">✏️ Preencher Lacunas</SelectItem>
+                            <SelectItem value="matching">🔗 Correspondência</SelectItem>
+                            <SelectItem value="drag_drop">🎯 Arrastar e Soltar</SelectItem>
+                            <SelectItem value="hotspot">📍 Hotspot</SelectItem>
+                            <SelectItem value="word_search">🔍 Caça-Palavras</SelectItem>
+                            <SelectItem value="crossword">📝 Palavras Cruzadas</SelectItem>
+                            <SelectItem value="scenario_builder">🎭 Construtor de Cenários</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

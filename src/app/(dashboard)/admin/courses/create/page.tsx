@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, Eye, EyeOff, ImageIcon, Check, X, AlertCircle } from 'lucide-react';
+import { Loader2, Upload, Eye, EyeOff, ImageIcon, Check, X, AlertCircle, HelpCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -50,6 +50,18 @@ const courseCreationSchema = z.object({
   enableComments: z.boolean().default(true),
   autoCertification: z.boolean().default(true),
   minimumPassingScore: z.coerce.number().min(0).max(100).default(70),
+  
+  // Configurações de Avaliação
+  enableIndividualQuizzes: z.boolean().default(true),
+  defaultQuizSettings: z.object({
+    passingScore: z.coerce.number().min(0).max(100).default(70).optional(),
+    timeLimit: z.coerce.number().min(1).optional(),
+    allowRetry: z.boolean().default(true).optional(),
+    maxRetries: z.coerce.number().min(1).default(3).optional(),
+    shuffleQuestions: z.boolean().default(false).optional(),
+    showResults: z.boolean().default(true).optional(),
+    certificateRequired: z.boolean().default(false).optional(),
+  }).optional(),
   
   // SEO
   seoTags: z.string().optional().or(z.literal('')), // Será convertido para array
@@ -145,6 +157,16 @@ export default function CreateCoursePage() {
             enableComments: true,
             autoCertification: true,
             minimumPassingScore: 70,
+            enableIndividualQuizzes: true,
+            defaultQuizSettings: {
+                passingScore: 70,
+                timeLimit: undefined,
+                allowRetry: true,
+                maxRetries: 3,
+                shuffleQuestions: false,
+                showResults: true,
+                certificateRequired: false,
+            },
             seoTags: '',
         },
         mode: 'onChange', // Validação em tempo real
@@ -830,40 +852,65 @@ export default function CreateCoursePage() {
                     </Alert>
                 )}
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField control={form.control} name="enableComments" render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                                <Checkbox
-                                    checked={field.value || true}
-                                    onCheckedChange={field.onChange}
-                                />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                                <FormLabel>Ativar comentários dos alunos</FormLabel>
-                                <FormDescription>
-                                    Permite que os alunos deixem comentários nas aulas.
-                                </FormDescription>
-                            </div>
-                        </FormItem>
-                    )}/>
+                {/* Configurações de Avaliação */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <HelpCircle className="h-5 w-5 text-blue-600" />
+                        <h3 className="text-lg font-semibold">Configurações de Avaliação</h3>
+                    </div>
                     
-                    <FormField control={form.control} name="autoCertification" render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                                <Checkbox
-                                    checked={field.value || true}
-                                    onCheckedChange={field.onChange}
-                                />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                                <FormLabel>Certificação automática</FormLabel>
-                                <FormDescription>
-                                    Emite certificado automaticamente ao completar o curso.
-                                </FormDescription>
-                            </div>
-                        </FormItem>
-                    )}/>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField control={form.control} name="enableIndividualQuizzes" render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value || true}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                    <FormLabel>Ativar provas individuais</FormLabel>
+                                    <FormDescription>
+                                        Permite configurar provas específicas com questões personalizadas.
+                                    </FormDescription>
+                                </div>
+                            </FormItem>
+                        )}/>
+                        
+                        <FormField control={form.control} name="enableComments" render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value || true}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                    <FormLabel>Ativar comentários dos alunos</FormLabel>
+                                    <FormDescription>
+                                        Permite que os alunos deixem comentários nas aulas.
+                                    </FormDescription>
+                                </div>
+                            </FormItem>
+                        )}/>
+                        
+                        <FormField control={form.control} name="autoCertification" render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value || true}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                    <FormLabel>Certificação automática</FormLabel>
+                                    <FormDescription>
+                                        Emite certificado automaticamente ao completar o curso.
+                                    </FormDescription>
+                                </div>
+                            </FormItem>
+                        )}/>
+                    </div>
                 </div>
                 
                 <FormField control={form.control} name="minimumPassingScore" render={({ field }) => (

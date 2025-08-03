@@ -46,6 +46,7 @@ import { useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ContentBlocksEditor } from '@/components/course/ContentBlocksEditor';
+import { IndividualQuizEditor } from '@/components/course/IndividualQuizEditor';
 import { Controller } from 'react-hook-form';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -1361,7 +1362,8 @@ function EnhancedLessonEditor({
                         summary: '',
                         observations: '',
                       };
-                      form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.pages`, [...currentPages, newPage]);
+                      const updatedPages = [...currentPages, newPage];
+                      form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.pages`, updatedPages);
                     }}
                   >
                     <PlusCircle className="h-4 w-4 mr-2" />
@@ -1473,7 +1475,8 @@ function EnhancedLessonEditor({
                         name: '',
                         url: '',
                       };
-                      form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.materials`, [...currentMaterials, newMaterial]);
+                      const updatedMaterials = [...currentMaterials, newMaterial];
+                      form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.materials`, updatedMaterials);
                     }}
                   >
                     <PlusCircle className="h-4 w-4 mr-2" />
@@ -1555,7 +1558,8 @@ function EnhancedLessonEditor({
                           { id: nanoid(), text: '', isCorrect: false },
                         ],
                       };
-                      form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.questions`, [...currentQuestions, newQuestion]);
+                      const updatedQuestions = [...currentQuestions, newQuestion];
+                      form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.questions`, updatedQuestions);
                     }}
                   >
                     <PlusCircle className="h-4 w-4 mr-2" />
@@ -1723,7 +1727,8 @@ function PageContentEditor({
                       type: 'paragraph' as const,
                       text: '',
                     };
-                    form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.contentBlocks`, [...currentBlocks, newBlock]);
+                    const updatedBlocks = [...currentBlocks, newBlock];
+                    form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.contentBlocks`, updatedBlocks);
                   }}
                 >
                   <PlusCircle className="h-4 w-4 mr-2" />
@@ -1974,18 +1979,17 @@ function PageContentEditor({
           <div className="space-y-3">
             <FormField
               control={form.control}
-              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.summary`}
+              name={`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.individualQuiz`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição do Quiz</FormLabel>
+                  <FormLabel>Configuração do Quiz</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      {...field} 
-                      placeholder="Descreva o quiz..."
-                      rows={2}
-                      className="text-sm"
+                    <IndividualQuizEditor
+                      value={field.value}
+                      onChange={field.onChange}
                     />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />

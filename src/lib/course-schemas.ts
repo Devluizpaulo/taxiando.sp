@@ -90,6 +90,175 @@ export const contentBlockSchema = z.discriminatedUnion('type', [
     type: z.literal('observation'), 
     text: z.string().min(1, "O texto da observação é obrigatório."), 
     icon: z.string().optional() 
+  }),
+  // Novos elementos educativos
+  z.object({ 
+    type: z.literal('interactive_simulation'), 
+    title: z.string().min(1, "O título da simulação é obrigatório."),
+    description: z.string().optional(),
+    scenario: z.string().min(1, "O cenário da simulação é obrigatório."),
+    options: z.array(z.object({
+      id: z.string(),
+      text: z.string().min(1, "O texto da opção é obrigatório."),
+      outcome: z.string().min(1, "O resultado da opção é obrigatório."),
+      isCorrect: z.boolean().default(false)
+    })).min(2, "A simulação deve ter pelo menos 2 opções."),
+    feedback: z.string().optional()
+  }),
+  z.object({ 
+    type: z.literal('case_study'), 
+    title: z.string().min(1, "O título do caso é obrigatório."),
+    description: z.string().min(1, "A descrição do caso é obrigatória."),
+    background: z.string().min(1, "O contexto do caso é obrigatório."),
+    challenge: z.string().min(1, "O desafio do caso é obrigatório."),
+    questions: z.array(z.string().min(1, "A pergunta do caso é obrigatória.")).min(1, "O caso deve ter pelo menos uma pergunta."),
+    solution: z.string().optional(),
+    keyLearnings: z.array(z.string()).optional()
+  }),
+  z.object({ 
+    type: z.literal('mind_map'), 
+    title: z.string().min(1, "O título do mapa mental é obrigatório."),
+    centralTopic: z.string().min(1, "O tópico central é obrigatório."),
+    branches: z.array(z.object({
+      id: z.string(),
+      text: z.string().min(1, "O texto do ramo é obrigatório."),
+      subBranches: z.array(z.object({
+        id: z.string(),
+        text: z.string().min(1, "O texto do sub-ramo é obrigatório.")
+      })).optional()
+    })).min(1, "O mapa mental deve ter pelo menos um ramo.")
+  }),
+  z.object({ 
+    type: z.literal('flashcard'), 
+    front: z.string().min(1, "O conteúdo da frente do cartão é obrigatório."),
+    back: z.string().min(1, "O conteúdo do verso do cartão é obrigatório."),
+    category: z.string().optional(),
+    difficulty: z.enum(['easy', 'medium', 'hard']).default('medium')
+  }),
+  z.object({ 
+    type: z.literal('timeline'), 
+    title: z.string().min(1, "O título da linha do tempo é obrigatório."),
+    events: z.array(z.object({
+      id: z.string(),
+      date: z.string().min(1, "A data do evento é obrigatória."),
+      title: z.string().min(1, "O título do evento é obrigatório."),
+      description: z.string().min(1, "A descrição do evento é obrigatória."),
+      imageUrl: z.string().url().optional()
+    })).min(2, "A linha do tempo deve ter pelo menos 2 eventos.")
+  }),
+  z.object({ 
+    type: z.literal('comparison_table'), 
+    title: z.string().min(1, "O título da tabela é obrigatório."),
+    columns: z.array(z.string().min(1, "O título da coluna é obrigatório.")).min(2, "A tabela deve ter pelo menos 2 colunas."),
+    rows: z.array(z.object({
+      id: z.string(),
+      feature: z.string().min(1, "O nome da característica é obrigatório."),
+      values: z.array(z.string().min(1, "O valor da célula é obrigatório."))
+    })).min(1, "A tabela deve ter pelo menos uma linha.")
+  }),
+  z.object({ 
+    type: z.literal('fill_blanks'), 
+    title: z.string().min(1, "O título do exercício é obrigatório."),
+    text: z.string().min(1, "O texto com lacunas é obrigatório."),
+    blanks: z.array(z.object({
+      id: z.string(),
+      correctAnswer: z.string().min(1, "A resposta correta é obrigatória."),
+      hints: z.array(z.string()).optional(),
+      alternatives: z.array(z.string()).optional()
+    })).min(1, "O exercício deve ter pelo menos uma lacuna.")
+  }),
+  z.object({ 
+    type: z.literal('matching'), 
+    title: z.string().min(1, "O título do exercício é obrigatório."),
+    leftItems: z.array(z.object({
+      id: z.string(),
+      text: z.string().min(1, "O texto do item é obrigatório.")
+    })).min(2, "O exercício deve ter pelo menos 2 itens."),
+    rightItems: z.array(z.object({
+      id: z.string(),
+      text: z.string().min(1, "O texto do item é obrigatório."),
+      correctMatch: z.string().min(1, "O ID do item correspondente é obrigatório.")
+    })).min(2, "O exercício deve ter pelo menos 2 itens.")
+  }),
+  z.object({ 
+    type: z.literal('drag_drop'), 
+    title: z.string().min(1, "O título do exercício é obrigatório."),
+    description: z.string().min(1, "A descrição do exercício é obrigatória."),
+    items: z.array(z.object({
+      id: z.string(),
+      text: z.string().min(1, "O texto do item é obrigatório."),
+      correctZone: z.string().min(1, "A zona correta é obrigatória.")
+    })).min(2, "O exercício deve ter pelo menos 2 itens."),
+    zones: z.array(z.object({
+      id: z.string(),
+      title: z.string().min(1, "O título da zona é obrigatório."),
+      description: z.string().optional()
+    })).min(2, "O exercício deve ter pelo menos 2 zonas.")
+  }),
+  z.object({ 
+    type: z.literal('hotspot'), 
+    title: z.string().min(1, "O título do exercício é obrigatório."),
+    imageUrl: z.string().url("URL da imagem inválida."),
+    hotspots: z.array(z.object({
+      id: z.string(),
+      x: z.number().min(0).max(100),
+      y: z.number().min(0).max(100),
+      radius: z.number().min(5).max(50).default(20),
+      title: z.string().min(1, "O título do hotspot é obrigatório."),
+      description: z.string().min(1, "A descrição do hotspot é obrigatória."),
+      isCorrect: z.boolean().default(false)
+    })).min(1, "O exercício deve ter pelo menos um hotspot.")
+  }),
+  z.object({ 
+    type: z.literal('word_search'), 
+    title: z.string().min(1, "O título do exercício é obrigatório."),
+    grid: z.array(z.array(z.string().length(1))).min(5, "A grade deve ter pelo menos 5 linhas."),
+    words: z.array(z.object({
+      id: z.string(),
+      word: z.string().min(2, "A palavra deve ter pelo menos 2 letras."),
+      direction: z.enum(['horizontal', 'vertical', 'diagonal']).default('horizontal'),
+      startX: z.number().min(0),
+      startY: z.number().min(0)
+    })).min(3, "O exercício deve ter pelo menos 3 palavras.")
+  }),
+  z.object({ 
+    type: z.literal('crossword'), 
+    title: z.string().min(1, "O título do exercício é obrigatório."),
+    grid: z.array(z.array(z.object({
+      letter: z.string().length(1).optional(),
+      number: z.number().optional(),
+      isBlack: z.boolean().default(false)
+    }))).min(5, "A grade deve ter pelo menos 5 linhas."),
+    clues: z.object({
+      across: z.array(z.object({
+        number: z.number(),
+        clue: z.string().min(1, "A dica é obrigatória."),
+        answer: z.string().min(1, "A resposta é obrigatória.")
+      })),
+      down: z.array(z.object({
+        number: z.number(),
+        clue: z.string().min(1, "A dica é obrigatória."),
+        answer: z.string().min(1, "A resposta é obrigatória.")
+      }))
+    })
+  }),
+  z.object({ 
+    type: z.literal('scenario_builder'), 
+    title: z.string().min(1, "O título do cenário é obrigatório."),
+    description: z.string().min(1, "A descrição do cenário é obrigatória."),
+    variables: z.array(z.object({
+      id: z.string(),
+      name: z.string().min(1, "O nome da variável é obrigatório."),
+      type: z.enum(['text', 'number', 'boolean', 'select']),
+      options: z.array(z.string()).optional(),
+      defaultValue: z.string().optional()
+    })).optional(),
+    outcomes: z.array(z.object({
+      id: z.string(),
+      condition: z.string().min(1, "A condição é obrigatória."),
+      result: z.string().min(1, "O resultado é obrigatório."),
+      feedback: z.string().optional()
+    })).min(1, "O cenário deve ter pelo menos um resultado.")
   })
 ]);
 
@@ -114,6 +283,20 @@ export const lessonPageSchema = z.object({
     caption: z.string().optional()
   })).optional(),
   questions: z.array(quizQuestionSchema).optional(),
+  individualQuiz: z.object({
+    id: z.string().optional(),
+    title: z.string().min(3, "O título do quiz é obrigatório."),
+    description: z.string().optional(),
+    questions: z.array(quizQuestionSchema).min(1, "O quiz deve ter pelo menos uma questão."),
+    passingScore: z.coerce.number().min(0).max(100).default(70),
+    timeLimit: z.coerce.number().min(1).optional(), // em minutos
+    allowRetry: z.boolean().default(true),
+    maxRetries: z.coerce.number().min(1).default(3),
+    shuffleQuestions: z.boolean().default(false),
+    showResults: z.boolean().default(true),
+    certificateRequired: z.boolean().default(false),
+    weight: z.coerce.number().min(1).max(100).default(100), // peso da prova no curso
+  }).optional(),
   exercise: z.object({
     question: z.string().min(1, "A pergunta do exercício é obrigatória."),
     answer: z.string().min(1, "A resposta do exercício é obrigatória."),
@@ -364,3 +547,21 @@ export const courseFormSchema = z.object({
 });
 
 export type CourseFormValues = z.infer<typeof courseFormSchema>;
+
+// Schema para quiz individual com configurações específicas
+export const individualQuizSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().min(3, "O título do quiz é obrigatório."),
+  description: z.string().optional(),
+  questions: z.array(quizQuestionSchema).min(1, "O quiz deve ter pelo menos uma questão."),
+  passingScore: z.coerce.number().min(0).max(100).default(70),
+  timeLimit: z.coerce.number().min(1).optional(), // em minutos
+  allowRetry: z.boolean().default(true),
+  maxRetries: z.coerce.number().min(1).default(3),
+  shuffleQuestions: z.boolean().default(false),
+  showResults: z.boolean().default(true),
+  certificateRequired: z.boolean().default(false),
+  weight: z.coerce.number().min(1).max(100).default(100), // peso da prova no curso
+});
+
+export type IndividualQuizSchema = z.infer<typeof individualQuizSchema>;
