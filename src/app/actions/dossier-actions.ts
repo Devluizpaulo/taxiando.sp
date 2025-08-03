@@ -428,7 +428,7 @@ async function generateDocumentVerification(driver: UserProfile) {
       valid: true,
       number: driver.cnhNumber || '',
       category: driver.cnhCategory || 'B',
-      expiration: driver.cnhExpiration ? new Date(driver.cnhExpiration.toDate()).toISOString() : '',
+      expiration: driver.cnhExpiration ? driver.cnhExpiration.toDate().toISOString() : '',
       points: driver.cnhPoints || 0,
       restrictions: [],
       status: 'valid' as const
@@ -436,7 +436,7 @@ async function generateDocumentVerification(driver: UserProfile) {
     condutax: {
       valid: true,
       number: driver.condutaxNumber || '',
-      expiration: driver.condutaxExpiration ? new Date(driver.condutaxExpiration.toDate()).toISOString() : '',
+      expiration: driver.condutaxExpiration ? driver.condutaxExpiration.toDate().toISOString() : '',
       status: 'valid' as const
     },
     cpf: {
@@ -516,24 +516,90 @@ async function generateRiskAssessment(dossierData: Partial<DriverDossier>) {
     score -= 25;
   }
 
+  // Verificar validação de contato
+  if (dossierData.contactValidation?.phone.valid && dossierData.contactValidation?.email.valid) {
+    score += 10;
+  } else if (dossierData.contactValidation && (!dossierData.contactValidation.phone.valid || !dossierData.contactValidation.email.valid)) {
+    score -= 10;
+  }
+
+  // Verificar validação de endereço
+  if (dossierData.addressValidation?.valid) {
+    score += 10;
+  } else if (dossierData.addressValidation && !dossierData.addressValidation.valid) {
+    score -= 10;
+  }
+
+  // Verificar histórico de trabalho
+  if ((dossierData.workHistory?.stabilityScore ?? 0) >= 7) {
+    score += 5;
+  } else if ((dossierData.workHistory?.stabilityScore ?? 0) <= 3) {
+    score -= 5;
+  }
+
   score = Math.max(1, Math.min(100, score));
+  const riskLevel = score < 30 ? 'high' : score < 70 ? 'medium' : 'low';
+
+  const factors: Array<{
+    factor: string;
+    impact: 'negative' | 'neutral' | 'positive';
+    weight: number;
+    description: string;
+  }> = [
+    {
+      factor: 'Histórico Financeiro',
+      impact: dossierData.financialAnalysis?.riskLevel === 'high' ? 'negative' : 
+             dossierData.financialAnalysis?.riskLevel === 'medium' ? 'neutral' : 'positive',
+      weight: 30,
+      description: 'Análise de crédito e pagamentos'
+    },
+    {
+      factor: 'Verificação Serasa',
+      impact: dossierData.serasaCheck?.hasRestrictions ? 'negative' : 'positive',
+      weight: 25,
+      description: 'Consulta de restrições financeiras'
+    },
+    {
+      factor: 'Antecedentes Criminais',
+      impact: dossierData.criminalRecord?.hasRecord ? 'negative' : 'positive',
+      weight: 20,
+      description: 'Verificação de registros criminais'
+    },
+    {
+      factor: 'Validação de Contato',
+      impact: (dossierData.contactValidation?.phone.valid && dossierData.contactValidation?.email.valid) ? 'positive' : 
+              dossierData.contactValidation ? 'negative' : 'neutral',
+      weight: 10,
+      description: 'Confirmação de dados de contato'
+    },
+    {
+      factor: 'Validação de Endereço',
+      impact: dossierData.addressValidation?.valid ? 'positive' : 
+              dossierData.addressValidation ? 'negative' : 'neutral',
+      weight: 10,
+      description: 'Confirmação de endereço residencial'
+    },
+    {
+      factor: 'Histórico Profissional',
+      impact: (dossierData.workHistory?.stabilityScore ?? 0) >= 7 ? 'positive' : 
+              (dossierData.workHistory?.stabilityScore ?? 0) <= 3 ? 'negative' : 'neutral',
+      weight: 5,
+      description: 'Análise de experiência profissional'
+    }
+  ];
 
   return {
     overallScore: score,
-    riskLevel: (score < 30 ? 'high' : score < 70 ? 'medium' : 'low') as 'low' | 'medium' | 'high',
-          factors: [
-        {
-          factor: 'Histórico Financeiro',
-          impact: dossierData.financialAnalysis?.riskLevel === 'high' ? 'negative' as const : 'positive' as const,
-          weight: 30,
-          description: 'Análise de crédito e pagamentos'
-        }
-      ],
+    riskLevel: riskLevel as 'low' | 'medium' | 'high',
+    factors,
     recommendations: [
       'Monitorar pagamentos regularmente',
-      'Manter documentação atualizada'
+      'Manter documentação atualizada',
+      riskLevel === 'high' ? 'Realizar verificações adicionais antes de aprovar' : 
+      riskLevel === 'medium' ? 'Considerar período probatório inicial' : 
+      'Elegível para benefícios de motoristas confiáveis'
     ],
-    insuranceRisk: (score < 30 ? 'high' : score < 70 ? 'medium' : 'low') as 'low' | 'medium' | 'high'
+    insuranceRisk: riskLevel as 'low' | 'medium' | 'high'
   };
 }
 

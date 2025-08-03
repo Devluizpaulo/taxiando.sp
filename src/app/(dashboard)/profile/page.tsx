@@ -726,12 +726,12 @@ export default function CompleteProfilePage() {
                                         <CardContent>
                                             <FormItem>
                                                 <div className="flex items-center justify-center">
-                                                    <FirebaseImageUpload
-                                                        value={form.watch('photoUrl')}
-                                                        onChange={url => form.setValue('photoUrl', url, { shouldValidate: true, shouldDirty: true })}
-                                                        pathPrefix={`users/${user?.uid}/profile/`}
-                                                    />
-                                                </div>
+                                                <FirebaseImageUpload
+                                                    value={form.watch('photoUrl')}
+                                                    onChange={url => form.setValue('photoUrl', url, { shouldValidate: true, shouldDirty: true })}
+                                                    pathPrefix={`users/${user?.uid}/profile/`}
+                                                />
+                                            </div>
                                                 <FormMessage />
                                             </FormItem>
                                         </CardContent>
@@ -803,7 +803,7 @@ export default function CompleteProfilePage() {
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent className="space-y-6">
-                                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                                 <FormField 
                                                     control={form.control} 
                                                     name="phone" 
@@ -843,9 +843,9 @@ export default function CompleteProfilePage() {
                                                         </FormItem>
                                                     )} 
                                                 />
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                                 </div>
                             </div>
 
@@ -862,8 +862,8 @@ export default function CompleteProfilePage() {
                                             <CardDescription>
                                                 Informações sobre onde você mora.
                                             </CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="space-y-6">
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
                                             <FormField control={form.control} name="address" render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel className="text-sm font-medium">Endereço Completo</FormLabel>
@@ -950,15 +950,15 @@ export default function CompleteProfilePage() {
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
-
-                                            <FormField control={form.control} name="garageInfo" render={({ field }) => (
+                                        
+                                        <FormField control={form.control} name="garageInfo" render={({ field }) => (
                                                 <FormItem className="space-y-3 rounded-lg border p-4 bg-muted/30">
                                                     <FormLabel className="text-sm font-medium">Onde o veículo ficará guardado durante a noite?</FormLabel>
                                                     <FormDescription className="text-sm">
                                                         Frotas sérias se preocupam com a segurança do veículo. Informar que você tem um local seguro aumenta muito suas chances de aprovação.
                                                     </FormDescription>
-                                                    <FormControl>
-                                                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                                <FormControl>
+                                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                                                             <FormItem className="flex items-center space-x-3 space-y-0">
                                                                 <FormControl>
                                                                     <RadioGroupItem value="covered" />
@@ -983,10 +983,10 @@ export default function CompleteProfilePage() {
                                                                 </FormControl>
                                                                 <FormLabel className="font-normal">Na Rua</FormLabel>
                                                             </FormItem>
-                                                        </RadioGroup>
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
+                                                    </RadioGroup>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
                                             )} />
                                         </CardContent>
                                     </Card>
@@ -1003,11 +1003,11 @@ export default function CompleteProfilePage() {
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent className="space-y-6">
-                                            <FormField control={form.control} name="workMode" render={({ field }) => (
+                                        <FormField control={form.control} name="workMode" render={({ field }) => (
                                                 <FormItem className="space-y-3">
                                                     <FormLabel className="text-sm font-medium">Qual seu modo de trabalho principal?</FormLabel>
                                                     <FormControl>
-                                                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                             <Label htmlFor="rental" className="flex flex-col p-4 border rounded-md cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-all">
                                                                 <RadioGroupItem value="rental" id="rental" className="sr-only" />
                                                                 <span className="font-bold text-lg">Alugo carro de Frota</span>
@@ -1018,13 +1018,13 @@ export default function CompleteProfilePage() {
                                                                 <span className="font-bold text-lg">Tenho meu próprio veículo</span>
                                                                 <span className="text-sm text-muted-foreground">Sou proprietário(a) e quero usar a plataforma para gerenciar meus documentos.</span>
                                                             </Label>
-                                                        </RadioGroup>
+                                                </RadioGroup>
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
                                             
-                                            {workMode === 'owner' && (
+                                        {workMode === 'owner' && (
                                                 <Card className="border-2 border-dashed border-blue-200 bg-blue-50/30">
                                                     <CardHeader className="pb-4">
                                                         <CardTitle className="flex items-center gap-2 text-lg text-blue-800">
@@ -1036,7 +1036,7 @@ export default function CompleteProfilePage() {
                                                         </CardDescription>
                                                     </CardHeader>
                                                     <CardContent className="space-y-6">
-                                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                                             <FormField control={form.control} name="vehicleLicensePlate" render={({ field }) => (
                                                                 <FormItem>
                                                                     <FormLabel className="text-sm font-medium">Placa do Veículo (Alvará)</FormLabel>
@@ -1060,7 +1060,7 @@ export default function CompleteProfilePage() {
                                                                     <FormMessage />
                                                                 </FormItem>
                                                             )} />
-                                                        </div>
+                                                </div>
                                                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                                             <FormField control={form.control} name="alvaraInspectionDate" render={({ field }) => (
                                                                 <FormItem>
@@ -1080,7 +1080,7 @@ export default function CompleteProfilePage() {
                                                                     <FormMessage />
                                                                 </FormItem>
                                                             )} />
-                                                        </div>
+                                            </div>
                                                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                                             <FormField control={form.control} name="licensingExpiration" render={({ field }) => (
                                                                 <FormItem>
@@ -1097,9 +1097,9 @@ export default function CompleteProfilePage() {
                                                         </div>
                                                     </CardContent>
                                                 </Card>
-                                            )}
-                                        </CardContent>
-                                    </Card>
+                                        )}
+                                    </CardContent>
+                                </Card>
                                 </div>
                             </div>
 

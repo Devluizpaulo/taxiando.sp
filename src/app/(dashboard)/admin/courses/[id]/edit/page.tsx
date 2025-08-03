@@ -8,7 +8,7 @@ import { nanoid } from 'nanoid';
 import { use } from 'react';
 import { debounce } from 'lodash';
 
-import { type Course } from '@/lib/types';
+import { type Course, type ContentBlock } from '@/lib/types';
 import { getCourseById, updateCourse, updateCourseStatus, deleteCourse } from '@/app/actions/course-actions';
 import { courseFormSchema, type CourseFormValues } from '@/lib/course-schemas';
 import { LoadingScreen } from '@/components/loading-screen';
@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { AdvancedContentEditor } from '@/components/advanced-content-editor';
 import { 
   Loader2, PlusCircle, Trash2, Save, LogOut, UploadCloud, Eye, Copy, 
   FileText, Video, ClipboardCheck, Mic, GripVertical, Paperclip, 
@@ -38,7 +39,7 @@ import {
   Image as ImageIcon, Link2, Code, Bold, Italic, Underline, AlignLeft,
   AlignCenter, AlignRight, List, ListOrdered, Quote, Heading1, Heading2,
   Heading3, Table, Zap, Sparkles, ChevronDown, ChevronUp, Move3D,
-  AlertCircle, Check
+  AlertCircle, Check, BookOpen
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/use-auth';
@@ -216,7 +217,7 @@ function useCourseOperations(courseId: string, userId: string): CourseOperations
   const { toast } = useToast();
   const router = useRouter();
 
-  return useMemo(() => ({
+  const operations = useMemo(() => ({
     create: async (data) => {
       try {
         toast({ title: 'Sucesso', description: 'Curso criado com sucesso!' });
@@ -244,7 +245,7 @@ function useCourseOperations(courseId: string, userId: string): CourseOperations
           title: 'Erro', 
           description: 'Falha ao carregar curso. Verifique o console para mais detalhes.' 
         });
-        throw error; // Re-throw para que o componente possa capturar
+        throw error;
       }
     },
     update: async (id, data) => {
@@ -314,7 +315,9 @@ function useCourseOperations(courseId: string, userId: string): CourseOperations
         toast({ title: 'Erro', description: 'Falha ao importar curso.' });
       }
     }
-  }), [courseId, userId, toast, router]);
+  }), [userId, toast, router]); // Removido courseId das dependências
+
+  return operations;
 }
 
 // Hook para auto-save otimizado
@@ -340,7 +343,10 @@ function useAutoSave(form: UseFormReturn<CourseFormValues>, courseId: string, op
       setHasUnsavedChanges(true);
       debouncedSave(data as CourseFormValues);
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      debouncedSave.cancel();
+    };
   }, [form, debouncedSave]);
 
   return { lastSaved, hasUnsavedChanges };
@@ -387,8 +393,6 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
     const loadCourse = async () => {
       try {
         console.log(`[EditCoursePage] Carregando curso com ID: ${id}`);
-        console.log(`[EditCoursePage] Usuário:`, user);
-        console.log(`[EditCoursePage] Operations:`, operations);
         
         if (!id || id.trim() === '') {
           console.error('[EditCoursePage] ID do curso é inválido:', id);
@@ -411,8 +415,11 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
         setIsLoading(false);
       }
     };
-    loadCourse();
-  }, [id, operations, user]);
+    
+    if (user && operations) {
+      loadCourse();
+    }
+  }, [id, user?.uid]); // Removido operations das dependências
 
   if (isLoading) return <LoadingScreen />;
   if (error) {
@@ -801,51 +808,398 @@ function GeneralTab({ form }: { form: UseFormReturn<CourseFormValues> }) {
 }
 
 function ContentTab({ form }: { form: UseFormReturn<CourseFormValues> }) {
+  const [activeModuleIndex, setActiveModuleIndex] = useState(0);
+  const [activeLessonIndex, setActiveLessonIndex] = useState(0);
+  const [viewMode, setViewMode] = useState<'structure' | 'editor'>('structure');
   const { fields: moduleFields, append: appendModule, remove: removeModule } = useFieldArray({
     control: form.control,
     name: 'modules',
   });
 
+  // Converter conteúdo existente para ContentBlocks
+  const getContentBlocks = useCallback((moduleIndex: number, lessonIndex: number): ContentBlock[] => {
+    try {
+      const lesson = form.getValues(`modules.${moduleIndex}.lessons.${lessonIndex}`);
+      if (lesson?.content) {
+        return typeof lesson.content === 'string' 
+          ? JSON.parse(lesson.content) 
+          : lesson.content;
+      }
+    } catch (error) {
+      console.error('Erro ao converter conteúdo:', error);
+    }
+    return [];
+  }, [form]);
+
+  const handleContentChange = useCallback((moduleIndex: number, lessonIndex: number, contentBlocks: ContentBlock[]) => {
+    form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.content`, JSON.stringify(contentBlocks));
+  }, [form]);
+
+  const createNewLesson = useCallback((moduleIndex: number) => {
+    const newLesson = {
+      id: nanoid(),
+      title: 'Nova Aula',
+      content: JSON.stringify([]),
+      totalDuration: 0,
+      pages: [],
+      materials: [],
+      questions: []
+    };
+    const currentLessons = form.getValues(`modules.${moduleIndex}.lessons`) || [];
+    form.setValue(`modules.${moduleIndex}.lessons`, [...currentLessons, newLesson]);
+    setActiveLessonIndex(currentLessons.length);
+  }, [form]);
+
   return (
     <div className="space-y-6">
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Estrutura do Curso
-          </CardTitle>
-          <CardDescription>
-            Organize o conteúdo em módulos e aulas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {moduleFields.map((module, index) => (
-              <EnhancedModuleEditor
-                key={module.id}
-                moduleIndex={index}
-                form={form}
-                onRemove={() => removeModule(index)}
-              />
-            ))}
-            
+      {/* Header com Modo de Visualização */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Conteúdo do Curso</h2>
+          <p className="text-gray-600 mt-1">Crie conteúdo incrível com o editor avançado</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex bg-gray-100 rounded-lg p-1">
             <Button
-              type="button"
-              variant="outline"
-              onClick={() => appendModule({
-                id: nanoid(),
-                title: '',
-                lessons: [],
-                badge: undefined,
-              })}
-              className="w-full border-dashed border-2 h-16 text-lg"
+              variant={viewMode === 'structure' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('structure')}
+              className="rounded-md"
             >
-              <PlusCircle className="h-6 w-6 mr-2" />
-              Adicionar Módulo
+              <Settings className="h-4 w-4 mr-2" />
+              Estrutura
+            </Button>
+            <Button
+              variant={viewMode === 'editor' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('editor')}
+              className="rounded-md"
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              Editor
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {viewMode === 'structure' ? (
+        /* MODO ESTRUTURA - Organização Visual */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Coluna 1: Lista de Módulos */}
+          <div className="space-y-4">
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-blue-900">
+                  <FileText className="h-5 w-5" />
+                  Módulos do Curso
+                </CardTitle>
+                <CardDescription className="text-blue-700">
+                  Organize seu conteúdo em módulos
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {moduleFields.map((module, index) => (
+                  <div
+                    key={module.id}
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      activeModuleIndex === index
+                        ? 'border-blue-500 bg-blue-50 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm'
+                    }`}
+                    onClick={() => setActiveModuleIndex(index)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">
+                          {module.title || `Módulo ${index + 1}`}
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          {module.lessons?.length || 0} aulas
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {index + 1}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeModule(index);
+                          }}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                <Button
+                  variant="outline"
+                  onClick={() => appendModule({
+                    id: nanoid(),
+                    title: '',
+                    lessons: [],
+                    badge: undefined,
+                  })}
+                  className="w-full border-dashed border-2 border-blue-300 text-blue-600 hover:border-blue-400 hover:bg-blue-50"
+                >
+                  <PlusCircle className="h-5 w-5 mr-2" />
+                  Adicionar Módulo
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Coluna 2: Aulas do Módulo Selecionado */}
+          <div className="space-y-4">
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-green-50 to-emerald-50">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-green-900">
+                  <BookOpen className="h-5 w-5" />
+                  Aulas do Módulo
+                </CardTitle>
+                <CardDescription className="text-green-700">
+                  {moduleFields[activeModuleIndex]?.title || `Módulo ${activeModuleIndex + 1}`}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {moduleFields[activeModuleIndex]?.lessons?.map((lesson, index) => (
+                  <div
+                    key={lesson.id}
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      activeLessonIndex === index
+                        ? 'border-green-500 bg-green-50 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-green-300 hover:shadow-sm'
+                    }`}
+                    onClick={() => setActiveLessonIndex(index)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">
+                          {lesson.title || `Aula ${index + 1}`}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="secondary" className="text-xs">
+                            {getContentBlocks(activeModuleIndex, index).length} elementos
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {lesson.totalDuration || 0} min
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const currentLessons = form.getValues(`modules.${activeModuleIndex}.lessons`);
+                            const updatedLessons = currentLessons.filter((_, i) => i !== index);
+                            form.setValue(`modules.${activeModuleIndex}.lessons`, updatedLessons);
+                          }}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                <Button
+                  variant="outline"
+                  onClick={() => createNewLesson(activeModuleIndex)}
+                  className="w-full border-dashed border-2 border-green-300 text-green-600 hover:border-green-400 hover:bg-green-50"
+                >
+                  <PlusCircle className="h-5 w-5 mr-2" />
+                  Adicionar Aula
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Coluna 3: Preview e Ações */}
+          <div className="space-y-4">
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-purple-50 to-pink-50">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-purple-900">
+                  <Eye className="h-5 w-5" />
+                  Preview da Aula
+                </CardTitle>
+                <CardDescription className="text-purple-700">
+                  {moduleFields[activeModuleIndex]?.lessons?.[activeLessonIndex]?.title || 'Selecione uma aula'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {moduleFields[activeModuleIndex]?.lessons?.[activeLessonIndex] ? (
+                  <>
+                    <div className="bg-white rounded-lg p-4 border">
+                      <h4 className="font-semibold text-gray-900 mb-2">
+                        {moduleFields[activeModuleIndex].lessons[activeLessonIndex].title}
+                      </h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Elementos:</span>
+                          <Badge variant="outline">
+                            {getContentBlocks(activeModuleIndex, activeLessonIndex).length}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Duração:</span>
+                          <Badge variant="outline">
+                            {moduleFields[activeModuleIndex].lessons[activeLessonIndex].totalDuration || 0} min
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button
+                      onClick={() => setViewMode('editor')}
+                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                    >
+                      <Zap className="h-4 w-4 mr-2" />
+                      Editar com Editor Avançado
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Selecione uma aula para visualizar</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Estatísticas Rápidas */}
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-orange-50 to-yellow-50">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-orange-900">
+                  <BarChart className="h-5 w-5" />
+                  Estatísticas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center p-3 bg-white rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {moduleFields.length}
+                    </div>
+                    <div className="text-xs text-gray-600">Módulos</div>
+                  </div>
+                  <div className="text-center p-3 bg-white rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {moduleFields.reduce((total, module) => total + (module.lessons?.length || 0), 0)}
+                    </div>
+                    <div className="text-xs text-gray-600">Aulas</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      ) : (
+        /* MODO EDITOR - Editor Avançado */
+        <div className="space-y-6">
+          {/* Header do Editor */}
+          <Card className="shadow-lg border-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="h-6 w-6" />
+                    Editor Avançado
+                  </CardTitle>
+                  <CardDescription className="text-blue-100">
+                    {moduleFields[activeModuleIndex]?.title || `Módulo ${activeModuleIndex + 1}`} - {moduleFields[activeModuleIndex]?.lessons?.[activeLessonIndex]?.title || `Aula ${activeLessonIndex + 1}`}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewMode('structure')}
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Voltar à Estrutura
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentBlocks = getContentBlocks(activeModuleIndex, activeLessonIndex);
+                      const newBlock = {
+                        type: 'slide_title',
+                        title: 'Novo Slide',
+                        subtitle: 'Clique para editar',
+                        background: 'gradient-to-r from-blue-500 to-purple-600',
+                        textColor: 'white',
+                        alignment: 'center'
+                      };
+                      handleContentChange(activeModuleIndex, activeLessonIndex, [...currentBlocks, newBlock]);
+                    }}
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Adicionar Slide
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          {/* Editor Principal */}
+          <Card className="shadow-lg border-0">
+            <CardContent className="p-0">
+              <div className="h-[700px] bg-white">
+                <AdvancedContentEditor
+                  contentBlocks={getContentBlocks(activeModuleIndex, activeLessonIndex)}
+                  onChange={(blocks) => handleContentChange(activeModuleIndex, activeLessonIndex, blocks)}
+                  onSave={() => {
+                    // Auto-save functionality
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recursos do Editor */}
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-gray-50 to-gray-100">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                Recursos Disponíveis
+              </CardTitle>
+              <CardDescription>
+                Explore as funcionalidades do editor avançado
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                  <Type className="h-8 w-8 mx-auto mb-3 text-blue-600" />
+                  <h4 className="font-semibold text-gray-900 mb-2">Elementos de Texto</h4>
+                  <p className="text-sm text-gray-600">Títulos, parágrafos, listas, citações e mais</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                  <ImageIcon className="h-8 w-8 mx-auto mb-3 text-green-600" />
+                  <h4 className="font-semibold text-gray-900 mb-2">Mídia</h4>
+                  <p className="text-sm text-gray-600">Imagens, vídeos, áudios e galerias</p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                  <Zap className="h-8 w-8 mx-auto mb-3 text-purple-600" />
+                  <h4 className="font-semibold text-gray-900 mb-2">Interativo</h4>
+                  <p className="text-sm text-gray-600">Slides, apresentações e elementos dinâmicos</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

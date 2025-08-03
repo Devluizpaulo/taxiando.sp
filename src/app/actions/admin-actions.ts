@@ -807,3 +807,133 @@ export async function createDefaultDossierPackages() {
     return { success: false, error: (error as Error).message };
   }
 }
+
+export async function createSampleCourseSuggestions() {
+  try {
+    const suggestions = [
+      {
+        driverId: 'sample-driver-1',
+        driverName: 'João Motorista',
+        driverEmail: 'joao@email.com',
+        suggestion: 'Gostaria de um curso sobre direção econômica e técnicas para reduzir o consumo de combustível.',
+        status: 'pending' as const,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      },
+      {
+        driverId: 'sample-driver-2',
+        driverName: 'Maria Silva',
+        driverEmail: 'maria@email.com',
+        suggestion: 'Sugiro um curso de atendimento ao cliente para motoristas, com foco em comunicação e resolução de conflitos.',
+        status: 'approved' as const,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        adminNotes: 'Excelente sugestão! Já está em desenvolvimento.'
+      },
+      {
+        driverId: 'sample-driver-3',
+        driverName: 'Pedro Santos',
+        driverEmail: 'pedro@email.com',
+        suggestion: 'Um curso sobre manutenção preventiva de veículos seria muito útil para evitar problemas mecânicos.',
+        status: 'implemented' as const,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        adminNotes: 'Curso criado e disponível na plataforma.'
+      },
+      {
+        driverId: 'sample-driver-4',
+        driverName: 'Ana Costa',
+        driverEmail: 'ana@email.com',
+        suggestion: 'Gostaria de aprender sobre gestão financeira pessoal e planejamento para aposentadoria.',
+        status: 'pending' as const,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      }
+    ];
+
+    const batch = adminDB.batch();
+    
+    for (const suggestion of suggestions) {
+      const docRef = adminDB.collection('courseSuggestions').doc();
+      batch.set(docRef, suggestion);
+    }
+
+    await batch.commit();
+    return { success: true, message: 'Sugestões de exemplo criadas com sucesso' };
+  } catch (error) {
+    console.error('Error creating sample course suggestions:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function createSampleEvents() {
+  try {
+    const today = new Date();
+    const events = [
+      {
+        title: 'Encontro de Motoristas - Zona Sul',
+        location: 'Shopping Morumbi, São Paulo',
+        description: 'Encontro mensal de motoristas da zona sul para networking e troca de experiências.',
+        driverSummary: 'Evento para motoristas da região',
+        peakTimes: '19:00 - 22:00',
+        trafficTips: 'Evite a Marginal Pinheiros no horário de pico',
+        pickupPoints: 'Entrada principal do shopping',
+        mapUrl: 'https://maps.google.com',
+        startDate: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 dias atrás
+        createdAt: FieldValue.serverTimestamp()
+      },
+      {
+        title: 'Workshop de Direção Defensiva',
+        location: 'Centro de Treinamento, São Paulo',
+        description: 'Workshop prático sobre técnicas de direção defensiva e segurança no trânsito.',
+        driverSummary: 'Treinamento de segurança',
+        peakTimes: '14:00 - 18:00',
+        trafficTips: 'Estacionamento disponível no local',
+        pickupPoints: 'Recepção do centro de treinamento',
+        mapUrl: 'https://maps.google.com',
+        startDate: new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000), // 5 dias atrás
+        createdAt: FieldValue.serverTimestamp()
+      },
+      {
+        title: 'Palestra sobre Economia de Combustível',
+        location: 'Auditório da Prefeitura, São Paulo',
+        description: 'Palestra sobre técnicas para economizar combustível e reduzir custos operacionais.',
+        driverSummary: 'Dicas de economia',
+        peakTimes: '20:00 - 21:30',
+        trafficTips: 'Trânsito tranquilo no horário',
+        pickupPoints: 'Entrada do auditório',
+        mapUrl: 'https://maps.google.com',
+        startDate: new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 dias atrás
+        createdAt: FieldValue.serverTimestamp()
+      },
+      {
+        title: 'Evento Futuro - Próximo Mês',
+        location: 'Centro de Eventos, São Paulo',
+        description: 'Evento que ainda vai acontecer para testar a diferenciação entre passados e futuros.',
+        driverSummary: 'Evento futuro',
+        peakTimes: '19:00 - 23:00',
+        trafficTips: 'Chegue com antecedência',
+        pickupPoints: 'Entrada principal',
+        mapUrl: 'https://maps.google.com',
+        startDate: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000), // 30 dias no futuro
+        createdAt: FieldValue.serverTimestamp()
+      }
+    ];
+
+    const batch = adminDB.batch();
+    
+    for (const event of events) {
+      const docRef = adminDB.collection('events').doc();
+      batch.set(docRef, {
+        ...event,
+        startDate: Timestamp.fromDate(event.startDate)
+      });
+    }
+
+    await batch.commit();
+    return { success: true, message: 'Eventos de exemplo criados com sucesso' };
+  } catch (error) {
+    console.error('Error creating sample events:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}

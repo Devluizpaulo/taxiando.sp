@@ -27,7 +27,8 @@ function cleanDataForFirestore(data: any): any {
         if (value === undefined) {
             cleaned[key] = null;
         } else if (value === '') {
-            cleaned[key] = null;
+            // Para campos de string opcionais, manter como string vazia em vez de null
+            cleaned[key] = '';
         } else if (typeof value === 'object' && value !== null) {
             cleaned[key] = cleanDataForFirestore(value);
         } else {
@@ -38,17 +39,57 @@ function cleanDataForFirestore(data: any): any {
 }
 
 export async function createCourse(values: any, userId?: string, userName?: string) {
-    // Validação robusta com Zod
-    const validation = courseFormSchema.partial().safeParse(values);
+    // Log detalhado dos dados recebidos
+    console.log('[createCourse] Dados recebidos:', JSON.stringify(values, null, 2));
+    
+    // Validação simplificada e otimizada
+    const validation = courseFormSchema.safeParse({
+        ...values,
+        modules: values.modules ?? [],
+        // Garantir que campos numéricos sejam números
+        estimatedDuration: values.estimatedDuration ? Number(values.estimatedDuration) : 60,
+        investmentCost: values.investmentCost ? Number(values.investmentCost) : 0,
+        priceInCredits: values.priceInCredits ? Number(values.priceInCredits) : 0,
+        saleValue: values.saleValue ? Number(values.saleValue) : 0,
+        minimumPassingScore: values.minimumPassingScore ? Number(values.minimumPassingScore) : 70,
+        // Garantir que campos booleanos sejam booleanos
+        isPublicListing: Boolean(values.isPublicListing),
+        enableComments: Boolean(values.enableComments),
+        autoCertification: Boolean(values.autoCertification),
+        // Garantir que campos de enum sejam válidos
+        difficulty: values.difficulty || 'Iniciante',
+        contractType: values.contractType || 'own_content',
+        courseType: values.courseType || 'own_course',
+        // Garantir que campos de string obrigatórios sejam strings
+        title: String(values.title || ''),
+        description: String(values.description || ''),
+        category: String(values.category || ''),
+        // Garantir que campos opcionais sejam tratados corretamente
+        targetAudience: values.targetAudience || '',
+        partnerName: values.partnerName || '',
+        contractPdfUrl: values.contractPdfUrl || '',
+        authorInfo: values.authorInfo || '',
+        legalNotice: values.legalNotice || '',
+        // Garantir que campos de array sejam arrays
+        seoTags: Array.isArray(values.seoTags) ? values.seoTags : [],
+        // Garantir que campos de enum opcionais sejam válidos
+        paymentType: values.paymentType || undefined,
+        contractStatus: values.contractStatus || undefined,
+        // Garantir que campos de string opcionais sejam strings
+        coverImageUrl: values.coverImageUrl || '',
+    });
+    
     if (!validation.success) {
-        // Internacionalização: mensagem em pt-BR
-        return { success: false, error: 'Dados inválidos: ' + validation.error.errors.map(e => e.message).join('; ') };
+        console.log('[createCourse] Erros de validação:', validation.error.errors);
+        return { success: false, error: 'Dados inválidos: ' + validation.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ') };
     }
+    
     // Checagem de duplicidade de título
     const existing = await adminDB.collection('courses').where('title', '==', values.title).get();
     if (!existing.empty) {
         return { success: false, error: 'Já existe um curso com este título.' };
     }
+    
     try {
         const courseId = nanoid();
         const courseData: Omit<Course, 'id' | 'createdAt' | 'modules' | 'totalLessons' | 'totalDuration' > = cleanDataForFirestore({
@@ -64,9 +105,9 @@ export async function createCourse(values: any, userId?: string, userName?: stri
             authorInfo: userName || '',
             legalNotice: 'Este conteúdo é protegido por direitos autorais. A reprodução não autorizada é proibida.',
             
-            // Novos campos da estrutura solicitada
+            // Campos essenciais
             targetAudience: values.targetAudience || null,
-            estimatedDuration: values.estimatedDuration || 0,
+            estimatedDuration: values.estimatedDuration || 60,
             isPublicListing: values.isPublicListing || false,
             
             // Tipo de contrato
@@ -102,14 +143,16 @@ export async function createCourse(values: any, userId?: string, userName?: stri
         await adminDB.collection('courses').doc(courseId).set(cleanDataForFirestore({
             ...courseData,
             id: courseId,
-            modules: [],
-            totalLessons: 0,
-            totalDuration: 0,
+            modules: values.modules || [],
+            totalLessons: values.totalLessons || 0,
+            totalDuration: values.totalDuration || 0,
             createdAt: Timestamp.now(),
         }));
+        
         revalidatePath('/admin/courses');
         return { success: true, courseId: courseId };
     } catch (error) {
+        console.error('[createCourse] Erro:', error);
         return { success: false, error: (error as Error).message };
     }
 }
@@ -337,7 +380,7 @@ export async function updateCourse(courseId: string, values: CourseFormValues, u
 
         // Handle file uploads for modules/lessons/pages/materials
         const modulesWithUploads = await Promise.all(
-            values.modules.map(async (module) => {
+            (values.modules ?? []).map(async (module) => {
                 const lessonsWithUploads = await Promise.all(
                     module.lessons.map(async (lesson) => {
                         // Upload de arquivos de página

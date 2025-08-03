@@ -170,7 +170,7 @@ export function CoursesClientPage({ initialCourses }: { initialCourses: Course[]
                         <CardDescription>Visualize e gerencie todos os cursos da plataforma.</CardDescription>
                     </div>
                     <Button asChild>
-                        <Link href="/admin/courses/create"><PlusCircle className="mr-2 h-4 w-4" /> Criar Novo Curso</Link>
+                        <Link href="/admin/courses/create-with-editor"><PlusCircle className="mr-2 h-4 w-4" /> Criar Novo Curso</Link>
                     </Button>
                 </CardHeader>
                 <CardContent>
@@ -195,7 +195,7 @@ export function CoursesClientPage({ initialCourses }: { initialCourses: Course[]
                                             <BookCopy className="h-8 w-8 text-muted-foreground" />
                                             <p className="text-muted-foreground">Nenhum curso encontrado.</p>
                                             <Button asChild variant="outline" size="sm">
-                                                <Link href="/admin/courses/create">Criar Primeiro Curso</Link>
+                                                <Link href="/admin/courses/create-with-editor">Criar Primeiro Curso</Link>
                                             </Button>
                                         </div>
                                     </TableCell>

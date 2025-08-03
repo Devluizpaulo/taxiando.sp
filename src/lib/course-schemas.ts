@@ -513,16 +513,16 @@ export const courseFormSchema = z.object({
   title: z.string().min(5, { message: 'O título deve ter pelo menos 5 caracteres.' }),
   description: z.string().min(20, { message: 'A descrição deve ter pelo menos 20 caracteres.' }),
   category: z.string().min(3, { message: 'A categoria é obrigatória.' }),
-  modules: z.array(moduleSchema).min(1, "O curso deve ter pelo menos um módulo."),
+  modules: z.array(moduleSchema).optional(),
   difficulty: z.enum(['Iniciante', 'Intermediário', 'Avançado']).default('Iniciante'),
   investmentCost: z.coerce.number().min(0).default(0).optional(),
   priceInCredits: z.coerce.number().min(0).default(0).optional(),
-  authorInfo: z.string().optional(),
-  legalNotice: z.string().optional(),
-  coverImageUrl: z.union([z.string(), z.instanceof(File)]),
+  authorInfo: z.string().optional().or(z.literal('')),
+  legalNotice: z.string().optional().or(z.literal('')),
+  coverImageUrl: z.union([z.string(), z.instanceof(File)]).optional().or(z.literal('')),
   
   // Novos campos da estrutura solicitada
-  targetAudience: z.string().optional(),
+  targetAudience: z.string().optional().or(z.literal('')),
   estimatedDuration: z.coerce.number().min(1, "A duração estimada deve ser de pelo menos 1 minuto.").optional(),
   isPublicListing: z.boolean().default(false),
   
@@ -532,10 +532,10 @@ export const courseFormSchema = z.object({
   
   // Controle financeiro
   courseType: z.enum(['own_course', 'partner_course']).optional(),
-  partnerName: z.string().optional(),
+  partnerName: z.string().optional().or(z.literal('')),
   paymentType: z.enum(['fixed', 'percentage', 'free', 'exchange']).optional(),
   contractStatus: z.enum(['negotiating', 'signed', 'expired']).optional(),
-  contractPdfUrl: z.string().url().optional(),
+  contractPdfUrl: z.string().url().optional().or(z.literal('')),
   
   // SEO e tags
   seoTags: z.array(z.string()).optional(),

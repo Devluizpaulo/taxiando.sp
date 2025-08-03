@@ -163,31 +163,133 @@ export interface QuizQuestion {
 
 // Novo tipo para blocos de conteúdo de aula
 export type ContentBlock =
-  | { type: 'heading'; level: 1 | 2 | 3 | 4; text: string }
-  | { type: 'paragraph'; text: string }
-  | { type: 'list'; style: 'bullet' | 'numbered'; items: string[] }
-  | { type: 'image'; url: string; alt?: string }
-  | { type: 'video'; url: string; platform?: 'youtube' | 'vimeo' | 'direct'; title?: string }
-  | { type: 'audio'; url: string; title?: string; duration?: number }
-  | { type: 'pdf'; url: string; title?: string; filename?: string }
-  | { type: 'gallery'; images: Array<{ url: string; alt?: string; caption?: string }> }
-  | { type: 'exercise'; question: string; answer: string; hints?: string[] }
-  | { type: 'quiz'; questions: QuizQuestion[] }
-  | { type: 'observation'; text: string; icon?: string }
-  // Novos elementos educativos
+  // Elementos básicos de texto
+  | { type: 'heading'; level: 1 | 2 | 3 | 4; text: string; style?: 'default' | 'accent' | 'gradient' | 'outline' }
+  | { type: 'paragraph'; text: string; style?: 'default' | 'quote' | 'highlight' | 'code' }
+  | { type: 'list'; style: 'bullet' | 'numbered' | 'checklist' | 'timeline'; items: string[]; icon?: string }
+  | { type: 'quote'; text: string; author?: string; source?: string; style?: 'default' | 'accent' | 'bordered' }
+  | { type: 'code'; code: string; language?: string; title?: string; showLineNumbers?: boolean }
+  | { type: 'callout'; text: string; type: 'info' | 'warning' | 'success' | 'error'; icon?: string }
+  | { type: 'divider'; style?: 'solid' | 'dashed' | 'dotted' | 'gradient' }
+  
+  // Elementos de mídia
+  | { type: 'image'; url: string; alt?: string; caption?: string; style?: 'default' | 'rounded' | 'bordered' | 'shadow' | 'overlay'; size?: 'small' | 'medium' | 'large' | 'full' }
+  | { type: 'video'; url: string; platform?: 'youtube' | 'vimeo' | 'direct'; title?: string; autoplay?: boolean; controls?: boolean; loop?: boolean }
+  | { type: 'audio'; url: string; title?: string; duration?: number; showWaveform?: boolean; autoplay?: boolean }
+  | { type: 'pdf'; url: string; title?: string; filename?: string; showPreview?: boolean }
+  | { type: 'gallery'; images: Array<{ url: string; alt?: string; caption?: string }>; layout?: 'grid' | 'carousel' | 'masonry'; columns?: number }
+  | { type: 'slideshow'; slides: Array<{ imageUrl: string; title?: string; description?: string }>; autoplay?: boolean; interval?: number }
+  | { type: 'embed'; url: string; title?: string; height?: number; allowFullscreen?: boolean }
+  
+  // Elementos de layout
+  | { type: 'columns'; columns: Array<{ content: ContentBlock[]; width?: number }>; gap?: number }
+  | { type: 'card'; title?: string; content: ContentBlock[]; style?: 'default' | 'elevated' | 'outlined' | 'filled'; color?: string }
+  | { type: 'container'; content: ContentBlock[]; background?: string; padding?: number; border?: string }
+  | { type: 'grid'; items: Array<{ content: ContentBlock[]; span?: number }>; columns?: number; gap?: number }
+  | { type: 'tabs'; tabs: Array<{ title: string; content: ContentBlock[]; icon?: string }>; style?: 'default' | 'pills' | 'underline' }
+  | { type: 'accordion'; items: Array<{ title: string; content: ContentBlock[]; icon?: string; defaultOpen?: boolean }> }
+  | { type: 'carousel'; slides: Array<{ content: ContentBlock[]; title?: string }>; autoplay?: boolean; showIndicators?: boolean }
+  
+  // Elementos de dados e tabelas
+  | { type: 'table'; headers: string[]; rows: string[][]; style?: 'default' | 'striped' | 'bordered' | 'compact' }
+  | { type: 'comparison_table'; title: string; columns: string[]; rows: Array<{ id: string; feature: string; values: string[] }>; highlight?: string }
+  | { type: 'chart'; type: 'bar' | 'line' | 'pie' | 'doughnut' | 'radar'; data: any; options?: any; title?: string }
+  | { type: 'progress'; value: number; max: number; label?: string; style?: 'default' | 'gradient' | 'animated' }
+  | { type: 'stats'; items: Array<{ label: string; value: string | number; icon?: string; color?: string }>; layout?: 'horizontal' | 'vertical' | 'grid' }
+  | { type: 'timeline'; title: string; events: Array<{ id: string; date: string; title: string; description: string; imageUrl?: string; color?: string }>; style?: 'default' | 'vertical' | 'horizontal' }
+  
+  // Elementos interativos educativos
+  | { type: 'exercise'; question: string; answer: string; hints?: string[]; type?: 'text' | 'multiple_choice' | 'true_false' }
+  | { type: 'quiz'; questions: QuizQuestion[]; timeLimit?: number; passingScore?: number; showResults?: boolean }
+  | { type: 'observation'; text: string; icon?: string; type?: 'tip' | 'warning' | 'note' | 'example' }
   | { type: 'interactive_simulation'; title: string; description?: string; scenario: string; options: Array<{ id: string; text: string; outcome: string; isCorrect: boolean }>; feedback?: string }
   | { type: 'case_study'; title: string; description: string; background: string; challenge: string; questions: string[]; solution?: string; keyLearnings?: string[] }
-  | { type: 'mind_map'; title: string; centralTopic: string; branches: Array<{ id: string; text: string; subBranches?: Array<{ id: string; text: string }> }> }
-  | { type: 'flashcard'; front: string; back: string; category?: string; difficulty: 'easy' | 'medium' | 'hard' }
-  | { type: 'timeline'; title: string; events: Array<{ id: string; date: string; title: string; description: string; imageUrl?: string }> }
-  | { type: 'comparison_table'; title: string; columns: string[]; rows: Array<{ id: string; feature: string; values: string[] }> }
-  | { type: 'fill_blanks'; title: string; text: string; blanks: Array<{ id: string; correctAnswer: string; hints?: string[]; alternatives?: string[] }> }
-  | { type: 'matching'; title: string; leftItems: Array<{ id: string; text: string }>; rightItems: Array<{ id: string; text: string; correctMatch: string }> }
-  | { type: 'drag_drop'; title: string; description: string; items: Array<{ id: string; text: string; correctZone: string }>; zones: Array<{ id: string; title: string; description?: string }> }
-  | { type: 'hotspot'; title: string; imageUrl: string; hotspots: Array<{ id: string; x: number; y: number; radius: number; title: string; description: string; isCorrect: boolean }> }
-  | { type: 'word_search'; title: string; grid: string[][]; words: Array<{ id: string; word: string; direction: 'horizontal' | 'vertical' | 'diagonal'; startX: number; startY: number }> }
+  | { type: 'mind_map'; title: string; centralTopic: string; branches: Array<{ id: string; text: string; subBranches?: Array<{ id: string; text: string }> }>; style?: 'radial' | 'tree' | 'flowchart' }
+  | { type: 'flashcard'; front: string; back: string; category?: string; difficulty: 'easy' | 'medium' | 'hard'; showHint?: boolean }
+  | { type: 'fill_blanks'; title: string; text: string; blanks: Array<{ id: string; correctAnswer: string; hints?: string[]; alternatives?: string[] }>; caseSensitive?: boolean }
+  | { type: 'matching'; title: string; leftItems: Array<{ id: string; text: string }>; rightItems: Array<{ id: string; text: string; correctMatch: string }>; shuffle?: boolean }
+  | { type: 'drag_drop'; title: string; description: string; items: Array<{ id: string; text: string; correctZone: string }>; zones: Array<{ id: string; title: string; description?: string }>; feedback?: string }
+  | { type: 'hotspot'; title: string; imageUrl: string; hotspots: Array<{ id: string; x: number; y: number; radius: number; title: string; description: string; isCorrect: boolean }>; showLabels?: boolean }
+  | { type: 'word_search'; title: string; grid: string[][]; words: Array<{ id: string; word: string; direction: 'horizontal' | 'vertical' | 'diagonal'; startX: number; startY: number }>; showHints?: boolean }
   | { type: 'crossword'; title: string; grid: Array<Array<{ letter?: string; number?: number; isBlack: boolean }>>; clues: { across: Array<{ number: number; clue: string; answer: string }>; down: Array<{ number: number; clue: string; answer: string }> } }
-  | { type: 'scenario_builder'; title: string; description: string; variables?: Array<{ id: string; name: string; type: 'text' | 'number' | 'boolean' | 'select'; options?: string[]; defaultValue?: string }>; outcomes: Array<{ id: string; condition: string; result: string; feedback?: string }> };
+  | { type: 'scenario_builder'; title: string; description: string; variables?: Array<{ id: string; name: string; type: 'text' | 'number' | 'boolean' | 'select'; options?: string[]; defaultValue?: string }>; outcomes: Array<{ id: string; condition: string; result: string; feedback?: string }> }
+  
+  // Elementos de apresentação (estilo PowerPoint)
+  | { type: 'slide_title'; title: string; subtitle?: string; background?: string; textColor?: string; alignment?: 'left' | 'center' | 'right' }
+  | { type: 'bullet_points'; title?: string; points: string[]; style?: 'default' | 'numbered' | 'icons' | 'animated'; icon?: string }
+  | { type: 'feature_comparison'; title: string; features: Array<{ name: string; values: string[] }>; highlight?: string }
+  | { type: 'process_flow'; title: string; steps: Array<{ title: string; description: string; icon?: string }>; style?: 'horizontal' | 'vertical' | 'circular' }
+  | { type: 'before_after'; title: string; before: { image: string; label: string }; after: { image: string; label: string }; description?: string }
+  | { type: 'testimonial'; quote: string; author: string; role?: string; company?: string; avatar?: string; rating?: number }
+  | { type: 'pricing_table'; title: string; plans: Array<{ name: string; price: string; features: string[]; highlighted?: boolean; buttonText?: string }> }
+  | { type: 'team_members'; title: string; members: Array<{ name: string; role: string; avatar?: string; bio?: string; social?: { linkedin?: string; twitter?: string } }> }
+  | { type: 'contact_info'; title: string; items: Array<{ type: 'email' | 'phone' | 'address' | 'website'; value: string; icon?: string }> }
+  
+  // Elementos de navegação
+  | { type: 'navigation_menu'; items: Array<{ title: string; url: string; icon?: string; external?: boolean }>; style?: 'horizontal' | 'vertical' | 'dropdown' }
+  | { type: 'breadcrumb'; items: Array<{ title: string; url?: string }> }
+  | { type: 'pagination'; currentPage: number; totalPages: number; onPageChange?: (page: number) => void }
+  
+  // Elementos de formulário
+  | { type: 'form'; fields: Array<{ type: 'text' | 'email' | 'number' | 'select' | 'textarea' | 'checkbox' | 'radio'; name: string; label: string; required?: boolean; options?: string[] }>; submitText?: string }
+  | { type: 'poll'; question: string; options: Array<{ id: string; text: string; votes: number }>; allowMultiple?: boolean; showResults?: boolean }
+  | { type: 'rating'; title: string; maxRating: number; currentRating?: number; showLabels?: boolean }
+  
+  // Elementos de mídia avançados
+  | { type: 'video_playlist'; title: string; videos: Array<{ url: string; title: string; duration?: number; thumbnail?: string }>; autoplay?: boolean }
+  | { type: 'audio_playlist'; title: string; tracks: Array<{ url: string; title: string; artist?: string; duration?: number }>; autoplay?: boolean }
+  | { type: '360_view'; imageUrl: string; title?: string; hotspots?: Array<{ x: number; y: number; title: string; description: string }> }
+  | { type: 'virtual_tour'; title: string; scenes: Array<{ imageUrl: string; title: string; description?: string; hotspots?: Array<{ x: number; y: number; targetScene: number }> }> }
+  
+  // Elementos de gamificação
+  | { type: 'achievement'; title: string; description: string; icon: string; unlocked?: boolean; progress?: number }
+  | { type: 'leaderboard'; title: string; participants: Array<{ name: string; score: number; rank: number; avatar?: string }>; showTop?: number }
+  | { type: 'badge'; title: string; description: string; icon: string; earned?: boolean; earnedAt?: string }
+  
+  // Elementos de comunicação
+  | { type: 'chat_widget'; title: string; messages: Array<{ id: string; text: string; sender: 'user' | 'bot'; timestamp: string }>; placeholder?: string }
+  | { type: 'comment_section'; title: string; comments: Array<{ id: string; author: string; text: string; timestamp: string; avatar?: string }>; allowReplies?: boolean }
+  | { type: 'social_feed'; title: string; posts: Array<{ id: string; author: string; content: string; timestamp: string; likes: number; avatar?: string }> }
+  
+  // Elementos de notificação
+  | { type: 'notification'; title: string; message: string; type: 'info' | 'success' | 'warning' | 'error'; dismissible?: boolean; autoHide?: boolean }
+  | { type: 'alert_banner'; title: string; message: string; type: 'info' | 'success' | 'warning' | 'error'; actionText?: string; actionUrl?: string }
+  
+  // Elementos de calendário
+  | { type: 'calendar'; title: string; events: Array<{ id: string; title: string; date: string; time?: string; description?: string; color?: string }>; view?: 'month' | 'week' | 'day' }
+  | { type: 'countdown'; title: string; targetDate: string; showDays?: boolean; showHours?: boolean; showMinutes?: boolean; showSeconds?: boolean }
+  
+  // Elementos de mapa
+  | { type: 'map'; title: string; center: { lat: number; lng: number }; markers: Array<{ lat: number; lng: number; title: string; description?: string }>; zoom?: number }
+  | { type: 'location_picker'; title: string; defaultLocation?: { lat: number; lng: number }; onLocationSelect?: (lat: number, lng: number) => void }
+  
+  // Elementos de código e desenvolvimento
+  | { type: 'code_editor'; title: string; language: string; initialCode: string; theme?: 'light' | 'dark'; readOnly?: boolean }
+  | { type: 'api_documentation'; title: string; endpoints: Array<{ method: string; path: string; description: string; parameters?: Array<{ name: string; type: string; required: boolean }> }> }
+  
+  // Elementos de análise e métricas
+  | { type: 'analytics_dashboard'; title: string; metrics: Array<{ name: string; value: string | number; change?: number; trend?: 'up' | 'down' | 'stable' }>; period?: string }
+  | { type: 'data_table'; title: string; columns: Array<{ key: string; label: string; sortable?: boolean }>; data: any[]; pagination?: boolean; search?: boolean }
+  
+  // Elementos de acessibilidade
+  | { type: 'accessibility_tools'; includeHighContrast?: boolean; includeScreenReader?: boolean; includeKeyboardNavigation?: boolean }
+  | { type: 'language_selector'; languages: Array<{ code: string; name: string; flag?: string }>; currentLanguage: string }
+  
+  // Elementos de personalização
+  | { type: 'theme_selector'; themes: Array<{ name: string; colors: { primary: string; secondary: string; background: string } }>; currentTheme: string }
+  | { type: 'font_selector'; fonts: Array<{ name: string; family: string; preview?: string }>; currentFont: string }
+  
+  // Elementos de backup e sincronização
+  | { type: 'auto_save_indicator'; lastSaved?: string; saving?: boolean; error?: string }
+  | { type: 'version_history'; versions: Array<{ id: string; timestamp: string; author: string; description: string }>; currentVersion: string }
+  
+  // Elementos de colaboração
+  | { type: 'collaboration_tools'; allowComments?: boolean; allowEditing?: boolean; showCollaborators?: boolean; maxCollaborators?: number }
+  | { type: 'revision_history'; revisions: Array<{ id: string; timestamp: string; author: string; changes: string[] }> }
+  
+  // Elementos de exportação e compartilhamento
+  | { type: 'export_options'; formats: Array<'pdf' | 'ppt' | 'doc' | 'html'>; includeMetadata?: boolean; watermark?: string }
+  | { type: 'share_panel'; title: string; url: string; platforms: Array<'email' | 'whatsapp' | 'linkedin' | 'twitter' | 'facebook'>; embedCode?: string };
 
 // Nova interface para páginas/trechos de aula
 export interface LessonPage {
@@ -1262,6 +1364,18 @@ export interface DriverDossier {
   createdAt: Timestamp | string;
   updatedAt: Timestamp | string;
   expiresAt: Timestamp | string;
+}
+
+export interface CourseSuggestion {
+  id: string;
+  driverId: string;
+  driverName: string;
+  driverEmail: string;
+  suggestion: string;
+  status: 'pending' | 'approved' | 'rejected' | 'implemented';
+  createdAt: Timestamp | string;
+  updatedAt?: Timestamp | string;
+  adminNotes?: string;
 }
 
 export interface DossierPurchase {
