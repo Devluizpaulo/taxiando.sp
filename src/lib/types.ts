@@ -66,6 +66,9 @@ export interface UserProfile {
 
     workMode?: 'owner' | 'rental';
     alvaraExpiration?: Timestamp;
+    alvaraInspectionDate?: Timestamp;
+    ipemInspectionDate?: Timestamp;
+    licensingExpiration?: Timestamp;
     vehicleLicensePlate?: string;
     
     workHistory?: WorkHistoryItem[];
@@ -987,4 +990,294 @@ export interface LocationReview {
   reviewerName: string;
   reviewerType: 'driver' | 'client';
   createdAt: Date;
+}
+
+// ===== SISTEMA DE DOSSIÊ DO MOTORISTA =====
+
+export interface DriverDossierPackage {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  features: DossierFeature[];
+  popular?: boolean;
+  createdAt: Timestamp | string;
+  updatedAt?: Timestamp | string;
+}
+
+export type DossierFeature = 
+  | 'basic_profile'
+  | 'financial_analysis'
+  | 'serasa_check'
+  | 'contact_validation'
+  | 'address_validation'
+  | 'work_history'
+  | 'document_verification'
+  | 'social_media_analysis'
+  | 'criminal_record'
+  | 'credit_score'
+  | 'income_verification'
+  | 'vehicle_preferences'
+  | 'risk_assessment'
+  | 'comprehensive_report';
+
+export interface DriverDossier {
+  id: string;
+  driverId: string;
+  driverName: string;
+  fleetId: string;
+  fleetName: string;
+  packageId: string;
+  packageName: string;
+  status: 'processing' | 'completed' | 'failed';
+  price: number;
+  paymentId: string;
+  
+  // Dados básicos do motorista
+  basicProfile: {
+    name: string;
+    email: string;
+    phone: string;
+    cpf: string;
+    birthDate: string;
+    photoUrl?: string;
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+  
+  // Análise financeira
+  financialAnalysis: {
+    creditScore: number;
+    creditLimit: number;
+    outstandingDebts: number;
+    paymentHistory: {
+      onTime: number;
+      late: number;
+      defaulted: number;
+    };
+    bankAccounts: Array<{
+      bank: string;
+      accountType: string;
+      balance: number;
+      status: 'active' | 'inactive' | 'blocked';
+    }>;
+    incomeSources: Array<{
+      type: 'salary' | 'freelance' | 'business' | 'other';
+      amount: number;
+      frequency: 'monthly' | 'weekly' | 'daily';
+      verified: boolean;
+    }>;
+    riskLevel: 'low' | 'medium' | 'high';
+  };
+  
+  // Verificação Serasa
+  serasaCheck: {
+    hasRestrictions: boolean;
+    restrictionCount: number;
+    totalDebt: number;
+    lastUpdate: string;
+    restrictions: Array<{
+      creditor: string;
+      amount: number;
+      type: string;
+      date: string;
+    }>;
+    score: number;
+  };
+  
+  // Validação de contatos
+  contactValidation: {
+    phone: {
+      valid: boolean;
+      carrier: string;
+      type: 'mobile' | 'landline';
+      lastSeen: string;
+    };
+    email: {
+      valid: boolean;
+      domain: string;
+      lastActivity: string;
+    };
+    whatsapp: {
+      hasWhatsApp: boolean;
+      lastSeen: string;
+    };
+    emergencyContacts: Array<{
+      name: string;
+      relationship: string;
+      phone: string;
+      verified: boolean;
+    }>;
+  };
+  
+  // Validação de endereço
+  addressValidation: {
+    valid: boolean;
+    coordinates: {
+      lat: number;
+      lng: number;
+    };
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    addressType: 'residential' | 'commercial' | 'mixed';
+    timeAtAddress: string;
+    previousAddresses: Array<{
+      address: string;
+      period: string;
+      reason: string;
+    }>;
+    mapUrl: string;
+  };
+  
+  // Histórico de trabalho
+  workHistory: {
+    currentJob: {
+      company: string;
+      position: string;
+      startDate: string;
+      salary: number;
+      verified: boolean;
+    };
+    previousJobs: Array<{
+      company: string;
+      position: string;
+      startDate: string;
+      endDate: string;
+      reason: string;
+      reference: string;
+      verified: boolean;
+    }>;
+    totalExperience: number; // em anos
+    stabilityScore: number; // 1-10
+  };
+  
+  // Verificação de documentos
+  documentVerification: {
+    cnh: {
+      valid: boolean;
+      number: string;
+      category: string;
+      expiration: string;
+      points: number;
+      restrictions: string[];
+      status: 'valid' | 'expired' | 'suspended' | 'cancelled';
+    };
+    condutax: {
+      valid: boolean;
+      number: string;
+      expiration: string;
+      status: 'valid' | 'expired' | 'suspended';
+    };
+    cpf: {
+      valid: boolean;
+      status: 'active' | 'suspended' | 'cancelled';
+      lastUpdate: string;
+    };
+    rg: {
+      valid: boolean;
+      number: string;
+      issuingAuthority: string;
+      issueDate: string;
+    };
+  };
+  
+  // Análise de redes sociais
+  socialMediaAnalysis: {
+    linkedin: {
+      exists: boolean;
+      profileUrl?: string;
+      connections: number;
+      lastActivity: string;
+      professionalScore: number;
+    };
+    facebook: {
+      exists: boolean;
+      profileUrl?: string;
+      friends: number;
+      lastActivity: string;
+    };
+    instagram: {
+      exists: boolean;
+      profileUrl?: string;
+      followers: number;
+      lastActivity: string;
+    };
+    overallSocialScore: number;
+  };
+  
+  // Verificação de antecedentes criminais
+  criminalRecord: {
+    hasRecord: boolean;
+    records: Array<{
+      type: string;
+      date: string;
+      status: string;
+      description: string;
+    }>;
+    riskLevel: 'low' | 'medium' | 'high';
+    lastCheck: string;
+  };
+  
+  // Preferências de veículos
+  vehiclePreferences: {
+    preferredTypes: string[];
+    preferredTransmission: 'automatic' | 'manual' | 'indifferent';
+    preferredFuelTypes: string[];
+    maxDailyRate: number;
+    preferredFeatures: string[];
+    drivingStyle: 'conservative' | 'moderate' | 'aggressive';
+    experienceLevel: 'beginner' | 'intermediate' | 'expert';
+  };
+  
+  // Avaliação de risco
+  riskAssessment: {
+    overallScore: number; // 1-100
+    riskLevel: 'low' | 'medium' | 'high';
+    factors: Array<{
+      factor: string;
+      impact: 'positive' | 'negative' | 'neutral';
+      weight: number;
+      description: string;
+    }>;
+    recommendations: string[];
+    insuranceRisk: 'low' | 'medium' | 'high';
+  };
+  
+  // Relatório abrangente
+  comprehensiveReport: {
+    summary: string;
+    keyFindings: string[];
+    redFlags: string[];
+    greenFlags: string[];
+    recommendations: string[];
+    conclusion: string;
+    generatedAt: string;
+    validUntil: string;
+  };
+  
+  createdAt: Timestamp | string;
+  updatedAt: Timestamp | string;
+  expiresAt: Timestamp | string;
+}
+
+export interface DossierPurchase {
+  id: string;
+  fleetId: string;
+  driverId: string;
+  packageId: string;
+  status: 'pending' | 'pending_admin_review' | 'processing' | 'completed' | 'failed' | 'rejected';
+  price: number;
+  paymentId?: string;
+  dossierId?: string;
+  createdAt: Timestamp | string;
+  updatedAt?: Timestamp | string;
+  completedAt?: Timestamp | string;
+  adminApprovedAt?: Timestamp | string;
+  rejectedAt?: Timestamp | string;
+  rejectionReason?: string;
+  error?: string;
 }

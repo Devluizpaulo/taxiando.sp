@@ -18,7 +18,7 @@ import {
   SidebarTrigger,
   useSidebar
 } from "@/components/ui/sidebar";
-import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star, LifeBuoy, Headset, ImageIcon, Library, Car, Users, MapPin, BarChart2, Search, Map, Eye } from "lucide-react";
+import { Building, FileText, LayoutDashboard, LogOut, Shield, FilePen, CheckSquare, Wrench, BookOpen, KeyRound, CreditCard, ShoppingCart, Calendar, Settings, Megaphone, Tag, Handshake, Mail, Newspaper, Star, LifeBuoy, Headset, ImageIcon, Library, Car, Users, MapPin, BarChart2, Search, Map, Eye, FileText as FileTextIcon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -194,6 +194,7 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                         <SidebarMenu>
                            <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/fleet/profile"><Building/> Perfil da Frota</Link></SidebarMenuButton></SidebarMenuItem>
                            <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/fleet/find-drivers"><Search/> Buscar Motoristas</Link></SidebarMenuButton></SidebarMenuItem>
+                           <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/fleet/dossiers"><FileTextIcon/> Dossiês dos Motoristas</Link></SidebarMenuButton></SidebarMenuItem>
                            <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/billing"><CreditCard/> Faturamento</Link></SidebarMenuButton></SidebarMenuItem>
                            <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/fleet/reports"><BarChart2/> Relatórios</Link></SidebarMenuButton></SidebarMenuItem>
                         </SidebarMenu>
@@ -256,6 +257,7 @@ function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
                         <SidebarGroupContent>
                             <SidebarMenu>
                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/courses"><BookOpen className="text-blue-500" /> Cursos</Link></SidebarMenuButton></SidebarMenuItem>
+                                <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/dossiers"><FileTextIcon className="text-green-500" /> Dossiês</Link></SidebarMenuButton></SidebarMenuItem>
                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/blog"><Newspaper className="text-purple-500" /> Blog/Notícias</Link></SidebarMenuButton></SidebarMenuItem>
                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/events"><Calendar className="text-orange-500" /> Eventos</Link></SidebarMenuButton></SidebarMenuItem>
                                 <SidebarMenuItem onClick={handleMenuClick}><SidebarMenuButton asChild><Link href="/admin/city-guide"><MapPin className="text-teal-500" /> Guia da Cidade</Link></SidebarMenuButton></SidebarMenuItem>

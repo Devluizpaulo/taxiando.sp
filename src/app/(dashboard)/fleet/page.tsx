@@ -10,6 +10,7 @@ import { useAuth, useAuthProtection } from '@/hooks/use-auth';
 import type { Vehicle, VehicleApplication, UserProfile, AdminUser, Review, GalleryImage } from '@/lib/types';
 import { vehicleFormSchema, type VehicleFormValues } from '@/lib/fleet-schemas';
 import { getFleetData, upsertVehicle, deleteVehicle, updateApplicationStatus, getDriverProfile } from '@/app/actions/fleet-actions';
+import { getDossierPackages, createDossierPurchase, getFleetDossiers, canUserPurchaseDossierPackage } from '@/app/actions/dossier-actions';
 import { getReviewsForUser } from '@/app/actions/review-actions';
 import { getFleetGalleryImages } from '@/app/actions/secure-storage-actions';
 import { format } from 'date-fns';
@@ -26,7 +27,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle, StarHalf, Search, GitCommitHorizontal, Fuel, ShieldCheck, MapPin, UploadCloud, Images, Link as LinkIcon, AlertCircle, ImagePlus, X, Coins } from "lucide-react";
+import { Car, Users, Eye, PlusCircle, UserCheck, Star, Wrench, Trash2, Loader2, FilePen, ChevronRight, Briefcase, FileText, Smartphone, MessageCircle, StarHalf, Search, GitCommitHorizontal, Fuel, ShieldCheck, MapPin, UploadCloud, Images, Link as LinkIcon, AlertCircle, ImagePlus, X, Coins, FileText as FileTextIcon, Shield, TrendingUp, CheckCircle } from "lucide-react";
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
@@ -67,6 +68,27 @@ const getProfileStatusVariant = (status: string): "default" | "secondary" | "des
     }
 };
 
+const getFeatureDisplayName = (feature: string): string => {
+    const featureNames: Record<string, string> = {
+        'basic_profile': 'Perfil Básico',
+        'financial_analysis': 'Análise Financeira',
+        'serasa_check': 'Verificação Serasa',
+        'contact_validation': 'Validação de Contatos',
+        'address_validation': 'Validação de Endereço',
+        'work_history': 'Histórico de Trabalho',
+        'document_verification': 'Verificação de Documentos',
+        'social_media_analysis': 'Análise de Redes Sociais',
+        'criminal_record': 'Antecedentes Criminais',
+        'credit_score': 'Score de Crédito',
+        'income_verification': 'Verificação de Renda',
+        'vehicle_preferences': 'Preferências de Veículos',
+        'risk_assessment': 'Avaliação de Risco',
+        'comprehensive_report': 'Relatório Abrangente'
+    };
+    
+    return featureNames[feature] || feature;
+};
+
 
 export default function FleetPage() {
     const { user, userProfile, loading } = useAuthProtection({ requiredRoles: ['fleet', 'admin'] });
@@ -91,11 +113,21 @@ export default function FleetPage() {
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
     const [driverToReview, setDriverToReview] = useState<{id: string, name: string} | null>(null);
     
+    // State for dossier modal
+    const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
+    const [selectedDriverForDossier, setSelectedDriverForDossier] = useState<{id: string, name: string} | null>(null);
+    const [dossierPackages, setDossierPackages] = useState<any[]>([]);
+    const [selectedPackage, setSelectedPackage] = useState<any>(null);
+    const [isProcessingDossier, setIsProcessingDossier] = useState(false);
+    
     useEffect(() => {
         if (user) {
             const loadData = async () => {
                 setPageLoading(true);
-                const fleetResult = await getFleetData(user.uid);
+                const [fleetResult, packagesResult] = await Promise.all([
+                    getFleetData(user.uid),
+                    getDossierPackages()
+                ]);
 
                 if (fleetResult.success) {
                     setVehicles(fleetResult.vehicles);
@@ -103,6 +135,8 @@ export default function FleetPage() {
                 } else {
                     toast({ variant: 'destructive', title: 'Erro ao Carregar Dados', description: fleetResult.error });
                 }
+                
+                setDossierPackages(packagesResult);
                 setPageLoading(false);
             };
             loadData();
@@ -205,7 +239,73 @@ export default function FleetPage() {
         if (updatedData.success) {
             setVehicles(updatedData.vehicles);
         }
-    }
+    };
+
+    const handlePurchaseDossier = async (driverId: string, driverName: string) => {
+        setSelectedDriverForDossier({ id: driverId, name: driverName });
+        setIsDossierModalOpen(true);
+    };
+
+    const handleDossierPurchase = async () => {
+        if (!user || !selectedDriverForDossier || !selectedPackage) return;
+        
+        setIsProcessingDossier(true);
+        try {
+            // Primeiro, verificar se o motorista pode comprar este pacote
+            const eligibilityCheck = await canUserPurchaseDossierPackage(
+                selectedDriverForDossier.id,
+                selectedPackage.id
+            );
+
+            if (!eligibilityCheck.canPurchase) {
+                if (eligibilityCheck.requiresConsent) {
+                    toast({ 
+                        variant: 'destructive',
+                        title: 'Autorização Financeira Necessária', 
+                        description: 'Este motorista precisa concordar com a análise financeira em seu perfil antes de prosseguir com o dossiê.' 
+                    });
+                } else {
+                    toast({ 
+                        variant: 'destructive',
+                        title: 'Erro ao Verificar Elegibilidade', 
+                        description: eligibilityCheck.error || 'Erro desconhecido' 
+                    });
+                }
+                return;
+            }
+
+            const result = await createDossierPurchase(
+                user.uid,
+                selectedDriverForDossier.id,
+                selectedPackage.id,
+                selectedPackage.price
+            );
+
+            if (result.success) {
+                toast({ 
+                    title: 'Dossiê Solicitado', 
+                    description: `Dossiê do motorista ${selectedDriverForDossier.name} será gerado em breve.` 
+                });
+                setIsDossierModalOpen(false);
+                setSelectedDriverForDossier(null);
+                setSelectedPackage(null);
+            } else {
+                toast({ 
+                    variant: 'destructive',
+                    title: 'Erro ao Solicitar Dossiê', 
+                    description: result.error 
+                });
+            }
+        } catch (error) {
+            toast({ 
+                variant: 'destructive',
+                title: 'Erro', 
+                description: 'Erro ao processar solicitação' 
+            });
+        } finally {
+            setIsProcessingDossier(false);
+        }
+    };
 
 
     if (loading || pageLoading) {
@@ -352,6 +452,15 @@ export default function FleetPage() {
                                                         {isFetchingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Eye className="mr-2 h-4 w-4"/>}
                                                         Ver Perfil
                                                     </Button>
+                                                    <Button 
+                                                        variant="secondary" 
+                                                        size="sm" 
+                                                        onClick={() => handlePurchaseDossier(app.driverId, app.driverName)}
+                                                        className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
+                                                    >
+                                                        <FileTextIcon className="mr-2 h-4 w-4"/>
+                                                        Dossiê Completo
+                                                    </Button>
                                                     {app.status === 'Pendente' ? (
                                                         <>
                                                             <Button variant="outline" size="sm" onClick={() => handleApplicationStatusChange(app.id, 'Aprovado')}>Aprovar</Button>
@@ -426,6 +535,129 @@ export default function FleetPage() {
                             onReviewSubmitted={() => setIsReviewModalOpen(false)}
                         />
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal de Dossiê */}
+            <Dialog open={isDossierModalOpen} onOpenChange={setIsDossierModalOpen}>
+                <DialogContent className="sm:max-w-4xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Shield className="h-5 w-5 text-blue-600" />
+                            Dossiê Completo do Motorista
+                        </DialogTitle>
+                        <DialogDescription>
+                            Escolha um pacote de dossiê para {selectedDriverForDossier?.name}. 
+                            O dossiê incluirá análise financeira, verificação de documentos, histórico de trabalho e muito mais.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-6">
+                        {/* Pacotes Disponíveis */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {dossierPackages.map((pkg) => (
+                                <Card 
+                                    key={pkg.id} 
+                                    className={`cursor-pointer transition-all hover:shadow-lg ${
+                                        selectedPackage?.id === pkg.id 
+                                            ? 'ring-2 ring-blue-500 bg-blue-50' 
+                                            : 'hover:border-blue-300'
+                                    }`}
+                                    onClick={() => setSelectedPackage(pkg)}
+                                >
+                                    <CardHeader className="pb-3">
+                                        <div className="flex items-center justify-between">
+                                            <CardTitle className="text-lg">{pkg.name}</CardTitle>
+                                            {pkg.popular && (
+                                                <Badge variant="default" className="bg-gradient-to-r from-orange-500 to-red-500">
+                                                    Popular
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <CardDescription>{pkg.description}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold text-blue-600 mb-4">
+                                            R$ {pkg.price.toFixed(2)}
+                                        </div>
+                                        
+                                        <div className="space-y-2">
+                                            <div className="text-sm font-medium text-gray-700">Inclui:</div>
+                                            <ul className="text-sm text-gray-600 space-y-1">
+                                                {pkg.features.map((feature: string, index: number) => (
+                                                    <li key={index} className="flex items-center gap-2">
+                                                        <CheckCircle className="h-3 w-3 text-green-500" />
+                                                        {getFeatureDisplayName(feature)}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+
+                        {/* Resumo da Compra */}
+                        {selectedPackage && (
+                            <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+                                <CardHeader>
+                                    <CardTitle className="text-blue-800">Resumo da Compra</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-600">Motorista:</span>
+                                            <span className="font-medium">{selectedDriverForDossier?.name}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-600">Pacote:</span>
+                                            <span className="font-medium">{selectedPackage.name}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-600">Valor:</span>
+                                            <span className="text-xl font-bold text-blue-600">
+                                                R$ {selectedPackage.price.toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="text-sm text-gray-500 mt-2">
+                                            <TrendingUp className="h-4 w-4 inline mr-1" />
+                                            O dossiê será gerado automaticamente após a confirmação do pagamento.
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => {
+                                setIsDossierModalOpen(false);
+                                setSelectedDriverForDossier(null);
+                                setSelectedPackage(null);
+                            }}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button 
+                            onClick={handleDossierPurchase}
+                            disabled={!selectedPackage || isProcessingDossier}
+                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        >
+                            {isProcessingDossier ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Processando...
+                                </>
+                            ) : (
+                                <>
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    Comprar Dossiê
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

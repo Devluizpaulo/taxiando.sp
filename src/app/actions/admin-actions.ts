@@ -4,7 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { adminDB, adminAuth } from '@/lib/firebase-admin';
 import { type UserProfile, type GlobalSettings, type AnalyticsData, type AdminUser, type Vehicle, type ServiceListing, type Course, type Coupon, type CreditPackage, type PaymentGatewaySettings } from '@/lib/types';
-import { Timestamp } from 'firebase-admin/firestore';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { format, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as z from 'zod';
@@ -739,4 +739,71 @@ export async function getAdminReportsData() {
         console.error("Error fetching admin reports data:", error);
         return { success: false, error: (error as Error).message };
     }
+}
+
+export async function createDefaultDossierPackages() {
+  try {
+    const packages = [
+      {
+        name: "Dossiê Básico",
+        description: "Informações essenciais do motorista com verificação básica de documentos",
+        price: 29.90,
+        features: ['basic_profile', 'document_verification'],
+        popular: false
+      },
+      {
+        name: "Dossiê Completo",
+        description: "Análise financeira, verificação Serasa e histórico de trabalho",
+        price: 79.90,
+        features: [
+          'basic_profile', 
+          'financial_analysis', 
+          'serasa_check', 
+          'contact_validation', 
+          'address_validation', 
+          'work_history', 
+          'document_verification',
+          'risk_assessment'
+        ],
+        popular: true
+      },
+      {
+        name: "Dossiê Premium",
+        description: "Análise completa com redes sociais, antecedentes criminais e relatório abrangente",
+        price: 149.90,
+        features: [
+          'basic_profile', 
+          'financial_analysis', 
+          'serasa_check', 
+          'contact_validation', 
+          'address_validation', 
+          'work_history', 
+          'document_verification',
+          'social_media_analysis',
+          'criminal_record',
+          'vehicle_preferences',
+          'risk_assessment',
+          'comprehensive_report'
+        ],
+        popular: false
+      }
+    ];
+
+    const batch = adminDB.batch();
+    
+    for (const pkg of packages) {
+      const docRef = adminDB.collection('dossier_packages').doc();
+      batch.set(docRef, {
+        ...pkg,
+        createdAt: FieldValue.serverTimestamp(),
+        isActive: true
+      });
+    }
+
+    await batch.commit();
+    return { success: true, message: 'Pacotes de dossiê criados com sucesso' };
+  } catch (error) {
+    console.error('Error creating default dossier packages:', error);
+    return { success: false, error: (error as Error).message };
+  }
 }

@@ -21,7 +21,7 @@ import {
   exportEducationalElements,
   type EducationalElement 
 } from '@/app/actions/educational-elements-actions';
-import { EducationalElementEditor } from '@/components/course/EducationalElementEditor';
+import { ContentBlocksEditor } from '@/components/course/ContentBlocksEditor';
 import { useToast } from '@/hooks/use-toast';
 
 export default function EducationalElementsPage() {
@@ -471,22 +471,33 @@ export default function EducationalElementsPage() {
       {/* Editor Modal */}
       {showEditor && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-background rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <EducationalElementEditor
-              courseId={courseId}
-              lessonId="all"
-              userId="current-user-id" // Você precisa passar o ID do usuário atual
-              element={selectedElement || undefined}
-              onSave={(elementId) => {
+          <div className="bg-background rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">
+                {isCreating ? 'Criar Elemento Educacional' : 'Editar Elemento Educacional'}
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowEditor(false);
+                  setSelectedElement(null);
+                  setIsCreating(false);
+                }}
+              >
+                Fechar
+              </Button>
+            </div>
+            
+            <ContentBlocksEditor
+              contentBlocks={selectedElement ? [selectedElement.data] : []}
+              onChange={(blocks) => {
+                // Implementar lógica de salvamento
+                console.log('Elementos atualizados:', blocks);
                 setShowEditor(false);
                 setSelectedElement(null);
                 setIsCreating(false);
                 loadElements();
-              }}
-              onCancel={() => {
-                setShowEditor(false);
-                setSelectedElement(null);
-                setIsCreating(false);
               }}
             />
           </div>
