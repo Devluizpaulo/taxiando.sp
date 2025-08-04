@@ -169,7 +169,7 @@ export type ContentBlock =
   | { type: 'list'; style: 'bullet' | 'numbered' | 'checklist' | 'timeline'; items: string[]; icon?: string }
   | { type: 'quote'; text: string; author?: string; source?: string; style?: 'default' | 'accent' | 'bordered' }
   | { type: 'code'; code: string; language?: string; title?: string; showLineNumbers?: boolean }
-  | { type: 'callout'; text: string; type: 'info' | 'warning' | 'success' | 'error'; icon?: string }
+  | { type: 'callout'; text: string; calloutType: 'info' | 'warning' | 'success' | 'error'; icon?: string }
   | { type: 'divider'; style?: 'solid' | 'dashed' | 'dotted' | 'gradient' }
   
   // Elementos de mídia
@@ -193,15 +193,15 @@ export type ContentBlock =
   // Elementos de dados e tabelas
   | { type: 'table'; headers: string[]; rows: string[][]; style?: 'default' | 'striped' | 'bordered' | 'compact' }
   | { type: 'comparison_table'; title: string; columns: string[]; rows: Array<{ id: string; feature: string; values: string[] }>; highlight?: string }
-  | { type: 'chart'; type: 'bar' | 'line' | 'pie' | 'doughnut' | 'radar'; data: any; options?: any; title?: string }
+  | { type: 'chart'; chartType: 'bar' | 'line' | 'pie' | 'doughnut' | 'radar'; data: any; options?: any; title?: string }
   | { type: 'progress'; value: number; max: number; label?: string; style?: 'default' | 'gradient' | 'animated' }
   | { type: 'stats'; items: Array<{ label: string; value: string | number; icon?: string; color?: string }>; layout?: 'horizontal' | 'vertical' | 'grid' }
   | { type: 'timeline'; title: string; events: Array<{ id: string; date: string; title: string; description: string; imageUrl?: string; color?: string }>; style?: 'default' | 'vertical' | 'horizontal' }
   
   // Elementos interativos educativos
-  | { type: 'exercise'; question: string; answer: string; hints?: string[]; type?: 'text' | 'multiple_choice' | 'true_false' }
+  | { type: 'exercise'; question: string; answer: string; hints?: string[]; exerciseType?: 'text' | 'multiple_choice' | 'true_false' }
   | { type: 'quiz'; questions: QuizQuestion[]; timeLimit?: number; passingScore?: number; showResults?: boolean }
-  | { type: 'observation'; text: string; icon?: string; type?: 'tip' | 'warning' | 'note' | 'example' }
+  | { type: 'observation'; text: string; icon?: string; observationType?: 'tip' | 'warning' | 'note' | 'example' }
   | { type: 'interactive_simulation'; title: string; description?: string; scenario: string; options: Array<{ id: string; text: string; outcome: string; isCorrect: boolean }>; feedback?: string }
   | { type: 'case_study'; title: string; description: string; background: string; challenge: string; questions: string[]; solution?: string; keyLearnings?: string[] }
   | { type: 'mind_map'; title: string; centralTopic: string; branches: Array<{ id: string; text: string; subBranches?: Array<{ id: string; text: string }> }>; style?: 'radial' | 'tree' | 'flowchart' }
@@ -212,7 +212,7 @@ export type ContentBlock =
   | { type: 'hotspot'; title: string; imageUrl: string; hotspots: Array<{ id: string; x: number; y: number; radius: number; title: string; description: string; isCorrect: boolean }>; showLabels?: boolean }
   | { type: 'word_search'; title: string; grid: string[][]; words: Array<{ id: string; word: string; direction: 'horizontal' | 'vertical' | 'diagonal'; startX: number; startY: number }>; showHints?: boolean }
   | { type: 'crossword'; title: string; grid: Array<Array<{ letter?: string; number?: number; isBlack: boolean }>>; clues: { across: Array<{ number: number; clue: string; answer: string }>; down: Array<{ number: number; clue: string; answer: string }> } }
-  | { type: 'scenario_builder'; title: string; description: string; variables?: Array<{ id: string; name: string; type: 'text' | 'number' | 'boolean' | 'select'; options?: string[]; defaultValue?: string }>; outcomes: Array<{ id: string; condition: string; result: string; feedback?: string }> }
+  | { type: 'scenario_builder'; title: string; description: string; variables?: Array<{ id: string; name: string; variableType: 'text' | 'number' | 'boolean' | 'select'; options?: string[]; defaultValue?: string }>; outcomes: Array<{ id: string; condition: string; result: string; feedback?: string }> }
   
   // Elementos de apresentação (estilo PowerPoint)
   | { type: 'slide_title'; title: string; subtitle?: string; background?: string; textColor?: string; alignment?: 'left' | 'center' | 'right' }
@@ -223,7 +223,7 @@ export type ContentBlock =
   | { type: 'testimonial'; quote: string; author: string; role?: string; company?: string; avatar?: string; rating?: number }
   | { type: 'pricing_table'; title: string; plans: Array<{ name: string; price: string; features: string[]; highlighted?: boolean; buttonText?: string }> }
   | { type: 'team_members'; title: string; members: Array<{ name: string; role: string; avatar?: string; bio?: string; social?: { linkedin?: string; twitter?: string } }> }
-  | { type: 'contact_info'; title: string; items: Array<{ type: 'email' | 'phone' | 'address' | 'website'; value: string; icon?: string }> }
+  | { type: 'contact_info'; title: string; items: Array<{ contactType: 'email' | 'phone' | 'address' | 'website'; value: string; icon?: string }> }
   
   // Elementos de navegação
   | { type: 'navigation_menu'; items: Array<{ title: string; url: string; icon?: string; external?: boolean }>; style?: 'horizontal' | 'vertical' | 'dropdown' }
@@ -231,7 +231,7 @@ export type ContentBlock =
   | { type: 'pagination'; currentPage: number; totalPages: number; onPageChange?: (page: number) => void }
   
   // Elementos de formulário
-  | { type: 'form'; fields: Array<{ type: 'text' | 'email' | 'number' | 'select' | 'textarea' | 'checkbox' | 'radio'; name: string; label: string; required?: boolean; options?: string[] }>; submitText?: string }
+  | { type: 'form'; fields: Array<{ fieldType: 'text' | 'email' | 'number' | 'select' | 'textarea' | 'checkbox' | 'radio'; name: string; label: string; required?: boolean; options?: string[] }>; submitText?: string }
   | { type: 'poll'; question: string; options: Array<{ id: string; text: string; votes: number }>; allowMultiple?: boolean; showResults?: boolean }
   | { type: 'rating'; title: string; maxRating: number; currentRating?: number; showLabels?: boolean }
   
@@ -252,8 +252,8 @@ export type ContentBlock =
   | { type: 'social_feed'; title: string; posts: Array<{ id: string; author: string; content: string; timestamp: string; likes: number; avatar?: string }> }
   
   // Elementos de notificação
-  | { type: 'notification'; title: string; message: string; type: 'info' | 'success' | 'warning' | 'error'; dismissible?: boolean; autoHide?: boolean }
-  | { type: 'alert_banner'; title: string; message: string; type: 'info' | 'success' | 'warning' | 'error'; actionText?: string; actionUrl?: string }
+  | { type: 'notification'; title: string; message: string; notificationType: 'info' | 'success' | 'warning' | 'error'; dismissible?: boolean; autoHide?: boolean }
+  | { type: 'alert_banner'; title: string; message: string; alertType: 'info' | 'success' | 'warning' | 'error'; actionText?: string; actionUrl?: string }
   
   // Elementos de calendário
   | { type: 'calendar'; title: string; events: Array<{ id: string; title: string; date: string; time?: string; description?: string; color?: string }>; view?: 'month' | 'week' | 'day' }
@@ -265,7 +265,7 @@ export type ContentBlock =
   
   // Elementos de código e desenvolvimento
   | { type: 'code_editor'; title: string; language: string; initialCode: string; theme?: 'light' | 'dark'; readOnly?: boolean }
-  | { type: 'api_documentation'; title: string; endpoints: Array<{ method: string; path: string; description: string; parameters?: Array<{ name: string; type: string; required: boolean }> }> }
+  | { type: 'api_documentation'; title: string; endpoints: Array<{ method: string; path: string; description: string; parameters?: Array<{ name: string; parameterType: string; required: boolean }> }> }
   
   // Elementos de análise e métricas
   | { type: 'analytics_dashboard'; title: string; metrics: Array<{ name: string; value: string | number; change?: number; trend?: 'up' | 'down' | 'stable' }>; period?: string }

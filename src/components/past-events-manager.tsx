@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getPastEvents, getEventsToDelete, autoDeleteOldEvents, deletePastEvents, getEventStats } from '@/app/actions/event-actions';
 import { type Event } from '@/lib/types';
+import { type Timestamp } from 'firebase-admin/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -112,8 +113,9 @@ export function PastEventsManager() {
     loadData();
   }, []);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
+  const formatDate = (dateInput: string | Timestamp) => {
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput.toDate();
+    return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -122,8 +124,8 @@ export function PastEventsManager() {
     });
   };
 
-  const getDaysSinceEvent = (dateString: string) => {
-    const eventDate = new Date(dateString);
+  const getDaysSinceEvent = (dateInput: string | Timestamp) => {
+    const eventDate = typeof dateInput === 'string' ? new Date(dateInput) : dateInput.toDate();
     const today = new Date();
     const diffTime = Math.abs(today.getTime() - eventDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

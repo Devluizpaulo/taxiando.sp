@@ -178,7 +178,7 @@ export function AdvancedContentEditor({
       case 'quiz':
         return { type: 'quiz', questions: [] };
       case 'chart':
-        return { type: 'chart', type: 'bar', data: { labels: ['A', 'B', 'C'], datasets: [{ data: [1, 2, 3] }] }, title: 'Gráfico' };
+        return { type: 'chart', chartType: 'bar', data: { labels: ['A', 'B', 'C'], datasets: [{ data: [1, 2, 3] }] }, title: 'Gráfico' };
       default:
         return { type: 'paragraph', text: 'Novo elemento' };
     }

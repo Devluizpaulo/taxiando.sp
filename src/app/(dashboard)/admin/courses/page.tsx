@@ -88,10 +88,12 @@ export default async function AdminCoursesPage() {
                           <span className="text-xs text-muted-foreground ml-2">({suggestion.driverEmail})</span>
                         </div>
                         <div className="text-sm text-slate-700 mt-1">{suggestion.suggestion}</div>
-                        <div className="text-xs text-muted-foreground mt-2">
-                          Sugerido em: {suggestion.createdAt instanceof Date 
-                            ? suggestion.createdAt.toLocaleDateString('pt-BR') 
-                            : new Date(suggestion.createdAt).toLocaleDateString('pt-BR')}
+                                                <div className="text-xs text-muted-foreground mt-2">
+                          Sugerido em: {suggestion.createdAt instanceof Date
+                            ? suggestion.createdAt.toLocaleDateString('pt-BR')
+                            : typeof suggestion.createdAt === 'string'
+                            ? new Date(suggestion.createdAt).toLocaleDateString('pt-BR')
+                            : suggestion.createdAt.toDate().toLocaleDateString('pt-BR')}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

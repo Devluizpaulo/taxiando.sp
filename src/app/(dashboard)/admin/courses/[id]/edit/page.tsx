@@ -218,14 +218,14 @@ function useCourseOperations(courseId: string, userId: string): CourseOperations
   const router = useRouter();
 
   const operations = useMemo(() => ({
-    create: async (data) => {
+    create: async (data: Partial<CourseFormValues>) => {
       try {
         toast({ title: 'Sucesso', description: 'Curso criado com sucesso!' });
       } catch (error) {
         toast({ title: 'Erro', description: 'Falha ao criar curso.' });
       }
     },
-    read: async (id) => {
+    read: async (id: string) => {
       try {
         console.log(`[useCourseOperations.read] Buscando curso: ${id}`);
         const course = await getCourseById(id);
@@ -248,7 +248,7 @@ function useCourseOperations(courseId: string, userId: string): CourseOperations
         throw error;
       }
     },
-    update: async (id, data) => {
+    update: async (id: string, data: Partial<CourseFormValues>) => {
       try {
         const result = await updateCourse(id, data as CourseFormValues, userId);
         if (result.success) {
@@ -260,7 +260,7 @@ function useCourseOperations(courseId: string, userId: string): CourseOperations
         toast({ title: 'Erro', description: 'Falha ao atualizar curso.' });
       }
     },
-    delete: async (id) => {
+    delete: async (id: string) => {
       try {
         const result = await deleteCourse(id);
         if (result.success) {
@@ -273,7 +273,7 @@ function useCourseOperations(courseId: string, userId: string): CourseOperations
         toast({ title: 'Erro', description: 'Falha ao excluir curso.' });
       }
     },
-    duplicate: async (id) => {
+    duplicate: async (id: string) => {
       try {
         const course = await getCourseById(id);
         if (course) {
@@ -288,7 +288,7 @@ function useCourseOperations(courseId: string, userId: string): CourseOperations
         toast({ title: 'Erro', description: 'Falha ao duplicar curso.' });
       }
     },
-    export: async (id) => {
+    export: async (id: string) => {
       try {
         const course = await getCourseById(id);
         if (course) {
@@ -306,7 +306,7 @@ function useCourseOperations(courseId: string, userId: string): CourseOperations
         toast({ title: 'Erro', description: 'Falha ao exportar curso.' });
       }
     },
-    import: async (file) => {
+    import: async (file: File) => {
       try {
         const text = await file.text();
         const courseData = JSON.parse(text);
@@ -839,6 +839,7 @@ function ContentTab({ form }: { form: UseFormReturn<CourseFormValues> }) {
     const newLesson = {
       id: nanoid(),
       title: 'Nova Aula',
+      type: 'single' as const,
       content: JSON.stringify([]),
       totalDuration: 0,
       pages: [],
@@ -846,7 +847,8 @@ function ContentTab({ form }: { form: UseFormReturn<CourseFormValues> }) {
       questions: []
     };
     const currentLessons = form.getValues(`modules.${moduleIndex}.lessons`) || [];
-    form.setValue(`modules.${moduleIndex}.lessons`, [...currentLessons, newLesson]);
+    const updatedLessons = currentLessons.concat([newLesson]);
+    form.setValue(`modules.${moduleIndex}.lessons`, updatedLessons);
     setActiveLessonIndex(currentLessons.length);
   }, [form]);
 
@@ -1133,14 +1135,14 @@ function ContentTab({ form }: { form: UseFormReturn<CourseFormValues> }) {
                     onClick={() => {
                       const currentBlocks = getContentBlocks(activeModuleIndex, activeLessonIndex);
                       const newBlock = {
-                        type: 'slide_title',
+                        type: 'slide_title' as const,
                         title: 'Novo Slide',
                         subtitle: 'Clique para editar',
                         background: 'gradient-to-r from-blue-500 to-purple-600',
                         textColor: 'white',
-                        alignment: 'center'
+                        alignment: 'center' as const
                       };
-                      handleContentChange(activeModuleIndex, activeLessonIndex, [...currentBlocks, newBlock]);
+                      handleContentChange(activeModuleIndex, activeLessonIndex, currentBlocks.concat([newBlock]));
                     }}
                     className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                   >
@@ -1716,7 +1718,7 @@ function EnhancedLessonEditor({
                         summary: '',
                         observations: '',
                       };
-                      const updatedPages = [...currentPages, newPage];
+                      const updatedPages = currentPages.concat([newPage]);
                       form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.pages`, updatedPages);
                     }}
                   >
@@ -1829,7 +1831,7 @@ function EnhancedLessonEditor({
                         name: '',
                         url: '',
                       };
-                      const updatedMaterials = [...currentMaterials, newMaterial];
+                      const updatedMaterials = currentMaterials.concat([newMaterial]);
                       form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.materials`, updatedMaterials);
                     }}
                   >
@@ -1912,7 +1914,7 @@ function EnhancedLessonEditor({
                           { id: nanoid(), text: '', isCorrect: false },
                         ],
                       };
-                      const updatedQuestions = [...currentQuestions, newQuestion];
+                      const updatedQuestions = currentQuestions.concat([newQuestion]);
                       form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.questions`, updatedQuestions);
                     }}
                   >
@@ -2081,7 +2083,7 @@ function PageContentEditor({
                       type: 'paragraph' as const,
                       text: '',
                     };
-                    const updatedBlocks = [...currentBlocks, newBlock];
+                    const updatedBlocks = currentBlocks.concat([newBlock]);
                     form.setValue(`modules.${moduleIndex}.lessons.${lessonIndex}.pages.${pageIndex}.contentBlocks`, updatedBlocks);
                   }}
                 >
