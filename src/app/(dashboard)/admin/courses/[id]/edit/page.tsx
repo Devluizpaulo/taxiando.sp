@@ -325,17 +325,21 @@ function useAutoSave(form: UseFormReturn<CourseFormValues>, courseId: string, op
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  // Usar useRef para manter uma referência estável às operações
+  const operationsRef = useRef(operations);
+  operationsRef.current = operations;
+
   const debouncedSave = useCallback(
     debounce(async (data: CourseFormValues) => {
       try {
-        await operations.update(courseId, data);
+        await operationsRef.current.update(courseId, data);
         setLastSaved(new Date());
         setHasUnsavedChanges(false);
       } catch (error) {
         console.error('Auto-save failed:', error);
       }
     }, 2000),
-    [courseId, operations]
+    [courseId]
   );
 
   useEffect(() => {
