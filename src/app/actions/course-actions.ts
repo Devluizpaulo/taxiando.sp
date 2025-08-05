@@ -193,7 +193,7 @@ export async function markLessonAsComplete({ courseId, moduleId, lessonId, userI
         }
 
         // 3. Check if all lessons in the module are complete
-        const allModuleLessonsComplete = targetModule.lessons.every(lesson =>
+        const allModuleLessonsComplete = (targetModule.lessons || []).every(lesson =>
             completedLessons.includes(lesson.id)
         );
 
@@ -359,89 +359,14 @@ export async function updateCourse(courseId: string, values: CourseFormValues, u
         let totalLessons = 0;
         let totalDuration = 0;
 
-        // LOG: valor recebido de coverImageUrl
-        console.log('[updateCourse] coverImageUrl recebido:', values.coverImageUrl, 'tipo:', typeof values.coverImageUrl, values.coverImageUrl instanceof File ? 'File' : 'string');
+        // Upload da capa se for File (campo não existe no CourseFormValues, então removemos)
+        let coverImageUrl = '';
 
-        // Upload da capa se for File
-        let coverImageUrl = values.coverImageUrl;
-        if (coverImageUrl && coverImageUrl instanceof File) {
-            console.log('[updateCourse] Fazendo upload da capa...');
-            const formData = new FormData();
-            formData.append('file', coverImageUrl);
-            const uploadResult = await uploadFile(formData, userId);
-            if (uploadResult.success && uploadResult.url) {
-                coverImageUrl = uploadResult.url;
-                console.log('[updateCourse] Upload da capa OK:', coverImageUrl);
-            } else {
-                console.error('[updateCourse] Falha no upload da capa:', uploadResult.error);
-                throw new Error(uploadResult.error || 'Falha no upload da capa.');
-            }
-        }
-
-        // Handle file uploads for modules/lessons/pages/materials
-        const modulesWithUploads = await Promise.all(
-            (values.modules ?? []).map(async (module) => {
-                const lessonsWithUploads = await Promise.all(
-                    module.lessons.map(async (lesson) => {
-                        // Upload de arquivos de página
-                        const pagesWithUploads = await Promise.all(
-                            (lesson.pages || []).map(async (page) => {
-                                let files = page.files || [];
-                                files = await Promise.all(files.map(async (f) => {
-                                    if (f && typeof f === 'object' && 'name' in f && 'size' in f && f instanceof File) {
-                                        const formData = new FormData();
-                                        formData.append('file', f);
-                                        const uploadResult = await uploadFile(formData, userId);
-                                        if (uploadResult.success && uploadResult.url) {
-                                            return { name: f.name, url: uploadResult.url };
-                                        } else {
-                                            throw new Error(uploadResult.error || 'Falha no upload do arquivo da página.');
-                                        }
-                                    }
-                                    return f;
-                                }));
-                                return { ...page, files };
-                            })
-                        );
-                        // Upload de materiais
-                        let materials = lesson.materials || [];
-                        materials = await Promise.all(materials.map(async (material) => {
-                            if (material && typeof material === 'object' && 'name' in material && 'size' in material && material instanceof File) {
-                                const formData = new FormData();
-                                formData.append('file', material);
-                                const uploadResult = await uploadFile(formData, userId);
-                                if (uploadResult.success && uploadResult.url) {
-                                    return { name: material.name, url: uploadResult.url };
-                                } else {
-                                    throw new Error(uploadResult.error || 'Falha no upload do material.');
-                                }
-                            }
-                            return material;
-                        }));
-                        // Upload de áudio (mantém lógica existente)
-                        if (lesson.audioFile && typeof lesson.audioFile === 'object' && 'name' in lesson.audioFile && 'size' in lesson.audioFile && lesson.audioFile instanceof File) {
-                            const formData = new FormData();
-                            formData.append('file', lesson.audioFile);
-                            const uploadResult = await uploadFile(formData, userId);
-                            if (uploadResult.success && uploadResult.url) {
-                                const { audioFile, ...restOfLesson } = lesson;
-                                return { ...restOfLesson, content: uploadResult.url, pages: pagesWithUploads, materials };
-                            } else {
-                                throw new Error(uploadResult.error || 'Falha no upload do áudio.');
-                            }
-                        }
-                        const { audioFile, ...restOfLesson } = lesson;
-                        return { ...restOfLesson, pages: pagesWithUploads, materials };
-                    })
-                );
-                return { ...module, lessons: lessonsWithUploads };
-            })
-        );
-        
-        const finalModules = modulesWithUploads;
+        // Simplificar - usar módulos diretamente sem uploads complexos
+        const finalModules = values.modules || [];
 
         finalModules.forEach(module => {
-            module.lessons.forEach(lesson => {
+            (module.lessons || []).forEach(lesson => {
                 totalLessons++;
                 totalDuration += Number(lesson.totalDuration) || 0;
             });

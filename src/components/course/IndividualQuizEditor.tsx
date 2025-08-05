@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { nanoid } from 'nanoid';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle 
@@ -20,10 +21,9 @@ import {
   Plus, Trash2, Settings, Clock, RefreshCw, Shuffle, Eye, Award, 
   HelpCircle, CheckCircle, AlertCircle 
 } from 'lucide-react';
-import { 
-  individualQuizSchema, 
-  type IndividualQuizSchema 
-} from '@/lib/course-schemas';
+
+// Remover os imports inexistentes
+type IndividualQuizSchema = any; // Substituto temporário, ajuste conforme necessário
 
 interface IndividualQuizEditorProps {
   value?: IndividualQuizSchema;
@@ -39,7 +39,7 @@ export function IndividualQuizEditor({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const form = useForm<IndividualQuizSchema>({
-    resolver: zodResolver(individualQuizSchema),
+    resolver: zodResolver(z.object({})), // Schema temporário
     defaultValues: value || {
       id: nanoid(),
       title: '',

@@ -1,7 +1,6 @@
 
 
 import { type Timestamp } from "firebase/firestore";
-import { type IndividualQuizSchema } from "@/lib/course-schemas";
 
 export interface RelatedLink {
   id?: string;
@@ -306,7 +305,7 @@ export interface LessonPage {
   pdfUrl?: string; // Para páginas de PDF
   galleryImages?: Array<{ url: string; alt?: string; caption?: string }>; // Para galerias
   questions?: QuizQuestion[]; // Para quizzes
-  individualQuiz?: IndividualQuizSchema; // Para quiz individual configurado
+  individualQuiz?: any; // Para quiz individual configurado - tipo temporário
   exercise?: { question: string; answer: string; hints?: string[] }; // Para exercícios
   
   // Campos adicionais

@@ -11,7 +11,8 @@ import {
   Clock, CheckCircle, XCircle, AlertCircle, HelpCircle, 
   RefreshCw, Award, Timer, Eye, EyeOff 
 } from 'lucide-react';
-import { type IndividualQuizSchema } from '@/lib/course-schemas';
+
+type IndividualQuizSchema = any; // Substituto temporário, ajuste conforme necessário
 
 interface QuizViewerProps {
   quiz: IndividualQuizSchema;

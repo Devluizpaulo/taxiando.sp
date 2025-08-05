@@ -473,6 +473,9 @@ const ContentTab = ({ form }: { form: any }) => {
     keyName: 'fieldId',
   });
 
+  // Obter os valores atuais dos módulos para acessar as propriedades
+  const modules = form.watch('modules') || [];
+
   const handleAddModule = useCallback(() => {
     appendModule({
       id: nanoid(),
@@ -664,11 +667,11 @@ const ContentTab = ({ form }: { form: any }) => {
                   Aulas do Módulo
                 </CardTitle>
                 <CardDescription className="text-green-700">
-                  {moduleFields[activeModuleIndex]?.title || `Módulo ${activeModuleIndex + 1}`}
+                  {modules[activeModuleIndex]?.title || `Módulo ${activeModuleIndex + 1}`}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {moduleFields[activeModuleIndex]?.lessons?.map((lesson: any, index: number) => (
+                {modules[activeModuleIndex]?.lessons?.map((lesson: any, index: number) => (
                   <div
                     key={lesson.id}
                     className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
@@ -762,17 +765,17 @@ const ContentTab = ({ form }: { form: any }) => {
                   Preview da Aula
                 </CardTitle>
                 <CardDescription className="text-purple-700">
-                  {moduleFields[activeModuleIndex]?.lessons?.[activeLessonIndex]?.title || 'Selecione uma aula'}
+                  {modules[activeModuleIndex]?.lessons?.[activeLessonIndex]?.title || 'Selecione uma aula'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 bg-white rounded-lg border min-h-[200px]">
-                  {moduleFields[activeModuleIndex]?.lessons?.[activeLessonIndex]?.content ? (
+                  {modules[activeModuleIndex]?.lessons?.[activeLessonIndex]?.content ? (
                     <div className="prose prose-sm max-w-none">
                       <p className="text-gray-600">
                         {(() => {
                           try {
-                            const content = JSON.parse(moduleFields[activeModuleIndex].lessons[activeLessonIndex].content);
+                            const content = JSON.parse(modules[activeModuleIndex].lessons[activeLessonIndex].content);
                             return content[0]?.text || 'Conteúdo da aula...';
                           } catch {
                             return 'Conteúdo da aula...';
@@ -797,13 +800,13 @@ const ContentTab = ({ form }: { form: any }) => {
                 </div>
                 
                 {/* Estatísticas da aula */}
-                {moduleFields[activeModuleIndex]?.lessons?.[activeLessonIndex]?.content && (
+                {modules[activeModuleIndex]?.lessons?.[activeLessonIndex]?.content && (
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="p-2 bg-white rounded border text-center">
                       <p className="font-medium text-gray-900">
                         {(() => {
                           try {
-                            const content = JSON.parse(moduleFields[activeModuleIndex].lessons[activeLessonIndex].content);
+                            const content = JSON.parse(modules[activeModuleIndex].lessons[activeLessonIndex].content);
                             return content[0]?.text?.split(/\s+/).filter((w: string) => w.length > 0).length || 0;
                           } catch {
                             return 0;
@@ -814,7 +817,7 @@ const ContentTab = ({ form }: { form: any }) => {
                     </div>
                     <div className="p-2 bg-white rounded border text-center">
                       <p className="font-medium text-gray-900">
-                        {moduleFields[activeModuleIndex]?.lessons?.[activeLessonIndex]?.totalDuration || 0}
+                        {modules[activeModuleIndex]?.lessons?.[activeLessonIndex]?.totalDuration || 0}
                       </p>
                       <p className="text-gray-600">minutos</p>
                     </div>
@@ -823,7 +826,7 @@ const ContentTab = ({ form }: { form: any }) => {
 
                 {/* Resumo dos elementos educacionais */}
                 {(() => {
-                  const lesson = moduleFields[activeModuleIndex]?.lessons?.[activeLessonIndex];
+                  const lesson = modules[activeModuleIndex]?.lessons?.[activeLessonIndex];
                   if (!lesson) return null;
                   
                   const elements = [
@@ -857,12 +860,12 @@ const ContentTab = ({ form }: { form: any }) => {
       ) : viewMode === 'editor' ? (
         /* MODO EDITOR - Editor Avançado */
         <div className="space-y-6">
-          {moduleFields.length > 0 && moduleFields[activeModuleIndex]?.lessons?.length > 0 ? (
+          {modules.length > 0 && modules[activeModuleIndex]?.lessons?.length > 0 ? (
             <div className="space-y-4">
               <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900">
-                    Editando: {moduleFields[activeModuleIndex]?.title || `Módulo ${activeModuleIndex + 1}`} - {moduleFields[activeModuleIndex]?.lessons?.[activeLessonIndex]?.title || `Aula ${activeLessonIndex + 1}`}
+                    Editando: {modules[activeModuleIndex]?.title || `Módulo ${activeModuleIndex + 1}`} - {modules[activeModuleIndex]?.lessons?.[activeLessonIndex]?.title || `Aula ${activeLessonIndex + 1}`}
                   </h3>
                   <p className="text-sm text-gray-600">Use as ferramentas abaixo para criar conteúdo rico</p>
                 </div>
@@ -897,12 +900,12 @@ const ContentTab = ({ form }: { form: any }) => {
       ) : (
         /* MODO ELEMENTOS - Gerenciador de Elementos Educacionais */
         <div className="space-y-6">
-          {moduleFields.length > 0 && moduleFields[activeModuleIndex]?.lessons?.length > 0 ? (
+          {modules.length > 0 && modules[activeModuleIndex]?.lessons?.length > 0 ? (
             <div className="space-y-4">
               <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900">
-                    Elementos Educacionais: {moduleFields[activeModuleIndex]?.title || `Módulo ${activeModuleIndex + 1}`} - {moduleFields[activeModuleIndex]?.lessons?.[activeLessonIndex]?.title || `Aula ${activeLessonIndex + 1}`}
+                    Elementos Educacionais: {modules[activeModuleIndex]?.title || `Módulo ${activeModuleIndex + 1}`} - {modules[activeModuleIndex]?.lessons?.[activeLessonIndex]?.title || `Aula ${activeLessonIndex + 1}`}
                   </h3>
                   <p className="text-sm text-gray-600">Crie provas, exercícios, resumos e testes para esta aula</p>
                 </div>
