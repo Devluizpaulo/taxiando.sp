@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { type Event } from '@/lib/types';
 import { deleteEvent } from '@/app/actions/event-actions';
@@ -10,6 +11,7 @@ import { toDate } from '@/lib/date-utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,14 +31,27 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, PlusCircle, Trash2, FilePen } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, FilePen, Archive } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function EventsClientPage({ initialEvents }: { initialEvents: Event[] }) {
     const [events, setEvents] = useState<Event[]>(initialEvents);
     const { toast } = useToast();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('all');
+
+    const filteredEvents = useMemo(() => {
+        return events.filter(event => {
+            const searchMatch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                event.location.toLowerCase().includes(searchTerm.toLowerCase());
+            const categoryMatch = categoryFilter === 'all' || event.category === categoryFilter;
+            return searchMatch && categoryMatch;
+        });
+    }, [events, searchTerm, categoryFilter]);
 
     const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
         const result = await deleteEvent(eventId);
@@ -45,6 +60,15 @@ export function EventsClientPage({ initialEvents }: { initialEvents: Event[] }) 
             setEvents(events.filter(e => e.id !== eventId));
         } else {
             toast({ variant: 'destructive', title: 'Erro ao Remover', description: result.error });
+        }
+    };
+
+    const getStatusBadge = (status?: string) => {
+        switch (status) {
+            case 'active': return <Badge variant="default">Ativo</Badge>;
+            case 'archived': return <Badge variant="secondary">Arquivado</Badge>;
+            case 'cancelled': return <Badge variant="destructive">Cancelado</Badge>;
+            default: return <Badge variant="outline">Indefinido</Badge>;
         }
     };
 
@@ -61,35 +85,65 @@ export function EventsClientPage({ initialEvents }: { initialEvents: Event[] }) 
                         <CardTitle>Todos os Eventos</CardTitle>
                         <CardDescription>Visualize e gerencie todos os eventos cadastrados.</CardDescription>
                     </div>
-                    <Button asChild>
-                        <Link href="/admin/events/create"><PlusCircle /> Criar Novo Evento</Link>
-                    </Button>
+                     <div className="flex items-center gap-2">
+                        <Link href="/admin/events/past">
+                            <Button variant="outline"><Archive className="mr-2"/>Ver Arquivados</Button>
+                        </Link>
+                        <Button asChild>
+                            <Link href="/admin/events/create"><PlusCircle /> Criar Novo Evento</Link>
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
+                    <div className="flex gap-4 mb-4">
+                        <Input 
+                            placeholder="Buscar por título ou local..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="max-w-sm"
+                        />
+                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Categoria" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todas</SelectItem>
+                                <SelectItem value="show">Show</SelectItem>
+                                <SelectItem value="festa">Festa</SelectItem>
+                                <SelectItem value="esporte">Esporte</SelectItem>
+                                <SelectItem value="corporativo">Corporativo</SelectItem>
+                                <SelectItem value="outro">Outro</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Título do Evento</TableHead>
                                 <TableHead>Local</TableHead>
+                                <TableHead>Categoria</TableHead>
                                 <TableHead>Data de Início</TableHead>
+                                <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {events.length === 0 ? (
+                            {filteredEvents.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center">
-                                        Nenhum evento encontrado. Que tal criar o primeiro?
+                                    <TableCell colSpan={6} className="h-24 text-center">
+                                        Nenhum evento encontrado.
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                events.map(event => (
+                                filteredEvents.map(event => (
                                     <TableRow key={event.id}>
                                         <TableCell className="font-medium">{event.title}</TableCell>
                                         <TableCell>{event.location}</TableCell>
+                                        <TableCell><Badge variant="outline" className="capitalize">{event.category || 'Outro'}</Badge></TableCell>
                                         <TableCell>
                                             {format(toDate(event.startDate) ?? new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                                         </TableCell>
+                                        <TableCell>{getStatusBadge(event.status)}</TableCell>
                                         <TableCell className="text-right">
                                             <AlertDialog>
                                                 <DropdownMenu>
@@ -133,3 +187,5 @@ export function EventsClientPage({ initialEvents }: { initialEvents: Event[] }) 
         </div>
     );
 }
+
+    

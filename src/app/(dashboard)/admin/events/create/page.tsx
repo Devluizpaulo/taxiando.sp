@@ -1,9 +1,10 @@
 
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm, useWatch, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
@@ -16,12 +17,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, Calendar as CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { DatePicker } from '@/components/ui/datepicker';
 import { createEvent } from '@/app/actions/event-actions';
 import { planEvent, type EventPlannerOutput } from '@/ai/flows/event-planner-flow';
 import { EventCard } from '@/components/event-card';
 import { toDate } from '@/lib/date-utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 
 const eventFormSchema = z.object({
@@ -34,6 +37,9 @@ const eventFormSchema = z.object({
     trafficTips: z.string().min(5, { message: "A dica de trânsito é obrigatória." }),
     pickupPoints: z.string().min(5, { message: "A sugestão de pontos de embarque é obrigatória." }),
     mapUrl: z.string().url("A URL do mapa precisa ser um link válido.").min(1, "A URL do mapa é obrigatória."),
+    category: z.enum(['show', 'festa', 'esporte', 'corporativo', 'outro']).default('outro'),
+    isRecurring: z.boolean().default(false),
+    additionalDates: z.array(z.date()).optional(),
 });
 
 
@@ -101,10 +107,19 @@ export default function CreateEventPage() {
             trafficTips: '',
             pickupPoints: '',
             mapUrl: '',
+            category: 'outro',
+            isRecurring: false,
+            additionalDates: [],
         },
     });
 
     const watchedValues = form.watch();
+    const isRecurring = form.watch('isRecurring');
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "additionalDates"
+    });
 
     const handleDetailsGenerated = (details: EventPlannerOutput) => {
         form.setValue('title', details.title);
@@ -186,9 +201,14 @@ export default function CreateEventPage() {
                                     <FormField control={form.control} name="title" render={({ field }) => (
                                         <FormItem><FormLabel>Título do Evento</FormLabel><FormControl><Input {...field} placeholder="Ex: Virada Cultural Paulista" /></FormControl><FormMessage /></FormItem>
                                     )} />
-                                    <FormField control={form.control} name="location" render={({ field }) => (
-                                        <FormItem><FormLabel>Local</FormLabel><FormControl><Input {...field} placeholder="Ex: Praça da Sé, Centro, São Paulo" /></FormControl><FormMessage /></FormItem>
-                                    )} />
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <FormField control={form.control} name="location" render={({ field }) => (
+                                            <FormItem><FormLabel>Local</FormLabel><FormControl><Input {...field} placeholder="Ex: Praça da Sé, Centro, São Paulo" /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="category" render={({ field }) => (
+                                            <FormItem><FormLabel>Categoria</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="show">Show</SelectItem><SelectItem value="festa">Festa</SelectItem><SelectItem value="esporte">Esporte</SelectItem><SelectItem value="corporativo">Corporativo</SelectItem><SelectItem value="outro">Outro</SelectItem></SelectContent></Select><FormMessage /></FormItem>
+                                        )}/>
+                                    </div>
                                     <FormField control={form.control} name="description" render={({ field }) => (
                                         <FormItem><FormLabel>Descrição Curta</FormLabel><FormControl><Textarea {...field} placeholder="Descreva o que é o evento, principais atrações, etc." /></FormControl><FormMessage /></FormItem>
                                     )} />
@@ -204,6 +224,41 @@ export default function CreateEventPage() {
                                             <FormMessage />
                                         </FormItem>
                                     </div>
+                                     <FormField control={form.control} name="isRecurring" render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                            <div className="space-y-0.5"><FormLabel>Evento Recorrente?</FormLabel><FormDescription>Marque se este evento se repete em outras datas.</FormDescription></div>
+                                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                        </FormItem>
+                                    )}/>
+                                    {isRecurring && (
+                                        <Card className="p-4 bg-muted/50">
+                                            <FormLabel>Datas Adicionais</FormLabel>
+                                            <div className="space-y-2 mt-2">
+                                                {fields.map((field, index) => (
+                                                     <div key={field.id} className="flex items-center gap-2">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`additionalDates.${index}`}
+                                                            render={({ field }) => (
+                                                                <FormItem className="flex-1">
+                                                                    <FormControl>
+                                                                        <DatePicker value={field.value} onChange={field.onChange} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                                <Button type="button" variant="outline" size="sm" onClick={() => append(new Date())}>
+                                                    <PlusCircle className="mr-2" /> Adicionar Data
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    )}
                                     <FormField control={form.control} name="mapUrl" render={({ field }) => (
                                         <FormItem><FormLabel>URL do Google Maps para o Local</FormLabel><FormControl><Input {...field} placeholder="https://maps.app.goo.gl/..." /></FormControl><FormMessage /></FormItem>
                                     )} />
@@ -257,3 +312,5 @@ export default function CreateEventPage() {
         </Form>
     );
 }
+
+    

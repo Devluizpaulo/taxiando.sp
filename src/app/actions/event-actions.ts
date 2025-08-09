@@ -41,6 +41,7 @@ export async function getUpcomingEvents(): Promise<Event[]> {
     const eventsCollection = adminDB.collection('events');
     const q = eventsCollection
       .where('startDate', '>=', Timestamp.fromDate(today))
+      .where('status', '==', 'active') // Apenas eventos ativos
       .orderBy('startDate', 'asc')
       .limit(20);
 
@@ -66,27 +67,62 @@ export async function getUpcomingEvents(): Promise<Event[]> {
   }
 }
 
-// Using native Date for startDate as it comes from the client form.
-type EventFormInput = Omit<Event, 'id' | 'createdAt' | 'startDate'> & {
+// Usando native Date para startDate vindo do formulário.
+type EventFormInput = Omit<Event, 'id' | 'createdAt' | 'startDate' | 'status'> & {
     startDate: Date;
+    additionalDates?: Date[];
 };
 
 
 export async function createEvent(eventData: EventFormInput) {
     try {
         const eventId = nanoid();
+        const now = Timestamp.now();
 
-        const dataToSave = {
-            ...eventData,
+        const baseEventData = {
+            title: eventData.title,
+            location: eventData.location,
+            description: eventData.description,
+            driverSummary: eventData.driverSummary,
+            peakTimes: eventData.peakTimes,
+            trafficTips: eventData.trafficTips,
+            pickupPoints: eventData.pickupPoints,
+            mapUrl: eventData.mapUrl,
+            category: eventData.category || 'outro',
+            isRecurring: (eventData.additionalDates || []).length > 0,
+            recurrenceRule: eventData.recurrenceRule,
+            status: 'active' as const,
+            createdAt: now,
+        };
+        
+        const batch = adminDB.batch();
+
+        // Evento principal
+        const mainEventRef = adminDB.collection('events').doc(eventId);
+        batch.set(mainEventRef, {
+            ...baseEventData,
             id: eventId,
             startDate: Timestamp.fromDate(new Date(eventData.startDate)),
-            createdAt: Timestamp.now(),
-        };
+        });
 
-        await adminDB.collection('events').doc(eventId).set(dataToSave);
+        // Eventos recorrentes
+        if (eventData.additionalDates) {
+            for (const date of eventData.additionalDates) {
+                const recurringEventId = nanoid();
+                const recurringEventRef = adminDB.collection('events').doc(recurringEventId);
+                batch.set(recurringEventRef, {
+                    ...baseEventData,
+                    id: recurringEventId,
+                    parentId: eventId, // Link para o evento principal
+                    startDate: Timestamp.fromDate(new Date(date)),
+                });
+            }
+        }
+        
+        await batch.commit();
 
         revalidatePath('/admin/events');
-        revalidatePath('/'); // Revalidate home page to show new event
+        revalidatePath('/');
         return { success: true, eventId: eventId };
 
     } catch (error) {
@@ -120,6 +156,7 @@ export async function updateEvent(eventId: string, eventData: EventFormInput) {
         const dataToSave = {
             ...eventData,
             startDate: Timestamp.fromDate(new Date(eventData.startDate)),
+            updatedAt: Timestamp.now(), // Campo para rastrear atualizações
         };
 
         await adminDB.collection('events').doc(eventId).update(dataToSave);
@@ -229,11 +266,12 @@ export async function autoDeleteOldEvents(): Promise<{ success: boolean; deleted
     await batch.commit();
     
     // Revalidar páginas que podem ter sido afetadas
+    revalidatePath('/admin/events/past');
     revalidatePath('/admin/events');
     revalidatePath('/');
     revalidatePath('/events');
     
-    console.log(`Auto-deleted ${eventsToDelete.length} old events`);
+    console.log(`Cron job: Auto-deleted ${eventsToDelete.length} old events`);
     return { success: true, deletedCount: eventsToDelete.length };
   } catch (error) {
     console.error("Error auto-deleting old events: ", (error as Error).message);
@@ -266,6 +304,7 @@ export async function deletePastEvents(daysBack: number = 7): Promise<{ success:
     await batch.commit();
     
     // Revalidar páginas
+    revalidatePath('/admin/events/past');
     revalidatePath('/admin/events');
     revalidatePath('/');
     revalidatePath('/events');
@@ -289,18 +328,18 @@ export async function getEventStats(): Promise<{
   error?: string 
 }> {
   try {
-    const [allEvents, upcomingEvents, pastEvents, eventsToDelete] = await Promise.all([
-      getAdminEvents(),
-      getUpcomingEvents(),
-      getPastEvents(30),
-      getEventsToDelete()
+    const [allEventsSnap, upcomingEventsSnap, pastEventsSnap, toDeleteSnap] = await Promise.all([
+      adminDB.collection('events').count().get(),
+      adminDB.collection('events').where('startDate', '>=', Timestamp.fromDate(startOfToday())).count().get(),
+      adminDB.collection('events').where('startDate', '<', Timestamp.fromDate(startOfToday())).count().get(),
+      adminDB.collection('events').where('startDate', '<', Timestamp.fromDate(subDays(startOfToday(), 7))).count().get()
     ]);
 
     const stats = {
-      total: allEvents.length,
-      upcoming: upcomingEvents.length,
-      past: pastEvents.length,
-      toDelete: eventsToDelete.length
+      total: allEventsSnap.data().count,
+      upcoming: upcomingEventsSnap.data().count,
+      past: pastEventsSnap.data().count,
+      toDelete: toDeleteSnap.data().count
     };
 
     return { success: true, stats };
@@ -309,3 +348,5 @@ export async function getEventStats(): Promise<{
     return { success: false, error: (error as Error).message };
   }
 }
+
+    

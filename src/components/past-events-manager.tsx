@@ -353,4 +353,6 @@ export function PastEventsManager() {
       )}
     </div>
   );
-} 
+}
+
+    
