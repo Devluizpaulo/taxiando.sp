@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { adminDB } from '@/lib/firebase-admin';
@@ -348,5 +347,3 @@ export async function getEventStats(): Promise<{
     return { success: false, error: (error as Error).message };
   }
 }
-
-    
