@@ -90,7 +90,7 @@ const AiAssistantCard = ({ onDetailsGenerated, isGenerating }: { onDetailsGenera
 
 export default function CreateEventPage() {
     const router = useRouter();
-    const { toast } } from useToast();
+    const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
 
