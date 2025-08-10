@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { adminDB, Timestamp } from '@/lib/firebase-admin';
 import type { Review, UserProfile } from '@/lib/types';
 import * as z from 'zod';
+import { cleanFirestoreData } from '@/lib/utils';
 
 const reviewSchema = z.object({
   rating: z.number().min(1).max(5),
@@ -48,10 +49,10 @@ export async function getPendingReviews(): Promise<Review[]> {
         const snapshot = await adminDB.collection('reviews').where('status', '==', 'pending').orderBy('createdAt', 'desc').get();
         return snapshot.docs.map(doc => {
             const data = doc.data();
+            const cleanedData = cleanFirestoreData(data);
             return {
-                ...data,
+                ...cleanedData,
                 id: doc.id,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
             } as Review;
         });
     } catch (error) {
@@ -109,10 +110,10 @@ export async function getReviewsForUser(userId: string): Promise<Review[]> {
         
         return snapshot.docs.map(doc => {
             const data = doc.data();
+            const cleanedData = cleanFirestoreData(data);
             return {
-                ...data,
+                ...cleanedData,
                 id: doc.id,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
             } as Review;
         });
     } catch (error) {

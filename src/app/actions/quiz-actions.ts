@@ -1,9 +1,11 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { adminDB, Timestamp } from '@/lib/firebase-admin';
 import { type QuizData } from '@/lib/types';
 import { quizFormSchema, type QuizFormValues } from '@/lib/quiz-schemas';
+import { cleanFirestoreData } from '@/lib/utils';
 
 // --- Actions ---
 
@@ -55,10 +57,10 @@ export async function getAllQuizzes(): Promise<QuizData[]> {
         const snapshot = await adminDB.collection('quizzes').orderBy('createdAt', 'desc').get();
         return snapshot.docs.map(doc => {
             const data = doc.data();
+            const cleanedData = cleanFirestoreData(data);
             return {
-                ...data,
+                ...cleanedData,
                 id: doc.id,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
             } as QuizData;
         });
     } catch (error) {
@@ -115,10 +117,10 @@ export async function getActiveQuiz(): Promise<QuizData | null> {
 
         const doc = snapshot.docs[0];
         const data = doc.data();
+        const cleanedData = cleanFirestoreData(data);
         return {
+            ...cleanedData,
             id: doc.id,
-            ...data,
-            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
         } as QuizData;
 
     } catch (error) {

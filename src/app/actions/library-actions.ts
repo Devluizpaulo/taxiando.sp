@@ -10,6 +10,7 @@ import { uploadDocumentFile } from './storage-actions-compat';
 import { nanoid } from 'nanoid';
 import { auth } from '@/lib/firebase';
 import {FieldValue} from 'firebase-admin/firestore';
+import { cleanFirestoreData } from '@/lib/utils';
 
 export async function createOrUpdateBook(data: BookFormValues, userId: string, bookId?: string) {
     const validation = bookFormSchema.safeParse(data);
@@ -90,10 +91,10 @@ export async function getAllBooks(): Promise<LibraryBook[]> {
         const snapshot = await adminDB.collection('library_books').orderBy('createdAt', 'desc').get();
         return snapshot.docs.map(doc => {
             const data = doc.data();
+            const cleanedData = cleanFirestoreData(data);
             return {
-                ...data,
+                ...cleanedData,
                 id: doc.id,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
             } as LibraryBook;
         });
     } catch (error) {
@@ -116,11 +117,11 @@ export async function getBookById(bookId: string): Promise<LibraryBook | null> {
         await docRef.update({ accessCount: FieldValue.increment(1) });
         revalidatePath('/library');
 
+        const cleanedData = cleanFirestoreData(data);
         return {
-            ...data,
+            ...cleanedData,
             id: doc.id,
-            accessCount: data.accessCount + 1,
-            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+            accessCount: cleanedData.accessCount + 1,
         } as LibraryBook;
     } catch (error) {
         console.error("Error fetching book by id:", error);

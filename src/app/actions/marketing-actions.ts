@@ -9,6 +9,7 @@ import { type Coupon, type Notification, type UserProfile, type Partner } from '
 import { auth } from '@/lib/firebase';
 import { uploadFile } from './storage-actions';
 import { partnerFormSchema, couponFormSchema, type PartnerFormValues, type CouponFormValues } from '@/lib/marketing-schemas';
+import { cleanFirestoreData } from '@/lib/utils';
 
 export type { CouponFormValues };
 
@@ -38,12 +39,10 @@ export async function getCouponById(id: string): Promise<Coupon | null> {
         if (!docSnap.exists) return null;
         
         const data = docSnap.data()!;
+        const cleanedData = cleanFirestoreData(data);
         return {
-            ...data,
+            ...cleanedData,
             id: docSnap.id,
-            createdAt: (data.createdAt as AdminTimestamp).toDate().toISOString(),
-            expiresAt: data.expiresAt ? (data.expiresAt as AdminTimestamp).toDate().toISOString() : undefined,
-            updatedAt: data.updatedAt ? (data.updatedAt as AdminTimestamp).toDate().toISOString() : undefined,
         } as Coupon;
     } catch (error) {
         return null;
@@ -95,11 +94,10 @@ export async function getAllCoupons(): Promise<Coupon[]> {
         
         return querySnapshot.docs.map(doc => {
             const data = doc.data();
+            const cleanedData = cleanFirestoreData(data);
             return {
+                ...cleanedData,
                 id: doc.id,
-                ...data,
-                createdAt: (data.createdAt as AdminTimestamp).toDate().toISOString(),
-                expiresAt: data.expiresAt ? (data.expiresAt as AdminTimestamp).toDate().toISOString() : undefined,
             } as Coupon;
         });
     } catch (error) {
@@ -161,11 +159,10 @@ export async function getPartnerById(id: string): Promise<Partner | null> {
         if (!docSnap.exists) return null;
         
         const data = docSnap.data()!;
+        const cleanedData = cleanFirestoreData(data);
         return {
-            ...data,
+            ...cleanedData,
             id: docSnap.id,
-            createdAt: (data.createdAt as AdminTimestamp).toDate().toISOString(),
-            updatedAt: data.updatedAt ? (data.updatedAt as AdminTimestamp).toDate().toISOString() : undefined,
         } as Partner;
     } catch (error) {
         return null;
@@ -244,10 +241,10 @@ export async function getAllPartners(): Promise<Partner[]> {
         const querySnapshot = await partnersCollection.get();
         return querySnapshot.docs.map(doc => {
             const data = doc.data();
+            const cleanedData = cleanFirestoreData(data);
             return {
+                ...cleanedData,
                 id: doc.id,
-                ...data,
-                createdAt: (data.createdAt as AdminTimestamp).toDate().toISOString(),
             } as Partner;
         });
     } catch (error) {
@@ -263,10 +260,10 @@ export async function getActivePartners(): Promise<Partner[]> {
         const querySnapshot = await partnersCollection.get();
         return querySnapshot.docs.map(doc => {
             const data = doc.data();
+            const cleanedData = cleanFirestoreData(data);
             return {
+                ...cleanedData,
                 id: doc.id,
-                ...data,
-                createdAt: (data.createdAt as AdminTimestamp).toDate().toISOString(),
             } as Partner;
         });
     } catch (error) {
@@ -310,10 +307,10 @@ export async function getNotificationsForUser(): Promise<{notifications: Notific
         const querySnapshot = await q.get();
         const notifications = querySnapshot.docs.map(doc => {
              const data = doc.data();
+             const cleanedData = cleanFirestoreData(data);
              return {
+                ...cleanedData,
                 id: doc.id,
-                ...data,
-                createdAt: (data.createdAt as AdminTimestamp).toDate().toISOString(),
              } as Notification
         });
 

@@ -7,6 +7,7 @@ import { adminDB } from '@/lib/firebase-admin';
 import { type BlogPost } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type BlogPostFormValues } from '@/lib/blog-schemas';
+import { cleanFirestoreData } from '@/lib/utils';
 
 
 export async function createBlogPost(values: BlogPostFormValues, authorId: string, authorName: string) {
@@ -75,11 +76,10 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
         const snapshot = await adminDB.collection('blog_posts').orderBy('createdAt', 'desc').get();
         return snapshot.docs.map(doc => {
             const data = doc.data();
+            const cleanedData = cleanFirestoreData(data);
             return {
+                ...cleanedData,
                 id: doc.id,
-                ...data,
-                createdAt: data.createdAt,
-                updatedAt: data.updatedAt,
             } as BlogPost;
         });
     } catch (error) {
@@ -101,11 +101,10 @@ export async function getPublishedBlogPosts(postLimit?: number): Promise<BlogPos
         const snapshot = await query.get();
         return snapshot.docs.map(doc => {
             const data = doc.data();
+            const cleanedData = cleanFirestoreData(data);
             return {
+                ...cleanedData,
                 id: doc.id,
-                ...data,
-                createdAt: data.createdAt,
-                updatedAt: data.updatedAt,
             } as BlogPost;
         });
     } catch (error) {
@@ -123,11 +122,10 @@ export async function getBlogPostById(postId: string): Promise<BlogPost | null> 
         if (!doc.exists) return null;
         
         const data = doc.data()!;
+        const cleanedData = cleanFirestoreData(data);
         return {
+            ...cleanedData,
             id: doc.id,
-            ...data,
-            createdAt: data.createdAt,
-            updatedAt: data.updatedAt,
         } as BlogPost;
     } catch (error) {
         return null;
@@ -147,11 +145,10 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
 
         const doc = snapshot.docs[0];
         const data = doc.data();
+        const cleanedData = cleanFirestoreData(data);
         return {
+            ...cleanedData,
             id: doc.id,
-            ...data,
-            createdAt: data.createdAt,
-            updatedAt: data.updatedAt,
         } as BlogPost;
     } catch (error) {
         return null;

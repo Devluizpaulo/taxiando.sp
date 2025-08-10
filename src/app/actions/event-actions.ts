@@ -7,6 +7,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import { nanoid } from 'nanoid';
 import { startOfToday, addDays, subDays } from 'date-fns';
+import { cleanFirestoreData } from '@/lib/utils';
 
 
 export async function getAdminEvents(): Promise<Event[]> {
@@ -17,13 +18,10 @@ export async function getAdminEvents(): Promise<Event[]> {
         
         const eventsData = querySnapshot.docs.map(doc => {
             const data = doc.data();
-            const startDate = (data.startDate as Timestamp)?.toDate();
-            const createdAt = (data.createdAt as Timestamp)?.toDate();
+            const cleanedData = cleanFirestoreData(data);
             return {
-                ...data,
+                ...cleanedData,
                 id: doc.id,
-                startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
-                createdAt: createdAt ? createdAt.toISOString() : new Date().toISOString(),
             } as Event;
         });
         return eventsData;
@@ -48,13 +46,10 @@ export async function getUpcomingEvents(): Promise<Event[]> {
     
     return querySnapshot.docs.map(doc => {
         const data = doc.data();
-        const startDate = (data.startDate as Timestamp)?.toDate();
-        const createdAt = (data.createdAt as Timestamp)?.toDate();
+        const cleanedData = cleanFirestoreData(data);
         return { 
+            ...cleanedData,
             id: doc.id,
-            ...data,
-            startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
-            createdAt: createdAt ? createdAt.toISOString() : new Date().toISOString(),
         } as Event;
     });
   } catch (error) {
@@ -136,13 +131,10 @@ export async function getEventById(eventId: string): Promise<Event | null> {
             return null;
         }
         const data = eventDoc.data()!;
-        const startDate = (data.startDate as Timestamp)?.toDate();
-        const createdAt = (data.createdAt as Timestamp)?.toDate();
+        const cleanedData = cleanFirestoreData(data);
         return {
-            ...data,
+            ...cleanedData,
             id: eventDoc.id,
-            startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
-            createdAt: createdAt ? createdAt.toISOString() : new Date().toISOString(),
         } as Event;
 
     } catch (error) {
@@ -202,13 +194,10 @@ export async function getPastEvents(daysBack: number = 30): Promise<Event[]> {
     
     return querySnapshot.docs.map(doc => {
         const data = doc.data();
-        const startDate = (data.startDate as Timestamp)?.toDate();
-        const createdAt = (data.createdAt as Timestamp)?.toDate();
+        const cleanedData = cleanFirestoreData(data);
         return { 
+            ...cleanedData,
             id: doc.id,
-            ...data,
-            startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
-            createdAt: createdAt ? createdAt.toISOString() : new Date().toISOString(),
         } as Event;
     });
   } catch (error) {
@@ -232,13 +221,10 @@ export async function getEventsToDelete(): Promise<Event[]> {
     
     return querySnapshot.docs.map(doc => {
         const data = doc.data();
-        const startDate = (data.startDate as Timestamp)?.toDate();
-        const createdAt = (data.createdAt as Timestamp)?.toDate();
+        const cleanedData = cleanFirestoreData(data);
         return { 
+            ...cleanedData,
             id: doc.id,
-            ...data,
-            startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
-            createdAt: createdAt ? createdAt.toISOString() : new Date().toISOString(),
         } as Event;
     });
   } catch (error) {

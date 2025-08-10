@@ -1,9 +1,11 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { adminDB, Timestamp } from '@/lib/firebase-admin';
 import { type SupportTicket } from '@/lib/types';
 import * as z from 'zod';
+import { cleanFirestoreData } from '@/lib/utils';
 
 const contactFormSchema = z.object({
   name: z.string().min(3, "O nome é obrigatório."),
@@ -36,11 +38,10 @@ export async function getSupportTickets(): Promise<SupportTicket[]> {
         const snapshot = await adminDB.collection('support_tickets').orderBy('createdAt', 'desc').get();
         return snapshot.docs.map(doc => {
             const data = doc.data();
+            const cleanedData = cleanFirestoreData(data);
             return {
-                ...data,
+                ...cleanedData,
                 id: doc.id,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-                resolvedAt: data.resolvedAt ? (data.resolvedAt as Timestamp).toDate().toISOString() : undefined,
             } as SupportTicket;
         });
     } catch (error) {
