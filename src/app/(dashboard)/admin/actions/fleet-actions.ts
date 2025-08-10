@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -8,6 +9,7 @@ import { vehiclePerks } from '@/lib/data';
 import { Timestamp } from 'firebase-admin/firestore';
 import { type VehicleFormValues } from '@/lib/fleet-schemas';
 import { auth } from '@/lib/firebase';
+import { cleanUserProfile } from '@/lib/utils';
 
 // Get all data for a fleet's dashboard
 export async function getFleetData(fleetId: string) {
@@ -188,16 +190,11 @@ export async function getDriverProfile(driverId: string): Promise<AdminUser | nu
 
         const data = userDoc.data() as UserProfile;
         
-        const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
+        const cleanedData = cleanUserProfile(data);
 
         return {
-            ...data,
+            ...cleanedData,
             uid: userDoc.id,
-            createdAt: toISO(data.createdAt) || new Date().toISOString(),
-            cnhExpiration: toISO(data.cnhExpiration),
-            condutaxExpiration: toISO(data.condutaxExpiration),
-            alvaraExpiration: toISO(data.alvaraExpiration),
-            lastNotificationCheck: toISO(data.lastNotificationCheck),
         } as AdminUser;
 
     } catch (error) {
@@ -415,19 +412,12 @@ export async function getDriversSeekingRentals(): Promise<AdminUser[]> {
             .orderBy('createdAt', 'desc')
             .get();
             
-        const toISO = (ts?: Timestamp): string | undefined => ts ? ts.toDate().toISOString() : undefined;
-
         const drivers = snapshot.docs.map(doc => {
             const data = doc.data() as UserProfile;
-            const { uid: _, ...dataWithoutUid } = data;
-             return {
-                ...dataWithoutUid,
+            const cleanedData = cleanUserProfile(data);
+            return {
+                ...cleanedData,
                 uid: doc.id,
-                createdAt: toISO(data.createdAt) || new Date().toISOString(),
-                cnhExpiration: toISO(data.cnhExpiration),
-                condutaxExpiration: toISO(data.condutaxExpiration),
-                alvaraExpiration: toISO(data.alvaraExpiration),
-                lastNotificationCheck: toISO(data.lastNotificationCheck),
             } as AdminUser;
         });
         
