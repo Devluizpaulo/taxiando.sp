@@ -13,7 +13,9 @@ export const eventFormSchema = z.object({
     mapUrl: z.string().url("A URL do mapa precisa ser um link válido.").min(1, "A URL do mapa é obrigatória."),
     category: z.enum(['show', 'festa', 'esporte', 'corporativo', 'outro']).default('outro'),
     isRecurring: z.boolean().default(false),
-    additionalDates: z.array(z.date()).optional(),
+    additionalDates: z.array(z.object({
+        date: z.date()
+    })).optional(),
 });
 
 export type EventFormValues = z.infer<typeof eventFormSchema>;

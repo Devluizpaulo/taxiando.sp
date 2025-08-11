@@ -136,7 +136,12 @@ export default function CreateEventPage() {
     const onSubmit = async (values: EventFormValues) => {
         setIsSubmitting(true);
         try {
-            const result = await createEvent(values);
+            const dataToSubmit = {
+                ...values,
+                additionalDates: values.additionalDates?.map(d => d.date)
+            };
+
+            const result = await createEvent(dataToSubmit);
 
             if (result.success) {
                 toast({
@@ -217,7 +222,7 @@ export default function CreateEventPage() {
                                                      <div key={field.id} className="flex items-center gap-2">
                                                         <FormField
                                                             control={form.control}
-                                                            name={`additionalDates.${index}`}
+                                                            name={`additionalDates.${index}.date`}
                                                             render={({ field }) => (
                                                                 <FormItem className="flex-1">
                                                                     <FormControl>
@@ -232,7 +237,7 @@ export default function CreateEventPage() {
                                                         </Button>
                                                     </div>
                                                 ))}
-                                                <Button type="button" variant="outline" size="sm" onClick={() => append(new Date())}>
+                                                <Button type="button" variant="outline" size="sm" onClick={() => append({ date: new Date() })}>
                                                     <PlusCircle className="mr-2" /> Adicionar Data
                                                 </Button>
                                             </div>
