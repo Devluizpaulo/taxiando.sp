@@ -1947,6 +1947,7 @@ export function TipFormDialog({ isOpen, setIsOpen, tip, onFinished }: TipFormDia
                 // Preencher campos básicos
                 form.setValue('title', result.data.title);
                 form.setValue('description', result.data.description);
+                form.setValue('location', result.data.location);
                 form.setValue('tags', result.data.tags);
                 
                 // Detectar e definir tipo automaticamente

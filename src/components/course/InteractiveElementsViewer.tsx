@@ -29,26 +29,26 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
   };
 
   const renderInteractiveSimulation = () => {
-    if (block.type !== 'interactive_simulation') return null;
+    if (block.blockType !== 'interactive_simulation') return null;
 
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <span className="text-lg">🎮</span>
-            {block.title}
+            {'title' in block && block.title}
           </CardTitle>
-          <CardDescription>{block.description}</CardDescription>
+          <CardDescription>{'description' in block && block.description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-muted/50 p-4 rounded-lg">
             <h4 className="font-medium mb-2">Cenário:</h4>
-            <p className="text-sm">{block.scenario}</p>
+            <p className="text-sm">{'scenario' in block && block.scenario}</p>
           </div>
 
           <div className="space-y-3">
             <h4 className="font-medium">Escolha uma opção:</h4>
-            {block.options.map((option) => (
+            {'options' in block && block.options.map((option: any) => (
               <Button
                 key={option.id}
                 variant={selectedOptions[option.id] ? "default" : "outline"}
@@ -71,7 +71,7 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
             ))}
           </div>
 
-          {isCompleted && block.feedback && (
+          {isCompleted && 'feedback' in block && block.feedback && (
             <Alert>
               <Lightbulb className="h-4 w-4" />
               <AlertDescription>{block.feedback}</AlertDescription>
@@ -83,33 +83,33 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
   };
 
   const renderCaseStudy = () => {
-    if (block.type !== 'case_study') return null;
+    if (block.blockType !== 'case_study') return null;
 
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <span className="text-lg">📋</span>
-            {block.title}
+            {'title' in block && block.title}
           </CardTitle>
-          <CardDescription>{block.description}</CardDescription>
+          <CardDescription>{'description' in block && block.description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-4">
             <div>
               <h4 className="font-medium mb-2">Contexto:</h4>
-              <p className="text-sm bg-muted/50 p-3 rounded">{block.background}</p>
+              <p className="text-sm bg-muted/50 p-3 rounded">{'background' in block && block.background}</p>
             </div>
 
             <div>
               <h4 className="font-medium mb-2">Desafio:</h4>
-              <p className="text-sm bg-muted/50 p-3 rounded">{block.challenge}</p>
+              <p className="text-sm bg-muted/50 p-3 rounded">{'challenge' in block && block.challenge}</p>
             </div>
 
             <div>
               <h4 className="font-medium mb-2">Perguntas para Reflexão:</h4>
               <ul className="space-y-2">
-                {block.questions.map((question, index) => (
+                {'questions' in block && block.questions.map((question: string, index: number) => (
                   <li key={index} className="text-sm bg-muted/50 p-3 rounded">
                     {index + 1}. {question}
                   </li>
@@ -117,7 +117,7 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
               </ul>
             </div>
 
-            {showResults && block.solution && (
+            {showResults && 'solution' in block && block.solution && (
               <div>
                 <h4 className="font-medium mb-2">Solução Sugerida:</h4>
                 <p className="text-sm bg-green-50 p-3 rounded border border-green-200">
@@ -126,11 +126,11 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
               </div>
             )}
 
-            {showResults && block.keyLearnings && block.keyLearnings.length > 0 && (
+            {showResults && 'keyLearnings' in block && block.keyLearnings && block.keyLearnings.length > 0 && (
               <div>
                 <h4 className="font-medium mb-2">Principais Aprendizados:</h4>
                 <ul className="space-y-1">
-                  {block.keyLearnings.map((learning, index) => (
+                  {block.keyLearnings.map((learning: string, index: number) => (
                     <li key={index} className="text-sm flex items-center gap-2">
                       <CheckCircle className="h-3 w-3 text-green-600" />
                       {learning}
@@ -158,32 +158,32 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
   };
 
   const renderMindMap = () => {
-    if (block.type !== 'mind_map') return null;
+    if (block.blockType !== 'mind_map') return null;
 
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <span className="text-lg">🧠</span>
-            {block.title}
+            {'title' in block && block.title}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="text-center">
               <div className="bg-primary text-primary-foreground rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-4">
-                <span className="font-bold text-lg">{block.centralTopic}</span>
+                <span className="font-bold text-lg">{'centralTopic' in block && block.centralTopic}</span>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {block.branches.map((branch) => (
+              {'branches' in block && block.branches.map((branch: any) => (
                 <div key={branch.id} className="space-y-2">
                   <div className="bg-secondary p-3 rounded-lg">
                     <h4 className="font-medium">{branch.text}</h4>
                     {branch.subBranches && branch.subBranches.length > 0 && (
                       <ul className="mt-2 space-y-1">
-                        {branch.subBranches.map((subBranch) => (
+                        {branch.subBranches.map((subBranch: any) => (
                           <li key={subBranch.id} className="text-sm bg-background p-2 rounded">
                             {subBranch.text}
                           </li>
@@ -201,7 +201,7 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
   };
 
   const renderFlashcard = () => {
-    if (block.type !== 'flashcard') return null;
+    if (block.blockType !== 'flashcard') return null;
 
     const [isFlipped, setIsFlipped] = useState(false);
 
@@ -211,10 +211,12 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
           <CardTitle className="flex items-center gap-2">
             <span className="text-lg">🃏</span>
             Flashcard
-            {block.category && (
+            {'category' in block && block.category && (
               <Badge variant="secondary">{block.category}</Badge>
             )}
-            <Badge variant="outline">{block.difficulty}</Badge>
+            {'difficulty' in block && block.difficulty && (
+              <Badge variant="outline">{block.difficulty}</Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -228,7 +230,7 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
               {/* Frente */}
               <div className="absolute inset-0 bg-card border rounded-lg p-6 flex items-center justify-center backface-hidden">
                 <div className="text-center">
-                  <h3 className="text-lg font-medium">{block.front}</h3>
+                  <h3 className="text-lg font-medium">{'front' in block && block.front}</h3>
                   <p className="text-sm text-muted-foreground mt-2">Clique para virar</p>
                 </div>
               </div>
@@ -236,7 +238,7 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
               {/* Verso */}
               <div className="absolute inset-0 bg-card border rounded-lg p-6 flex items-center justify-center backface-hidden rotate-y-180">
                 <div className="text-center">
-                  <h3 className="text-lg font-medium">{block.back}</h3>
+                  <h3 className="text-lg font-medium">{'back' in block && block.back}</h3>
                   <p className="text-sm text-muted-foreground mt-2">Clique para virar de volta</p>
                 </div>
               </div>
@@ -248,21 +250,21 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
   };
 
   const renderTimeline = () => {
-    if (block.type !== 'timeline') return null;
+    if (block.blockType !== 'timeline') return null;
 
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <span className="text-lg">📅</span>
-            {block.title}
+            {'title' in block && block.title}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="relative">
             <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border"></div>
             <div className="space-y-6">
-              {block.events.map((event, index) => (
+              {'events' in block && block.events.map((event: any, index: number) => (
                 <div key={event.id} className="relative flex items-start gap-4">
                   <div className="absolute left-2 w-4 h-4 bg-primary rounded-full border-2 border-background"></div>
                   <div className="ml-8 flex-1">
@@ -289,14 +291,14 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
   };
 
   const renderComparisonTable = () => {
-    if (block.type !== 'comparison_table') return null;
+    if (block.blockType !== 'comparison_table') return null;
 
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <span className="text-lg">📊</span>
-            {block.title}
+            {'title' in block && block.title}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -305,7 +307,7 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
               <thead>
                 <tr>
                   <th className="border p-2 text-left bg-muted">Característica</th>
-                  {block.columns.map((column, index) => (
+                  {'columns' in block && block.columns.map((column: string, index: number) => (
                     <th key={index} className="border p-2 text-center bg-muted">
                       {column}
                     </th>
@@ -313,10 +315,10 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
                 </tr>
               </thead>
               <tbody>
-                {block.rows.map((row) => (
+                {'rows' in block && block.rows.map((row: any) => (
                   <tr key={row.id}>
                     <td className="border p-2 font-medium">{row.feature}</td>
-                    {row.values.map((value, index) => (
+                    {row.values.map((value: string, index: number) => (
                       <td key={index} className="border p-2 text-center">
                         {value}
                       </td>
@@ -332,20 +334,20 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
   };
 
   const renderFillBlanks = () => {
-    if (block.type !== 'fill_blanks') return null;
+    if (block.blockType !== 'fill_blanks') return null;
 
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [showResults, setShowResults] = useState(false);
 
     const handleSubmit = () => {
-      const correctAnswers = block.blanks.reduce((count, blank) => {
+      const correctAnswers = 'blanks' in block && block.blanks ? block.blanks.reduce((count: number, blank: any) => {
         const userAnswer = answers[blank.id]?.toLowerCase().trim();
         const correctAnswer = blank.correctAnswer.toLowerCase().trim();
         return count + (userAnswer === correctAnswer ? 1 : 0);
-      }, 0);
+      }, 0) : 0;
 
-      const score = Math.round((correctAnswers / block.blanks.length) * 100);
-      handleComplete({ score, answers, correctAnswers, total: block.blanks.length });
+      const score = Math.round((correctAnswers / ('blanks' in block && block.blanks ? block.blanks.length : 0)) * 100);
+      handleComplete({ score, answers, correctAnswers, total: 'blanks' in block && block.blanks ? block.blanks.length : 0 });
       setShowResults(true);
     };
 
@@ -354,12 +356,12 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <span className="text-lg">✏️</span>
-            {block.title}
+            {'title' in block && block.title}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
-            {block.blanks.map((blank, index) => (
+            {'blanks' in block && block.blanks.map((blank: any, index: number) => (
               <div key={blank.id} className="space-y-2">
                 <label className="text-sm font-medium">
                   Lacuna {index + 1}:
@@ -410,7 +412,7 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
   };
 
   // Renderizar baseado no tipo
-  switch (block.type) {
+  switch (block.blockType) {
     case 'interactive_simulation':
       return renderInteractiveSimulation();
     case 'case_study':
@@ -431,7 +433,7 @@ export function InteractiveElementsViewer({ block, onComplete }: InteractiveElem
           <CardContent className="p-6">
             <div className="text-center text-muted-foreground">
               <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Elemento interativo não suportado: {block.type}</p>
+              <p>Elemento interativo não suportado: {block.blockType}</p>
             </div>
           </CardContent>
         </Card>

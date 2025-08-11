@@ -20,7 +20,6 @@ export default async function AdminCoursesPage() {
         case 'pending': return <Clock className="h-4 w-4 text-amber-500" />;
         case 'approved': return <CheckCircle className="h-4 w-4 text-green-500" />;
         case 'rejected': return <XCircle className="h-4 w-4 text-red-500" />;
-        case 'implemented': return <BookOpen className="h-4 w-4 text-blue-500" />;
         default: return <Clock className="h-4 w-4 text-gray-500" />;
       }
     };
@@ -30,7 +29,6 @@ export default async function AdminCoursesPage() {
         case 'pending': return 'Pendente';
         case 'approved': return 'Aprovado';
         case 'rejected': return 'Rejeitado';
-        case 'implemented': return 'Implementado';
         default: return 'Desconhecido';
       }
     };
@@ -40,7 +38,6 @@ export default async function AdminCoursesPage() {
         case 'pending': return 'secondary';
         case 'approved': return 'default';
         case 'rejected': return 'destructive';
-        case 'implemented': return 'outline';
         default: return 'outline';
       }
     };
@@ -84,11 +81,16 @@ export default async function AdminCoursesPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="font-semibold text-amber-900">
-                          {suggestion.driverName} 
-                          <span className="text-xs text-muted-foreground ml-2">({suggestion.driverEmail})</span>
+                          {suggestion.suggestedByName} 
+                          <span className="text-xs text-muted-foreground ml-2">({suggestion.suggestedBy})</span>
                         </div>
-                        <div className="text-sm text-slate-700 mt-1">{suggestion.suggestion}</div>
-                                                <div className="text-xs text-muted-foreground mt-2">
+                        <div className="text-sm text-slate-700 mt-1">
+                          <strong>{suggestion.title}</strong>
+                          {suggestion.description && (
+                            <div className="mt-1">{suggestion.description}</div>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-2">
                           Sugerido em: {suggestion.createdAt instanceof Date
                             ? suggestion.createdAt.toLocaleDateString('pt-BR')
                             : typeof suggestion.createdAt === 'string'

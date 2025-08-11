@@ -12,7 +12,7 @@ export interface EducationalElement {
   id: string;
   courseId: string;
   lessonId: string;
-  type: ContentBlock['type'];
+  type: ContentBlock['blockType'];
   data: ContentBlock;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -86,7 +86,7 @@ export async function createEducationalElement(
       id: elementId,
       courseId,
       lessonId,
-      type: elementData.type,
+      type: elementData.blockType,
       data: elementData,
       createdAt: now,
       updatedAt: now,
@@ -255,7 +255,7 @@ export async function updateEducationalElementStatus(
 // Buscar elementos por tipo
 export async function getEducationalElementsByType(
   courseId: string,
-  type: ContentBlock['type']
+  type: ContentBlock['blockType']
 ): Promise<{ success: boolean; elements?: EducationalElement[]; error?: string }> {
   try {
     const snapshot = await adminDB

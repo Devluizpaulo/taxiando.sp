@@ -14,7 +14,7 @@ export default function AdvancedEditorPage() {
   const router = useRouter();
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([
     {
-      type: 'slide_title',
+      blockType: 'slide_title',
       title: 'Editor Avançado de Conteúdo',
       subtitle: 'Crie apresentações profissionais com múltiplos tipos de elementos',
       background: 'gradient-to-r from-blue-500 to-purple-600',
@@ -22,13 +22,13 @@ export default function AdvancedEditorPage() {
       alignment: 'center'
     },
     {
-      type: 'heading',
+      blockType: 'heading',
       level: 2,
       text: 'Recursos Principais',
       style: 'accent'
     },
     {
-      type: 'bullet_points',
+      blockType: 'bullet_points',
       title: 'O que você pode fazer:',
       points: [
         'Adicionar diferentes tipos de conteúdo',
@@ -41,7 +41,7 @@ export default function AdvancedEditorPage() {
       icon: 'check'
     },
     {
-      type: 'image',
+      blockType: 'image',
       url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=400&fit=crop',
       alt: 'Editor de apresentações',
       caption: 'Interface moderna e intuitiva',
@@ -49,7 +49,7 @@ export default function AdvancedEditorPage() {
       size: 'large'
     },
     {
-      type: 'paragraph',
+      blockType: 'paragraph',
       text: 'Este editor oferece uma experiência similar ao PowerPoint, mas com recursos avançados para criação de conteúdo educacional e apresentações profissionais.',
       style: 'highlight'
     }

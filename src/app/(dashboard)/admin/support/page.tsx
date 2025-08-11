@@ -35,11 +35,12 @@ export default function AdminSupportPage() {
 
     const handleStatusToggle = async (ticket: SupportTicket) => {
         setUpdatingId(ticket.id);
-        const newStatus = ticket.status === 'Open' ? 'Resolved' : 'Open';
-        const result = await updateTicketStatus(ticket.id, newStatus);
+        const newStatus = ticket.status === 'open' ? 'resolved' : 'open';
+        const apiStatus = ticket.status === 'open' ? 'Resolved' : 'Open';
+        const result = await updateTicketStatus(ticket.id, apiStatus);
         
         if (result.success) {
-            toast({ title: 'Status do Ticket Atualizado!', description: `O ticket foi marcado como ${newStatus === 'Resolved' ? 'Resolvido' : 'Aberto'}.` });
+            toast({ title: 'Status do Ticket Atualizado!', description: `O ticket foi marcado como ${newStatus === 'resolved' ? 'Resolvido' : 'Aberto'}.` });
             setTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, status: newStatus } : t));
         } else {
             toast({ variant: 'destructive', title: 'Erro ao atualizar', description: result.error });
@@ -88,15 +89,15 @@ export default function AdminSupportPage() {
                                 tickets.map(ticket => (
                                     <TableRow key={ticket.id}>
                                         <TableCell>
-                                            <Badge variant={ticket.status === 'Open' ? 'destructive' : 'default'}>
-                                                {ticket.status === 'Open' ? 'Aberto' : 'Resolvido'}
+                                            <Badge variant={ticket.status === 'open' ? 'destructive' : 'default'}>
+                                                {ticket.status === 'open' ? 'Aberto' : 'Resolvido'}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="font-medium">{ticket.name}</div>
-                                            <div className="text-sm text-muted-foreground">{ticket.email}</div>
+                                            <div className="font-medium">{ticket.userName}</div>
+                                            <div className="text-sm text-muted-foreground">{ticket.userEmail}</div>
                                         </TableCell>
-                                        <TableCell className="max-w-xs truncate">{ticket.message}</TableCell>
+                                        <TableCell className="max-w-xs truncate">{ticket.description}</TableCell>
                                         <TableCell>{formatDistanceToNow(new Date(ticket.createdAt as string), { addSuffix: true, locale: ptBR })}</TableCell>
                                         <TableCell className="text-right">
                                              <DropdownMenu>
@@ -107,7 +108,7 @@ export default function AdminSupportPage() {
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onSelect={() => handleStatusToggle(ticket)} disabled={updatingId === ticket.id}>
                                                         {updatingId === ticket.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : (
-                                                            ticket.status === 'Open' ? <><MailCheck className="mr-2 h-4 w-4"/>Marcar como Resolvido</> : <><MailWarning className="mr-2 h-4 w-4"/>Reabrir Ticket</>
+                                                            ticket.status === 'open' ? <><MailCheck className="mr-2 h-4 w-4"/>Marcar como Resolvido</> : <><MailWarning className="mr-2 h-4 w-4"/>Reabrir Ticket</>
                                                         )}
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -126,12 +127,12 @@ export default function AdminSupportPage() {
                     <DialogHeader>
                         <DialogTitle>Mensagem de Suporte</DialogTitle>
                         <DialogDescription>
-                            De: {selectedTicket?.name} ({selectedTicket?.email}) <br/>
+                            De: {selectedTicket?.userName} ({selectedTicket?.userEmail}) <br/>
                             Recebido em: {selectedTicket && format(new Date(selectedTicket.createdAt as string), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4 max-h-[50vh] overflow-y-auto">
-                        <p className="text-sm text-foreground whitespace-pre-wrap">{selectedTicket?.message}</p>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">{selectedTicket?.description}</p>
                     </div>
                     <DialogFooter>
                         <DialogClose asChild><Button type="button" variant="outline">Fechar</Button></DialogClose>

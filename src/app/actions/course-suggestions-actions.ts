@@ -135,7 +135,7 @@ export async function getCourseSuggestionsStats(): Promise<{ success: boolean; s
       pending: suggestions.filter(s => s.status === 'pending').length,
       approved: suggestions.filter(s => s.status === 'approved').length,
       rejected: suggestions.filter(s => s.status === 'rejected').length,
-      implemented: suggestions.filter(s => s.status === 'implemented').length
+      implemented: suggestions.filter(s => s.status === 'approved').length
     };
 
     return { success: true, stats };

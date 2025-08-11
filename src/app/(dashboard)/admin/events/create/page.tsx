@@ -1,22 +1,20 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
-import Image from 'next/image';
-import { useForm, useWatch, useFieldArray } from 'react-hook-form';
+import { useState } from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Calendar as CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, Sparkles, PlusCircle, Trash2 } from 'lucide-react';
 import { DatePicker } from '@/components/ui/datepicker';
 import { createEvent } from '@/app/actions/event-actions';
 import { planEvent, type EventPlannerOutput } from '@/ai/flows/event-planner-flow';
@@ -38,7 +36,7 @@ const eventFormSchema = z.object({
     mapUrl: z.string().url("A URL do mapa precisa ser um link válido.").min(1, "A URL do mapa é obrigatória."),
     category: z.enum(['show', 'festa', 'esporte', 'corporativo', 'outro']).default('outro'),
     isRecurring: z.boolean().default(false),
-    additionalDates: z.array(z.date()).optional(),
+    additionalDates: z.array(z.date()).default([]),
 });
 
 

@@ -27,7 +27,7 @@ import { LoadingScreen } from '@/components/loading-screen';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { markLessonAsComplete } from '@/app/actions/course-actions';
-import { use } from 'react';
+
 
 
 const getLessonIcon = (type: Lesson['type']) => {
@@ -49,8 +49,8 @@ const getYoutubeEmbedUrl = (url: string): string | null => {
 }
 
 
-export default function CoursePage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
+export default function CoursePage({ params }: { params: { id: string } }) {
+    const { id } = params;
     const { user, userProfile } = useAuth();
     const { toast } = useToast();
     const [course, setCourse] = useState<Course | null>(null);
@@ -381,7 +381,7 @@ function QuizPlayer({ lesson, course, isCompleted, onLessonCompleted }: { lesson
         const correctAnswers: Record<string, string> = {};
         let score = 0;
         lesson.questions?.forEach(q => {
-            const correctOption = q.options.find(o => o.isCorrect);
+            const correctOption = q.options.find((o: { id: string; text: string; isCorrect: boolean; explanation?: string }) => o.isCorrect);
             if (correctOption?.id) {
                 correctAnswers[q.id] = correctOption.id;
                 if (answers[q.id] === correctOption.id) {
@@ -425,11 +425,11 @@ function QuizPlayer({ lesson, course, isCompleted, onLessonCompleted }: { lesson
                     <div className="p-4 rounded-md bg-green-50 border border-green-200 text-green-800 text-sm">Prova já concluída com sucesso.</div>
                 ) : !result ? (
                     <>
-                        {lesson.questions.map((q, index) => (
+                        {lesson.questions?.map((q, index) => (
                             <div key={q.id} className="space-y-3">
                                 <p className="font-semibold">({index + 1}) {q.question}</p>
                                 <RadioGroup value={answers[q.id]} onValueChange={(value) => handleAnswerChange(q.id, value)}>
-                                    {q.options.map(o => (
+                                    {q.options.map((o: { id: string; text: string; isCorrect: boolean; explanation?: string }) => (
                                         <Label key={o.id} htmlFor={o.id} className="flex items-center gap-3 p-3 rounded-md border border-input has-[:checked]:border-primary has-[:checked]:bg-primary/5 cursor-pointer">
                                             <RadioGroupItem value={o.id} id={o.id} />
                                             <span>{o.text}</span>
@@ -438,7 +438,7 @@ function QuizPlayer({ lesson, course, isCompleted, onLessonCompleted }: { lesson
                                 </RadioGroup>
                             </div>
                         ))}
-                        <Button onClick={handleSubmit} disabled={Object.keys(answers).length !== lesson.questions.length}>Finalizar Prova</Button>
+                        <Button onClick={handleSubmit} disabled={Object.keys(answers).length !== (lesson.questions?.length || 0)}>Finalizar Prova</Button>
                     </>
                 ) : (
                     <div className="space-y-6">
@@ -451,11 +451,11 @@ function QuizPlayer({ lesson, course, isCompleted, onLessonCompleted }: { lesson
 
                         <div className="space-y-3">
                             <h3 className="font-bold">Revisão da Prova</h3>
-                            {lesson.questions.map((q, index) => (
+                            {lesson.questions?.map((q, index) => (
                                 <div key={q.id} className="p-4 rounded-md border">
                                     <p className="font-semibold">({index + 1}) {q.question}</p>
                                     <div className="mt-2 space-y-2 text-sm">
-                                        {q.options.map(o => {
+                                        {q.options.map((o: { id: string; text: string; isCorrect: boolean; explanation?: string }) => {
                                             const isUserAnswer = answers[q.id] === o.id;
                                             const isCorrectAnswer = result.correctAnswers[q.id] === o.id;
                                             return (

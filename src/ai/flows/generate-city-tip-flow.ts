@@ -263,11 +263,33 @@ Gere tags relevantes baseadas no tipo detectado e conteúdo. Exemplos:
 - Para familia: família, crianças, [tipo de atividade]
 - Para pet: pet friendly, [tipo de pet]
 
-**EXEMPLOS DE LOCALIZAÇÕES:**
+**LOCALIZAÇÃO (CAMPO OBRIGATÓRIO):**
+Para o campo "location", você DEVE fornecer um endereço específico e detalhado. Baseado no tópico fornecido, gere um endereço realista que inclua:
+
+1. **Endereço completo**: Rua, número, bairro, cidade, estado
+2. **Ponto de referência**: Se mencionado no tópico ou se for um local conhecido
+3. **Região específica**: Bairro ou área específica de São Paulo
+
+**EXEMPLOS DE ENDEREÇOS ESPECÍFICOS:**
+- "Rua Harmonia, 123, Vila Madalena, São Paulo - SP"
+- "Avenida Paulista, 1000, Bela Vista, São Paulo - SP"
+- "Rua 25 de Março, 500, Centro, São Paulo - SP"
+- "Avenida Brigadeiro Faria Lima, 2000, Itaim Bibi, São Paulo - SP"
+- "Rua dos Pinheiros, 800, Pinheiros, São Paulo - SP"
+
+**REGIÕES DE SÃO PAULO:**
 Vila Madalena, Pinheiros, Itaim Bibi, Jardins, Centro, Mooca, Liberdade, Zona Sul, Zona Norte, Zona Leste, Zona Oeste, ABC, Litoral Sul, Vale do Paraíba, Interior, Serra da Mantiqueira, etc.
+
+**IMPORTANTE:** Se o tópico mencionar um local específico, use esse local. Se não mencionar, gere um endereço realista baseado no tipo de estabelecimento e região mencionada no tópico.
 
 Tópico do Usuário: {{{topic}}}
 Público-Alvo: {{{target}}}
+
+**INSTRUÇÕES ESPECÍFICAS PARA LOCALIZAÇÃO:**
+1. Se o tópico mencionar um endereço específico (rua, número, bairro), use esse endereço
+2. Se o tópico mencionar apenas uma região (ex: "zona sul", "Pinheiros"), gere um endereço realista nessa região
+3. Se o tópico não mencionar localização, gere um endereço apropriado baseado no tipo de estabelecimento
+4. Sempre inclua rua, número, bairro, cidade e estado no formato: "Rua Exemplo, 123, Bairro, São Paulo - SP"
 
 Analise o tópico, detecte o tipo automaticamente e gere os campos específicos apropriados.`,
 });

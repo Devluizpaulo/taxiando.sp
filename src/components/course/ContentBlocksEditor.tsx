@@ -35,34 +35,34 @@ interface ContentBlocksEditorProps {
 export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEditorProps) {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-    const addBlock = (type: ContentBlock['type']) => {
+    const addBlock = (blockType: ContentBlock['blockType']) => {
         const newBlock: ContentBlock = (() => {
-            switch (type) {
+            switch (blockType) {
                 case 'heading':
-                    return { type: 'heading', level: 1, text: '' };
+                    return { blockType: 'heading', level: 1, text: '' };
                 case 'paragraph':
-                    return { type: 'paragraph', text: '' };
+                    return { blockType: 'paragraph', text: '' };
                 case 'list':
-                    return { type: 'list', style: 'bullet', items: [''] };
+                    return { blockType: 'list', style: 'bullet', items: [''] };
                 case 'image':
-                    return { type: 'image', url: '', alt: '' };
+                    return { blockType: 'image', url: '', alt: undefined, caption: undefined };
                 case 'video':
-                    return { type: 'video', url: '', platform: 'youtube' };
+                    return { blockType: 'video', url: '', platform: undefined, title: undefined, autoplay: undefined };
                 case 'audio':
-                    return { type: 'audio', url: '', title: '' };
+                    return { blockType: 'audio', url: '', title: '', duration: undefined };
                 case 'pdf':
-                    return { type: 'pdf', url: '', title: '' };
+                    return { blockType: 'pdf', url: '', title: '', filename: undefined };
                 case 'gallery':
-                    return { type: 'gallery', images: [{ url: '', alt: '', caption: '' }] };
+                    return { blockType: 'gallery', images: [{ url: '', alt: undefined, caption: undefined }], style: undefined };
                 case 'exercise':
-                    return { type: 'exercise', question: '', answer: '', hints: [] };
+                    return { blockType: 'exercise', question: '', answer: '', hints: undefined };
                 case 'quiz':
-                    return { type: 'quiz', questions: [] };
+                    return { blockType: 'quiz', questions: [] };
                 case 'observation':
-                    return { type: 'observation', text: '', icon: '💡' };
+                    return { blockType: 'observation', text: '', icon: undefined };
                 case 'interactive_simulation':
                     return { 
-                        type: 'interactive_simulation', 
+                        blockType: 'interactive_simulation', 
                         title: '', 
                         description: '', 
                         scenario: '', 
@@ -70,11 +70,11 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                             { id: nanoid(), text: '', outcome: '', isCorrect: false },
                             { id: nanoid(), text: '', outcome: '', isCorrect: false }
                         ], 
-                        feedback: '' 
+                        feedback: undefined 
                     };
                 case 'case_study':
                     return { 
-                        type: 'case_study', 
+                        blockType: 'case_study', 
                         title: '', 
                         description: '', 
                         background: '', 
@@ -85,45 +85,45 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                     };
                 case 'mind_map':
                     return { 
-                        type: 'mind_map', 
+                        blockType: 'mind_map', 
                         title: '', 
                         centralTopic: '', 
                         branches: [{ id: nanoid(), text: '', subBranches: [] }] 
                     };
                 case 'flashcard':
                     return { 
-                        type: 'flashcard', 
+                        blockType: 'flashcard', 
                         front: '', 
                         back: '', 
-                        category: '', 
-                        difficulty: 'medium' 
+                        category: undefined, 
+                        difficulty: undefined 
                     };
                 case 'timeline':
                     return { 
-                        type: 'timeline', 
+                        blockType: 'timeline', 
                         title: '', 
                         events: [
-                            { id: nanoid(), date: '', title: '', description: '' },
-                            { id: nanoid(), date: '', title: '', description: '' }
+                            { id: nanoid(), date: '', title: '', description: '', imageUrl: undefined },
+                            { id: nanoid(), date: '', title: '', description: '', imageUrl: undefined }
                         ] 
                     };
                 case 'comparison_table':
                     return { 
-                        type: 'comparison_table', 
+                        blockType: 'comparison_table', 
                         title: '', 
                         columns: ['', ''], 
                         rows: [{ id: nanoid(), feature: '', values: ['', ''] }] 
                     };
                 case 'fill_blanks':
                     return { 
-                        type: 'fill_blanks', 
+                        blockType: 'fill_blanks', 
                         title: '', 
                         text: '', 
-                        blanks: [{ id: nanoid(), correctAnswer: '', hints: [], alternatives: [] }] 
+                        blanks: [{ id: nanoid(), correctAnswer: '', hints: undefined, alternatives: undefined }] 
                     };
                 case 'matching':
                     return { 
-                        type: 'matching', 
+                        blockType: 'matching', 
                         title: '', 
                         leftItems: [
                             { id: nanoid(), text: '' },
@@ -136,7 +136,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                     };
                 case 'drag_drop':
                     return { 
-                        type: 'drag_drop', 
+                        blockType: 'drag_drop', 
                         title: '', 
                         description: '', 
                         items: [
@@ -150,14 +150,14 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                     };
                 case 'hotspot':
                     return { 
-                        type: 'hotspot', 
+                        blockType: 'hotspot', 
                         title: '', 
                         imageUrl: '', 
                         hotspots: [{ id: nanoid(), x: 50, y: 50, radius: 20, title: '', description: '', isCorrect: false }] 
                     };
                 case 'word_search':
                     return { 
-                        type: 'word_search', 
+                        blockType: 'word_search', 
                         title: '', 
                         grid: Array(10).fill(null).map(() => Array(10).fill('A')), 
                         words: [
@@ -168,21 +168,21 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                     };
                 case 'crossword':
                     return { 
-                        type: 'crossword', 
+                        blockType: 'crossword', 
                         title: '', 
                         grid: Array(10).fill(null).map(() => Array(10).fill({ letter: '', number: undefined, isBlack: false })), 
                         clues: { across: [], down: [] } 
                     };
                 case 'scenario_builder':
                     return { 
-                        type: 'scenario_builder', 
+                        blockType: 'scenario_builder', 
                         title: '', 
                         description: '', 
                         variables: [], 
-                        outcomes: [{ id: nanoid(), condition: '', result: '', feedback: '' }] 
+                        outcomes: [{ id: nanoid(), condition: '', result: '', feedback: undefined }] 
                     };
                 default:
-                    return { type: 'paragraph', text: '' };
+                    return { blockType: 'paragraph', text: '' };
             }
         })();
         
@@ -208,7 +208,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
     };
 
     const renderBlockEditor = (block: ContentBlock, index: number) => {
-        switch (block.type) {
+        switch (block.blockType) {
             case 'heading':
                 return (
                     <div className="space-y-2">
@@ -228,7 +228,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                                 </SelectContent>
                             </Select>
                             <Input
-                                value={block.text || ''}
+                                value={block.text}
                                 onChange={(e) => updateBlock(index, { ...block, text: e.target.value })}
                                 placeholder="Digite o título..."
                                 className="font-bold"
@@ -240,7 +240,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
             case 'paragraph':
                 return (
                     <Textarea
-                        value={block.text || ''}
+                        value={block.text}
                         onChange={(e) => updateBlock(index, { ...block, text: e.target.value })}
                         placeholder="Digite o texto do parágrafo..."
                         rows={3}
@@ -253,7 +253,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                         <div className="flex items-center gap-2">
                             <Select 
                                 value={block.style} 
-                                onValueChange={(value) => updateBlock(index, { ...block, style: value as 'bullet' | 'numbered' })}
+                                onValueChange={(value) => updateBlock(index, { ...block, style: value as 'bullet' | 'numbered' | 'checklist' | 'timeline' })}
                             >
                                 <SelectTrigger className="w-32">
                                     <SelectValue />
@@ -261,16 +261,20 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                                 <SelectContent>
                                     <SelectItem value="bullet">Lista com marcadores</SelectItem>
                                     <SelectItem value="numbered">Lista numerada</SelectItem>
+                                    <SelectItem value="checklist">Lista de verificação</SelectItem>
+                                    <SelectItem value="timeline">Linha do tempo</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         {block.items.map((item, itemIndex) => (
                             <div key={itemIndex} className="flex items-center gap-2">
                                 <span className="text-sm text-muted-foreground w-6">
-                                    {block.style === 'numbered' ? `${itemIndex + 1}.` : '•'}
+                                    {block.style === 'numbered' ? `${itemIndex + 1}.` : 
+                                     block.style === 'checklist' ? '☐' : 
+                                     block.style === 'timeline' ? '●' : '•'}
                                 </span>
                                 <Input
-                                    value={item || ''}
+                                    value={item}
                                     onChange={(e) => {
                                         const newItems = [...block.items];
                                         newItems[itemIndex] = e.target.value;
@@ -309,7 +313,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                 return (
                     <div className="space-y-2">
                         <Input
-                            value={block.url || ''}
+                            value={block.url}
                             onChange={(e) => updateBlock(index, { ...block, url: e.target.value })}
                             placeholder="URL da imagem..."
                         />
@@ -317,6 +321,11 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                             value={block.alt || ''}
                             onChange={(e) => updateBlock(index, { ...block, alt: e.target.value })}
                             placeholder="Texto alternativo (alt)..."
+                        />
+                        <Input
+                            value={block.caption || ''}
+                            onChange={(e) => updateBlock(index, { ...block, caption: e.target.value })}
+                            placeholder="Legenda da imagem..."
                         />
                         {block.url && (
                             <img src={block.url} alt={block.alt || 'Preview'} className="max-w-xs rounded-lg shadow" />
@@ -328,7 +337,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                 return (
                     <div className="space-y-2">
                         <Input
-                            value={block.url || ''}
+                            value={block.url}
                             onChange={(e) => updateBlock(index, { ...block, url: e.target.value })}
                             placeholder="URL do vídeo (YouTube, Vimeo ou direto)..."
                         />
@@ -359,12 +368,12 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                 return (
                     <div className="space-y-2">
                         <Input
-                            value={block.url || ''}
+                            value={block.url}
                             onChange={(e) => updateBlock(index, { ...block, url: e.target.value })}
                             placeholder="URL do arquivo de áudio..."
                         />
                         <Input
-                            value={block.title || ''}
+                            value={block.title}
                             onChange={(e) => updateBlock(index, { ...block, title: e.target.value })}
                             placeholder="Título do áudio..."
                         />
@@ -381,12 +390,12 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                 return (
                     <div className="space-y-2">
                         <Input
-                            value={block.url || ''}
+                            value={block.url}
                             onChange={(e) => updateBlock(index, { ...block, url: e.target.value })}
                             placeholder="URL do arquivo PDF..."
                         />
                         <Input
-                            value={block.title || ''}
+                            value={block.title}
                             onChange={(e) => updateBlock(index, { ...block, title: e.target.value })}
                             placeholder="Título do PDF..."
                         />
@@ -418,7 +427,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                                     </Button>
                                 </div>
                                 <Input
-                                    value={image.url || ''}
+                                    value={image.url}
                                     onChange={(e) => {
                                         const newImages = [...block.images];
                                         newImages[imageIndex] = { ...image, url: e.target.value };
@@ -453,7 +462,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                             onClick={() => {
                                 updateBlock(index, { 
                                     ...block, 
-                                    images: [...block.images, { url: '', alt: '', caption: '' }] 
+                                    images: [...block.images, { url: '', alt: undefined, caption: undefined }] 
                                 });
                             }}
                         >
@@ -467,13 +476,13 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                 return (
                     <div className="space-y-2">
                         <Textarea
-                            value={block.question || ''}
+                            value={block.question}
                             onChange={(e) => updateBlock(index, { ...block, question: e.target.value })}
                             placeholder="Pergunta do exercício..."
                             rows={2}
                         />
                         <Textarea
-                            value={block.answer || ''}
+                            value={block.answer}
                             onChange={(e) => updateBlock(index, { ...block, answer: e.target.value })}
                             placeholder="Resposta do exercício..."
                             rows={2}
@@ -483,7 +492,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                             {(block.hints || []).map((hint, hintIndex) => (
                                 <div key={hintIndex} className="flex items-center gap-2">
                                     <Input
-                                        value={hint || ''}
+                                        value={hint}
                                         onChange={(e) => {
                                             const newHints = [...(block.hints || [])];
                                             newHints[hintIndex] = e.target.value;
@@ -533,7 +542,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                                 className="w-16"
                             />
                             <Textarea
-                                value={block.text || ''}
+                                value={block.text}
                                 onChange={(e) => updateBlock(index, { ...block, text: e.target.value })}
                                 placeholder="Observação importante em tom didático..."
                                 rows={2}
@@ -561,22 +570,22 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="text-lg">
-                                    {block.type === 'interactive_simulation' && '🎮'}
-                                    {block.type === 'case_study' && '📋'}
-                                    {block.type === 'timeline' && '📅'}
-                                    {block.type === 'fill_blanks' && '✏️'}
-                                    {block.type === 'mind_map' && '🧠'}
-                                    {block.type === 'flashcard' && '🃏'}
-                                    {block.type === 'comparison_table' && '📊'}
-                                    {block.type === 'matching' && '🔗'}
-                                    {block.type === 'drag_drop' && '🎯'}
-                                    {block.type === 'hotspot' && '📍'}
-                                    {block.type === 'word_search' && '🔍'}
-                                    {block.type === 'crossword' && '📝'}
-                                    {block.type === 'scenario_builder' && '🎭'}
+                                    {block.blockType === 'interactive_simulation' && '🎮'}
+                                    {block.blockType === 'case_study' && '📋'}
+                                    {block.blockType === 'timeline' && '📅'}
+                                    {block.blockType === 'fill_blanks' && '✏️'}
+                                    {block.blockType === 'mind_map' && '🧠'}
+                                    {block.blockType === 'flashcard' && '🃏'}
+                                    {block.blockType === 'comparison_table' && '📊'}
+                                    {block.blockType === 'matching' && '🔗'}
+                                    {block.blockType === 'drag_drop' && '🎯'}
+                                    {block.blockType === 'hotspot' && '📍'}
+                                    {block.blockType === 'word_search' && '🔍'}
+                                    {block.blockType === 'crossword' && '📝'}
+                                    {block.blockType === 'scenario_builder' && '🎭'}
                                 </span>
                                 <h4 className="font-medium">
-                                    {getBlockLabel(block.type)}
+                                    {getBlockLabel(block.blockType)}
                                 </h4>
                             </div>
                             <p className="text-sm text-blue-700">
@@ -587,7 +596,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                         
                         <div className="space-y-2">
                             <Input
-                                value={'title' in block ? block.title || '' : ''}
+                                value={'title' in block ? block.title : ''}
                                 onChange={(e) => {
                                     if ('title' in block) {
                                         updateBlock(index, { ...block, title: e.target.value });
@@ -596,7 +605,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                                 placeholder="Título do elemento..."
                             />
                             <Textarea
-                                value={'description' in block ? block.description || '' : ''}
+                                value={'description' in block ? block.description : ''}
                                 onChange={(e) => {
                                     if ('description' in block) {
                                         updateBlock(index, { ...block, description: e.target.value });
@@ -614,7 +623,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                             className="w-full"
                             onClick={() => {
                                 // Aqui você pode abrir um modal ou navegar para o editor específico
-                                console.log('Abrir editor específico para:', block.type);
+                                console.log('Abrir editor específico para:', block.blockType);
                             }}
                         >
                             <Settings className="h-4 w-4 mr-2" />
@@ -628,8 +637,8 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
         }
     };
 
-    const getBlockIcon = (type: ContentBlock['type']) => {
-        switch (type) {
+    const getBlockIcon = (blockType: ContentBlock['blockType']) => {
+        switch (blockType) {
             case 'heading': return <Type className="h-4 w-4" />;
             case 'paragraph': return <FileText className="h-4 w-4" />;
             case 'list': return <List className="h-4 w-4" />;
@@ -657,8 +666,8 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
         }
     };
 
-    const getBlockLabel = (type: ContentBlock['type']) => {
-        switch (type) {
+    const getBlockLabel = (blockType: ContentBlock['blockType']) => {
+        switch (blockType) {
             case 'heading': return 'Título';
             case 'paragraph': return 'Texto';
             case 'list': return 'Lista';
@@ -691,7 +700,7 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
             <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Blocos de Conteúdo</h3>
                 <div className="flex gap-2">
-                    <Select onValueChange={(value) => addBlock(value as ContentBlock['type'])}>
+                    <Select onValueChange={(value) => addBlock(value as ContentBlock['blockType'])}>
                         <SelectTrigger className="w-48">
                             <SelectValue placeholder="Adicionar bloco..." />
                         </SelectTrigger>
@@ -731,8 +740,8 @@ export function ContentBlocksEditor({ contentBlocks, onChange }: ContentBlocksEd
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                                    {getBlockIcon(block.type)}
-                                    <Badge variant="outline">{getBlockLabel(block.type)}</Badge>
+                                    {getBlockIcon(block.blockType)}
+                                    <Badge variant="outline">{getBlockLabel(block.blockType)}</Badge>
                                 </div>
                                 <Button
                                     type="button"

@@ -84,7 +84,7 @@ export function UsersClientPage({ initialUsers }: { initialUsers: AdminUser[] })
             const result = await updateUserProfileStatus(userId, newStatus);
             if (result.success) {
                 toast({ title: 'Sucesso', description: 'Status do usuário atualizado.' });
-                setUsers(prev => prev.map(u => u.uid === userId ? { ...u, profileStatus: result.dbStatus } : u));
+                setUsers(prev => prev.map(u => u.uid === userId ? { ...u, profileStatus: result.dbStatus || 'incomplete' } : u));
             } else {
                 toast({ variant: 'destructive', title: 'Erro', description: result.error });
             }
@@ -227,7 +227,7 @@ function UserCard({ user, updatingUserStatus, handleUserStatusUpdate, setUserToD
                 <div className="truncate">
                     <Link href={`/admin/users/${user.uid}`} className="font-semibold hover:underline truncate block">{displayName}</Link>
                     <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-                    <p className="text-xs text-muted-foreground">Membro desde: {format(new Date(user.createdAt), 'dd/MM/yyyy')}</p>
+                    <p className="text-xs text-muted-foreground">Membro desde: {format(user.createdAt instanceof Date ? user.createdAt : typeof user.createdAt === 'string' ? new Date(user.createdAt) : new Date(user.createdAt.seconds * 1000), 'dd/MM/yyyy')}</p>
                 </div>
             </div>
 

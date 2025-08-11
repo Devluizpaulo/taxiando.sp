@@ -59,7 +59,7 @@ export default function CreateCourseWithEditorPage() {
   // Conteúdo inicial otimizado
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([
     {
-      type: 'slide_title',
+      blockType: 'slide_title',
       title: 'Bem-vindo ao Curso',
       subtitle: 'Clique para editar o título e subtítulo',
       background: 'gradient-to-r from-blue-500 to-purple-600',
@@ -67,13 +67,13 @@ export default function CreateCourseWithEditorPage() {
       alignment: 'center'
     },
     {
-      type: 'heading',
+      blockType: 'heading',
       level: 2,
       text: 'Objetivos do Curso',
       style: 'accent'
     },
     {
-      type: 'bullet_points',
+      blockType: 'bullet_points',
       title: 'O que você aprenderá:',
       points: [
         'Adicione seus objetivos aqui',

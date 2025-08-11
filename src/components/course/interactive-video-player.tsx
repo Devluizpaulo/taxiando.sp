@@ -21,11 +21,12 @@ import {
 import { type ContentBlock } from '@/lib/types';
 
 interface InteractiveVideoPlayerProps {
-    videoBlock: ContentBlock & { type: 'video' };
-    onProgress?: (progress: number) => void;
-    onComplete?: () => void;
-    showObservations?: boolean;
-    observations?: string;
+  videoBlock: ContentBlock & { blockType: 'video' };
+  onComplete?: () => void;
+  onProgress?: (progress: number) => void;
+  className?: string;
+  showObservations?: boolean;
+  observations?: string;
 }
 
 export function InteractiveVideoPlayer({ 

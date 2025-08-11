@@ -130,15 +130,61 @@ export default function SettingsPage() {
         console.log('[SettingsPage] onSubmit chamado', values);
         setIsSubmitting(true);
         try {
-            // Corrige os campos url para garantir que são string
-            const fixedValues = {
-                ...values,
+            // Corrige os campos url para garantir que são string e adiciona campos obrigatórios
+            const fixedValues: GlobalSettings = {
+                id: 'global', // ID obrigatório
+                siteName: values.siteName,
+                siteDescription: 'A plataforma completa para o profissional do volante em São Paulo', // Campo obrigatório
+                logoUrl: values.logoUrl || '',
+                faviconUrl: '/favicon.ico', // Campo obrigatório
+                primaryColor: '#2172E5', // Campo obrigatório
+                secondaryColor: '#FFD700', // Campo obrigatório
+                contactEmail: values.contactEmail || '',
+                contactPhone: values.contactPhone || '',
+                activeGateway: values.activeGateway || 'mercadoPago',
+                mercadoPagoPublicKey: values.mercadoPagoPublicKey || '',
+                mercadoPagoAccessToken: values.mercadoPagoAccessToken || '',
+                stripePublicKey: values.stripePublicKey || '',
+                stripeSecretKey: values.stripeSecretKey || '',
+                activeThemeName: values.activeThemeName,
                 socialMedia: values.socialMedia ? {
                     instagram: { enabled: values.socialMedia.instagram.enabled, url: values.socialMedia.instagram.url || '' },
                     facebook: { enabled: values.socialMedia.facebook.enabled, url: values.socialMedia.facebook.url || '' },
                     whatsapp: { enabled: values.socialMedia.whatsapp.enabled, url: values.socialMedia.whatsapp.url || '' },
-                } : undefined,
-                logoUrl: values.logoUrl || ''
+                } : {
+                    instagram: { enabled: true, url: 'https://instagram.com' },
+                    facebook: { enabled: true, url: 'https://facebook.com' },
+                    whatsapp: { enabled: false, url: 'https://wa.me/5511999999999' },
+                },
+                seoSettings: {
+                    metaTitle: 'Táxiando SP - Plataforma para Profissionais do Volante',
+                    metaDescription: values.seo?.metaDescription || 'A plataforma completa para o profissional do volante em São Paulo.',
+                    keywords: values.seo?.metaKeywords ? values.seo.metaKeywords.split(',').map(k => k.trim()) : ['táxi', 'sp', 'taxista', 'frota'],
+                },
+                seo: {
+                    metaDescription: values.seo?.metaDescription || 'A plataforma completa para o profissional do volante em São Paulo.',
+                    metaKeywords: values.seo?.metaKeywords || 'táxi, sp, taxista, frota',
+                },
+                homepage: values.homepage || {
+                    showAgenda: true,
+                    showTestimonials: true,
+                    showPartners: true,
+                },
+                user: values.user || {
+                    allowPublicRegistration: true,
+                    defaultNewUserCredits: 0,
+                },
+                legal: {
+                    termsOfService: values.legal?.termsOfService || '## Termos de Serviço\n\nBem-vindo! O conteúdo dos termos de serviço pode ser editado no painel do administrador.',
+                    privacyPolicy: values.legal?.privacyPolicy || '## Política de Privacidade\n\nBem-vindo! O conteúdo da política de privacidade pode ser editado no painel do administrador.',
+                },
+                themes: values.themes || [],
+                cityGuideCategories: [],
+                cityGuideRegions: [],
+                maintenanceMode: false,
+                maintenanceMessage: '',
+                createdAt: new Date(),
+                updatedAt: new Date(),
             };
             console.log('[SettingsPage] Enviando para updateGlobalSettings:', fixedValues);
             const result = await updateGlobalSettings(fixedValues);
@@ -301,17 +347,17 @@ export default function SettingsPage() {
                                                 <Button type="button" variant="ghost" size="icon" onClick={() => removeTheme(index)} disabled={themeFields.length <= 1}><Trash2 className="text-destructive"/></Button>
                                             </div>
                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                {Object.keys(field.colors).map((colorKey) => (
+                                                {Object.keys(form.getValues(`themes.${index}.colors`) || {}).map((colorKey) => (
                                                     <FormField
                                                         key={`${field.id}-${colorKey}`}
                                                         control={form.control}
-                                                        name={`themes.${index}.colors.${colorKey as keyof Theme['colors']}`}
+                                                        name={`themes.${index}.colors.${colorKey}` as any}
                                                         render={({ field: colorField }) => (
                                                             <FormItem>
                                                                 <FormLabel className="text-xs capitalize">{colorKey.replace('--', '')}</FormLabel>
                                                                 <div className="flex items-center gap-2">
-                                                                    <FormControl><Input type="color" {...colorField} className="p-1 h-8 w-8" value={`#${hslToHex(colorField.value)}`} onChange={(e) => colorField.onChange(hexToHsl(e.target.value))} /></FormControl>
-                                                                    <span className="text-xs text-muted-foreground">{hslToHex(colorField.value)}</span>
+                                                                    <FormControl><Input type="color" {...colorField} className="p-1 h-8 w-8" value={`#${hslToHex(String(colorField.value || ''))}`} onChange={(e) => colorField.onChange(hexToHsl(e.target.value))} /></FormControl>
+                                                                    <span className="text-xs text-muted-foreground">{hslToHex(String(colorField.value || ''))}</span>
                                                                 </div>
                                                             </FormItem>
                                                         )}

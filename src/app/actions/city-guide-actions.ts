@@ -206,6 +206,7 @@ export async function generateTipWithAI(data: { topic: string; target: 'driver' 
   data?: {
     title: string;
     description: string;
+    location: string;
     tags: string[];
     tipType: 'gastronomia' | 'day-off' | 'pousada' | 'turismo' | 'cultura' | 'nightlife' | 'roteiros' | 'compras' | 'aventura' | 'familia' | 'pet' | 'outro';
     specificFields?: any;
@@ -223,6 +224,7 @@ export async function generateTipWithAI(data: { topic: string; target: 'driver' 
     const result = {
       title: aiResult.title,
       description: aiResult.description,
+      location: aiResult.location,
       tags: aiResult.tags,
       tipType: aiResult.tipType,
       specificFields: aiResult.specificFields || {}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getPastEvents, getEventsToDelete, autoDeleteOldEvents, deletePastEvents, getEventStats } from '@/app/actions/event-actions';
 import { type Event } from '@/lib/types';
-import { type Timestamp } from 'firebase-admin/firestore';
+import { type Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -113,8 +113,9 @@ export function PastEventsManager() {
     loadData();
   }, []);
 
-  const formatDate = (dateInput: string | Timestamp) => {
-    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput.toDate();
+  const formatDate = (dateInput: string | Date | Timestamp) => {
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : 
+                 dateInput instanceof Date ? dateInput : dateInput.toDate();
     return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
@@ -124,8 +125,9 @@ export function PastEventsManager() {
     });
   };
 
-  const getDaysSinceEvent = (dateInput: string | Timestamp) => {
-    const eventDate = typeof dateInput === 'string' ? new Date(dateInput) : dateInput.toDate();
+  const getDaysSinceEvent = (dateInput: string | Date | Timestamp) => {
+    const eventDate = typeof dateInput === 'string' ? new Date(dateInput) : 
+                      dateInput instanceof Date ? dateInput : dateInput.toDate();
     const today = new Date();
     const diffTime = Math.abs(today.getTime() - eventDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

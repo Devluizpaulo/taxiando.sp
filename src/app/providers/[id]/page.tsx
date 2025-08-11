@@ -15,10 +15,10 @@ import { StarRating } from '@/components/ui/star-rating';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { use } from 'react';
 
-export default async function ProviderPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
+
+export default async function ProviderPage({ params }: { params: { id: string } }) {
+    const { id } = params;
     const { success, provider, services } = await getProviderPublicProfile(id);
 
     if (!success || !provider) {
@@ -132,13 +132,13 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
                                         </div>
                                     </div>
                                     
-                                    {provider.socialMedia && (provider.socialMedia.instagram || provider.socialMedia.facebook || provider.socialMedia.whatsapp) && (
+                                    {provider.socialMedia && (provider.socialMedia.instagram || provider.socialMedia.facebook) && (
                                         <div className="border-t pt-6">
                                             <h3 className="font-semibold mb-3">Redes Sociais</h3>
                                             <div className="flex gap-2">
                                                 {provider.socialMedia.instagram && <Button asChild variant="outline" size="icon"><a href={`https://instagram.com/${provider.socialMedia.instagram.replace('@','')}`} target="_blank" rel="noopener noreferrer"><Instagram /></a></Button>}
                                                 {provider.socialMedia.facebook && <Button asChild variant="outline" size="icon"><a href={`https://facebook.com${provider.socialMedia.facebook}`} target="_blank" rel="noopener noreferrer"><FacebookIcon /></a></Button>}
-                                                {provider.socialMedia.whatsapp && <Button asChild variant="outline" size="icon"><a href={`https://wa.me/${provider.socialMedia.whatsapp}`} target="_blank" rel="noopener noreferrer"><MessageSquare /></a></Button>}
+
                                             </div>
                                         </div>
                                     )}

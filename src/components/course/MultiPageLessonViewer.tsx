@@ -126,35 +126,35 @@ export function MultiPageLessonViewer({
                     <div className="prose prose-sm max-w-none">
                         {currentPage.contentBlocks?.map((block, index) => (
                             <div key={index} className="mb-4">
-                                {block.type === 'heading' && (
-                                    <h3 style={{ fontSize: `${24 - block.level * 2}px` }}>
-                                        {block.text}
+                                {block.blockType === 'heading' && (
+                                    <h3 style={{ fontSize: `${24 - ('level' in block ? block.level : 1) * 2}px` }}>
+                                        {'text' in block ? block.text : ''}
                                     </h3>
                                 )}
-                                {block.type === 'paragraph' && (
-                                    <p className="text-gray-700 leading-relaxed">{block.text}</p>
+                                {block.blockType === 'paragraph' && (
+                                    <p className="text-gray-700 leading-relaxed">{'text' in block ? block.text : ''}</p>
                                 )}
-                                {block.type === 'list' && (
+                                {block.blockType === 'list' && (
                                     <ul className="list-disc pl-6 space-y-1">
-                                        {block.items.map((item, i) => (
+                                        {'items' in block ? block.items.map((item: string, i: number) => (
                                             <li key={i} className="text-gray-700">{item}</li>
-                                        ))}
+                                        )) : null}
                                     </ul>
                                 )}
-                                {block.type === 'image' && (
+                                {block.blockType === 'image' && (
                                     <div className="my-4">
                                         <img 
-                                            src={block.url} 
-                                            alt={block.alt || ''} 
+                                            src={'url' in block ? block.url : ''} 
+                                            alt={'alt' in block ? block.alt || '' : ''} 
                                             className="max-w-full h-auto rounded-lg shadow-md"
                                         />
                                     </div>
                                 )}
-                                {block.type === 'observation' && (
+                                {block.blockType === 'observation' && (
                                     <div className="bg-blue-50 border-l-4 border-blue-400 p-4 my-4 rounded-r-lg">
                                         <div className="flex items-start gap-2">
-                                            <span className="text-2xl">{block.icon || '💡'}</span>
-                                            <p className="text-blue-800 font-medium">{block.text}</p>
+                                            <span className="text-2xl">{'icon' in block ? block.icon || '💡' : '💡'}</span>
+                                            <p className="text-blue-800 font-medium">{'text' in block ? block.text : ''}</p>
                                         </div>
                                     </div>
                                 )}
@@ -168,7 +168,7 @@ export function MultiPageLessonViewer({
                     <div className="my-4">
                         <InteractiveVideoPlayer 
                             videoBlock={{
-                                type: 'video',
+                                blockType: 'video',
                                 url: currentPage.videoUrl,
                                 platform: 'direct',
                                 title: currentPage.title

@@ -9,7 +9,7 @@ import { getCouponById, updateCoupon, type CouponFormValues } from '@/app/action
 import { couponFormSchema } from '@/lib/marketing-schemas';
 import { type Coupon } from '@/lib/types';
 import { toDate } from '@/lib/date-utils';
-import { use } from 'react';
+
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,8 +22,8 @@ import { Switch } from '@/components/ui/switch';
 import { DatePicker } from '@/components/ui/datepicker';
 import { LoadingScreen } from '@/components/loading-screen';
 
-export default function EditCouponPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
+export default function EditCouponPage({ params }: { params: { id: string } }) {
+    const { id } = params;
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,7 +40,7 @@ export default function EditCouponPage({ params }: { params: Promise<{ id: strin
             if (coupon) {
                 form.reset({
                     ...coupon,
-                    expiresAt: coupon.expiresAt ? toDate(coupon.expiresAt) : undefined,
+                    expiresAt: coupon.validUntil ? toDate(coupon.validUntil) : undefined,
                 });
             } else {
                 toast({ variant: 'destructive', title: 'Erro', description: 'Cupom não encontrado.' });

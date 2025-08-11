@@ -105,12 +105,12 @@ const HowToBeDriverSection = () => (
                         </CardContent>
                         <CardFooter className="flex items-center gap-3 sm:gap-4">
                             <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
-                                <AvatarImage src={testimonial.imageUrls?.[0] || 'https://placehold.co/600x400.png'} alt={testimonial.name} data-ai-hint="driver portrait business owner" />
-                                <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+                                <AvatarImage src={testimonial.authorAvatarUrl || 'https://placehold.co/600x400.png'} alt={testimonial.authorName} data-ai-hint="driver portrait business owner" />
+                                <AvatarFallback>{testimonial.authorName.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="min-w-0 flex-1">
-                                <p className="font-semibold text-sm sm:text-base truncate">{testimonial.name}</p>
-                                <p className="text-xs sm:text-sm text-muted-foreground truncate">{testimonial.role}</p>
+                                <p className="font-semibold text-sm sm:text-base truncate">{testimonial.authorName}</p>
+                                <p className="text-xs sm:text-sm text-muted-foreground truncate">{testimonial.authorRole}</p>
                             </div>
                         </CardFooter>
                     </Card>

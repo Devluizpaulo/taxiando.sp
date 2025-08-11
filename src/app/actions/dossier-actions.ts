@@ -315,7 +315,7 @@ async function generateFinancialAnalysis(driver: UserProfile) {
     bankAccounts: [
       {
         bank: 'Banco do Brasil',
-        accountType: 'Conta Corrente',
+        accountType: 'checking' as const,
         balance: Math.floor(Math.random() * 5000) + 500,
         status: 'active' as const
       }
@@ -428,7 +428,7 @@ async function generateDocumentVerification(driver: UserProfile) {
       valid: true,
       number: driver.cnhNumber || '',
       category: driver.cnhCategory || 'B',
-      expiration: driver.cnhExpiration ? driver.cnhExpiration.toDate().toISOString() : '',
+      expiration: driver.cnhExpiration ? (typeof driver.cnhExpiration === 'string' ? driver.cnhExpiration : driver.cnhExpiration instanceof Date ? driver.cnhExpiration.toISOString() : driver.cnhExpiration.toDate().toISOString()) : '',
       points: driver.cnhPoints || 0,
       restrictions: [],
       status: 'valid' as const
@@ -436,7 +436,7 @@ async function generateDocumentVerification(driver: UserProfile) {
     condutax: {
       valid: true,
       number: driver.condutaxNumber || '',
-      expiration: driver.condutaxExpiration ? driver.condutaxExpiration.toDate().toISOString() : '',
+      expiration: driver.condutaxExpiration ? (typeof driver.condutaxExpiration === 'string' ? driver.condutaxExpiration : driver.condutaxExpiration instanceof Date ? driver.condutaxExpiration.toISOString() : driver.condutaxExpiration.toDate().toISOString()) : '',
       status: 'valid' as const
     },
     cpf: {

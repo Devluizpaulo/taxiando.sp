@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MoreHorizontal, Users, Briefcase, BookOpen, DollarSign, PackagePlus, ArrowRight, Calendar, CreditCard, ShoppingCart, Loader2, Eye, LogIn, UserCheck, Search, Trash2, FilePen, Sparkles, Building, Settings, Car, Wrench, Shield, Newspaper, Library, ImageIcon, Tag, Mail, Megaphone, Handshake, LifeBuoy, Star, Share2, TrendingUp, Activity, Zap, Target, Award, Rocket, Crown, Trophy, Heart, Globe, ChartBar, BarChart3, PieChart, TrendingDown, ArrowUpRight, ArrowDownRight, Minus, Plus, ChevronUp, ChevronDown, Play, Pause, RotateCcw, RefreshCw, CheckCircle2, XCircle, Clock, Filter } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -231,6 +232,23 @@ const getStatusVariant = (status?: string): "default" | "secondary" | "destructi
     }
 };
 
+const getAnimatedBadgeVariant = (status?: string): "default" | "success" | "warning" | "error" => {
+    switch (status) {
+        case 'Aprovado':
+        case 'approved':
+        case 'Ativo':
+             return 'success';
+        case 'Pendente': 
+        case 'pending_review':
+        case 'incomplete':
+            return 'warning';
+        case 'Rejeitado':
+        case 'rejected':
+            return 'error';
+        default: return 'default';
+    }
+};
+
 // Componente de card de métrica moderno
 function ModernMetricCard({ 
     title, 
@@ -244,7 +262,7 @@ function ModernMetricCard({
 }: { 
     title: string; 
     value: string | number; 
-    icon: any; 
+    icon: LucideIcon; 
     gradient: string; 
     trend?: 'up' | 'down' | 'neutral'; 
     trendValue?: string; 
@@ -294,7 +312,7 @@ function ModernMetricCard({
 }
 
 // Componente de gráfico moderno
-function ModernChart({ data, title, type = 'bar' }: { data: any[]; title: string; type?: 'bar' | 'line' | 'area' }) {
+function ModernChart({ data, title, type = 'bar' }: { data: Array<{ name: string; value: number }>; title: string; type?: 'bar' | 'line' | 'area' }) {
     const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'];
     
     return (
@@ -427,7 +445,7 @@ function ModernChart({ data, title, type = 'bar' }: { data: any[]; title: string
 }
 
 // Componente de tabela moderna
-function ModernTable({ 
+function ModernTable<T extends Record<string, any>>({ 
     title, 
     description, 
     data, 
@@ -438,10 +456,10 @@ function ModernTable({
 }: { 
     title: string; 
     description: string; 
-    data: any[]; 
-    columns: { key: string; label: string; render?: (item: any) => React.ReactNode }[];
+    data: T[]; 
+    columns: { key: string; label: string; render?: (item: T) => React.ReactNode }[];
     emptyMessage: string;
-    icon: any;
+    icon: LucideIcon;
     gradient: string;
 }) {
     return (
@@ -465,7 +483,7 @@ function ModernTable({
                             >
                                 {columns.map((column, colIndex) => (
                                     <div key={colIndex} className="flex-1">
-                                        {column.render ? column.render(item) : item[column.key]}
+                                        {column.render ? column.render(item) : String(item[column.key] || '')}
                                     </div>
                                 ))}
                             </div>
@@ -557,7 +575,7 @@ function StatCard({
 }: { 
     title: string; 
     value: string | number; 
-    icon: any; 
+    icon: LucideIcon; 
     color: string; 
     trend?: 'up' | 'down' | 'neutral'; 
     trendValue?: string;
@@ -1237,24 +1255,24 @@ export function AdminDashboardClient() {
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                     <div className="lg:col-span-2">
                         <ModernChart 
-                            data={analytics.userGrowth || []} 
+                            data={(analytics.userGrowth || []).map(item => ({ name: item.month, value: item.total }))} 
                             title="Crescimento de Usuários" 
                             type="area"
                         />
                     </div>
                     <div className="space-y-6">
-                        <ModernTable
+                        <ModernTable<AdminUser>
                             title="Cadastros para Análise"
                             description="Cadastros recentes que precisam de atenção"
                             data={users.filter(u => u.profileStatus === 'pending_review').slice(0, 5)}
                             columns={[
-                                { key: 'name', label: 'Nome', render: (user) => (
+                                { key: 'name', label: 'Nome', render: (user: AdminUser) => (
                                     <div>
                                         <div className="font-medium">{user.name}</div>
                                         <div className="text-sm text-gray-500">{user.email}</div>
                                     </div>
                                 )},
-                                { key: 'profileStatus', label: 'Status', render: (user) => (
+                                { key: 'profileStatus', label: 'Status', render: (user: AdminUser) => (
                                     <Badge variant={getStatusVariant(user.profileStatus)}>
                                         {user.profileStatus}
                                     </Badge>
@@ -1269,23 +1287,23 @@ export function AdminDashboardClient() {
 
                 {/* Conteúdo Mais Popular */}
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-                    <ModernTable
+                    <ModernTable<any>
                         title="Blog Mais Popular"
                         description="Posts com mais visualizações e compartilhamentos"
                         data={analytics.topContent?.blog || []}
                         columns={[
-                            { key: 'title', label: 'Título', render: (post) => (
+                            { key: 'title', label: 'Título', render: (post: any) => (
                                 <div className="font-medium">{post.title}</div>
                             )},
-                            { key: 'views', label: 'Visualizações', render: (post) => (
-                                <AnimatedBadge variant="default" className="bg-blue-100 text-blue-800 border-blue-300 font-semibold">
-                                    {post.views}
-                                </AnimatedBadge>
+                            { key: 'views', label: 'Visualizações', render: (post: any) => (
+                                                        <AnimatedBadge variant="default" className="bg-blue-100 text-blue-800 border-blue-300 font-semibold">
+                            {String(post.views || 0)}
+                        </AnimatedBadge>
                             )},
-                            { key: 'shares', label: 'Compartilhamentos', render: (post) => (
-                                <AnimatedBadge variant="success" className="bg-green-100 text-green-800 border-green-300 font-semibold">
-                                    {post.shares}
-                                </AnimatedBadge>
+                            { key: 'shares', label: 'Compartilhamentos', render: (post: any) => (
+                                                        <AnimatedBadge variant="success" className="bg-green-100 text-green-800 border-green-300 font-semibold">
+                            {String(post.shares || 0)}
+                        </AnimatedBadge>
                             )}
                         ]}
                         emptyMessage="Nenhum post do blog ainda"
@@ -1293,23 +1311,23 @@ export function AdminDashboardClient() {
                         gradient="gradient-bg-2"
                     />
 
-                    <ModernTable
+                    <ModernTable<any>
                         title="Eventos Mais Populares"
                         description="Eventos da agenda cultural com mais engajamento"
                         data={analytics.topContent?.events || []}
                         columns={[
-                            { key: 'title', label: 'Título', render: (event) => (
+                            { key: 'title', label: 'Título', render: (event: any) => (
                                 <div className="font-medium">{event.title}</div>
                             )},
-                            { key: 'views', label: 'Visualizações', render: (event) => (
-                                <AnimatedBadge variant="default" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
-                                    {event.views}
-                                </AnimatedBadge>
+                            { key: 'views', label: 'Visualizações', render: (event: any) => (
+                                                            <AnimatedBadge variant="default" className="bg-purple-100 text-purple-800 border-purple-300 font-semibold">
+                                {String(event.views || 0)}
+                            </AnimatedBadge>
                             )},
-                            { key: 'shares', label: 'Compartilhamentos', render: (event) => (
-                                <AnimatedBadge variant="warning" className="bg-orange-100 text-orange-800 border-orange-300 font-semibold">
-                                    {event.shares}
-                                </AnimatedBadge>
+                            { key: 'shares', label: 'Compartilhamentos', render: (event: any) => (
+                                                            <AnimatedBadge variant="warning" className="bg-orange-100 text-orange-800 border-orange-300 font-semibold">
+                                {String(event.shares || 0)}
+                            </AnimatedBadge>
                             )}
                         ]}
                         emptyMessage="Nenhum evento ainda"
@@ -1372,9 +1390,9 @@ export function AdminDashboardClient() {
                                                     </Button>
                                                 </TableCell>
                                                     <TableCell>
-                                                        <AnimatedBadge variant={getStatusVariant(vehicle.moderationStatus) as any}>
-                                                            {vehicle.moderationStatus}
-                                                        </AnimatedBadge>
+                                                                                <AnimatedBadge variant={getAnimatedBadgeVariant(vehicle.moderationStatus)}>
+                            {vehicle.moderationStatus}
+                        </AnimatedBadge>
                                                     </TableCell>
                                                 <TableCell className="text-right">
                                                     {vehicle.moderationStatus === 'Pendente' && (
@@ -1443,9 +1461,9 @@ export function AdminDashboardClient() {
                                                 </TableCell>
                                                 <TableCell>{srv.provider}</TableCell>
                                                     <TableCell>
-                                                        <AnimatedBadge variant={getStatusVariant(srv.status) as any}>
-                                                            {srv.status}
-                                                        </AnimatedBadge>
+                                                                                <AnimatedBadge variant={getAnimatedBadgeVariant(srv.status)}>
+                            {srv.status}
+                        </AnimatedBadge>
                                                     </TableCell>
                                                 <TableCell className="text-right">
                                                     {srv.status === 'Pendente' && (

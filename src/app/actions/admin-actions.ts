@@ -10,12 +10,7 @@ import { ptBR } from 'date-fns/locale';
 import * as z from 'zod';
 import { cleanUserProfile } from '@/lib/utils';
 
-declare module '@/lib/types' {
-  interface GlobalSettings {
-    cityGuideCategories?: string[];
-    cityGuideRegions?: string[];
-  }
-}
+
 
 export async function updateUserProfileStatus(userId: string, newStatus: 'Aprovado' | 'Rejeitado' | 'Pendente') {
     try {
@@ -171,8 +166,13 @@ export async function updateListingStatus(
 
 export async function getGlobalSettings(): Promise<GlobalSettings> {
     const defaultSettings: GlobalSettings = { 
+        id: 'global',
         siteName: 'Táxiando SP',
+        siteDescription: 'A plataforma completa para o profissional do volante em São Paulo',
         logoUrl: '/logo.png',
+        faviconUrl: '/favicon.ico',
+        primaryColor: '#2172E5',
+        secondaryColor: '#FFD700',
         contactEmail: 'contato@taxiando.com',
         contactPhone: '(11) 99999-9999',
         activeGateway: 'mercadoPago',
@@ -185,6 +185,11 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
           instagram: { url: 'https://instagram.com', enabled: true },
           facebook: { url: 'https://facebook.com', enabled: true },
           whatsapp: { url: 'https://wa.me/5511999999999', enabled: false },
+        },
+        seoSettings: {
+            metaTitle: 'Táxiando SP - Plataforma para Profissionais do Volante',
+            metaDescription: 'A plataforma completa para o profissional do volante em São Paulo. Encontre veículos, cursos e uma comunidade para acelerar seus resultados.',
+            keywords: ['táxi', 'sp', 'taxista', 'frota', 'aluguel de táxi', 'cursos para taxistas'],
         },
         seo: {
             metaDescription: 'A plataforma completa para o profissional do volante em São Paulo. Encontre veículos, cursos e uma comunidade para acelerar seus resultados.',
@@ -231,6 +236,10 @@ export async function getGlobalSettings(): Promise<GlobalSettings> {
         ],
         cityGuideCategories: [],
         cityGuideRegions: [],
+        maintenanceMode: false,
+        maintenanceMessage: '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
     };
 
     try {
@@ -315,7 +324,7 @@ export async function getPaymentSettings(): Promise<PaymentGatewaySettings> {
     try {
         const settings = await getGlobalSettings();
         return {
-            activeGateway: settings.activeGateway,
+            activeGateway: settings.activeGateway || 'mercadoPago',
             mercadoPago: {
                 publicKey: settings.mercadoPagoPublicKey,
                 accessToken: settings.mercadoPagoAccessToken,
@@ -544,8 +553,8 @@ export async function getAdminDashboardAnalytics(periodStart?: Date): Promise<An
 
         const analytics: AnalyticsData = {
             pageViews: periodStart ? pageViewsCounts : (await pageViewsRef.get()).data() || {},
-            logins: periodStart ? { total: loginsCount } : (await loginsRef.get()).data() || { total: 0 },
-            sales: (await salesRef.get()).data() || { totalRevenue: 0, packagesSold: 0 },
+            logins: periodStart ? { total: loginsCount } : (await loginsRef.get()).data() as { total: number } || { total: 0 },
+            sales: (await salesRef.get()).data() as { totalRevenue: number; packagesSold: number } || { totalRevenue: 0, packagesSold: 0 },
             contentViews: (await contentViewsRef.get()).data() || {},
             contentShares: periodStart ? sharesCounts : (await contentSharesRef.get()).data() || {},
             topContent,
@@ -642,7 +651,18 @@ export async function getAdminDashboardData(periodStart?: Date) {
     });
 
     usersData.forEach(user => {
-        const registrationMonth = format(new Date(user.createdAt), 'MMM/yy', { locale: ptBR });
+        let createdAtDate: Date;
+        if (user.createdAt instanceof Date) {
+            createdAtDate = user.createdAt;
+        } else if (typeof user.createdAt === 'string') {
+            createdAtDate = new Date(user.createdAt);
+        } else if (user.createdAt && typeof (user.createdAt as any).toDate === 'function') {
+            createdAtDate = (user.createdAt as any).toDate();
+        } else {
+            createdAtDate = new Date();
+        }
+        
+        const registrationMonth = format(createdAtDate, 'MMM/yy', { locale: ptBR });
         const monthData = userGrowthData.find(m => m.month === registrationMonth);
         if (monthData) {
             monthData.total += 1;
@@ -697,7 +717,7 @@ export async function getAdminReportsData() {
                   : (typeof data.updatedAt === 'string' ? data.updatedAt : undefined),
             } as CreditPackage;
         });
-        const topUsedCoupons = couponsSnapshot.docs.map(doc => doc.data() as Coupon).sort((a, b) => (b.uses || 0) - (a.uses || 0)).slice(0, 5);
+        const topUsedCoupons = couponsSnapshot.docs.map(doc => doc.data() as Coupon).sort((a, b) => ((b as any).uses || 0) - ((a as any).uses || 0)).slice(0, 5);
 
         // Engagement reports
         const courses = coursesSnapshot.docs.map(doc => {

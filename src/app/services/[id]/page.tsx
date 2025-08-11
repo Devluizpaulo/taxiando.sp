@@ -19,11 +19,11 @@ import { LoadingScreen } from '@/components/loading-screen';
 import { type ServiceListing, type UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { use } from 'react';
+
 import { trackContentView } from '@/app/actions/analytics-actions';
 
-export default function ServicePage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
+export default function ServicePage({ params }: { params: { id: string } }) {
+    const { id } = params;
     const router = useRouter();
     const { toast } = useToast();
 
@@ -146,13 +146,13 @@ export default function ServicePage({ params }: { params: Promise<{ id: string }
                                             )}
                                         </div>
                                         
-                                        {provider.socialMedia && (provider.socialMedia.instagram || provider.socialMedia.facebook || provider.socialMedia.whatsapp) && (
+                                        {provider.socialMedia && (provider.socialMedia.instagram || provider.socialMedia.facebook) && (
                                             <div className="border-t pt-4">
                                                 <h4 className="font-semibold mb-2 text-card-foreground">Redes Sociais e Contato</h4>
                                                 <div className="flex gap-2">
                                                     {provider.socialMedia.instagram && <Button asChild variant="outline" size="icon"><a href={`https://instagram.com/${provider.socialMedia.instagram.replace('@','')}`} target="_blank" rel="noopener noreferrer" title="Instagram"><Instagram /></a></Button>}
                                                     {provider.socialMedia.facebook && <Button asChild variant="outline" size="icon"><a href={`https://facebook.com${provider.socialMedia.facebook}`} target="_blank" rel="noopener noreferrer" title="Facebook"><FacebookIcon /></a></Button>}
-                                                    {provider.socialMedia.whatsapp && <Button asChild variant="outline" size="icon"><a href={`https://wa.me/${provider.socialMedia.whatsapp}`} target="_blank" rel="noopener noreferrer" title="WhatsApp"><MessageSquare /></a></Button>}
+
                                                 </div>
                                             </div>
                                         )}

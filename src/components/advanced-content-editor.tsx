@@ -85,57 +85,57 @@ export function AdvancedContentEditor({
   // Categorias de elementos
   const elementCategories = {
     'Texto': [
-      { type: 'heading', label: 'Título', icon: Type, color: 'text-blue-600' },
-      { type: 'paragraph', label: 'Parágrafo', icon: Type, color: 'text-green-600' },
-      { type: 'list', label: 'Lista', icon: ListIcon, color: 'text-purple-600' },
-      { type: 'quote', label: 'Citação', icon: MessageSquare, color: 'text-orange-600' },
-      { type: 'callout', label: 'Destaque', icon: Zap, color: 'text-red-600' },
-      { type: 'code', label: 'Código', icon: Code, color: 'text-gray-600' }
+      { blockType: 'heading', label: 'Título', icon: Type, color: 'text-blue-600' },
+      { blockType: 'paragraph', label: 'Parágrafo', icon: Type, color: 'text-green-600' },
+      { blockType: 'list', label: 'Lista', icon: ListIcon, color: 'text-purple-600' },
+      { blockType: 'quote', label: 'Citação', icon: MessageSquare, color: 'text-orange-600' },
+      { blockType: 'callout', label: 'Destaque', icon: Zap, color: 'text-red-600' },
+      { blockType: 'code', label: 'Código', icon: Code, color: 'text-gray-600' }
     ],
     'Mídia': [
-      { type: 'image', label: 'Imagem', icon: Image, color: 'text-pink-600' },
-      { type: 'video', label: 'Vídeo', icon: Video, color: 'text-red-600' },
-      { type: 'audio', label: 'Áudio', icon: Video, color: 'text-blue-600' },
-      { type: 'gallery', label: 'Galeria', icon: Grid, color: 'text-purple-600' },
-      { type: 'slideshow', label: 'Apresentação', icon: Layers, color: 'text-green-600' },
-      { type: 'embed', label: 'Incorporar', icon: Share2, color: 'text-orange-600' }
+      { blockType: 'image', label: 'Imagem', icon: Image, color: 'text-pink-600' },
+      { blockType: 'video', label: 'Vídeo', icon: Video, color: 'text-red-600' },
+      { blockType: 'audio', label: 'Áudio', icon: Video, color: 'text-blue-600' },
+      { blockType: 'gallery', label: 'Galeria', icon: Grid, color: 'text-purple-600' },
+      { blockType: 'slideshow', label: 'Apresentação', icon: Layers, color: 'text-green-600' },
+      { blockType: 'embed', label: 'Incorporar', icon: Share2, color: 'text-orange-600' }
     ],
     'Layout': [
-      { type: 'columns', label: 'Colunas', icon: Columns, color: 'text-blue-600' },
-      { type: 'card', label: 'Card', icon: FileText, color: 'text-green-600' },
-      { type: 'container', label: 'Container', icon: Layout, color: 'text-purple-600' },
-      { type: 'grid', label: 'Grid', icon: Grid, color: 'text-orange-600' },
-      { type: 'tabs', label: 'Abas', icon: FileText, color: 'text-red-600' },
-      { type: 'accordion', label: 'Acordeão', icon: Layers, color: 'text-pink-600' }
+      { blockType: 'columns', label: 'Colunas', icon: Columns, color: 'text-blue-600' },
+      { blockType: 'card', label: 'Card', icon: FileText, color: 'text-green-600' },
+      { blockType: 'container', label: 'Container', icon: Layout, color: 'text-purple-600' },
+      { blockType: 'grid', label: 'Grid', icon: Grid, color: 'text-orange-600' },
+      { blockType: 'tabs', label: 'Abas', icon: FileText, color: 'text-red-600' },
+      { blockType: 'accordion', label: 'Acordeão', icon: Layers, color: 'text-pink-600' }
     ],
     'Dados': [
-      { type: 'table', label: 'Tabela', icon: Table, color: 'text-blue-600' },
-      { type: 'chart', label: 'Gráfico', icon: BarChart3, color: 'text-green-600' },
-      { type: 'progress', label: 'Progresso', icon: BarChart3, color: 'text-purple-600' },
-      { type: 'stats', label: 'Estatísticas', icon: BarChart3, color: 'text-orange-600' },
-      { type: 'timeline', label: 'Linha do Tempo', icon: Calendar, color: 'text-red-600' }
+      { blockType: 'table', label: 'Tabela', icon: Table, color: 'text-blue-600' },
+      { blockType: 'chart', label: 'Gráfico', icon: BarChart3, color: 'text-green-600' },
+      { blockType: 'progress', label: 'Progresso', icon: BarChart3, color: 'text-purple-600' },
+      { blockType: 'stats', label: 'Estatísticas', icon: BarChart3, color: 'text-orange-600' },
+      { blockType: 'timeline', label: 'Linha do Tempo', icon: Calendar, color: 'text-red-600' }
     ],
     'Apresentação': [
-      { type: 'slide_title', label: 'Título de Slide', icon: Type, color: 'text-blue-600' },
-      { type: 'bullet_points', label: 'Tópicos', icon: ListIcon, color: 'text-green-600' },
-      { type: 'feature_comparison', label: 'Comparação', icon: Table, color: 'text-purple-600' },
-      { type: 'process_flow', label: 'Fluxo', icon: Zap, color: 'text-orange-600' },
-      { type: 'before_after', label: 'Antes/Depois', icon: Eye, color: 'text-red-600' },
-      { type: 'testimonial', label: 'Depoimento', icon: MessageSquare, color: 'text-pink-600' }
+      { blockType: 'slide_title', label: 'Título de Slide', icon: Type, color: 'text-blue-600' },
+      { blockType: 'bullet_points', label: 'Tópicos', icon: ListIcon, color: 'text-green-600' },
+      { blockType: 'feature_comparison', label: 'Comparação', icon: Table, color: 'text-purple-600' },
+      { blockType: 'process_flow', label: 'Fluxo', icon: Zap, color: 'text-orange-600' },
+      { blockType: 'before_after', label: 'Antes/Depois', icon: Eye, color: 'text-red-600' },
+      { blockType: 'testimonial', label: 'Depoimento', icon: MessageSquare, color: 'text-pink-600' }
     ],
     'Interativo': [
-      { type: 'quiz', label: 'Quiz', icon: Star, color: 'text-blue-600' },
-      { type: 'exercise', label: 'Exercício', icon: Zap, color: 'text-green-600' },
-      { type: 'flashcard', label: 'Flashcard', icon: FileText, color: 'text-purple-600' },
-      { type: 'poll', label: 'Enquete', icon: Users, color: 'text-orange-600' },
-      { type: 'rating', label: 'Avaliação', icon: Star, color: 'text-red-600' }
+      { blockType: 'quiz', label: 'Quiz', icon: Star, color: 'text-blue-600' },
+      { blockType: 'exercise', label: 'Exercício', icon: Zap, color: 'text-green-600' },
+      { blockType: 'flashcard', label: 'Flashcard', icon: FileText, color: 'text-purple-600' },
+      { blockType: 'poll', label: 'Enquete', icon: Users, color: 'text-orange-600' },
+      { blockType: 'rating', label: 'Avaliação', icon: Star, color: 'text-red-600' }
     ],
     'Avançado': [
-      { type: 'map', label: 'Mapa', icon: MapPin, color: 'text-blue-600' },
-      { type: 'calendar', label: 'Calendário', icon: Calendar, color: 'text-green-600' },
-      { type: 'code_editor', label: 'Editor de Código', icon: Code, color: 'text-purple-600' },
-      { type: 'chat_widget', label: 'Chat', icon: MessageSquare, color: 'text-orange-600' },
-      { type: '360_view', label: 'Visão 360°', icon: Eye, color: 'text-red-600' }
+      { blockType: 'map', label: 'Mapa', icon: MapPin, color: 'text-blue-600' },
+      { blockType: 'calendar', label: 'Calendário', icon: Calendar, color: 'text-green-600' },
+      { blockType: 'code_editor', label: 'Editor de Código', icon: Code, color: 'text-purple-600' },
+      { blockType: 'chat_widget', label: 'Chat', icon: MessageSquare, color: 'text-orange-600' },
+      { blockType: '360_view', label: 'Visão 360°', icon: Eye, color: 'text-red-600' }
     ]
   };
 
@@ -153,34 +153,34 @@ export function AdvancedContentEditor({
   const createDefaultBlock = (type: string): ContentBlock => {
     switch (type) {
       case 'heading':
-        return { type: 'heading', level: 1, text: 'Novo Título' };
+        return { blockType: 'heading', level: 1, text: 'Novo Título' };
       case 'paragraph':
-        return { type: 'paragraph', text: 'Digite seu texto aqui...' };
+        return { blockType: 'paragraph', text: 'Digite seu texto aqui...' };
       case 'list':
-        return { type: 'list', style: 'bullet', items: ['Item 1', 'Item 2', 'Item 3'] };
+        return { blockType: 'list', style: 'bullet', items: ['Item 1', 'Item 2', 'Item 3'] };
       case 'image':
-        return { type: 'image', url: '', alt: 'Descrição da imagem' };
+        return { blockType: 'image', url: '', alt: 'Descrição da imagem' };
       case 'video':
-        return { type: 'video', url: '', platform: 'youtube', title: 'Título do vídeo' };
+        return { blockType: 'video', url: '', platform: 'youtube', title: 'Título do vídeo' };
       case 'table':
-        return { type: 'table', headers: ['Coluna 1', 'Coluna 2', 'Coluna 3'], rows: [['Dado 1', 'Dado 2', 'Dado 3']] };
+        return { blockType: 'table', headers: ['Coluna 1', 'Coluna 2', 'Coluna 3'], rows: [['Dado 1', 'Dado 2', 'Dado 3']] };
       case 'card':
-        return { type: 'card', title: 'Título do Card', content: [{ type: 'paragraph', text: 'Conteúdo do card...' }] };
+        return { blockType: 'card', title: 'Título do Card', content: [{ blockType: 'paragraph', text: 'Conteúdo do card...' }] };
       case 'columns':
-        return { type: 'columns', columns: [
-          { content: [{ type: 'paragraph', text: 'Coluna 1' }] },
-          { content: [{ type: 'paragraph', text: 'Coluna 2' }] }
+        return { blockType: 'columns', columns: [
+          { content: [{ blockType: 'paragraph', text: 'Coluna 1' }] },
+          { content: [{ blockType: 'paragraph', text: 'Coluna 2' }] }
         ] };
       case 'slide_title':
-        return { type: 'slide_title', title: 'Título da Apresentação', subtitle: 'Subtítulo' };
+        return { blockType: 'slide_title', title: 'Título da Apresentação', subtitle: 'Subtítulo' };
       case 'bullet_points':
-        return { type: 'bullet_points', points: ['Ponto 1', 'Ponto 2', 'Ponto 3'] };
+        return { blockType: 'bullet_points', points: ['Ponto 1', 'Ponto 2', 'Ponto 3'] };
       case 'quiz':
-        return { type: 'quiz', questions: [] };
+        return { blockType: 'quiz', questions: [] };
       case 'chart':
-        return { type: 'chart', chartType: 'bar', data: { labels: ['A', 'B', 'C'], datasets: [{ data: [1, 2, 3] }] }, title: 'Gráfico' };
+        return { blockType: 'chart', chartType: 'bar', data: { labels: ['A', 'B', 'C'], datasets: [{ data: [1, 2, 3] }] }, title: 'Gráfico' };
       default:
-        return { type: 'paragraph', text: 'Novo elemento' };
+        return { blockType: 'paragraph', text: 'Novo elemento' };
     }
   };
 
@@ -231,11 +231,11 @@ export function AdvancedContentEditor({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Edit3 className="h-4 w-4" />
-            Editar {block.type}
+            Editar {block.blockType}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {block.type === 'heading' && (
+          {block.blockType === 'heading' && (
             <>
               <div>
                 <Label>Texto</Label>
@@ -262,7 +262,7 @@ export function AdvancedContentEditor({
             </>
           )}
 
-          {block.type === 'paragraph' && (
+          {block.blockType === 'paragraph' && (
             <div>
               <Label>Texto</Label>
               <Textarea
@@ -274,7 +274,7 @@ export function AdvancedContentEditor({
             </div>
           )}
 
-          {block.type === 'image' && (
+          {block.blockType === 'image' && (
             <>
               <div>
                 <Label>URL da Imagem</Label>
@@ -309,7 +309,7 @@ export function AdvancedContentEditor({
             </>
           )}
 
-          {block.type === 'video' && (
+          {block.blockType === 'video' && (
             <>
               <div>
                 <Label>URL do Vídeo</Label>
@@ -342,7 +342,7 @@ export function AdvancedContentEditor({
             </>
           )}
 
-          {block.type === 'slide_title' && (
+          {block.blockType === 'slide_title' && (
             <>
               <div>
                 <Label>Título</Label>
@@ -376,7 +376,7 @@ export function AdvancedContentEditor({
             </>
           )}
 
-          {block.type === 'bullet_points' && (
+          {block.blockType === 'bullet_points' && (
             <>
               <div>
                 <Label>Título (opcional)</Label>
@@ -527,17 +527,17 @@ export function AdvancedContentEditor({
 
         {/* Preview do conteúdo */}
         <div className="pr-20">
-          {block.type === 'heading' && (
+          {block.blockType === 'heading' && (
             <div className={`font-bold ${block.level === 1 ? 'text-2xl' : block.level === 2 ? 'text-xl' : 'text-lg'}`}>
               {block.text || 'Título'}
             </div>
           )}
           
-          {block.type === 'paragraph' && (
+          {block.blockType === 'paragraph' && (
             <p className="text-gray-700">{block.text || 'Parágrafo'}</p>
           )}
           
-          {block.type === 'image' && (
+          {block.blockType === 'image' && (
             <div className="text-center p-4 bg-gray-100 rounded">
               {block.url ? (
                 <img src={block.url} alt={block.alt} className="max-w-full h-32 object-cover rounded" />
@@ -550,21 +550,21 @@ export function AdvancedContentEditor({
             </div>
           )}
           
-          {block.type === 'video' && (
+          {block.blockType === 'video' && (
             <div className="text-center p-4 bg-gray-100 rounded">
               <Video className="h-8 w-8 mx-auto text-gray-500" />
               <p className="text-sm text-gray-600 mt-2">{block.title || 'Vídeo'}</p>
             </div>
           )}
           
-          {block.type === 'slide_title' && (
+          {block.blockType === 'slide_title' && (
             <div className="text-center p-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg">
               <h1 className="text-3xl font-bold mb-2">{block.title || 'Título da Apresentação'}</h1>
               {block.subtitle && <p className="text-xl opacity-90">{block.subtitle}</p>}
             </div>
           )}
           
-          {block.type === 'bullet_points' && (
+          {block.blockType === 'bullet_points' && (
             <div>
               {block.title && <h3 className="font-semibold mb-2">{block.title}</h3>}
               <ul className="space-y-1">
@@ -578,7 +578,7 @@ export function AdvancedContentEditor({
             </div>
           )}
           
-          {block.type === 'table' && (
+          {block.blockType === 'table' && (
             <div className="overflow-x-auto">
               <table className="min-w-full border border-gray-300">
                 <thead>
@@ -605,10 +605,24 @@ export function AdvancedContentEditor({
             </div>
           )}
           
-          {block.type === 'card' && (
+          {block.blockType === 'card' && (
             <div className="border rounded-lg p-4 bg-white shadow-sm">
-              {block.title && <h3 className="font-semibold mb-2">{block.title}</h3>}
-              <p className="text-gray-600">Conteúdo do card...</p>
+              {'title' in block && block.title && <h3 className="font-semibold mb-2">{block.title}</h3>}
+              <div className="space-y-2">
+                {block.content.map((contentBlock, contentIndex) => (
+                  <div key={contentIndex} className="text-sm text-gray-600">
+                    {contentBlock.blockType === 'paragraph' && contentBlock.text}
+                    {contentBlock.blockType === 'heading' && contentBlock.text}
+                    {contentBlock.blockType === 'list' && (
+                      <ul className="list-disc list-inside">
+                        {contentBlock.items.map((item, itemIndex) => (
+                          <li key={itemIndex}>{item}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -616,7 +630,7 @@ export function AdvancedContentEditor({
         {/* Badge do tipo */}
         <div className="absolute bottom-2 left-2">
           <Badge variant="secondary" className="text-xs">
-            {block.type}
+            {block.blockType}
           </Badge>
         </div>
       </div>
@@ -705,11 +719,11 @@ export function AdvancedContentEditor({
                     <div className="grid grid-cols-2 gap-2">
                       {elements.map((element) => (
                         <Button
-                          key={element.type}
+                          key={element.blockType}
                           variant="outline"
                           size="sm"
                           className="h-auto p-3 flex flex-col items-center gap-2"
-                          onClick={() => addBlock(element.type)}
+                          onClick={() => addBlock(element.blockType)}
                           disabled={readOnly}
                         >
                           <element.icon className={`h-5 w-5 ${element.color}`} />

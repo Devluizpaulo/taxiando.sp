@@ -103,9 +103,9 @@ export function CouponsClientPage({ initialCoupons }: { initialCoupons: Coupon[]
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="font-semibold">{formatDiscount(coupon)}</TableCell>
-                                        <TableCell>{coupon.uses} / {coupon.maxUses ?? '∞'}</TableCell>
+                                        <TableCell>{coupon.usedCount} / {coupon.usageLimit ?? '∞'}</TableCell>
                                         <TableCell>
-                                            {coupon.expiresAt ? format(toDate(coupon.expiresAt) ?? new Date(), "dd/MM/yyyy", { locale: ptBR }) : 'Nunca'}
+                                            {coupon.validUntil ? format(toDate(coupon.validUntil) ?? new Date(), "dd/MM/yyyy", { locale: ptBR }) : 'Nunca'}
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant={coupon.isActive ? 'default' : 'secondary'}>
