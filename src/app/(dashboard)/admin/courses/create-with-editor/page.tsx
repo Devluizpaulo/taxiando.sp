@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -169,7 +170,7 @@ export default function CreateCourseWithEditorPage() {
     form.setValue('description', data.description);
     form.setValue('category', data.category);
 
-    const newContentBlocks = data.modules.flatMap(module => {
+    const newContentBlocks: ContentBlock[] = data.modules.flatMap(module => {
       const moduleTitle: ContentBlock = {
         blockType: 'heading',
         level: 2,
@@ -177,7 +178,7 @@ export default function CreateCourseWithEditorPage() {
         style: 'accent'
       };
 
-      const lessonBlocks = module.lessons.flatMap(lesson => ([
+      const lessonBlocks: ContentBlock[] = module.lessons.flatMap(lesson => ([
         {
           blockType: 'heading' as const,
           level: 3,
@@ -492,7 +493,7 @@ export default function CreateCourseWithEditorPage() {
           <AdvancedContentEditor
             contentBlocks={contentBlocks}
             onChange={setContentBlocks}
-            onSave={() => form.handleSubmit(onSubmit)()}
+            onSave={form.handleSubmit(onSubmit)}
           />
         </div>
       </div>

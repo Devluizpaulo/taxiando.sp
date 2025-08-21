@@ -868,7 +868,7 @@ export interface CityTipReview {
 }
 
 export type ContentBlock =
-  | { blockType: 'heading'; level: 1 | 2 | 3 | 4; text: string; style?: 'default' | 'accent' | 'quote' }
+  | { blockType: 'heading'; level: number; text: string; style?: 'default' | 'accent' | 'quote' }
   | { blockType: 'paragraph'; text: string; style?: 'default' | 'lead' | 'quote' | 'highlight' }
   | { blockType: 'list'; style: 'bullet' | 'numbered' | 'checklist' | 'timeline'; items: string[] }
   | { blockType: 'image'; url: string; alt?: string; caption?: string; style?: 'default' | 'rounded' | 'full' | 'shadow'; size?: 'small' | 'medium' | 'large' }
