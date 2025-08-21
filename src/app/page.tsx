@@ -31,10 +31,10 @@ const HowToBeDriverSection = () => (
               Quer se tornar um taxista profissional em SP?
             </h2>
             <div className="space-y-4">
-              <p className="text-base sm:text-lg text-muted-foreground">
+              <p className="text-base sm:text-lg text-muted-foreground text-justify">
                 Preparamos um guia completo com o passo a passo, desde a documentação necessária até encontrar o veículo ideal para você começar com o pé direito.
               </p>
-              <p className="text-sm sm:text-base text-muted-foreground">
+              <p className="text-sm sm:text-base text-muted-foreground text-justify">
                 Desmistificamos todo o processo para você focar no que realmente importa: dirigir com segurança e profissionalismo.
               </p>
             </div>
@@ -92,7 +92,7 @@ const HowToBeDriverSection = () => (
                 <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tighter text-foreground">
                     Aprovado por quem está na rua
                 </h2>
-                <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-muted-foreground px-4">
+                <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-muted-foreground px-4 text-justify">
                     Veja o que profissionais como você estão dizendo sobre a Táxiando SP.
                 </p>
             </div>
@@ -101,7 +101,7 @@ const HowToBeDriverSection = () => (
                     <Card key={testimonial.id} className="flex flex-col justify-between h-full">
                         <CardContent className="pt-6 flex-1">
                             <Quote className="h-6 w-6 sm:h-8 sm:w-8 text-primary/30 mb-4" />
-                            <p className="text-sm sm:text-base text-muted-foreground italic">"{testimonial.quote}"</p>
+                            <p className="text-sm sm:text-base text-muted-foreground italic text-justify">"{testimonial.quote}"</p>
                         </CardContent>
                         <CardFooter className="flex items-center gap-3 sm:gap-4">
                             <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
@@ -140,7 +140,7 @@ const HowToBeDriverSection = () => (
                     <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tighter text-foreground">
                         Últimas Notícias e Matérias
                     </h2>
-                    <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-muted-foreground px-4">
+                    <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-muted-foreground px-4 text-justify">
                         Informação de qualidade para o profissional do volante.
                     </p>
                 </div>
@@ -160,7 +160,7 @@ const HowToBeDriverSection = () => (
                                 <CardTitle className="font-headline text-lg sm:text-xl line-clamp-2">{post.title}</CardTitle>
                             </CardHeader>
                             <CardContent className="flex-1 pt-0">
-                                <p className="text-sm sm:text-base text-muted-foreground line-clamp-3">{post.excerpt}</p>
+                                <p className="text-sm sm:text-base text-muted-foreground line-clamp-3 text-justify">{post.excerpt}</p>
                             </CardContent>
                             <CardFooter className="pt-0">
                                 <Button asChild variant="outline" className="w-full">
@@ -201,7 +201,7 @@ const ClassifiedsSection = async () => {
                     <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tighter text-foreground">
                       Oportunidades em Destaque
                     </h2>
-                    <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-muted-foreground px-4">
+                    <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-muted-foreground px-4 text-justify">
                       Encontre o veículo ideal e os melhores serviços para acelerar sua carreira.
                     </p>
                 </div>
@@ -293,7 +293,7 @@ const CityGuideSection = () => (
         <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tighter text-foreground">
           Guia da Cidade
         </h2>
-        <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-muted-foreground px-4">
+        <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-muted-foreground px-4 text-justify">
           Descubra os melhores lugares de São Paulo com dicas exclusivas para motoristas e passageiros.
         </p>
       </div>
@@ -310,7 +310,7 @@ const CityGuideSection = () => (
           </CardHeader>
           <CardContent className="flex-1 p-3 sm:p-4">
             <CardTitle className="font-headline text-base sm:text-lg">Dica de exemplo</CardTitle>
-            <CardDescription className="mt-2 line-clamp-2 text-sm">Aqui você pode exibir dicas estáticas ou buscar de outra fonte.</CardDescription>
+            <CardDescription className="mt-2 line-clamp-2 text-sm text-justify">Aqui você pode exibir dicas estáticas ou buscar de outra fonte.</CardDescription>
             <div className="mt-3 sm:mt-4 flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
               <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>São Paulo, SP</span>
@@ -340,7 +340,7 @@ const RentVehiclePrompt = () => (
             <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tighter">
               Precisa de um carro pra rodar?
             </h2>
-            <p className="text-base sm:text-lg text-accent-foreground/80">
+            <p className="text-base sm:text-lg text-accent-foreground/80 text-justify">
               Não fique a pé. Na Táxiando SP você encontra veículos de frotas e "porta branca" verificados, prontos para você começar a trabalhar hoje mesmo.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start">
@@ -382,7 +382,7 @@ export default async function Home() {
                 <h1 className="font-headline text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tighter text-foreground">
                   O ecossistema completo para o profissional do volante.
                 </h1>
-                <p className="mx-auto max-w-xl text-base sm:text-lg lg:text-xl text-muted-foreground lg:mx-0">
+                <p className="mx-auto max-w-xl text-base sm:text-lg lg:text-xl text-muted-foreground lg:mx-0 text-justify">
                   Mais que uma plataforma, uma comunidade. Encontre veículos, qualifique-se com cursos exclusivos e descubra os melhores roteiros da cidade com nosso Guia SP.
                 </p>
                 <div className="flex flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start">
@@ -429,7 +429,7 @@ export default async function Home() {
                 <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tighter text-foreground">
                   Tudo que você precisa para decolar
                 </h2>
-                <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-muted-foreground px-4">
+                <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg text-muted-foreground px-4 text-justify">
                   Oferecemos as ferramentas e o conhecimento para você ir mais longe.
                 </p>
               </div>
@@ -442,7 +442,7 @@ export default async function Home() {
                     <CardTitle className="font-headline mt-4 text-lg sm:text-xl">Cursos Especializados</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm sm:text-base text-muted-foreground">
+                    <p className="text-sm sm:text-base text-muted-foreground text-justify">
                       Aprenda com especialistas do mercado e obtenha as certificações mais valorizadas.
                     </p>
                   </CardContent>
@@ -455,7 +455,7 @@ export default async function Home() {
                     <CardTitle className="font-headline mt-4 text-lg sm:text-xl">Notícias e Matérias</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm sm:text-base text-muted-foreground">
+                    <p className="text-sm sm:text-base text-muted-foreground text-justify">
                       Fique por dentro de tudo que acontece no setor, com análises e novidades.
                     </p>
                   </CardContent>
@@ -468,7 +468,7 @@ export default async function Home() {
                     <CardTitle className="font-headline mt-4 text-lg sm:text-xl">Aluguel e Classificados</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm sm:text-base text-muted-foreground">
+                    <p className="text-sm sm:text-base text-muted-foreground text-justify">
                       Conectamos você às melhores frotas e serviços para o seu dia a dia.
                     </p>
                   </CardContent>
@@ -500,7 +500,7 @@ export default async function Home() {
               <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tighter text-primary-foreground">
                 Pronto para dar o próximo passo?
               </h2>
-              <p className="mx-auto mt-4 max-w-xl text-base sm:text-lg text-primary-foreground/90 px-4">
+              <p className="mx-auto mt-4 max-w-xl text-base sm:text-lg text-primary-foreground/90 px-4 text-justify">
                 Junte-se a milhares de profissionais que estão transformando suas carreiras com a Táxiando SP.
               </p>
               <Button asChild size="lg" variant="secondary" className="mt-6 sm:mt-8 bg-accent text-accent-foreground hover:bg-accent/90 w-full sm:w-auto">
