@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { createCourse } from '@/app/actions/course-actions';
 import { AdvancedContentEditor } from '@/components/advanced-content-editor';
 import { type ContentBlock } from '@/lib/types';
+import { generateCourseStructure, type GenerateCourseOutput } from '@/ai/flows/course-creator-flow';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,8 +18,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Save, 
@@ -33,8 +32,11 @@ import {
   CheckCircle,
   AlertCircle,
   Plus,
-  Sparkles
+  Sparkles,
+  Loader2,
+  Brain
 } from 'lucide-react';
+import { nanoid } from 'nanoid';
 
 // Schema simplificado e otimizado
 const courseSchema = z.object({
@@ -50,13 +52,93 @@ const courseSchema = z.object({
 
 type CourseFormValues = z.infer<typeof courseSchema>;
 
+// Novo componente para o Assistente de IA
+const AiCourseGenerator = ({ onCourseGenerated, isGenerating, onGenerationStart, onGenerationEnd }: {
+  onCourseGenerated: (data: GenerateCourseOutput) => void;
+  isGenerating: boolean;
+  onGenerationStart: () => void;
+  onGenerationEnd: () => void;
+}) => {
+  const [topic, setTopic] = useState('');
+  const [audience, setAudience] = useState('');
+  const { toast } = useToast();
+
+  const handleGenerate = async () => {
+    if (topic.trim().length < 10) {
+      toast({
+        variant: 'destructive',
+        title: 'Tópico muito curto',
+        description: 'Por favor, forneça mais detalhes sobre o que você quer ensinar.',
+      });
+      return;
+    }
+
+    onGenerationStart();
+    try {
+      const result = await generateCourseStructure({ topic, targetAudience: audience });
+      onCourseGenerated(result);
+      toast({
+        title: "Curso Gerado com IA!",
+        description: "A estrutura e o conteúdo do curso foram preenchidos para você.",
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro da IA',
+        description: 'Não foi possível gerar o curso. Tente novamente ou com um tópico diferente.',
+      });
+      console.error(error);
+    } finally {
+      onGenerationEnd();
+    }
+  };
+
+  return (
+    <Card className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-blue-800">
+          <Brain className="h-5 w-5" />
+          Assistente de IA para Criação de Cursos
+        </CardTitle>
+        <CardDescription>
+          Sem tempo? Descreva um tópico e deixe a IA criar uma estrutura completa de curso, com módulos, aulas e até quizzes.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Textarea
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder="Ex: Técnicas de direção defensiva para taxistas em São Paulo"
+          rows={3}
+          disabled={isGenerating}
+        />
+        <Input
+          value={audience}
+          onChange={(e) => setAudience(e.target.value)}
+          placeholder="Público-alvo (opcional, ex: iniciantes, experientes)"
+          disabled={isGenerating}
+        />
+        <Button onClick={handleGenerate} disabled={isGenerating || !topic.trim()} className="w-full">
+          {isGenerating ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="mr-2 h-4 w-4" />
+          )}
+          {isGenerating ? 'Gerando curso, aguarde...' : 'Gerar Curso com IA'}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
+
 export default function CreateCourseWithEditorPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('info');
   const [isCreating, setIsCreating] = useState(false);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
   
-  // Conteúdo inicial otimizado
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([
     {
       blockType: 'slide_title',
@@ -65,24 +147,6 @@ export default function CreateCourseWithEditorPage() {
       background: 'gradient-to-r from-blue-500 to-purple-600',
       textColor: 'white',
       alignment: 'center'
-    },
-    {
-      blockType: 'heading',
-      level: 2,
-      text: 'Objetivos do Curso',
-      style: 'accent'
-    },
-    {
-      blockType: 'bullet_points',
-      title: 'O que você aprenderá:',
-      points: [
-        'Adicione seus objetivos aqui',
-        'Use o editor para personalizar',
-        'Crie conteúdo interativo',
-        'Organize em módulos e aulas'
-      ],
-      style: 'icons',
-      icon: 'check'
     }
   ]);
 
@@ -100,11 +164,53 @@ export default function CreateCourseWithEditorPage() {
     },
   });
 
-  const handleSave = () => {
-    toast({
-      title: 'Conteúdo salvo!',
-      description: 'Seu conteúdo foi salvo automaticamente.',
+  const handleAiCourseGenerated = (data: GenerateCourseOutput) => {
+    form.setValue('title', data.title);
+    form.setValue('description', data.description);
+    form.setValue('category', data.category);
+
+    const newContentBlocks = data.modules.flatMap(module => {
+      const moduleTitle: ContentBlock = {
+        blockType: 'heading',
+        level: 2,
+        text: module.title,
+        style: 'accent'
+      };
+
+      const lessonBlocks = module.lessons.flatMap(lesson => ([
+        {
+          blockType: 'heading' as const,
+          level: 3,
+          text: lesson.title
+        },
+        {
+          blockType: 'paragraph' as const,
+          text: lesson.content
+        }
+      ]));
+
+      const quizBlock: ContentBlock[] = module.quiz ? [
+        {
+          blockType: 'quiz' as const,
+          questions: module.quiz.map(q => ({
+            id: q.id,
+            question: q.question,
+            options: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })),
+          }))
+        }
+      ] : [];
+
+      return [moduleTitle, ...lessonBlocks, ...quizBlock];
     });
+
+    setContentBlocks(newContentBlocks);
+    
+    // Calcula a duração total estimada
+    const totalDuration = data.modules.reduce((total, module) => 
+      total + module.lessons.reduce((moduleTotal, lesson) => moduleTotal + lesson.totalDuration, 0), 0);
+    form.setValue('estimatedDuration', totalDuration);
+
+    setActiveTab('editor'); // Muda para a aba do editor para ver o resultado
   };
 
   const handleCreateCourse = async (values: CourseFormValues) => {
@@ -120,18 +226,18 @@ export default function CreateCourseWithEditorPage() {
     setIsCreating(true);
     
     try {
-      // Preparar dados do curso com o conteúdo do editor
       const courseData = {
         ...values,
         modules: [{
-          id: 'module-1',
+          id: nanoid(),
           title: 'Módulo Principal',
           description: 'Conteúdo criado com o editor avançado',
           lessons: [{
-            id: 'lesson-1',
+            id: nanoid(),
             title: 'Aula Principal',
             content: JSON.stringify(contentBlocks),
             totalDuration: values.estimatedDuration,
+            type: 'multi_page' as const,
             pages: [],
             materials: [],
             questions: []
@@ -143,7 +249,7 @@ export default function CreateCourseWithEditorPage() {
 
       const result = await createCourse(courseData);
       
-      if (result.success) {
+      if (result.success && result.courseId) {
         toast({
           title: 'Curso criado com sucesso!',
           description: 'Seu curso foi criado e está pronto para ser editado.',
@@ -182,28 +288,19 @@ export default function CreateCourseWithEditorPage() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Criar Novo Curso</h1>
               <p className="text-gray-600 mt-1">
-                Use o editor avançado para criar conteúdo interativo
+                Use o editor avançado ou a IA para criar conteúdo interativo
               </p>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={handleSave}>
-              <Save className="h-4 w-4 mr-2" />
-              Salvar Rascunho
-            </Button>
-            <Button onClick={onSubmit} disabled={isCreating}>
+            <Button onClick={onSubmit} disabled={isCreating || isAiGenerating}>
               {isCreating ? (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2 animate-spin" />
-                  Criando...
-                </>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar Curso
-                </>
+                <Plus className="h-4 w-4 mr-2" />
               )}
+              {isCreating ? 'Criando...' : 'Criar Curso'}
             </Button>
           </div>
         </div>
@@ -211,16 +308,21 @@ export default function CreateCourseWithEditorPage() {
 
       <div className="flex h-[calc(100vh-80px)]">
         {/* Sidebar com informações do curso */}
-        <div className="w-80 bg-white border-r overflow-y-auto">
+        <div className="w-96 bg-white border-r overflow-y-auto p-6 space-y-6">
+           <AiCourseGenerator 
+              onCourseGenerated={handleAiCourseGenerated}
+              isGenerating={isAiGenerating}
+              onGenerationStart={() => setIsAiGenerating(true)}
+              onGenerationEnd={() => setIsAiGenerating(false)}
+            />
+          
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="info">Informações</TabsTrigger>
               <TabsTrigger value="settings">Configurações</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="info" className="p-6 space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Informações Básicas</h3>
+            <TabsContent value="info" className="p-1 space-y-6">
                 <Form {...form}>
                   <form className="space-y-4">
                     <FormField
@@ -261,7 +363,7 @@ export default function CreateCourseWithEditorPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Categoria</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecione uma categoria" />
@@ -272,6 +374,8 @@ export default function CreateCourseWithEditorPage() {
                               <SelectItem value="Segurança">Segurança</SelectItem>
                               <SelectItem value="Tecnologia">Tecnologia</SelectItem>
                               <SelectItem value="Atendimento">Atendimento</SelectItem>
+                               <SelectItem value="Finanças">Finanças</SelectItem>
+                                <SelectItem value="Bem-estar">Bem-estar</SelectItem>
                               <SelectItem value="Outros">Outros</SelectItem>
                             </SelectContent>
                           </Select>
@@ -279,14 +383,20 @@ export default function CreateCourseWithEditorPage() {
                         </FormItem>
                       )}
                     />
-                    
-                    <FormField
+                  </form>
+                </Form>
+            </TabsContent>
+            
+            <TabsContent value="settings" className="p-1 space-y-6">
+                <Form {...form}>
+                  <form className="space-y-4">
+                     <FormField
                       control={form.control}
                       name="difficulty"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Nível de Dificuldade</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue />
@@ -316,16 +426,6 @@ export default function CreateCourseWithEditorPage() {
                         </FormItem>
                       )}
                     />
-                  </form>
-                </Form>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="settings" className="p-6 space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Configurações</h3>
-                <Form {...form}>
-                  <form className="space-y-4">
                     <FormField
                       control={form.control}
                       name="isPublicListing"
@@ -383,7 +483,6 @@ export default function CreateCourseWithEditorPage() {
                     />
                   </form>
                 </Form>
-              </div>
             </TabsContent>
           </Tabs>
         </div>
@@ -393,10 +492,10 @@ export default function CreateCourseWithEditorPage() {
           <AdvancedContentEditor
             contentBlocks={contentBlocks}
             onChange={setContentBlocks}
-            onSave={handleSave}
+            onSave={() => form.handleSubmit(onSubmit)()}
           />
         </div>
       </div>
     </div>
   );
-} 
+}
